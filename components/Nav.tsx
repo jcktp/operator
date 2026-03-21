@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, FolderOpen, Power } from 'lucide-react'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power } from 'lucide-react'
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState } from 'react'
 
 const links = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/upload', label: 'Add Report', icon: Upload },
+  { href: '/library', label: 'Library', icon: Library },
   { href: '/directs', label: 'Directs', icon: Users },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
@@ -18,7 +19,6 @@ export default function Nav() {
   const pathname = usePathname()
   const { shutdown } = useShutdown()
   const [confirmingShutdown, setConfirmingShutdown] = useState(false)
-  const [openingFolder, setOpeningFolder] = useState(false)
 
   const handleShutdown = () => {
     if (!confirmingShutdown) {
@@ -27,12 +27,6 @@ export default function Nav() {
     } else {
       shutdown()
     }
-  }
-
-  const handleOpenFolder = async () => {
-    setOpeningFolder(true)
-    await fetch('/api/open-folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-    setTimeout(() => setOpeningFolder(false), 1000)
   }
 
   return (
@@ -50,7 +44,7 @@ export default function Nav() {
                 href={href}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                  pathname === href
+                  pathname === href || (href !== '/' && pathname.startsWith(href))
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                 )}
@@ -60,23 +54,7 @@ export default function Nav() {
               </Link>
             ))}
 
-            {/* Divider */}
             <div className="w-px h-4 bg-gray-200 mx-1" />
-
-            {/* Open reports folder */}
-            <button
-              onClick={handleOpenFolder}
-              title="Open reports folder"
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                openingFolder
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-              )}
-            >
-              <FolderOpen size={15} />
-              <span className="hidden sm:inline">Reports</span>
-            </button>
 
             {/* Power off */}
             <button
@@ -90,7 +68,7 @@ export default function Nav() {
               )}
             >
               <Power size={15} />
-              <span className="hidden sm:inline">{confirmingShutdown ? 'Confirm' : ''}</span>
+              {confirmingShutdown && <span className="hidden sm:inline">Confirm</span>}
             </button>
           </div>
         </div>
