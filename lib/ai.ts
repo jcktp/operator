@@ -99,6 +99,76 @@ Limits: max 10 metrics, 5 insights, 4 questions. Only use data from the report.`
   }
 }
 
+export interface ComparisonChange {
+  metric: string
+  previous: string
+  current: string
+  direction: 'improved' | 'declined' | 'unchanged' | 'new' | 'removed'
+  significance: 'high' | 'medium' | 'low'
+  note?: string
+}
+
+export interface ReportComparison {
+  headline: string
+  changes: ComparisonChange[]
+  newTopics: string[]
+  removedTopics: string[]
+}
+
+export async function compareReports(
+  previousSummary: string,
+  previousMetrics: string,
+  currentSummary: string,
+  currentMetrics: string,
+  area: string
+): Promise<ReportComparison> {
+  const ollama = getClient()
+  const model = getModel()
+
+  let prevMetrics: Metric[] = []
+  let currMetrics: Metric[] = []
+  try { prevMetrics = JSON.parse(previousMetrics || '[]') } catch {}
+  try { currMetrics = JSON.parse(currentMetrics || '[]') } catch {}
+
+  const prevText = `Summary: ${previousSummary}\nMetrics: ${prevMetrics.map(m => `${m.label}: ${m.value}`).join(', ')}`
+  const currText = `Summary: ${currentSummary}\nMetrics: ${currMetrics.map(m => `${m.label}: ${m.value}`).join(', ')}`
+
+  const prompt = `Compare two ${area} reports for a CEO. Identify what changed, improved, or declined.
+
+PREVIOUS REPORT:
+${prevText}
+
+CURRENT REPORT:
+${currText}
+
+Reply with ONLY valid JSON:
+{
+  "headline": "1 sentence summarising the most important change",
+  "changes": [{"metric": "metric or topic name", "previous": "previous value/state", "current": "current value/state", "direction": "improved|declined|unchanged|new|removed", "significance": "high|medium|low", "note": "optional context"}],
+  "newTopics": ["topics or metrics that appear in current but not previous"],
+  "removedTopics": ["topics or metrics in previous but missing from current"]
+}
+
+Limits: max 8 changes, max 4 newTopics, max 4 removedTopics. Only compare what is actually in the reports.`
+
+  const response = await ollama.chat({
+    model,
+    messages: [{ role: 'user', content: prompt }],
+    options: { temperature: 0.1 },
+  })
+
+  const text = response.message.content
+  const json = extractJson(text)
+  const parsed = JSON.parse(json) as ReportComparison
+
+  return {
+    headline: parsed.headline ?? '',
+    changes: Array.isArray(parsed.changes) ? parsed.changes : [],
+    newTopics: Array.isArray(parsed.newTopics) ? parsed.newTopics : [],
+    removedTopics: Array.isArray(parsed.removedTopics) ? parsed.removedTopics : [],
+  }
+}
+
 export async function generateDashboardInsights(
   reports: Array<{ area: string; summary: string; metrics: string; insights: string }>
 ): Promise<{ crossInsights: Insight[]; topQuestions: Question[]; healthSignal: string }> {

@@ -28,6 +28,7 @@ model Report {
   metrics        String?
   insights       String?
   questions      String?
+  comparison     String?
   area           String
   reportDate     DateTime?
   directReportId String?

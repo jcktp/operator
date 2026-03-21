@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { extractText, getFileType } from '@/lib/parsers'
-import { analyzeReport } from '@/lib/ai'
-
+import { analyzeReport, compareReports } from '@/lib/ai'
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,7 +19,6 @@ export async function POST(req: NextRequest) {
     const fileType = getFileType(file.name)
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // Extract text content from the file
     let rawContent: string
     try {
       rawContent = await extractText(buffer, fileType)
@@ -32,19 +30,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File appears to be empty or unreadable' }, { status: 422 })
     }
 
-    // Get direct report info if provided
+    // Apply saved Ollama settings
+    const settings = await prisma.setting.findMany()
+    for (const s of settings) {
+      if (s.key === 'ollama_host') process.env.OLLAMA_HOST = s.value
+      if (s.key === 'ollama_model') process.env.OLLAMA_MODEL = s.value
+    }
+
+    // Get direct report name if provided
     let directName: string | undefined
     if (directReportId) {
       const direct = await prisma.directReport.findUnique({ where: { id: directReportId } })
       if (direct) directName = direct.name
     }
 
-    // Apply saved Ollama settings to env before analysis
-    const settings = await prisma.setting.findMany()
-    for (const s of settings) {
-      if (s.key === 'ollama_host') process.env.OLLAMA_HOST = s.value
-      if (s.key === 'ollama_model') process.env.OLLAMA_MODEL = s.value
-    }
+    // Find the most recent prior report for the same area (for comparison)
+    const previousReport = await prisma.report.findFirst({
+      where: {
+        area,
+        ...(directReportId ? { directReportId } : {}),
+        summary: { not: null },
+        metrics: { not: null },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
 
     // Run AI analysis
     let analysis = null
@@ -52,10 +61,24 @@ export async function POST(req: NextRequest) {
       analysis = await analyzeReport(rawContent, title, area, directName)
     } catch (e) {
       console.error('AI analysis failed:', e)
-      // Continue without analysis — data is still stored
     }
 
-    // Store in database
+    // Run comparison against previous report (if one exists and analysis succeeded)
+    let comparison = null
+    if (previousReport && analysis && previousReport.summary && previousReport.metrics) {
+      try {
+        comparison = await compareReports(
+          previousReport.summary,
+          previousReport.metrics,
+          analysis.summary,
+          JSON.stringify(analysis.metrics),
+          area
+        )
+      } catch (e) {
+        console.error('Comparison failed:', e)
+      }
+    }
+
     const report = await prisma.report.create({
       data: {
         title,
@@ -70,13 +93,12 @@ export async function POST(req: NextRequest) {
         metrics: analysis?.metrics ? JSON.stringify(analysis.metrics) : null,
         insights: analysis?.insights ? JSON.stringify(analysis.insights) : null,
         questions: analysis?.questions ? JSON.stringify(analysis.questions) : null,
+        comparison: comparison ? JSON.stringify(comparison) : null,
       },
-      include: {
-        directReport: true,
-      },
+      include: { directReport: true },
     })
 
-    return NextResponse.json({ report })
+    return NextResponse.json({ report, hasPrevious: !!previousReport })
   } catch (e) {
     console.error('Upload error:', e)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
