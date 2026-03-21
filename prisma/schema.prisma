@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model DirectReport {
+  id        String   @id @default(uuid())
+  name      String
+  title     String
+  email     String?
+  area      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reports   Report[]
+}
+
+model Report {
+  id             String        @id @default(uuid())
+  title          String
+  fileName       String
+  fileType       String
+  fileSize       Int
+  rawContent     String
+  summary        String?
+  metrics        String?
+  insights       String?
+  questions      String?
+  area           String
+  reportDate     DateTime?
+  directReportId String?
+  directReport   DirectReport? @relation(fields: [directReportId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
