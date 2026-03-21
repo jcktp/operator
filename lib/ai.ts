@@ -1,8 +1,13 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { Ollama } from 'ollama'
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+function getClient() {
+  const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
+  return new Ollama({ host })
+}
+
+function getModel() {
+  return process.env.OLLAMA_MODEL ?? 'llama3.2:3b'
+}
 
 export interface ReportAnalysis {
   summary: string
@@ -31,71 +36,67 @@ export interface Question {
   priority: 'high' | 'medium' | 'low'
 }
 
+function extractJson(text: string): string {
+  // Try to find a JSON block between ```json ... ``` or just { ... }
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fenced) return fenced[1].trim()
+
+  // Find the outermost { ... }
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start !== -1 && end !== -1 && end > start) {
+    return text.slice(start, end + 1)
+  }
+  throw new Error('No JSON found in response')
+}
+
 export async function analyzeReport(
   content: string,
   reportTitle: string,
   area: string,
   directName?: string
 ): Promise<ReportAnalysis> {
-  const prompt = `You are analyzing a business report for a CEO. Your job is to extract and understand the data AS-IS — do not invent, change, or extrapolate numbers. Present exactly what the report contains.
+  const ollama = getClient()
+  const model = getModel()
 
-Report Title: ${reportTitle}
-Business Area: ${area}
-${directName ? `From: ${directName}` : ''}
+  // Keep content short for lightweight models
+  const truncated = content.slice(0, 6000)
 
-Report Content:
----
-${content.slice(0, 12000)}
----
+  const prompt = `You are analyzing a business report for a CEO. Extract data exactly as it appears — do not invent numbers.
 
-Respond with a JSON object with this exact structure:
+Report: ${reportTitle}
+Area: ${area}${directName ? `\nFrom: ${directName}` : ''}
+
+Content:
+${truncated}
+
+Reply with ONLY valid JSON, no other text:
 {
-  "summary": "2-3 sentence plain-language summary of what this report covers and the overall picture. Be direct and factual.",
-  "metrics": [
-    {
-      "label": "metric name",
-      "value": "exact value as reported",
-      "context": "vs plan, vs prior period, or any context given in the report",
-      "trend": "up | down | flat | unknown",
-      "status": "positive | negative | neutral | warning"
-    }
-  ],
-  "insights": [
-    {
-      "type": "observation | anomaly | risk | opportunity",
-      "text": "specific, factual observation based only on what the report contains",
-      "area": "which part of the business this relates to"
-    }
-  ],
-  "questions": [
-    {
-      "text": "A specific question the CEO should ask this direct report",
-      "why": "Why this question matters based on what the report shows",
-      "priority": "high | medium | low"
-    }
-  ]
+  "summary": "2-3 sentence factual summary",
+  "metrics": [{"label": "name", "value": "exact value", "context": "vs plan or prior period if mentioned", "trend": "up|down|flat|unknown", "status": "positive|negative|neutral|warning"}],
+  "insights": [{"type": "observation|anomaly|risk|opportunity", "text": "factual observation from the report", "area": "business area"}],
+  "questions": [{"text": "question to ask the direct", "why": "why it matters", "priority": "high|medium|low"}]
 }
 
-Rules:
-- metrics: extract all concrete numbers, percentages, and figures mentioned. Maximum 15.
-- insights: flag anomalies, things that stand out, risks, or opportunities visible in the data. Maximum 8.
-- questions: generate smart follow-up questions based on gaps, concerns, or notable items. Maximum 6.
-- Never invent data. Only work with what's in the report.
-- Keep language executive-level: direct, concise, no jargon.`
+Limits: max 10 metrics, 5 insights, 4 questions. Only use data from the report.`
 
-  const message = await client.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 2048,
+  const response = await ollama.chat({
+    model,
     messages: [{ role: 'user', content: prompt }],
+    options: { temperature: 0.1 },
   })
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : ''
+  const text = response.message.content
+  const json = extractJson(text)
+  const parsed = JSON.parse(json) as ReportAnalysis
 
-  // Extract JSON from response
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('Failed to parse AI response')
-
-  return JSON.parse(jsonMatch[0]) as ReportAnalysis
+  // Ensure arrays exist
+  return {
+    summary: parsed.summary ?? '',
+    metrics: Array.isArray(parsed.metrics) ? parsed.metrics : [],
+    insights: Array.isArray(parsed.insights) ? parsed.insights : [],
+    questions: Array.isArray(parsed.questions) ? parsed.questions : [],
+  }
 }
 
 export async function generateDashboardInsights(
@@ -105,57 +106,47 @@ export async function generateDashboardInsights(
     return { crossInsights: [], topQuestions: [], healthSignal: 'No reports available.' }
   }
 
+  const ollama = getClient()
+  const model = getModel()
+
   const reportsText = reports
+    .slice(0, 8)
     .map(r => {
       let metricsData: Metric[] = []
       let insightsData: Insight[] = []
-      try {
-        metricsData = JSON.parse(r.metrics || '[]')
-        insightsData = JSON.parse(r.insights || '[]')
-      } catch {}
-      return `Area: ${r.area}\nSummary: ${r.summary}\nKey metrics: ${metricsData.map(m => `${m.label}: ${m.value}`).join(', ')}\nInsights: ${insightsData.map(i => i.text).join('; ')}`
+      try { metricsData = JSON.parse(r.metrics || '[]') } catch {}
+      try { insightsData = JSON.parse(r.insights || '[]') } catch {}
+      return `${r.area}: ${r.summary}. Metrics: ${metricsData.slice(0, 4).map(m => `${m.label} ${m.value}`).join(', ')}. Flags: ${insightsData.slice(0, 3).map(i => i.text).join('; ')}`
     })
-    .join('\n\n---\n\n')
+    .join('\n')
 
-  const prompt = `You are a strategic advisor helping a CEO understand their business based on recent reports from their direct reports.
+  const prompt = `You are advising a CEO based on recent reports from their direct reports.
 
-Here are summaries from recent reports across different business areas:
-
+Reports:
 ${reportsText}
 
-Respond with a JSON object:
+Reply with ONLY valid JSON, no other text:
 {
-  "healthSignal": "1-2 sentence overall company health assessment based on these reports. Be direct.",
-  "crossInsights": [
-    {
-      "type": "observation | anomaly | risk | opportunity",
-      "text": "Pattern or insight that spans multiple areas or is particularly important",
-      "area": "which areas this relates to"
-    }
-  ],
-  "topQuestions": [
-    {
-      "text": "The most important question the CEO should be asking right now",
-      "why": "Why this matters across the business",
-      "priority": "high | medium | low"
-    }
-  ]
+  "healthSignal": "1-2 sentence overall company health assessment",
+  "crossInsights": [{"type": "observation|anomaly|risk|opportunity", "text": "cross-area pattern or key signal", "area": "areas involved"}],
+  "topQuestions": [{"text": "most important question for the CEO to ask", "why": "why it matters", "priority": "high|medium|low"}]
 }
 
-Rules:
-- crossInsights: maximum 5, focus on cross-functional patterns or critical signals
-- topQuestions: maximum 5, the questions that matter most given the full picture
-- Only draw from what the reports contain. No invented data.`
+Limits: max 4 crossInsights, 4 topQuestions. Only use what the reports contain.`
 
-  const message = await client.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 1024,
+  const response = await ollama.chat({
+    model,
     messages: [{ role: 'user', content: prompt }],
+    options: { temperature: 0.1 },
   })
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : ''
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('Failed to parse AI response')
+  const text = response.message.content
+  const json = extractJson(text)
+  const parsed = JSON.parse(json)
 
-  return JSON.parse(jsonMatch[0])
+  return {
+    healthSignal: parsed.healthSignal ?? '',
+    crossInsights: Array.isArray(parsed.crossInsights) ? parsed.crossInsights : [],
+    topQuestions: Array.isArray(parsed.topQuestions) ? parsed.topQuestions : [],
+  }
 }

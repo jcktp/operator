@@ -3,6 +3,13 @@ import { prisma } from '@/lib/db'
 import { generateDashboardInsights } from '@/lib/ai'
 
 export async function GET() {
+  // Apply saved Ollama settings
+  const allSettings = await prisma.setting.findMany()
+  for (const s of allSettings) {
+    if (s.key === 'ollama_host') process.env.OLLAMA_HOST = s.value
+    if (s.key === 'ollama_model') process.env.OLLAMA_MODEL = s.value
+  }
+
   // Get the most recent report per area
   const reports = await prisma.report.findMany({
     orderBy: { createdAt: 'desc' },

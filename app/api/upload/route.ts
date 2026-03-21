@@ -39,6 +39,13 @@ export async function POST(req: NextRequest) {
       if (direct) directName = direct.name
     }
 
+    // Apply saved Ollama settings to env before analysis
+    const settings = await prisma.setting.findMany()
+    for (const s of settings) {
+      if (s.key === 'ollama_host') process.env.OLLAMA_HOST = s.value
+      if (s.key === 'ollama_model') process.env.OLLAMA_MODEL = s.value
+    }
+
     // Run AI analysis
     let analysis = null
     try {
