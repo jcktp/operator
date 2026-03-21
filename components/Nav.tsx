@@ -3,12 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, Library, Power } from 'lucide-react'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2 } from 'lucide-react'
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState } from 'react'
+import WalkieTalkie from '@/components/WalkieTalkie'
 
 const links = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: BarChart2 },
   { href: '/upload', label: 'Add Report', icon: Upload },
   { href: '/library', label: 'Library', icon: Library },
   { href: '/directs', label: 'Directs', icon: Users },
@@ -32,9 +34,16 @@ export default function Nav() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-14">
-          <Link href="/" className="font-semibold text-sm tracking-tight text-gray-900">
-            operator
+        <div className="flex items-center justify-between h-16">
+
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <WalkieTalkie />
+            <span
+              className="text-xl text-gray-900"
+              style={{ fontFamily: 'var(--font-caveat)', fontWeight: 700 }}
+            >
+              operator
+            </span>
           </Link>
 
           <div className="flex items-center gap-1">
@@ -71,6 +80,7 @@ export default function Nav() {
               {confirmingShutdown && <span className="hidden sm:inline">Confirm</span>}
             </button>
           </div>
+
         </div>
       </div>
     </nav>

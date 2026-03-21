@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { formatDate, formatRelativeDate, formatFileSize } from '@/lib/utils'
+import { formatDate, formatRelativeDate, formatFileSize, cn } from '@/lib/utils'
 import { AreaBadge, InsightTypeBadge, StatusBadge } from '@/components/Badge'
 import { ArrowLeft, FileText, Calendar, User, HelpCircle, TrendingUp, AlertTriangle, GitCompare, Clock } from 'lucide-react'
 import DeleteReportButton from './DeleteButton'
+import RawContent from './RawContent'
 
 interface Metric {
   label: string
@@ -88,6 +89,34 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     unchanged: 'text-gray-400',
     new: 'text-blue-600',
     removed: 'text-gray-400',
+  }
+
+  // Period-over-period helpers
+  const periodLabel = (() => {
+    if (history.length === 0 || !comparison) return null
+    const prev = new Date(history[0].createdAt)
+    const curr = new Date(report.createdAt)
+    const days = Math.round((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24))
+    if (days <= 10) return 'WoW'
+    if (days <= 40) return 'MoM'
+    if (days <= 100) return 'QoQ'
+    return 'YoY'
+  })()
+
+  // Build lookup: metric label → comparison change
+  const changesByMetric = new Map(
+    (comparison?.changes ?? []).map(c => [c.metric.toLowerCase(), c])
+  )
+
+  // Calculate percentage point delta for % values
+  function ppDelta(prev?: string, curr?: string): string | null {
+    if (!prev || !curr) return null
+    if (!prev.includes('%') || !curr.includes('%')) return null
+    const p = parseFloat(prev.replace(/[^0-9.-]/g, ''))
+    const c = parseFloat(curr.replace(/[^0-9.-]/g, ''))
+    if (isNaN(p) || isNaN(c)) return null
+    const d = Math.round((c - p) * 10) / 10
+    return (d > 0 ? '+' : '') + d + 'pp'
   }
 
   return (
@@ -218,20 +247,38 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <TrendingUp size={11} />
             Key Metrics
+            {periodLabel && (
+              <span className="ml-1 text-gray-300 font-normal normal-case tracking-normal">
+                · vs prior report ({periodLabel})
+              </span>
+            )}
           </h2>
           <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
-            {metrics.map((m, i) => (
-              <div key={i} className="flex items-start justify-between px-4 py-3 gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{m.label}</p>
-                  {m.context && <p className="text-xs text-gray-400 mt-0.5">{m.context}</p>}
+            {metrics.map((m, i) => {
+              const change = changesByMetric.get(m.label.toLowerCase())
+              const pp = change ? ppDelta(change.previous, change.current) : null
+              return (
+                <div key={i} className="flex items-start justify-between px-4 py-3 gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900">{m.label}</p>
+                    {m.context && <p className="text-xs text-gray-400 mt-0.5">{m.context}</p>}
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {change && (
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-gray-400 line-through">{change.previous}</span>
+                        <span className={cn('font-medium', directionColor[change.direction] ?? 'text-gray-400')}>
+                          {directionIcon[change.direction] ?? '·'}
+                          {pp && <span className="ml-0.5 font-normal">{pp}</span>}
+                        </span>
+                      </div>
+                    )}
+                    {m.status && m.status !== 'neutral' && <StatusBadge status={m.status} />}
+                    <span className="text-sm font-semibold text-gray-900">{m.value}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {m.status && m.status !== 'neutral' && <StatusBadge status={m.status} />}
-                  <span className="text-sm font-semibold text-gray-900">{m.value}</span>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </section>
       )}
@@ -323,14 +370,12 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <details className="group">
           <summary className="cursor-pointer text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 list-none hover:text-gray-600 transition-colors">
             <FileText size={11} />
-            Raw Report Content
+            Report Content
             <span className="ml-1 text-gray-300 group-open:hidden">▸</span>
             <span className="ml-1 text-gray-300 hidden group-open:inline">▾</span>
           </summary>
           <div className="mt-3 bg-white border border-gray-200 rounded-xl p-4">
-            <pre className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed font-mono max-h-96 overflow-y-auto">
-              {report.rawContent}
-            </pre>
+            <RawContent content={report.rawContent} displayContent={report.displayContent ?? undefined} fileType={report.fileType} />
           </div>
         </details>
       </section>

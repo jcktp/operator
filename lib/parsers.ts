@@ -2,24 +2,28 @@ import mammoth from 'mammoth'
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 
-export async function extractText(buffer: Buffer, fileType: string): Promise<string> {
+export interface ParseResult {
+  text: string
+  displayContent?: string // HTML for word docs; JSON for excel/csv
+}
+
+export async function extractContent(buffer: Buffer, fileType: string): Promise<ParseResult> {
   switch (fileType.toLowerCase()) {
-    case 'pdf':
-      return extractPdf(buffer)
+    case 'pdf':  return { text: await extractPdf(buffer) }
     case 'docx':
-    case 'doc':
-      return extractWord(buffer)
+    case 'doc':  return extractWord(buffer)
     case 'xlsx':
-    case 'xls':
-      return extractExcel(buffer)
-    case 'csv':
-      return extractCsv(buffer)
+    case 'xls':  return extractExcel(buffer)
+    case 'csv':  return extractCsv(buffer)
     case 'txt':
-    case 'md':
-      return buffer.toString('utf-8')
-    default:
-      return buffer.toString('utf-8')
+    case 'md':   return { text: buffer.toString('utf-8') }
+    default:     return { text: buffer.toString('utf-8') }
   }
+}
+
+// Keep for backwards compat
+export async function extractText(buffer: Buffer, fileType: string): Promise<string> {
+  return (await extractContent(buffer, fileType)).text
 }
 
 async function extractPdf(buffer: Buffer): Promise<string> {
@@ -29,40 +33,59 @@ async function extractPdf(buffer: Buffer): Promise<string> {
   return data.text
 }
 
-async function extractWord(buffer: Buffer): Promise<string> {
-  const result = await mammoth.extractRawText({ buffer })
-  return result.value
+async function extractWord(buffer: Buffer): Promise<ParseResult> {
+  const [textResult, htmlResult] = await Promise.all([
+    mammoth.extractRawText({ buffer }),
+    mammoth.convertToHtml({ buffer }, {
+      styleMap: [
+        'p[style-name="Heading 1"] => h1:fresh',
+        'p[style-name="Heading 2"] => h2:fresh',
+        'p[style-name="Heading 3"] => h3:fresh',
+        'p[style-name="Title"] => h1:fresh',
+        'b => strong',
+        'i => em',
+      ],
+    }),
+  ])
+  return { text: textResult.value, displayContent: htmlResult.value }
 }
 
-function extractExcel(buffer: Buffer): string {
+function extractExcel(buffer: Buffer): ParseResult {
   const workbook = XLSX.read(buffer, { type: 'buffer' })
-  const lines: string[] = []
+  const textLines: string[] = []
+  const sheets: Array<{ name: string; rows: string[][] }> = []
 
   for (const sheetName of workbook.SheetNames) {
-    lines.push(`=== Sheet: ${sheetName} ===`)
     const sheet = workbook.Sheets[sheetName]
+    // For text (AI analysis): CSV format
     const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false })
-    lines.push(csv)
+    textLines.push(`=== Sheet: ${sheetName} ===`, csv)
+
+    // For display: structured rows
+    const aoa = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: '' })
+    const rows = (aoa as string[][]).filter(r => r.some(c => c !== '' && c != null))
+    sheets.push({ name: sheetName, rows: rows.map(r => r.map(c => String(c ?? ''))) })
   }
 
-  return lines.join('\n')
+  return {
+    text: textLines.join('\n'),
+    displayContent: JSON.stringify({ type: 'excel', sheets }),
+  }
 }
 
-function extractCsv(buffer: Buffer): string {
+function extractCsv(buffer: Buffer): ParseResult {
   const text = buffer.toString('utf-8')
-  const result = Papa.parse(text, { header: true, skipEmptyLines: true })
+  const result = Papa.parse(text, { header: false, skipEmptyLines: true })
+  const rows = result.data as string[][]
 
-  if (!result.data || result.data.length === 0) return text
+  // Text for AI: pipe-separated
+  const textLines = rows.map(r => r.join(' | '))
+  const textOutput = textLines.join('\n')
 
-  const rows = result.data as Record<string, unknown>[]
-  const headers = Object.keys(rows[0])
-  const lines = [headers.join(' | ')]
-
-  for (const row of rows) {
-    lines.push(headers.map(h => String(row[h] ?? '')).join(' | '))
+  return {
+    text: textOutput,
+    displayContent: JSON.stringify({ type: 'csv', rows }),
   }
-
-  return lines.join('\n')
 }
 
 export function getFileType(filename: string): string {

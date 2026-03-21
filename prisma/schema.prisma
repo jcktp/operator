@@ -7,14 +7,28 @@ datasource db {
 }
 
 model DirectReport {
-  id        String   @id @default(uuid())
-  name      String
-  title     String
-  email     String?
-  area      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  reports   Report[]
+  id             String          @id @default(uuid())
+  name           String
+  title          String
+  email          String?
+  area           String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  reports        Report[]
+  reportRequests ReportRequest[]
+}
+
+model ReportRequest {
+  id             String        @id @default(uuid())
+  token          String        @unique
+  title          String
+  area           String
+  message        String?
+  directReportId String?
+  directReport   DirectReport? @relation(fields: [directReportId], references: [id])
+  status         String        @default("pending")
+  createdAt      DateTime      @default(now())
+  expiresAt      DateTime?
 }
 
 model Report {
@@ -29,6 +43,7 @@ model Report {
   insights       String?
   questions      String?
   comparison     String?
+  displayContent String?
   area           String
   reportDate     DateTime?
   directReportId String?

@@ -1,13 +1,130 @@
 import { Ollama } from 'ollama'
 
-function getClient() {
-  const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
-  return new Ollama({ host })
+// ── Provider types ──────────────────────────────────────────────────────────
+
+export type AIProvider = 'ollama' | 'anthropic' | 'openai' | 'google' | 'groq'
+
+function getProvider(): AIProvider {
+  return (process.env.AI_PROVIDER as AIProvider) ?? 'ollama'
 }
 
-function getModel() {
-  return process.env.OLLAMA_MODEL ?? 'llama3.2:3b'
+// Max content length per provider (cloud models handle more context)
+function maxContentLength(): number {
+  const p = getProvider()
+  return p === 'ollama' ? 6000 : 20000
 }
+
+// ── Unified chat interface ──────────────────────────────────────────────────
+
+interface Message { role: 'user' | 'assistant'; content: string }
+
+async function chat(messages: Message[], temperature = 0.1): Promise<string> {
+  const provider = getProvider()
+  switch (provider) {
+    case 'anthropic': return chatAnthropic(messages, temperature)
+    case 'openai':    return chatOpenAI(messages, temperature)
+    case 'groq':      return chatGroq(messages, temperature)
+    case 'google':    return chatGoogle(messages, temperature)
+    default:          return chatOllama(messages, temperature)
+  }
+}
+
+async function chatOllama(messages: Message[], temperature: number): Promise<string> {
+  const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
+  const model = process.env.OLLAMA_MODEL ?? 'llama3.2:3b'
+  const ollama = new Ollama({ host })
+  const response = await ollama.chat({ model, messages, options: { temperature } })
+  return response.message.content
+}
+
+async function chatAnthropic(messages: Message[], temperature: number): Promise<string> {
+  const key = process.env.ANTHROPIC_API_KEY
+  if (!key) throw new Error('ANTHROPIC_API_KEY not set')
+  const model = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001'
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2048,
+      temperature,
+      messages,
+    }),
+  })
+  const data = await res.json() as { content?: Array<{ text: string }>; error?: { message: string } }
+  if (!res.ok) throw new Error(data.error?.message ?? 'Anthropic error')
+  return data.content![0].text
+}
+
+async function chatOpenAI(messages: Message[], temperature: number): Promise<string> {
+  const key = process.env.OPENAI_API_KEY
+  if (!key) throw new Error('OPENAI_API_KEY not set')
+  const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, messages, temperature }),
+  })
+  const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
+  if (!res.ok) throw new Error(data.error?.message ?? 'OpenAI error')
+  return data.choices![0].message.content
+}
+
+async function chatGroq(messages: Message[], temperature: number): Promise<string> {
+  const key = process.env.GROQ_API_KEY
+  if (!key) throw new Error('GROQ_API_KEY not set')
+  const model = process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant'
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, messages, temperature }),
+  })
+  const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
+  if (!res.ok) throw new Error(data.error?.message ?? 'Groq error')
+  return data.choices![0].message.content
+}
+
+async function chatGoogle(messages: Message[], temperature: number): Promise<string> {
+  const key = process.env.GOOGLE_API_KEY
+  if (!key) throw new Error('GOOGLE_API_KEY not set')
+  const model = process.env.GOOGLE_MODEL ?? 'gemini-1.5-flash'
+  // Combine messages into a single prompt (Gemini API differs)
+  const prompt = messages.map(m => m.content).join('\n\n')
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature },
+      }),
+    }
+  )
+  const data = await res.json() as {
+    candidates?: Array<{ content: { parts: Array<{ text: string }> } }>
+    error?: { message: string }
+  }
+  if (!res.ok) throw new Error(data.error?.message ?? 'Google error')
+  return data.candidates![0].content.parts[0].text
+}
+
+// ── JSON extraction ────────────────────────────────────────────────────────
+
+function extractJson(text: string): string {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fenced) return fenced[1].trim()
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start !== -1 && end !== -1 && end > start) return text.slice(start, end + 1)
+  throw new Error('No JSON found in response')
+}
+
+// ── Public interfaces ──────────────────────────────────────────────────────
 
 export interface ReportAnalysis {
   summary: string
@@ -36,19 +153,23 @@ export interface Question {
   priority: 'high' | 'medium' | 'low'
 }
 
-function extractJson(text: string): string {
-  // Try to find a JSON block between ```json ... ``` or just { ... }
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (fenced) return fenced[1].trim()
-
-  // Find the outermost { ... }
-  const start = text.indexOf('{')
-  const end = text.lastIndexOf('}')
-  if (start !== -1 && end !== -1 && end > start) {
-    return text.slice(start, end + 1)
-  }
-  throw new Error('No JSON found in response')
+export interface ComparisonChange {
+  metric: string
+  previous: string
+  current: string
+  direction: 'improved' | 'declined' | 'unchanged' | 'new' | 'removed'
+  significance: 'high' | 'medium' | 'low'
+  note?: string
 }
+
+export interface ReportComparison {
+  headline: string
+  changes: ComparisonChange[]
+  newTopics: string[]
+  removedTopics: string[]
+}
+
+// ── Analysis functions ─────────────────────────────────────────────────────
 
 export async function analyzeReport(
   content: string,
@@ -56,11 +177,7 @@ export async function analyzeReport(
   area: string,
   directName?: string
 ): Promise<ReportAnalysis> {
-  const ollama = getClient()
-  const model = getModel()
-
-  // Keep content short for lightweight models
-  const truncated = content.slice(0, 6000)
+  const truncated = content.slice(0, maxContentLength())
 
   const prompt = `You are analyzing a business report for a CEO. Extract data exactly as it appears — do not invent numbers.
 
@@ -80,39 +197,16 @@ Reply with ONLY valid JSON, no other text:
 
 Limits: max 10 metrics, 5 insights, 4 questions. Only use data from the report.`
 
-  const response = await ollama.chat({
-    model,
-    messages: [{ role: 'user', content: prompt }],
-    options: { temperature: 0.1 },
-  })
-
-  const text = response.message.content
+  const text = await chat([{ role: 'user', content: prompt }])
   const json = extractJson(text)
   const parsed = JSON.parse(json) as ReportAnalysis
 
-  // Ensure arrays exist
   return {
     summary: parsed.summary ?? '',
     metrics: Array.isArray(parsed.metrics) ? parsed.metrics : [],
     insights: Array.isArray(parsed.insights) ? parsed.insights : [],
     questions: Array.isArray(parsed.questions) ? parsed.questions : [],
   }
-}
-
-export interface ComparisonChange {
-  metric: string
-  previous: string
-  current: string
-  direction: 'improved' | 'declined' | 'unchanged' | 'new' | 'removed'
-  significance: 'high' | 'medium' | 'low'
-  note?: string
-}
-
-export interface ReportComparison {
-  headline: string
-  changes: ComparisonChange[]
-  newTopics: string[]
-  removedTopics: string[]
 }
 
 export async function compareReports(
@@ -122,9 +216,6 @@ export async function compareReports(
   currentMetrics: string,
   area: string
 ): Promise<ReportComparison> {
-  const ollama = getClient()
-  const model = getModel()
-
   let prevMetrics: Metric[] = []
   let currMetrics: Metric[] = []
   try { prevMetrics = JSON.parse(previousMetrics || '[]') } catch {}
@@ -151,13 +242,7 @@ Reply with ONLY valid JSON:
 
 Limits: max 8 changes, max 4 newTopics, max 4 removedTopics. Only compare what is actually in the reports.`
 
-  const response = await ollama.chat({
-    model,
-    messages: [{ role: 'user', content: prompt }],
-    options: { temperature: 0.1 },
-  })
-
-  const text = response.message.content
+  const text = await chat([{ role: 'user', content: prompt }])
   const json = extractJson(text)
   const parsed = JSON.parse(json) as ReportComparison
 
@@ -175,9 +260,6 @@ export async function generateDashboardInsights(
   if (reports.length === 0) {
     return { crossInsights: [], topQuestions: [], healthSignal: 'No reports available.' }
   }
-
-  const ollama = getClient()
-  const model = getModel()
 
   const reportsText = reports
     .slice(0, 8)
@@ -204,13 +286,7 @@ Reply with ONLY valid JSON, no other text:
 
 Limits: max 4 crossInsights, 4 topQuestions. Only use what the reports contain.`
 
-  const response = await ollama.chat({
-    model,
-    messages: [{ role: 'user', content: prompt }],
-    options: { temperature: 0.1 },
-  })
-
-  const text = response.message.content
+  const text = await chat([{ role: 'user', content: prompt }])
   const json = extractJson(text)
   const parsed = JSON.parse(json)
 
