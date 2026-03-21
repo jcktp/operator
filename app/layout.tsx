@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import Nav from '@/components/Nav'
+import { ShutdownProvider } from '@/components/ShutdownProvider'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -31,8 +32,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full`}>
       <body className="min-h-full bg-[#fafafa]">
-        <Nav />
-        <main className="pt-14 max-w-5xl mx-auto px-4 sm:px-6 py-8">{children}</main>
+        <ShutdownProvider>
+          <Nav />
+          <main className="pt-14 max-w-5xl mx-auto px-4 sm:px-6 py-10">{children}</main>
+        </ShutdownProvider>
       </body>
     </html>
   )

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { extractText, getFileType } from '@/lib/parsers'
 import { analyzeReport, compareReports } from '@/lib/ai'
+import { saveReportFile } from '@/lib/reports-folder'
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +19,11 @@ export async function POST(req: NextRequest) {
 
     const fileType = getFileType(file.name)
     const buffer = Buffer.from(await file.arrayBuffer())
+
+    // Save original file to ~/Documents/Operator Reports/{area}/
+    try { saveReportFile(buffer, file.name, area) } catch (e) {
+      console.warn('Could not save to reports folder:', e)
+    }
 
     let rawContent: string
     try {
