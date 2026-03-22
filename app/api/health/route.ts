@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import { cpus, loadavg } from 'os'
 import { prisma } from '@/lib/db'
 
+const PROVIDER_LABELS: Record<string, string> = {
+  ollama:    'Ollama',
+  anthropic: 'Anthropic',
+  openai:    'OpenAI',
+  groq:      'Groq',
+  google:    'Google Gemini',
+}
+
 type Level = 'ok' | 'warn' | 'error'
 
 function worst(...levels: Level[]): Level {
@@ -35,9 +43,10 @@ export async function GET() {
     const s = Object.fromEntries(rows.map(r => [r.key, r.value]))
     const provider = s.ai_provider ?? 'ollama'
 
+    aiLabel = PROVIDER_LABELS[provider] ?? provider
+
     if (provider === 'ollama') {
       const host = s.ollama_host ?? 'http://localhost:11434'
-      aiLabel = 'Ollama'
       try {
         const res = await fetch(`${host}/api/tags`, { signal: AbortSignal.timeout(3000) })
         if (res.ok) {
@@ -54,10 +63,9 @@ export async function GET() {
         aiDetail = 'Not running'
       }
     } else {
-      // Cloud provider — check if a key is saved (encrypted sentinel)
+      // Cloud provider — check if a key is saved
       const keyField = `${provider}_key`
       const hasSavedKey = !!s[keyField]
-      aiLabel = provider.charAt(0).toUpperCase() + provider.slice(1)
       aiStatus = hasSavedKey ? 'ok' : 'warn'
       aiDetail = hasSavedKey ? 'API key configured' : 'No API key saved'
     }
