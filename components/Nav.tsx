@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Trash2 } from 'lucide-react'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Trash2, Search } from 'lucide-react'
 import { useShutdown } from '@/components/ShutdownProvider'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
 import { useDispatch } from '@/components/DispatchContext'
 import StatusIndicator from '@/components/StatusIndicator'
+import SearchModal from '@/components/SearchModal'
 
 const links = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -27,6 +28,18 @@ export default function Nav() {
   const { shutdown } = useShutdown()
   const { open: dispatchOpen } = useDispatch()
   const [confirmingShutdown, setConfirmingShutdown] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(s => !s)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const handleShutdown = () => {
     if (!confirmingShutdown) {
@@ -38,6 +51,7 @@ export default function Nav() {
   }
 
   return (
+    <>
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
       <div className={cn(dispatchOpen ? 'w-3/4' : 'w-full', 'px-4 sm:px-6')}>
         <div className="flex items-center justify-between h-14">
@@ -71,6 +85,16 @@ export default function Nav() {
               </Link>
             ))}
           </div>
+
+          {/* Search */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            title="Search (⌘K)"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors shrink-0"
+          >
+            <Search size={13} />
+            <span className="hidden lg:inline text-gray-300">⌘K</span>
+          </button>
 
           {/* Power off — right side */}
           <div className="flex items-center gap-1 shrink-0 ml-2">
@@ -107,5 +131,7 @@ export default function Nav() {
         </div>
       </div>
     </nav>
+    {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
+    </>
   )
 }
