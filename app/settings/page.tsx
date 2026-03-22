@@ -16,7 +16,7 @@ const DEFAULT_MODELS = [
 const CLOUD_PROVIDERS = [
   {
     id: 'anthropic' as const,
-    label: 'Anthropic Claude',
+    label: 'Anthropic',
     model: 'claude-haiku-4-5-20251001',
     placeholder: 'sk-ant-...',
     docsUrl: 'https://console.anthropic.com/',

@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Operator
 
-## Getting Started
+Operator is a local-first data analysis tool. Upload CSV, Excel, PDF, or Word files and generate structured reports using a local LLM (via Ollama) or a cloud AI provider of your choice.
 
-First, run the development server:
+## Features
+
+- **Local AI** — runs entirely on your machine with [Ollama](https://ollama.com); no data leaves your device
+- **Cloud AI** — optionally connect Anthropic, OpenAI, Google, or Groq for higher-quality output
+- **Reports** — structured analysis with history, diffs, and follow-up questions
+- **Library** — browse all past reports in one place
+- **Multi-file upload** — process multiple documents in one run
+
+## Requirements
+
+- [Node.js](https://nodejs.org) 18+
+- [Ollama](https://ollama.com) (installed automatically on first run if missing)
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+./start.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The startup script will:
+1. Install Node.js and Ollama if they are not already present
+2. Install npm dependencies
+3. Set up the local SQLite database
+4. Pull the default LLM model if not already downloaded
+5. Open the app in your browser at `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+API keys for cloud providers can be entered in the **Settings** page inside the app. They are stored locally in the SQLite database and never sent anywhere other than the provider's own API.
 
-## Learn More
+Environment variables (`.env.local`) are created automatically on first run. You can also set keys there as an alternative to the Settings UI:
 
-To learn more about Next.js, take a look at the following resources:
+```
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=...
+GROQ_API_KEY=gsk_...
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js](https://nextjs.org) (App Router)
+- [Prisma](https://www.prisma.io) + SQLite
+- [Ollama](https://ollama.com) for local inference
+- [Tailwind CSS](https://tailwindcss.com)

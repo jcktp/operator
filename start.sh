@@ -13,44 +13,131 @@ PORT=3000
 PID_FILE="/tmp/operator-next.pid"
 LOG_FILE="/tmp/operator.log"
 
-bold "\nOperator — starting up\n"
+# ── detect OS ─────────────────────────────────────────────────────────────────
+OS="$(uname -s)"
+case "$OS" in
+  Darwin)  PLATFORM="macOS" ;;
+  Linux)   PLATFORM="Linux" ;;
+  MINGW*|CYGWIN*|MSYS*) PLATFORM="Windows" ;;
+  *)       PLATFORM="unknown" ;;
+esac
+
+open_browser() {
+  case "$PLATFORM" in
+    macOS)   open "$1" ;;
+    Linux)   xdg-open "$1" 2>/dev/null || true ;;
+    Windows) start "$1" 2>/dev/null || true ;;
+  esac
+}
+
+bold "\nOperator — starting up (${PLATFORM})\n"
 
 # ── 1. Node.js ────────────────────────────────────────────────────────────────
 step "Checking Node.js..."
-command -v node &>/dev/null || error "Node.js not found. Install it from https://nodejs.org"
+if ! command -v node &>/dev/null; then
+  warn "Node.js not found — attempting install..."
+  case "$PLATFORM" in
+    macOS)
+      if command -v brew &>/dev/null; then
+        brew install node || error "Failed to install Node.js via Homebrew"
+      else
+        error "Node.js not found. Install from https://nodejs.org or install Homebrew (https://brew.sh) first."
+      fi
+      ;;
+    Linux)
+      if command -v apt-get &>/dev/null; then
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt-get install -y nodejs \
+          || error "Failed to install Node.js. Install manually from https://nodejs.org"
+      elif command -v dnf &>/dev/null; then
+        sudo dnf install -y nodejs || error "Failed to install Node.js. Install manually from https://nodejs.org"
+      elif command -v yum &>/dev/null; then
+        sudo yum install -y nodejs || error "Failed to install Node.js. Install manually from https://nodejs.org"
+      elif command -v pacman &>/dev/null; then
+        sudo pacman -Sy --noconfirm nodejs npm || error "Failed to install Node.js. Install manually from https://nodejs.org"
+      else
+        error "Node.js not found. Install from https://nodejs.org"
+      fi
+      ;;
+    Windows)
+      error "Node.js not found. Install from https://nodejs.org/en/download/ then re-run this script."
+      ;;
+    *)
+      error "Node.js not found. Install from https://nodejs.org"
+      ;;
+  esac
+fi
 step "Node $(node --version)"
 
 # ── 2. Ollama ─────────────────────────────────────────────────────────────────
 step "Checking Ollama..."
-command -v ollama &>/dev/null || error "Ollama not found. Install it from https://ollama.com"
+if ! command -v ollama &>/dev/null; then
+  warn "Ollama not found — installing..."
+  case "$PLATFORM" in
+    macOS)
+      if command -v brew &>/dev/null; then
+        brew install ollama || error "Failed to install Ollama via Homebrew"
+      else
+        curl -fsSL https://ollama.com/install.sh | sh || error "Failed to install Ollama. Visit https://ollama.com"
+      fi
+      ;;
+    Linux)
+      curl -fsSL https://ollama.com/install.sh | sh || error "Failed to install Ollama. Visit https://ollama.com"
+      ;;
+    Windows)
+      error "Please install Ollama from https://ollama.com/download/windows then re-run this script."
+      ;;
+    *)
+      error "Ollama not found. Install from https://ollama.com"
+      ;;
+  esac
+  step "Ollama installed"
+fi
 step "Ollama found"
 
-# ── 3. Dependencies ───────────────────────────────────────────────────────────
+# ── 3. Environment file ───────────────────────────────────────────────────────
+if [ ! -f ".env.local" ]; then
+  step "Creating .env.local (first run)..."
+  cat > .env.local <<'EOF'
+DATABASE_URL="file:./prisma/dev.db"
+
+# Optional: set API keys here as an alternative to the Settings page in the app.
+# Keys entered in Settings are stored in the local database and take precedence.
+ANTHROPIC_API_KEY=""
+OPENAI_API_KEY=""
+GOOGLE_API_KEY=""
+GROQ_API_KEY=""
+EOF
+  step ".env.local created"
+else
+  step ".env.local already exists"
+fi
+
+# ── 4. Dependencies ───────────────────────────────────────────────────────────
 if [ ! -d "node_modules" ]; then
   step "Installing dependencies (first run)..."
-  npm install --silent
+  npm install --loglevel=error
 else
   step "Dependencies already installed"
 fi
 
-# ── 4. Database ───────────────────────────────────────────────────────────────
+# ── 5. Database ────────────────────────────────────────────────────────────────
 step "Setting up database..."
 npx prisma migrate deploy 2>/dev/null || true
 npx prisma generate 2>/dev/null || true
 step "Database ready"
 
-# ── 5. Ollama server ──────────────────────────────────────────────────────────
+# ── 6. Ollama server ──────────────────────────────────────────────────────────
 if pgrep -x "ollama" &>/dev/null; then
   step "Ollama already running"
 else
   step "Starting Ollama server..."
-  ollama serve &>/tmp/ollama.log 2>&1 &
+  ollama serve >/tmp/ollama.log 2>&1 &
   sleep 2
   pgrep -x "ollama" &>/dev/null || error "Ollama failed to start. Check /tmp/ollama.log"
   step "Ollama server started"
 fi
 
-# ── 6. Model ──────────────────────────────────────────────────────────────────
+# ── 7. Model ──────────────────────────────────────────────────────────────────
 # Read saved model from database (falls back to default)
 DEFAULT_MODEL="llama3.2:3b"
 MODEL=$(node -e "
@@ -75,13 +162,13 @@ else
   step "Model $MODEL ready"
 fi
 
-# ── 7. Start Next.js ─────────────────────────────────────────────────────────
+# ── 8. Start Next.js ─────────────────────────────────────────────────────────
 step "Starting Operator server..."
 npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
 NEXT_PID=$!
 echo $NEXT_PID > "$PID_FILE"
 
-# ── 8. Wait for server to be ready ───────────────────────────────────────────
+# ── 9. Wait for server to be ready ───────────────────────────────────────────
 step "Waiting for server to be ready..."
 ATTEMPTS=0
 MAX=60
@@ -96,14 +183,14 @@ until curl -sf "http://localhost:$PORT" &>/dev/null; do
   fi
 done
 
-# ── 9. Open browser ───────────────────────────────────────────────────────────
+# ── 10. Open browser ──────────────────────────────────────────────────────────
 step "Opening Operator in your browser..."
-open "http://localhost:$PORT"
+open_browser "http://localhost:$PORT"
 
 bold "\nOperator is running at http://localhost:${PORT}"
 echo -e "Press ${BOLD}Ctrl+C${NC} to stop, or use the power button in the app.\n"
 
-# ── 10. Shutdown handler ─────────────────────────────────────────────────────
+# ── 11. Shutdown handler ─────────────────────────────────────────────────────
 cleanup() {
   echo ""
   step "Shutting down..."
