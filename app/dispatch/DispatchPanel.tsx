@@ -5,6 +5,7 @@ import { X, Send, Trash2, MessageSquare, Paperclip, Link2, Loader2, Globe, Globe
 import { cn } from '@/lib/utils'
 import { renderMarkdown } from './MarkdownRenderer'
 import { extractFileText } from './extractFileText'
+import { PERSONA_LIST, type PersonaId } from '@/lib/personas'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -32,6 +33,8 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
   const [fetchingUrl, setFetchingUrl] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
   const [webAccess, setWebAccess] = useState(true)
+  const [persona, setPersona] = useState<PersonaId>('dispatch')
+  const [userMemory, setUserMemory] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -45,6 +48,9 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then((d: { settings?: Record<string, string> }) => {
       setWebAccess(d.settings?.ollama_web_access !== 'false')
+    }).catch(() => {})
+    fetch('/api/dispatch/memory').then(r => r.json()).then((d: { memory?: string }) => {
+      setUserMemory(d.memory ?? '')
     }).catch(() => {})
   }, [])
 
@@ -163,7 +169,7 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
       const res = await fetch('/api/dispatch/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next, context: extraContext }),
+        body: JSON.stringify({ messages: next, context: extraContext, persona, userMemory }),
       })
       const data = await res.json()
       const reply: Message = {
@@ -187,6 +193,8 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
     inputRef.current?.focus()
   }
 
+  const activePersona = PERSONA_LIST.find(p => p.id === persona)!
+
   return (
     <div className="h-full flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
       {/* Header */}
@@ -194,8 +202,9 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
         <div className="flex items-center gap-2">
           <MessageSquare size={14} className="text-gray-400" />
           <span className="text-sm font-semibold text-gray-900">
-            {chatId ? 'Dispatch' : 'New chat'}
+            {activePersona.name}
           </span>
+          <span className="text-xs text-gray-400">{activePersona.tagline}</span>
         </div>
         <div className="flex items-center gap-1">
           {messages.length > 0 && (
@@ -214,6 +223,25 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
       </div>
 
       {/* Messages */}
+      {/* Persona selector */}
+      <div className="flex gap-1 px-3 pt-2.5 pb-0 shrink-0">
+        {PERSONA_LIST.map(p => (
+          <button
+            key={p.id}
+            onClick={() => setPersona(p.id)}
+            title={p.description}
+            className={cn(
+              'flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors',
+              persona === p.id
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+            )}
+          >
+            {p.name}
+          </button>
+        ))}
+      </div>
+
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-3 pb-8">
@@ -221,15 +249,16 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
               <MessageSquare size={18} className="text-gray-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700">Ask about your business</p>
-              <p className="text-xs text-gray-400 mt-1">Attach files, paste URLs, or just ask</p>
+              <p className="text-sm font-medium text-gray-700">{activePersona.name}</p>
+              <p className="text-xs text-gray-400 mt-1">{activePersona.description}</p>
             </div>
             <div className="flex flex-col gap-2 w-full mt-2">
-              {[
-                'What are the biggest risks right now?',
-                'Which area needs the most attention?',
-                'Summarise what changed this week',
-              ].map(s => (
+              {(persona === 'dispatch'
+                ? ['What are the biggest risks right now?', 'Which area needs the most attention?', 'Summarise what changed this week']
+                : persona === 'debrief'
+                ? ["Help me think through a decision I'm facing", "What am I not considering here?", "Play devil's advocate on this plan"]
+                : ['Generate 5 ideas for growing revenue', "What would a competitor do differently?", "What's an unconventional approach to this problem?"]
+              ).map(s => (
                 <button key={s} onClick={() => { setInput(s); inputRef.current?.focus() }}
                   className="text-xs text-left px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:border-gray-300 text-gray-600 transition-colors">
                   {s}

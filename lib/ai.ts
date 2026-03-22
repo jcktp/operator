@@ -1,6 +1,7 @@
 import { Ollama } from 'ollama'
 import { parseJsonSafe } from './utils'
 import type { Metric, Insight, Question } from './utils'
+import { PERSONAS, type PersonaId } from './personas'
 
 // ── Provider types ──────────────────────────────────────────────────────────
 
@@ -618,16 +619,56 @@ Reply with ONLY valid JSON: {"resolved": [1, 3]} — empty array if none.`
 
 export async function dispatchChat(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-  context: string
+  context: string,
+  personaId: PersonaId = 'dispatch',
+  userMemory = ''
 ): Promise<string> {
+  const persona = PERSONAS[personaId]
   const hasSearch = !!process.env.BRAVE_SEARCH_KEY
-  const systemPrompt = `You are Dispatch — a capable, helpful AI assistant working alongside a CEO.
+  const systemPrompt = persona.buildSystemPrompt(context, userMemory, hasSearch)
+  return chatWithTools(messages, systemPrompt, persona.temperature)
+}
 
-${context ? `BUSINESS CONTEXT (from recent reports):\n${context}\n\n` : ''}You have access to tools: you can check live weather, fetch web pages${hasSearch ? ', and search the web' : ''}. Use them whenever they would help answer the question accurately.
+/**
+ * Extracts 1–3 short factual statements worth remembering from a conversation.
+ * Returns an empty array if nothing noteworthy was found.
+ * Runs as a lightweight background call — failures are safe to ignore.
+ */
+export async function extractMemoryFacts(
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  existingMemory: string
+): Promise<string[]> {
+  if (messages.length < 2) return []
 
-Be direct and concise. Answer any question — business or otherwise. If you need live data, use your tools rather than guessing.`
+  const recent = messages.slice(-6) // last 3 turns
+  const prompt = `You are reading a short business conversation between a CEO and an AI assistant. Extract any NEW facts about this person's business, goals, or preferences that would be useful to remember in future conversations.
 
-  return chatWithTools(messages, systemPrompt, 0.3)
+Rules:
+- Only extract concrete, specific facts (not vague observations)
+- Only extract things NOT already in the existing memory
+- Maximum 2 facts
+- Each fact must be 1 short sentence
+- If nothing new and concrete is worth remembering, return an empty array
+
+Existing memory:
+${existingMemory || '(none)'}
+
+Conversation:
+${recent.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content.slice(0, 300)}`).join('\n')}
+
+Reply with ONLY valid JSON: {"facts": ["fact 1", "fact 2"]} — or {"facts": []} if nothing new.`
+
+  try {
+    const text = await chat([{ role: 'user', content: prompt }], 0.1)
+    const json = extractJson(text)
+    const parsed = JSON.parse(json) as { facts?: unknown }
+    if (!Array.isArray(parsed.facts)) return []
+    return (parsed.facts as unknown[])
+      .filter((f): f is string => typeof f === 'string' && f.trim().length > 0)
+      .slice(0, 2)
+  } catch {
+    return []
+  }
 }
 
 export async function generateDashboardInsights(

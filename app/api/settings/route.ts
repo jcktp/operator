@@ -16,6 +16,7 @@ const ALLOWED_KEYS = new Set([
   'groq_key', 'groq_model',
   'google_key', 'google_model',
   'ceo_name', 'company_name',
+  'user_memory',
 ])
 
 export async function GET() {
