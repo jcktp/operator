@@ -201,14 +201,21 @@ npx prisma migrate deploy || error "Database migration failed"
 npx prisma generate 2>/dev/null || true
 step "Database ready"
 
-# ── 8. Start Next.js ─────────────────────────────────────────────────────────
+# ── 8. Kill any existing server on this port ─────────────────────────────────
+if lsof -ti ":$PORT" &>/dev/null; then
+  step "Stopping existing process on port $PORT..."
+  lsof -ti ":$PORT" | xargs kill -9 2>/dev/null || true
+  sleep 1
+fi
+
+# ── 9. Start Next.js ─────────────────────────────────────────────────────────
 set_status "Starting server…"
 step "Starting Operator server..."
 npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
 NEXT_PID=$!
 echo $NEXT_PID > "$PID_FILE"
 
-# ── 9. Wait for Next.js, then open browser immediately ───────────────────────
+# ── 10. Wait for HTTP, then pre-warm /starting before opening browser ─────────
 step "Waiting for server to be ready..."
 ATTEMPTS=0
 MAX=60
@@ -223,11 +230,18 @@ until curl -sf "http://localhost:$PORT" &>/dev/null; do
   fi
 done
 
-# Open the browser to the loading screen right away
+# Pre-warm the routes so Turbopack compiles them before the browser loads them.
+# Without this the browser gets HTML but the JS chunks aren't ready yet.
+step "Compiling pages…"
+curl -sf "http://localhost:$PORT/api/startup-status" > /dev/null 2>&1 || true
+curl -sf "http://localhost:$PORT/starting" > /dev/null 2>&1 || true
+sleep 2  # brief pause for chunk writes to complete
+
+# Open the browser — chunks are compiled, no blank page
 step "Opening Operator in your browser..."
 open_browser "http://localhost:$PORT/starting"
 
-# ── 10. Ollama server (browser is already open, user sees loading screen) ─────
+# ── 11. Ollama server (browser is already open, user sees loading screen) ─────
 set_status "Starting AI engine…"
 if pgrep -x "ollama" &>/dev/null; then
   step "Ollama already running"
@@ -239,7 +253,7 @@ else
   step "Ollama server started"
 fi
 
-# ── 11. Model ─────────────────────────────────────────────────────────────────
+# ── 12. Model ─────────────────────────────────────────────────────────────────
 DEFAULT_MODEL="llama3.2:3b"
 MODEL=$(node -e "
 const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
@@ -263,14 +277,14 @@ else
   step "Model $MODEL ready"
 fi
 
-# ── 12. All done — signal the loading page to redirect ───────────────────────
+# ── 13. All done — signal the loading page to redirect ───────────────────────
 set_ready
 step "Ready!"
 
 bold "\nOperator is running at http://localhost:${PORT}"
 echo -e "Press ${BOLD}Ctrl+C${NC} to stop, or use the power button in the app.\n"
 
-# ── 13. Shutdown handler ─────────────────────────────────────────────────────
+# ── 14. Shutdown handler ─────────────────────────────────────────────────────
 cleanup() {
   echo ""
   step "Shutting down..."
