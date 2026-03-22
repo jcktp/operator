@@ -3,18 +3,36 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { AREAS } from '@/lib/utils'
-import { Upload, FileText, X, Loader2, CheckCircle, AlertCircle, Plus, Link2, Copy, Check } from 'lucide-react'
+import { Upload, FileText, X, Loader2, CheckCircle, AlertCircle, Plus, Link2, Copy, Check, Globe } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface QueuedFile {
+type LinkType = 'gdoc' | 'gsheet' | 'gslides'
+
+interface QueuedItem {
   id: string
-  file: File
+  type: 'file' | 'link'
+  file?: File
+  url?: string
+  linkType?: LinkType
   title: string
   status: 'pending' | 'uploading' | 'analyzing' | 'done' | 'error'
   error?: string
   reportId?: string
+}
+
+const LINK_LABELS: Record<LinkType, string> = {
+  gdoc: 'Google Docs',
+  gsheet: 'Google Sheets',
+  gslides: 'Google Slides',
+}
+
+function detectLinkType(url: string): LinkType | null {
+  if (url.includes('docs.google.com/document')) return 'gdoc'
+  if (url.includes('docs.google.com/spreadsheets')) return 'gsheet'
+  if (url.includes('docs.google.com/presentation')) return 'gslides'
+  return null
 }
 
 interface DirectReport {
@@ -31,7 +49,7 @@ type Tab = 'upload' | 'request'
 
 function UploadTab() {
   const router = useRouter()
-  const [queue, setQueue] = useState<QueuedFile[]>([])
+  const [queue, setQueue] = useState<QueuedItem[]>([])
   const [area, setArea] = useState('')
   const [directReportId, setDirectReportId] = useState('')
   const [reportDate, setReportDate] = useState('')
@@ -40,6 +58,8 @@ function UploadTab() {
   const [submitting, setSubmitting] = useState(false)
   const [allDone, setAllDone] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [linkInput, setLinkInput] = useState('')
+  const [linkError, setLinkError] = useState('')
 
   const loadDirects = useCallback(async () => {
     if (directsLoaded) return
@@ -50,12 +70,29 @@ function UploadTab() {
   }, [directsLoaded])
 
   const addFiles = (files: FileList | File[]) => {
-    const newItems: QueuedFile[] = Array.from(files).map(f => ({
-      id: fileId(), file: f,
+    const newItems: QueuedItem[] = Array.from(files).map(f => ({
+      id: fileId(), type: 'file', file: f,
       title: f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
       status: 'pending',
     }))
     setQueue(prev => [...prev, ...newItems])
+  }
+
+  const addLink = () => {
+    const url = linkInput.trim()
+    if (!url) return
+    const linkType = detectLinkType(url)
+    if (!linkType) {
+      setLinkError('Paste a Google Docs, Sheets, or Slides link')
+      return
+    }
+    setLinkError('')
+    setQueue(prev => [...prev, {
+      id: fileId(), type: 'link', url, linkType,
+      title: '',
+      status: 'pending',
+    }])
+    setLinkInput('')
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -66,10 +103,10 @@ function UploadTab() {
   const updateTitle = (id: string, title: string) =>
     setQueue(prev => prev.map(q => q.id === id ? { ...q, title } : q))
 
-  const removeFile = (id: string) =>
+  const removeItem = (id: string) =>
     setQueue(prev => prev.filter(q => q.id !== id))
 
-  const setStatus = (id: string, patch: Partial<QueuedFile>) =>
+  const setStatus = (id: string, patch: Partial<QueuedItem>) =>
     setQueue(prev => prev.map(q => q.id === id ? { ...q, ...patch } : q))
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,17 +117,26 @@ function UploadTab() {
     for (const item of queue) {
       if (item.status === 'done') continue
       setStatus(item.id, { status: 'uploading' })
-      const formData = new FormData()
-      formData.append('file', item.file)
-      formData.append('title', item.title)
-      formData.append('area', area)
-      if (directReportId) formData.append('directReportId', directReportId)
-      if (reportDate) formData.append('reportDate', reportDate)
       try {
         setStatus(item.id, { status: 'analyzing' })
-        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+        let res: Response
+        if (item.type === 'file' && item.file) {
+          const formData = new FormData()
+          formData.append('file', item.file)
+          formData.append('title', item.title)
+          formData.append('area', area)
+          if (directReportId) formData.append('directReportId', directReportId)
+          if (reportDate) formData.append('reportDate', reportDate)
+          res = await fetch('/api/upload', { method: 'POST', body: formData })
+        } else {
+          res = await fetch('/api/upload-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: item.url, title: item.title, area, directReportId: directReportId || null, reportDate: reportDate || null }),
+          })
+        }
         const data = await res.json()
-        if (!res.ok) setStatus(item.id, { status: 'error', error: data.error ?? 'Upload failed' })
+        if (!res.ok) setStatus(item.id, { status: 'error', error: data.error ?? 'Failed' })
         else setStatus(item.id, { status: 'done', reportId: data.report.id })
       } catch {
         setStatus(item.id, { status: 'error', error: 'Network error' })
@@ -109,6 +155,7 @@ function UploadTab() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {/* File drop zone */}
       <div
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
@@ -125,6 +172,33 @@ function UploadTab() {
         <p className="text-xs text-gray-400 mt-1">PDF, Word, Excel, CSV, text — multiple files at once</p>
       </div>
 
+      {/* Link input */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              type="url"
+              value={linkInput}
+              onChange={e => { setLinkInput(e.target.value); setLinkError('') }}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addLink() } }}
+              placeholder="Paste a Google Docs, Sheets, or Slides link…"
+              className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 placeholder-gray-400"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={addLink}
+            disabled={!linkInput.trim()}
+            className="shrink-0 px-3 py-2 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-40"
+          >
+            Add link
+          </button>
+        </div>
+        {linkError && <p className="text-xs text-red-500">{linkError}</p>}
+        <p className="text-xs text-gray-400">Document must be shared as "Anyone with the link can view"</p>
+      </div>
+
       {queue.length > 0 && (
         <div className="space-y-2">
           {queue.map(item => (
@@ -138,7 +212,8 @@ function UploadTab() {
                 {item.status === 'done' && <CheckCircle size={16} className="text-green-600" />}
                 {item.status === 'error' && <AlertCircle size={16} className="text-red-500" />}
                 {(item.status === 'uploading' || item.status === 'analyzing') && <Loader2 size={16} className="animate-spin text-blue-500" />}
-                {item.status === 'pending' && <FileText size={16} className="text-gray-400" />}
+                {item.status === 'pending' && item.type === 'link' && <Globe size={16} className="text-indigo-400" />}
+                {item.status === 'pending' && item.type === 'file' && <FileText size={16} className="text-gray-400" />}
               </div>
               <div className="flex-1 min-w-0">
                 {item.status === 'pending' ? (
@@ -151,7 +226,11 @@ function UploadTab() {
                     item.status === 'error' ? 'text-red-700' : 'text-blue-800'
                   }`}>{item.title}</p>
                 )}
-                <p className="text-xs text-gray-400 truncate">{item.file.name}</p>
+                <p className="text-xs text-gray-400 truncate">
+                  {item.type === 'link'
+                    ? (item.linkType ? LINK_LABELS[item.linkType] : 'Link') + (item.url ? ` · ${new URL(item.url).hostname}` : '')
+                    : item.file?.name}
+                </p>
                 {item.status === 'analyzing' && <p className="text-xs text-blue-500 mt-0.5">Analyzing…</p>}
                 {item.status === 'error' && item.error && <p className="text-xs text-red-500 mt-0.5">{item.error}</p>}
                 {item.status === 'done' && item.reportId && (
@@ -159,7 +238,7 @@ function UploadTab() {
                 )}
               </div>
               {item.status === 'pending' && (
-                <button type="button" onClick={e => { e.stopPropagation(); removeFile(item.id) }}
+                <button type="button" onClick={e => { e.stopPropagation(); removeItem(item.id) }}
                   className="shrink-0 text-gray-400 hover:text-gray-600"><X size={15} /></button>
               )}
             </div>
