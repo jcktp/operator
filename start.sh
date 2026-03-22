@@ -32,21 +32,41 @@ open_browser() {
 
 bold "\nOperator — starting up (${PLATFORM})\n"
 
-# ── 1. Node.js ────────────────────────────────────────────────────────────────
+# ── 1. Homebrew (macOS only — needed for Node, Ollama, cloudflared) ───────────
+if [ "$PLATFORM" = "macOS" ]; then
+  if ! command -v brew &>/dev/null; then
+    step "Homebrew not found — installing..."
+    echo -e "${YELLOW}  You may be prompted for your password.${NC}"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+      || error "Failed to install Homebrew. Install it manually from https://brew.sh then re-run this script."
+    # Add brew to PATH for the rest of this session (Apple Silicon vs Intel paths differ)
+    if [ -f /opt/homebrew/bin/brew ]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [ -f /usr/local/bin/brew ]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    fi
+    step "Homebrew installed"
+  else
+    step "Homebrew found ($(brew --version | head -1))"
+    # Ensure brew is on PATH even if it was installed in a non-standard location
+    if [ -f /opt/homebrew/bin/brew ]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    fi
+  fi
+fi
+
+# ── 2. Node.js ────────────────────────────────────────────────────────────────
 step "Checking Node.js..."
 if ! command -v node &>/dev/null; then
-  warn "Node.js not found — attempting install..."
+  warn "Node.js not found — installing..."
   case "$PLATFORM" in
     macOS)
-      if command -v brew &>/dev/null; then
-        brew install node || error "Failed to install Node.js via Homebrew"
-      else
-        error "Node.js not found. Install from https://nodejs.org or install Homebrew (https://brew.sh) first."
-      fi
+      brew install node || error "Failed to install Node.js via Homebrew"
       ;;
     Linux)
       if command -v apt-get &>/dev/null; then
-        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt-get install -y nodejs \
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - \
+          && sudo apt-get install -y nodejs \
           || error "Failed to install Node.js. Install manually from https://nodejs.org"
       elif command -v dnf &>/dev/null; then
         sudo dnf install -y nodejs || error "Failed to install Node.js. Install manually from https://nodejs.org"
@@ -68,17 +88,13 @@ if ! command -v node &>/dev/null; then
 fi
 step "Node $(node --version)"
 
-# ── 2. Ollama ─────────────────────────────────────────────────────────────────
+# ── 3. Ollama ─────────────────────────────────────────────────────────────────
 step "Checking Ollama..."
 if ! command -v ollama &>/dev/null; then
   warn "Ollama not found — installing..."
   case "$PLATFORM" in
     macOS)
-      if command -v brew &>/dev/null; then
-        brew install ollama || error "Failed to install Ollama via Homebrew"
-      else
-        curl -fsSL https://ollama.com/install.sh | sh || error "Failed to install Ollama. Visit https://ollama.com"
-      fi
+      brew install ollama || error "Failed to install Ollama via Homebrew"
       ;;
     Linux)
       curl -fsSL https://ollama.com/install.sh | sh || error "Failed to install Ollama. Visit https://ollama.com"
@@ -94,7 +110,7 @@ if ! command -v ollama &>/dev/null; then
 fi
 step "Ollama found"
 
-# ── 3. cloudflared (optional — enables remote report submissions) ─────────────
+# ── 4. cloudflared (optional — enables remote report submissions) ─────────────
 step "Checking cloudflared (optional — needed for remote report submissions)..."
 if command -v cloudflared &>/dev/null; then
   step "cloudflared found"
@@ -103,44 +119,31 @@ else
   CLOUDFLARED_OK=false
   case "$PLATFORM" in
     macOS)
-      # Ensure Homebrew is available
-      if ! command -v brew &>/dev/null; then
-        step "Homebrew not found — installing Homebrew first..."
-        echo -e "${YELLOW}  This will install Homebrew. You may be prompted for your password.${NC}"
-        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && {
-          # Add brew to PATH (Apple Silicon path differs from Intel)
-          [ -f /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
-          [ -f /usr/local/bin/brew ]    && eval "$(/usr/local/bin/brew shellenv)"
-          step "Homebrew installed"
-        } || warn "Could not install Homebrew — skipping cloudflared."
-      fi
-      if command -v brew &>/dev/null; then
-        brew install cloudflared && CLOUDFLARED_OK=true \
-          || warn "brew install cloudflared failed — remote submissions unavailable."
-      fi
+      # Homebrew is already installed and on PATH by this point (step 1 above)
+      brew install cloudflared && CLOUDFLARED_OK=true \
+        || warn "brew install cloudflared failed — remote submissions unavailable."
       ;;
     Linux)
-      # Prefer direct binary download — no sudo/package-manager dependency
       ARCH="$(uname -m)"
       case "$ARCH" in
-        x86_64)          CF_ARCH="amd64" ;;
-        aarch64|arm64)   CF_ARCH="arm64" ;;
-        armv7l)          CF_ARCH="arm" ;;
-        *)               CF_ARCH="amd64" ;;
+        x86_64)        CF_ARCH="amd64" ;;
+        aarch64|arm64) CF_ARCH="arm64" ;;
+        armv7l)        CF_ARCH="arm" ;;
+        *)             CF_ARCH="amd64" ;;
       esac
       CF_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}"
       step "Downloading cloudflared binary (${CF_ARCH})..."
       if curl -fsSL "$CF_URL" -o /tmp/cloudflared-dl; then
         sudo install -m 0755 /tmp/cloudflared-dl /usr/local/bin/cloudflared \
           && CLOUDFLARED_OK=true \
-          || warn "Could not move cloudflared to /usr/local/bin — remote submissions unavailable."
+          || warn "Could not install cloudflared — remote submissions unavailable."
         rm -f /tmp/cloudflared-dl
       else
         warn "Could not download cloudflared — remote submissions unavailable."
       fi
       ;;
     Windows)
-      warn "On Windows, install cloudflared manually from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
+      warn "On Windows, install cloudflared manually: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
       warn "Remote submissions will not be available until cloudflared is installed."
       ;;
     *)
@@ -152,7 +155,7 @@ else
   fi
 fi
 
-# ── 4. Environment file ───────────────────────────────────────────────────────
+# ── 5. Environment file ───────────────────────────────────────────────────────
 if [ ! -f ".env.local" ]; then
   step "Creating .env.local (first run)..."
   cat > .env.local <<'EOF'
@@ -172,7 +175,7 @@ else
   step ".env.local already exists"
 fi
 
-# ── 4. Dependencies ───────────────────────────────────────────────────────────
+# ── 6. Dependencies ───────────────────────────────────────────────────────────
 if [ ! -d "node_modules" ]; then
   step "Installing dependencies (first run)..."
   npm install --loglevel=error
@@ -180,13 +183,13 @@ else
   step "Dependencies already installed"
 fi
 
-# ── 5. Database ────────────────────────────────────────────────────────────────
+# ── 7. Database ───────────────────────────────────────────────────────────────
 step "Setting up database..."
 npx prisma migrate deploy 2>/dev/null || true
 npx prisma generate 2>/dev/null || true
 step "Database ready"
 
-# ── 6. Ollama server ──────────────────────────────────────────────────────────
+# ── 8. Ollama server ──────────────────────────────────────────────────────────
 if pgrep -x "ollama" &>/dev/null; then
   step "Ollama already running"
 else
@@ -197,7 +200,7 @@ else
   step "Ollama server started"
 fi
 
-# ── 7. Model ──────────────────────────────────────────────────────────────────
+# ── 9. Model ──────────────────────────────────────────────────────────────────
 # Read saved model from database (falls back to default)
 DEFAULT_MODEL="llama3.2:3b"
 MODEL=$(node -e "
@@ -213,7 +216,6 @@ prisma.setting.findUnique({ where: { key: 'ollama_model' } })
 
 step "Model: $MODEL"
 
-# Check if the model is already pulled
 if ollama list 2>/dev/null | grep -q "^${MODEL}"; then
   step "Model already available"
 else
@@ -222,13 +224,13 @@ else
   step "Model $MODEL ready"
 fi
 
-# ── 8. Start Next.js ─────────────────────────────────────────────────────────
+# ── 10. Start Next.js ────────────────────────────────────────────────────────
 step "Starting Operator server..."
 npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
 NEXT_PID=$!
 echo $NEXT_PID > "$PID_FILE"
 
-# ── 9. Wait for server to be ready ───────────────────────────────────────────
+# ── 11. Wait for server to be ready ──────────────────────────────────────────
 step "Waiting for server to be ready..."
 ATTEMPTS=0
 MAX=60
@@ -243,14 +245,14 @@ until curl -sf "http://localhost:$PORT" &>/dev/null; do
   fi
 done
 
-# ── 10. Open browser ──────────────────────────────────────────────────────────
+# ── 12. Open browser ─────────────────────────────────────────────────────────
 step "Opening Operator in your browser..."
 open_browser "http://localhost:$PORT"
 
 bold "\nOperator is running at http://localhost:${PORT}"
 echo -e "Press ${BOLD}Ctrl+C${NC} to stop, or use the power button in the app.\n"
 
-# ── 11. Shutdown handler ─────────────────────────────────────────────────────
+# ── 13. Shutdown handler ─────────────────────────────────────────────────────
 cleanup() {
   echo ""
   step "Shutting down..."
