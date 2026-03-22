@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { AREAS } from '@/lib/utils'
-import { Loader2, CheckCircle, Link2, Copy, Check } from 'lucide-react'
+import { Loader2, CheckCircle, Link2, Copy, Check, AlertTriangle, Globe } from 'lucide-react'
 import type { DirectReport } from './uploadTypes'
 
 export default function RequestTab() {
@@ -15,6 +15,16 @@ export default function RequestTab() {
   const [generating, setGenerating] = useState(false)
   const [link, setLink] = useState('')
   const [copied, setCopied] = useState(false)
+  const [tunnelUrl, setTunnelUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/tunnel')
+      .then(r => r.json())
+      .then((d: { running: boolean; url: string | null }) => {
+        if (d.running && d.url) setTunnelUrl(d.url)
+      })
+      .catch(() => {})
+  }, [])
 
   const loadDirects = useCallback(async () => {
     if (directsLoaded) return
@@ -35,7 +45,10 @@ export default function RequestTab() {
         body: JSON.stringify({ title, area, message, directReportId }),
       })
       const data = await res.json() as { request?: { token: string } }
-      if (res.ok && data.request) setLink(`${window.location.origin}/request/${data.request.token}`)
+      if (res.ok && data.request) {
+        const baseUrl = tunnelUrl ?? window.location.origin
+        setLink(`${baseUrl}/request/${data.request.token}`)
+      }
     } finally { setGenerating(false) }
   }
 
@@ -55,8 +68,19 @@ export default function RequestTab() {
           <p className="text-sm font-semibold text-gray-900">Request link ready</p>
           <p className="text-xs text-gray-500 mt-0.5">Send this to the person you want the report from</p>
         </div>
+        {!tunnelUrl && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
+            <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700">
+              This link only works on <strong>this machine</strong>. To share with others, enable remote access in <strong>Settings → Remote Submissions</strong>.
+            </p>
+          </div>
+        )}
         <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-          <p className="text-xs font-medium text-gray-500">Shareable link</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs font-medium text-gray-500">Shareable link</p>
+            {tunnelUrl && <span className="flex items-center gap-1 text-[10px] text-green-600 font-medium"><Globe size={10} /> Remote access active</span>}
+          </div>
           <div className="flex gap-2">
             <input readOnly value={link}
               className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-700 bg-gray-50 focus:outline-none" />
@@ -76,6 +100,14 @@ export default function RequestTab() {
 
   return (
     <form onSubmit={generate} className="space-y-5">
+      {!tunnelUrl && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
+          <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-700">
+            Remote access is off — generated links only work on this machine. Enable it in <strong>Settings → Remote Submissions</strong>.
+          </p>
+        </div>
+      )}
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1.5">Report title <span className="text-red-400">*</span></label>

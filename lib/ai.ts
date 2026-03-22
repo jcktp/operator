@@ -5,7 +5,7 @@ import { PERSONAS, type PersonaId } from './personas'
 
 // ── Provider types ──────────────────────────────────────────────────────────
 
-export type AIProvider = 'ollama' | 'anthropic' | 'openai' | 'google' | 'groq'
+export type AIProvider = 'ollama' | 'anthropic' | 'openai' | 'google' | 'groq' | 'xai' | 'perplexity'
 
 function getProvider(): AIProvider {
   return (process.env.AI_PROVIDER as AIProvider) ?? 'ollama'
@@ -166,11 +166,14 @@ async function toolFetchUrl(url: string): Promise<string> {
 async function chatWithTools(messages: Message[], systemPrompt: string, temperature = 0.3): Promise<string> {
   const provider = getProvider()
   switch (provider) {
-    case 'anthropic': return chatAnthropicTools(messages, systemPrompt, temperature)
-    case 'openai':    return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.openai.com/v1/chat/completions', process.env.OPENAI_API_KEY!, process.env.OPENAI_MODEL ?? 'gpt-4o-mini')
-    case 'groq':      return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY!, process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant')
-    case 'google':    return chatGoogleTools(messages, systemPrompt, temperature)
-    default:          return chatOllamaTools(messages, systemPrompt, temperature)
+    case 'anthropic':  return chatAnthropicTools(messages, systemPrompt, temperature)
+    case 'openai':     return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.openai.com/v1/chat/completions', process.env.OPENAI_API_KEY!, process.env.OPENAI_MODEL ?? 'gpt-4o-mini')
+    case 'groq':       return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY!, process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant')
+    case 'google':     return chatGoogleTools(messages, systemPrompt, temperature)
+    case 'xai':        return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.x.ai/v1/chat/completions', process.env.XAI_API_KEY!, process.env.XAI_MODEL ?? 'grok-3-mini')
+    // Perplexity sonar models search the web natively — don't pass tool_choice
+    case 'perplexity': return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.perplexity.ai/chat/completions', process.env.PERPLEXITY_API_KEY!, process.env.PERPLEXITY_MODEL ?? 'llama-3.1-sonar-small-128k-online', true)
+    default:           return chatOllamaTools(messages, systemPrompt, temperature)
   }
 }
 
@@ -239,10 +242,11 @@ async function chatOpenAITools(
   temperature: number,
   endpoint: string,
   apiKey: string,
-  model: string
+  model: string,
+  skipTools = false
 ): Promise<string> {
   if (!apiKey) throw new Error(`API key not set for ${endpoint}`)
-  const tools = availableTools().map(t => ({
+  const tools = skipTools ? [] : availableTools().map(t => ({
     type: 'function' as const,
     function: { name: t.name, description: t.description, parameters: t.parameters },
   }))
@@ -257,7 +261,9 @@ async function chatOpenAITools(
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages: msgs, tools, tool_choice: 'auto', temperature }),
+      body: JSON.stringify(tools.length > 0
+        ? { model, messages: msgs, tools, tool_choice: 'auto', temperature }
+        : { model, messages: msgs, temperature }),
     })
     const data = await res.json() as {
       choices?: Array<{
@@ -437,6 +443,32 @@ async function chat(messages: Message[], temperature = 0.1): Promise<string> {
       })
       const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
       if (!res.ok) throw new Error(data.error?.message ?? 'Groq error')
+      return data.choices?.[0]?.message.content ?? ''
+    }
+    case 'xai': {
+      const key = process.env.XAI_API_KEY
+      if (!key) throw new Error('XAI_API_KEY not set')
+      const model = process.env.XAI_MODEL ?? 'grok-3-mini'
+      const res = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages: [{ role: 'system', content: '' }, ...messages], temperature }),
+      })
+      const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
+      if (!res.ok) throw new Error(data.error?.message ?? 'xAI error')
+      return data.choices?.[0]?.message.content ?? ''
+    }
+    case 'perplexity': {
+      const key = process.env.PERPLEXITY_API_KEY
+      if (!key) throw new Error('PERPLEXITY_API_KEY not set')
+      const model = process.env.PERPLEXITY_MODEL ?? 'llama-3.1-sonar-small-128k-online'
+      const res = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages, temperature }),
+      })
+      const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
+      if (!res.ok) throw new Error(data.error?.message ?? 'Perplexity error')
       return data.choices?.[0]?.message.content ?? ''
     }
     case 'google': {

@@ -12,6 +12,8 @@ export const CLOUD_PROVIDERS = [
   { id: 'openai' as const, label: 'OpenAI', model: 'gpt-4o-mini', placeholder: 'sk-...', docsUrl: 'https://platform.openai.com/api-keys', docsLabel: 'Get key at platform.openai.com', note: 'GPT-4o mini — fast and affordable.' },
   { id: 'groq' as const, label: 'Groq', model: 'llama-3.1-8b-instant', placeholder: 'gsk_...', docsUrl: 'https://console.groq.com/keys', docsLabel: 'Get key at console.groq.com', note: 'Extremely fast inference. Generous free tier.' },
   { id: 'google' as const, label: 'Google Gemini', model: 'gemini-1.5-flash', placeholder: 'AIza...', docsUrl: 'https://aistudio.google.com/app/apikey', docsLabel: 'Get key at aistudio.google.com', note: 'Gemini 1.5 Flash — large context window.' },
+  { id: 'xai' as const, label: 'Grok (xAI)', model: 'grok-3-mini', placeholder: 'xai-...', docsUrl: 'https://console.x.ai/', docsLabel: 'Get key at console.x.ai', note: 'Grok 3 Mini — fast reasoning model by xAI.' },
+  { id: 'perplexity' as const, label: 'Perplexity', model: 'llama-3.1-sonar-small-128k-online', placeholder: 'pplx-...', docsUrl: 'https://www.perplexity.ai/settings/api', docsLabel: 'Get key at perplexity.ai', note: 'Sonar online — built-in live web search, no extra config.' },
 ]
 
 export type CloudProviderId = typeof CLOUD_PROVIDERS[number]['id']

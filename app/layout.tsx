@@ -27,9 +27,9 @@ export const metadata: Metadata = {
   title: 'Operator',
   description: 'Executive reporting, unified.',
   icons: {
-    icon: [{ url: '/icon.svg?v=4', type: 'image/svg+xml' }],
-    shortcut: '/icon.svg?v=4',
-    apple: '/icon.svg?v=4',
+    icon: [{ url: '/operator-icon.svg', type: 'image/svg+xml' }],
+    shortcut: '/operator-icon.svg',
+    apple: '/operator-icon.svg',
   },
 }
 

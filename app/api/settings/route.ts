@@ -4,7 +4,7 @@ import { encrypt, decrypt } from '@/lib/encryption'
 
 // Keys that contain sensitive credentials — never returned in plaintext
 const SENSITIVE_KEYS = new Set([
-  'anthropic_key', 'openai_key', 'groq_key', 'google_key',
+  'anthropic_key', 'openai_key', 'groq_key', 'google_key', 'xai_key', 'perplexity_key',
 ])
 
 // Only these keys are allowed to be written
@@ -15,6 +15,8 @@ const ALLOWED_KEYS = new Set([
   'openai_key', 'openai_model',
   'groq_key', 'groq_model',
   'google_key', 'google_model',
+  'xai_key', 'xai_model',
+  'perplexity_key', 'perplexity_model',
   'ceo_name', 'company_name', 'user_role',
   'user_memory',
 ])

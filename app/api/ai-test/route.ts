@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-type Provider = 'anthropic' | 'openai' | 'groq' | 'google'
+type Provider = 'anthropic' | 'openai' | 'groq' | 'google' | 'xai' | 'perplexity'
 
 const TEST_PROMPT = 'Reply with exactly: {"ok":true}'
 
@@ -89,6 +89,42 @@ async function testGoogle(key: string, model: string) {
   if (!res.ok) throw new Error(data.error?.message ?? `HTTP ${res.status}`)
 }
 
+async function listXAI(key: string): Promise<string[]> {
+  const res = await fetch('https://api.x.ai/v1/models', {
+    headers: { 'Authorization': `Bearer ${key}` },
+  })
+  const data = await res.json() as { data?: Array<{ id: string }> }
+  return (data.data ?? []).map(m => m.id).filter(id => id.startsWith('grok')).sort()
+}
+
+async function testXAI(key: string, model: string) {
+  const res = await fetch('https://api.x.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, max_tokens: 32, messages: [{ role: 'user', content: TEST_PROMPT }] }),
+  })
+  const data = await res.json() as { error?: { message: string } }
+  if (!res.ok) throw new Error(data.error?.message ?? `HTTP ${res.status}`)
+}
+
+function listPerplexity(): string[] {
+  return [
+    'llama-3.1-sonar-small-128k-online',
+    'llama-3.1-sonar-large-128k-online',
+    'llama-3.1-sonar-huge-128k-online',
+  ]
+}
+
+async function testPerplexity(key: string, model: string) {
+  const res = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, max_tokens: 32, messages: [{ role: 'user', content: TEST_PROMPT }] }),
+  })
+  const data = await res.json() as { error?: { message: string } }
+  if (!res.ok) throw new Error(data.error?.message ?? `HTTP ${res.status}`)
+}
+
 // ── Route ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -100,10 +136,12 @@ export async function POST(req: NextRequest) {
     let models: string[] = []
     try {
       switch (provider) {
-        case 'anthropic': models = await listAnthropic(key); break
-        case 'openai':    models = await listOpenAI(key); break
-        case 'groq':      models = await listGroq(key); break
-        case 'google':    models = await listGoogle(key); break
+        case 'anthropic':  models = await listAnthropic(key); break
+        case 'openai':     models = await listOpenAI(key); break
+        case 'groq':       models = await listGroq(key); break
+        case 'google':     models = await listGoogle(key); break
+        case 'xai':        models = await listXAI(key); break
+        case 'perplexity': models = listPerplexity(); break
       }
     } catch {
       // model listing failed — connection might still work
@@ -116,10 +154,12 @@ export async function POST(req: NextRequest) {
     // Test with the first available model
     const testModel = models[0]
     switch (provider) {
-      case 'anthropic': await testAnthropic(key, testModel); break
-      case 'openai':    await testOpenAI(key, testModel); break
-      case 'groq':      await testGroq(key, testModel); break
-      case 'google':    await testGoogle(key, testModel); break
+      case 'anthropic':  await testAnthropic(key, testModel); break
+      case 'openai':     await testOpenAI(key, testModel); break
+      case 'groq':       await testGroq(key, testModel); break
+      case 'google':     await testGoogle(key, testModel); break
+      case 'xai':        await testXAI(key, testModel); break
+      case 'perplexity': await testPerplexity(key, testModel); break
       default: return NextResponse.json({ error: 'Unknown provider' }, { status: 400 })
     }
 

@@ -11,13 +11,17 @@ const KEY_MAP: Record<string, string> = {
   openai_key:         'OPENAI_API_KEY',
   google_key:         'GOOGLE_API_KEY',
   groq_key:           'GROQ_API_KEY',
+  xai_key:            'XAI_API_KEY',
+  perplexity_key:     'PERPLEXITY_API_KEY',
   anthropic_model:    'ANTHROPIC_MODEL',
   openai_model:       'OPENAI_MODEL',
   google_model:       'GOOGLE_MODEL',
   groq_model:         'GROQ_MODEL',
+  xai_model:          'XAI_MODEL',
+  perplexity_model:   'PERPLEXITY_MODEL',
 }
 
-const ENCRYPTED_KEYS = new Set(['anthropic_key', 'openai_key', 'google_key', 'groq_key'])
+const ENCRYPTED_KEYS = new Set(['anthropic_key', 'openai_key', 'google_key', 'groq_key', 'xai_key', 'perplexity_key'])
 
 /**
  * Loads AI provider settings from the database into process.env.

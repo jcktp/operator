@@ -3,11 +3,13 @@ import { cpus, loadavg } from 'os'
 import { prisma } from '@/lib/db'
 
 const PROVIDER_LABELS: Record<string, string> = {
-  ollama:    'Ollama',
-  anthropic: 'Anthropic',
-  openai:    'OpenAI',
-  groq:      'Groq',
-  google:    'Google Gemini',
+  ollama:     'Ollama',
+  anthropic:  'Anthropic',
+  openai:     'OpenAI',
+  groq:       'Groq',
+  google:     'Google Gemini',
+  xai:        'Grok',
+  perplexity: 'Perplexity',
 }
 
 type Level = 'ok' | 'warn' | 'error'
