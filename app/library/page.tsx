@@ -4,6 +4,7 @@ import { formatRelativeDate, formatDate, AREAS, AREA_COLORS } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import { FileText, ArrowRight, GitCompare, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import LibraryClearButton from './LibraryClearButton'
 
 interface Metric {
   label: string
@@ -54,11 +55,14 @@ export default async function LibraryPage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Library</h1>
-        <p className="text-gray-500 text-sm mt-0.5">
-          All reports, by area. Full history with diffs and questions.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Library</h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            All reports, by area. Full history with diffs and questions.
+          </p>
+        </div>
+        {allReports.length > 0 && <LibraryClearButton />}
       </div>
 
       {allReports.length === 0 ? (

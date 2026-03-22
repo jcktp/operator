@@ -8,11 +8,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   if (open) {
     return (
-      <div className="flex pt-16 min-h-screen">
+      <div className="flex pt-14 min-h-screen">
         <main className="flex-1 min-w-0 py-8 px-4 sm:px-6">
           {children}
         </main>
-        <aside className="w-1/4 shrink-0 sticky top-16 h-[calc(100vh-64px)] py-4 pr-4 border-l border-gray-200">
+        <aside className="w-1/4 shrink-0 sticky top-14 h-[calc(100vh-56px)] py-4 pr-4 border-l border-gray-200">
           <DispatchPanel context={aiContext} onClose={() => setOpen(false)} />
         </aside>
       </div>
@@ -20,7 +20,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <main className="pt-24 pb-12 max-w-5xl mx-auto px-4 sm:px-6">
+    <main className="pt-20 pb-12 max-w-5xl mx-auto px-4 sm:px-6">
       {children}
     </main>
   )

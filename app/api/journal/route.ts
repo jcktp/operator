@@ -1,30 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
-function getWeekStart(date: Date): Date {
-  const d = new Date(date)
-  const day = d.getUTCDay()
-  const diff = day === 0 ? -6 : 1 - day // Monday
-  d.setUTCDate(d.getUTCDate() + diff)
-  d.setUTCHours(0, 0, 0, 0)
-  return d
-}
-
 export async function GET() {
   const entries = await prisma.journalEntry.findMany({
-    orderBy: { weekStart: 'desc' },
+    orderBy: { updatedAt: 'desc' },
   })
   return NextResponse.json({ entries })
 }
 
 export async function POST(req: NextRequest) {
-  const { weekStart, content } = await req.json()
-  const ws = weekStart ? new Date(weekStart) : getWeekStart(new Date())
+  const { id, title, folder, content } = await req.json()
 
-  const entry = await prisma.journalEntry.upsert({
-    where: { weekStart: ws },
-    update: { content },
-    create: { weekStart: ws, content },
+  if (id) {
+    // Update existing
+    const entry = await prisma.journalEntry.update({
+      where: { id },
+      data: { title, folder, content },
+    })
+    return NextResponse.json({ entry })
+  }
+
+  // Create new
+  const entry = await prisma.journalEntry.create({
+    data: {
+      title: title ?? 'Untitled',
+      folder: folder ?? 'General',
+      content: content ?? '',
+    },
   })
   return NextResponse.json({ entry })
+}
+
+export async function DELETE(req: NextRequest) {
+  const { id } = await req.json()
+  await prisma.journalEntry.delete({ where: { id } })
+  return NextResponse.json({ ok: true })
 }

@@ -37,10 +37,11 @@ export default function Nav() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-      <div className={cn(dispatchOpen ? 'w-3/4' : 'max-w-5xl mx-auto', 'px-4 sm:px-6')}>
-        <div className="flex items-center justify-between h-16">
+      <div className={cn(dispatchOpen ? 'w-3/4' : 'w-full', 'px-4 sm:px-6')}>
+        <div className="flex items-center justify-between h-14">
 
-          <Link href="/" className="flex items-center gap-2.5 group">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 group shrink-0 mr-3">
             <WalkieTalkie />
             <span
               className="text-xl text-gray-900"
@@ -50,37 +51,39 @@ export default function Nav() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-1">
+          {/* Nav links — left-aligned, fills remaining space */}
+          <div className="flex items-center gap-0.5 flex-1">
             {links.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                  'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
                   pathname === href || (href !== '/' && pathname.startsWith(href))
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                 )}
               >
-                <Icon size={15} />
+                <Icon size={13} />
                 <span className="hidden sm:inline">{label}</span>
               </Link>
             ))}
+          </div>
 
-            <div className="w-px h-4 bg-gray-200 mx-1" />
-
-            {/* Power off */}
+          {/* Power off — right side */}
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            <div className="w-px h-4 bg-gray-200" />
             <button
               onClick={handleShutdown}
               title={confirmingShutdown ? 'Click again to confirm shutdown' : 'Power off'}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
                 confirmingShutdown
                   ? 'bg-red-50 text-red-600 hover:bg-red-100'
                   : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
               )}
             >
-              <Power size={15} />
+              <Power size={13} />
               {confirmingShutdown && <span className="hidden sm:inline">Confirm</span>}
             </button>
           </div>

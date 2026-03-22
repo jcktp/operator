@@ -1,23 +1,82 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { X, Send, Save, Check, Loader2, MessageSquare, Trash2 } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { X, Send, Trash2, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Message { role: 'user' | 'assistant'; content: string }
 
 interface Props {
   context: string
-  onClose: () => void
+  onClose?: () => void
+  initialChat?: { id: string; title: string; messages: Message[] }
 }
 
-export default function DispatchPanel({ context, onClose }: Props) {
-  const [messages, setMessages] = useState<Message[]>([])
+/** Very simple markdown → JSX: **bold**, *italic*, headings, bullets */
+function renderMarkdown(text: string) {
+  const lines = text.split('\n')
+  const elements: React.ReactNode[] = []
+
+  lines.forEach((line, i) => {
+    // Heading
+    if (/^#{1,3}\s/.test(line)) {
+      const level = (line.match(/^#+/) ?? [''])[0].length
+      const content = renderInline(line.replace(/^#+\s/, ''))
+      const Tag = `h${Math.min(level + 2, 6)}` as 'h3' | 'h4' | 'h5' | 'h6'
+      elements.push(<Tag key={i} className="font-semibold mt-2 mb-0.5">{content}</Tag>)
+      return
+    }
+    // Bullet
+    if (/^[-*]\s/.test(line)) {
+      elements.push(
+        <div key={i} className="flex gap-1.5 my-0.5">
+          <span className="shrink-0 mt-1 w-1 h-1 bg-current rounded-full" />
+          <span>{renderInline(line.replace(/^[-*]\s/, ''))}</span>
+        </div>
+      )
+      return
+    }
+    // Numbered list
+    if (/^\d+\.\s/.test(line)) {
+      const num = (line.match(/^\d+/) ?? ['1'])[0]
+      elements.push(
+        <div key={i} className="flex gap-1.5 my-0.5">
+          <span className="shrink-0 text-xs font-medium">{num}.</span>
+          <span>{renderInline(line.replace(/^\d+\.\s/, ''))}</span>
+        </div>
+      )
+      return
+    }
+    // Empty line
+    if (line.trim() === '') {
+      elements.push(<div key={i} className="h-1.5" />)
+      return
+    }
+    elements.push(<p key={i} className="my-0.5">{renderInline(line)}</p>)
+  })
+  return <>{elements}</>
+}
+
+function renderInline(text: string): React.ReactNode {
+  // Split on **bold** and *italic* and `code`
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (/^\*\*[^*]+\*\*$/.test(part)) return <strong key={i}>{part.slice(2, -2)}</strong>
+        if (/^\*[^*]+\*$/.test(part)) return <em key={i}>{part.slice(1, -1)}</em>
+        if (/^`[^`]+`$/.test(part)) return <code key={i} className="bg-black/10 rounded px-0.5 text-[0.85em] font-mono">{part.slice(1, -1)}</code>
+        return <span key={i}>{part}</span>
+      })}
+    </>
+  )
+}
+
+export default function DispatchPanel({ context, onClose, initialChat }: Props) {
+  const [messages, setMessages] = useState<Message[]>(initialChat?.messages ?? [])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [chatId, setChatId] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [chatId, setChatId] = useState<string | null>(initialChat?.id ?? null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -29,6 +88,29 @@ export default function DispatchPanel({ context, onClose }: Props) {
     inputRef.current?.focus()
   }, [])
 
+  // Auto-save after messages change
+  const autoSave = useCallback(async (msgs: Message[], currentId: string | null) => {
+    if (msgs.length === 0) return
+    const title = msgs.find(m => m.role === 'user')?.content.slice(0, 60) || 'Untitled chat'
+    try {
+      if (currentId) {
+        await fetch(`/api/dispatch/${currentId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: msgs, title }),
+        })
+      } else {
+        const res = await fetch('/api/dispatch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: msgs, title }),
+        })
+        const data = await res.json()
+        if (data.chat?.id) setChatId(data.chat.id)
+      }
+    } catch {}
+  }, [])
+
   const send = async () => {
     const text = input.trim()
     if (!text || loading) return
@@ -37,7 +119,6 @@ export default function DispatchPanel({ context, onClose }: Props) {
     setMessages(next)
     setInput('')
     setLoading(true)
-    setSaved(false)
     try {
       const res = await fetch('/api/dispatch/chat', {
         method: 'POST',
@@ -45,11 +126,13 @@ export default function DispatchPanel({ context, onClose }: Props) {
         body: JSON.stringify({ messages: next, context }),
       })
       const data = await res.json()
-      if (data.content) {
-        setMessages(m => [...m, { role: 'assistant', content: data.content }])
-      } else {
-        setMessages(m => [...m, { role: 'assistant', content: `Error: ${data.error ?? 'Unknown error'}` }])
+      const reply: Message = {
+        role: 'assistant',
+        content: data.content ?? `Error: ${data.error ?? 'Unknown error'}`,
       }
+      const withReply = [...next, reply]
+      setMessages(withReply)
+      await autoSave(withReply, chatId)
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'Network error — could not reach the AI.' }])
     } finally {
@@ -57,37 +140,9 @@ export default function DispatchPanel({ context, onClose }: Props) {
     }
   }
 
-  const saveChat = async () => {
-    if (messages.length === 0 || saving) return
-    setSaving(true)
-    const title = messages.find(m => m.role === 'user')?.content.slice(0, 60) || 'Untitled chat'
-    try {
-      if (chatId) {
-        await fetch(`/api/dispatch/${chatId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages, title }),
-        })
-      } else {
-        const res = await fetch('/api/dispatch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages, title }),
-        })
-        const data = await res.json()
-        setChatId(data.chat?.id ?? null)
-      }
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    } finally {
-      setSaving(false)
-    }
-  }
-
   const clearChat = () => {
     setMessages([])
     setChatId(null)
-    setSaved(false)
     inputRef.current?.focus()
   }
 
@@ -97,32 +152,25 @@ export default function DispatchPanel({ context, onClose }: Props) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare size={14} className="text-gray-400" />
-          <span className="text-sm font-semibold text-gray-900">Dispatch</span>
+          <span className="text-sm font-semibold text-gray-900">
+            {chatId ? 'Dispatch' : 'New chat'}
+          </span>
         </div>
         <div className="flex items-center gap-1">
           {messages.length > 0 && (
-            <>
-              <button
-                onClick={clearChat}
-                title="Clear chat"
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              >
-                <Trash2 size={13} />
-              </button>
-              <button
-                onClick={saveChat}
-                disabled={saving}
-                title="Save chat"
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
-              >
-                {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <Check size={12} className="text-green-600" /> : <Save size={12} />}
-                {saved ? 'Saved' : 'Save'}
-              </button>
-            </>
+            <button
+              onClick={clearChat}
+              title="Clear chat"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <Trash2 size={13} />
+            </button>
           )}
-          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-            <X size={14} />
-          </button>
+          {onClose && (
+            <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -158,12 +206,12 @@ export default function DispatchPanel({ context, onClose }: Props) {
         {messages.map((m, i) => (
           <div key={i} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
             <div className={cn(
-              'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap',
+              'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
               m.role === 'user'
-                ? 'bg-gray-900 text-white rounded-br-sm'
+                ? 'bg-gray-900 text-white rounded-br-sm whitespace-pre-wrap'
                 : 'bg-gray-100 text-gray-800 rounded-bl-sm'
             )}>
-              {m.content}
+              {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
             </div>
           </div>
         ))}

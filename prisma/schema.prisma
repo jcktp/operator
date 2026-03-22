@@ -61,13 +61,13 @@ model Setting {
 }
 
 model JournalEntry {
-  id        String   @id @default(uuid())
-  weekStart DateTime
-  content   String   @default("")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([weekStart])
+  id        String    @id @default(uuid())
+  title     String    @default("Untitled")
+  folder    String    @default("General")
+  content   String    @default("")
+  weekStart DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model DispatchChat {
