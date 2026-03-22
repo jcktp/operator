@@ -8,6 +8,7 @@ import { useShutdown } from '@/components/ShutdownProvider'
 import { useState } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
 import { useDispatch } from '@/components/DispatchContext'
+import StatusIndicator from '@/components/StatusIndicator'
 
 const links = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -73,6 +74,7 @@ export default function Nav() {
 
           {/* Power off — right side */}
           <div className="flex items-center gap-1 shrink-0 ml-2">
+            <StatusIndicator />
             <div className="w-px h-4 bg-gray-200" />
             {confirmingShutdown && (
               <>
