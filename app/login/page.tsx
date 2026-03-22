@@ -28,7 +28,7 @@ export default function LoginPage() {
         setMode(d.setupComplete ? 'login' : 'setup')
         setTimeout(() => passwordRef.current?.focus(), 100)
       })
-      .catch(() => setMode('login'))
+      .catch(() => setMode('setup'))
   }, [])
 
   const handleSetup = async (e: React.FormEvent) => {
