@@ -358,11 +358,14 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
           )}
 
           {!historyLoading && history.length > 0 && history.map(chat => (
-            <button
+            <div
               key={chat.id}
+              role="button"
+              tabIndex={0}
               onClick={() => loadChat(chat)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') loadChat(chat) }}
               className={cn(
-                'w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors group',
+                'w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors group cursor-pointer',
                 chat.id === chatId && 'bg-gray-50'
               )}
             >
@@ -383,7 +386,7 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
                   <Trash2 size={11} />
                 </button>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       )}
