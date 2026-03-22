@@ -288,6 +288,16 @@ echo -e "Press ${BOLD}Ctrl+C${NC} to stop, or use the power button in the app.\n
 cleanup() {
   echo ""
   step "Shutting down..."
+  # Invalidate session so user must log in again on next startup
+  node -e "
+    const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+    const { PrismaClient } = require('@prisma/client');
+    const path = require('path');
+    const adapter = new PrismaBetterSqlite3({ url: path.resolve(process.cwd(), 'prisma', 'dev.db') });
+    const prisma = new PrismaClient({ adapter });
+    prisma.setting.updateMany({ where: { key: 'auth_session_token' }, data: { value: '' } })
+      .then(() => process.exit(0)).catch(() => process.exit(0));
+  " 2>/dev/null || true
   [ -f "$PID_FILE" ] && kill "$(cat $PID_FILE)" 2>/dev/null; rm -f "$PID_FILE"
   pkill -x "ollama" 2>/dev/null || true
   rm -f "$STATUS_FILE"

@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
 
 export async function POST() {
+  // Invalidate the session token so the user must log in again on next startup
+  try {
+    await prisma.setting.updateMany({
+      where: { key: 'auth_session_token' },
+      data: { value: '' },
+    })
+  } catch { /* best effort */ }
+
   // Respond first, then exit so the client receives the response
   setTimeout(() => {
     process.exit(0)
