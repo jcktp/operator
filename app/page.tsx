@@ -7,6 +7,7 @@ import OverviewShell from '@/app/overview/OverviewShell'
 import type { OverviewData } from '@/app/overview/OverviewShell'
 import OnePagerTab from '@/app/overview/OnePagerTab'
 import type { OnePagerReport } from '@/app/overview/OnePagerTab'
+import { getModeConfig } from '@/lib/mode'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,13 +34,15 @@ export default async function OverviewPage({
   const params = await searchParams
   const tab = params.tab
 
-  const [reports, directs] = await Promise.all([
+  const [reports, directs, modeRow] = await Promise.all([
     prisma.report.findMany({
       orderBy: { createdAt: 'desc' },
       include: { directReport: true },
     }),
     prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
+  const modeConfig = getModeConfig(modeRow?.value)
 
   if (reports.length === 0) {
     return (
@@ -47,13 +50,11 @@ export default async function OverviewPage({
         <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
           <FileText size={20} className="text-gray-400" />
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">No reports yet</h1>
-        <p className="text-gray-500 text-sm max-w-sm mb-6">
-          Upload your first report to get a unified view of your business.
-        </p>
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">{modeConfig.emptyStateTitle}</h1>
+        <p className="text-gray-500 text-sm max-w-sm mb-6">{modeConfig.emptyStateBody}</p>
         <Link href="/upload"
           className="inline-flex items-center gap-2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
-          <Upload size={15} />Add first report
+          <Upload size={15} />{modeConfig.emptyStateCta}
         </Link>
       </div>
     )

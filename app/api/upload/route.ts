@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
-import { extractContent, getFileType } from '@/lib/parsers'
-import { analyzeReport, compareReports, checkResolvedFlags } from '@/lib/ai'
+import { extractContent, getFileType, IMAGE_TYPES, getMimeType } from '@/lib/parsers'
+import { analyzeReport, compareReports, checkResolvedFlags, describeImage } from '@/lib/ai'
 import { saveReportFile } from '@/lib/reports-folder'
+import { join } from 'path'
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,10 +21,39 @@ export async function POST(req: NextRequest) {
 
     const fileType = getFileType(file.name)
     const buffer = Buffer.from(await file.arrayBuffer())
+    const isImage = IMAGE_TYPES.has(fileType.toLowerCase())
 
     // Save original file to ~/Documents/Operator Reports/{area}/
-    try { saveReportFile(buffer, file.name, area) } catch (e) {
+    let savedFileName = file.name
+    try { savedFileName = saveReportFile(buffer, file.name, area).split('/').pop() ?? file.name } catch (e) {
       console.warn('Could not save to reports folder:', e)
+    }
+
+    await loadAiSettings()
+
+    // Handle images separately
+    if (isImage) {
+      const mimeType = getMimeType(fileType)
+      const description = await describeImage(buffer, mimeType)
+      const relativePath = join(area, savedFileName)
+
+      const report = await prisma.report.create({
+        data: {
+          title,
+          fileName: file.name,
+          fileType,
+          fileSize: file.size,
+          rawContent: description,
+          displayContent: `image:${relativePath}`,
+          imagePath: relativePath,
+          area,
+          directReportId: directReportId || null,
+          reportDate: reportDate ? new Date(reportDate) : null,
+          summary: description.startsWith('[') ? null : description.slice(0, 300),
+        },
+        include: { directReport: true },
+      })
+      return NextResponse.json({ report, hasPrevious: false })
     }
 
     let rawContent: string
@@ -39,8 +69,6 @@ export async function POST(req: NextRequest) {
     if (!rawContent || rawContent.trim().length < 10) {
       return NextResponse.json({ error: 'File appears to be empty or unreadable' }, { status: 422 })
     }
-
-    await loadAiSettings()
 
     // Get direct report name if provided
     let directName: string | undefined

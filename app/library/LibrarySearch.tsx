@@ -18,6 +18,7 @@ interface Report {
   comparison: string | null
   questions: string | null
   fileType: string | null
+  displayContent: string | null
   createdAt: Date
   reportDate: Date | null
   directReport: { name: string; title: string } | null
@@ -93,6 +94,14 @@ export default function LibrarySearch({ reports }: { reports: Report[] }) {
                       <span className="uppercase tracking-wide">{report.fileType}</span>
                     </div>
                   </div>
+                  {report.displayContent?.startsWith('image:') && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/reports/${report.id}/image`}
+                      alt=""
+                      className="w-12 h-12 rounded-lg object-cover shrink-0 border border-gray-200"
+                    />
+                  )}
                   <ArrowRight size={14} className="text-gray-300 group-hover:text-gray-500 transition-colors shrink-0 mt-1" />
                 </div>
 

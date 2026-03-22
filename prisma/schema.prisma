@@ -47,6 +47,7 @@ model Report {
   area           String
   reportDate     DateTime?
   resolvedFlags  String?
+  imagePath      String?
   directReportId String?
   directReport   DirectReport? @relation(fields: [directReportId], references: [id])
   createdAt      DateTime      @default(now())

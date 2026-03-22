@@ -177,10 +177,12 @@ export default function RawContent({
   content,
   displayContent,
   fileType,
+  reportId,
 }: {
   content: string
   displayContent?: string
   fileType: string
+  reportId?: string
 }) {
   const [mode, setMode] = useState<DisplayMode>('formatted')
   const [copied, setCopied] = useState(false)
@@ -195,6 +197,26 @@ export default function RawContent({
   const isCsv = fileType === 'csv'
   const isWord = ['docx', 'doc'].includes(fileType)
   const isPdf = fileType === 'pdf'
+  const isImage = displayContent?.startsWith('image:') ?? false
+
+  // Image: show the image + AI description, no raw/formatted toggle needed
+  if (isImage) {
+    return (
+      <div className="space-y-3">
+        <img
+          src={`/api/reports/${reportId}/image`}
+          alt="Uploaded image"
+          className="w-full rounded-lg border border-gray-200 object-contain max-h-[600px]"
+        />
+        {content && (
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">AI Description</p>
+            <TextDisplay content={content} />
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const renderFormatted = () => {
     // Excel/CSV: always from displayContent (structured JSON)

@@ -8,27 +8,29 @@ import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
 import { useDispatch } from '@/components/DispatchContext'
+import { useMode } from '@/components/ModeContext'
 import StatusIndicator from '@/components/StatusIndicator'
 import SearchModal from '@/components/SearchModal'
-
-const links = [
-  { href: '/', label: 'Overview', icon: LayoutDashboard },
-  { href: '/dashboard', label: 'Dashboard', icon: BarChart2 },
-  { href: '/upload', label: 'Add Report', icon: Upload },
-  { href: '/library', label: 'Library', icon: Library },
-  { href: '/directs', label: 'Directs', icon: Users },
-  { href: '/journal', label: 'Journal', icon: BookOpen },
-  { href: '/dispatch', label: 'Dispatch', icon: MessageSquare },
-  { href: '/settings', label: 'Settings', icon: Settings },
-]
 
 export default function Nav() {
   const pathname = usePathname()
   const router = useRouter()
   const { shutdown } = useShutdown()
   const { open: dispatchOpen } = useDispatch()
+  const config = useMode()
   const [confirmingShutdown, setConfirmingShutdown] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+
+  const links = [
+    { href: '/', label: 'Overview', icon: LayoutDashboard },
+    { href: '/dashboard', label: 'Dashboard', icon: BarChart2 },
+    { href: '/upload', label: config.navDocuments, icon: Upload },
+    { href: '/library', label: config.navLibrary, icon: Library },
+    { href: '/directs', label: config.navPeople, icon: Users },
+    { href: '/journal', label: config.navJournal, icon: BookOpen },
+    { href: '/dispatch', label: 'Dispatch', icon: MessageSquare },
+    { href: '/settings', label: 'Settings', icon: Settings },
+  ]
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

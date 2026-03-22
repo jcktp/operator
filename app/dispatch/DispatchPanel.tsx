@@ -297,7 +297,7 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
                 </button>
               )}
               <button onClick={openHistory} title="Chat history"
-                className={cn('p-1.5 rounded-lg transition-colors', view === 'history' ? 'bg-gray-100 text-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100')}>
+                className="p-1.5 rounded-lg transition-colors text-gray-400 hover:text-gray-600 hover:bg-gray-100">
                 <Clock size={13} />
               </button>
             </>

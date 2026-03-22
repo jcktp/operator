@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { formatRelativeDate, AREAS } from '@/lib/utils'
+import { formatRelativeDate } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import { Users, Plus, Trash2, Loader2, X } from 'lucide-react'
+import { useMode } from '@/components/ModeContext'
 
 interface DirectReport {
   id: string
@@ -17,6 +18,7 @@ interface DirectReport {
 }
 
 export default function DirectsPage() {
+  const modeConfig = useMode()
   const [directs, setDirects] = useState<DirectReport[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -70,9 +72,9 @@ export default function DirectsPage() {
     <div className="max-w-2xl space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Direct Reports</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{modeConfig.navPeople}</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            The people who report to you, by area.
+            {modeConfig.personLabelPlural} you work with, by {modeConfig.collectionLabel.toLowerCase()}.
           </p>
         </div>
         <button
@@ -80,14 +82,14 @@ export default function DirectsPage() {
           className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
         >
           {showForm ? <X size={14} /> : <Plus size={14} />}
-          {showForm ? 'Cancel' : 'Add direct'}
+          {showForm ? 'Cancel' : `Add ${modeConfig.personLabel.toLowerCase()}`}
         </button>
       </div>
 
       {/* Add form */}
       {showForm && (
         <form onSubmit={handleAdd} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Add direct report</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Add {modeConfig.personLabel.toLowerCase()}</h2>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -124,7 +126,7 @@ export default function DirectsPage() {
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
               >
                 <option value="">Select…</option>
-                {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                {modeConfig.defaultAreas.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
             </div>
             <div>
@@ -156,8 +158,8 @@ export default function DirectsPage() {
           <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
             <Users size={18} className="text-gray-400" />
           </div>
-          <p className="text-sm text-gray-500">No direct reports yet.</p>
-          <p className="text-xs text-gray-400 mt-1">Add them to track who sends which reports.</p>
+          <p className="text-sm text-gray-500">No {modeConfig.personLabelPlural.toLowerCase()} yet.</p>
+          <p className="text-xs text-gray-400 mt-1">Add them to track who submits which {modeConfig.documentLabelPlural.toLowerCase()}.</p>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
@@ -172,9 +174,9 @@ export default function DirectsPage() {
                 <div className="flex items-center gap-3 text-xs text-gray-400">
                   {d.email && <span>{d.email}</span>}
                   {d.reports.length > 0 ? (
-                    <span>Last report {formatRelativeDate(d.reports[0].createdAt)}</span>
+                    <span>Last {modeConfig.documentLabel.toLowerCase()} {formatRelativeDate(d.reports[0].createdAt)}</span>
                   ) : (
-                    <span>No reports yet</span>
+                    <span>No {modeConfig.documentLabelPlural.toLowerCase()} yet</span>
                   )}
                 </div>
               </div>

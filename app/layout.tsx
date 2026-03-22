@@ -4,7 +4,9 @@ import './globals.css'
 import Nav from '@/components/Nav'
 import { ShutdownProvider } from '@/components/ShutdownProvider'
 import { DispatchProvider } from '@/components/DispatchContext'
+import { ModeProvider } from '@/components/ModeContext'
 import MainLayout from '@/components/MainLayout'
+import { prisma } from '@/lib/db'
 
 const dmSans = DM_Sans({
   variable: '--font-geist-sans',
@@ -33,18 +35,26 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  let appMode: string | null = null
+  try {
+    const row = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+    appMode = row?.value ?? null
+  } catch { /* DB not ready yet */ }
+
   return (
     <html lang="en" className={`${dmSans.variable} ${dmMono.variable} ${caveat.variable} h-full`}>
       <body className="min-h-full bg-[#fafafa]">
         <ShutdownProvider>
           <DispatchProvider>
-            <Nav />
-            <MainLayout>{children}</MainLayout>
+            <ModeProvider initialMode={appMode}>
+              <Nav />
+              <MainLayout>{children}</MainLayout>
+            </ModeProvider>
           </DispatchProvider>
         </ShutdownProvider>
       </body>

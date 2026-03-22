@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, AlertTriangle, Eye, EyeOff, ShieldAlert } from 'lucide-react'
+import { Loader2, AlertTriangle, Eye, EyeOff, ShieldAlert, ArrowRight } from 'lucide-react'
 import WalkieTalkie from '@/components/WalkieTalkie'
+import { MODE_LIST, type AppMode } from '@/lib/mode'
 
-type Mode = 'loading' | 'setup' | 'login' | 'uninstalled'
+type Screen = 'loading' | 'mode-pick' | 'setup' | 'login' | 'uninstalled'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>('loading')
+  const [screen, setScreen] = useState<Screen>('loading')
+  const [selectedMode, setSelectedMode] = useState<AppMode>('executive')
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
   const [password, setPassword] = useState('')
@@ -25,10 +27,10 @@ export default function LoginPage() {
       .then(r => r.json())
       .then((d: { setupComplete: boolean; attemptsLeft: number }) => {
         setAttemptsLeft(d.attemptsLeft)
-        setMode(d.setupComplete ? 'login' : 'setup')
+        setScreen(d.setupComplete ? 'login' : 'mode-pick')
         setTimeout(() => passwordRef.current?.focus(), 100)
       })
-      .catch(() => setMode('setup'))
+      .catch(() => setScreen('mode-pick'))
   }, [])
 
   const handleSetup = async (e: React.FormEvent) => {
@@ -41,7 +43,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, role, password }),
+        body: JSON.stringify({ name, role, password, appMode: selectedMode }),
       })
       const data = await res.json() as { ok?: boolean; error?: string }
       if (res.ok) {
@@ -70,7 +72,7 @@ export default function LoginPage() {
         router.replace('/')
         router.refresh()
       } else if (data.uninstalled) {
-        setMode('uninstalled')
+        setScreen('uninstalled')
       } else {
         setError(data.error ?? 'Incorrect password')
         if (data.attemptsLeft !== undefined) setAttemptsLeft(data.attemptsLeft)
@@ -82,8 +84,8 @@ export default function LoginPage() {
     }
   }
 
-  // ── Loading ────────────────────────────────────────────────────────────────
-  if (mode === 'loading') {
+  // ── Loading ──────────────────────────────────────────────────────────────────
+  if (screen === 'loading') {
     return (
       <div className="fixed inset-0 z-[200] bg-[#fafafa] flex items-center justify-center">
         <Loader2 size={20} className="animate-spin text-gray-300" />
@@ -91,8 +93,8 @@ export default function LoginPage() {
     )
   }
 
-  // ── Uninstalled ────────────────────────────────────────────────────────────
-  if (mode === 'uninstalled') {
+  // ── Uninstalled ──────────────────────────────────────────────────────────────
+  if (screen === 'uninstalled') {
     return (
       <div className="fixed inset-0 z-[200] bg-gray-950 flex flex-col items-center justify-center">
         <div className="text-center space-y-4 max-w-sm px-8">
@@ -108,10 +110,10 @@ export default function LoginPage() {
     )
   }
 
-  // ── Shared card wrapper ────────────────────────────────────────────────────
+  // ── Shared card wrapper ──────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-[200] bg-[#fafafa] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <div className="fixed inset-0 z-[200] bg-[#fafafa] flex items-center justify-center px-4 overflow-y-auto py-8">
+      <div className="w-full max-w-sm my-auto">
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-2">
@@ -121,8 +123,47 @@ export default function LoginPage() {
           </span>
         </div>
 
-        {/* ── Setup form ── */}
-        {mode === 'setup' && (
+        {/* ── Step 1: Mode picker ── */}
+        {screen === 'mode-pick' && (
+          <div className="space-y-5">
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">How will you use Operator?</h1>
+              <p className="text-sm text-gray-500 mt-0.5">This tailors the app to your workflow.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {MODE_LIST.map(m => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setSelectedMode(m.id)}
+                  className={`text-left p-3 rounded-xl border-2 transition-all ${
+                    selectedMode === m.id
+                      ? 'border-gray-900 bg-gray-900 text-white'
+                      : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="text-xl mb-1.5">{m.icon}</div>
+                  <div className="text-xs font-semibold">{m.label}</div>
+                  <div className={`text-[10px] mt-0.5 leading-tight ${selectedMode === m.id ? 'text-gray-300' : 'text-gray-400'}`}>
+                    {m.tagline}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setScreen('setup')}
+              className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+            >
+              Continue <ArrowRight size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* ── Step 2: Setup form ── */}
+        {screen === 'setup' && (
           <form onSubmit={handleSetup} className="space-y-5">
             <div>
               <h1 className="text-lg font-semibold text-gray-900">Set up Operator</h1>
@@ -154,7 +195,7 @@ export default function LoginPage() {
                 <label className="block text-xs font-medium text-gray-700 mb-1.5">Your role <span className="text-gray-400 font-normal">(optional)</span></label>
                 <input
                   type="text" value={role} onChange={e => setRole(e.target.value)}
-                  placeholder="e.g. CEO, Head of Product, COO"
+                  placeholder="e.g. CEO, Journalist, Team Lead"
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                 />
                 <p className="text-[11px] text-gray-400 mt-1">The AI will tailor responses to your role.</p>
@@ -188,15 +229,21 @@ export default function LoginPage() {
 
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
-            <button type="submit" disabled={submitting || !name.trim() || !password || !confirm}
-              className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-              {submitting ? <><Loader2 size={14} className="animate-spin" /> Setting up…</> : 'Create account'}
-            </button>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setScreen('mode-pick')}
+                className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                Back
+              </button>
+              <button type="submit" disabled={submitting || !name.trim() || !password || !confirm}
+                className="flex-1 bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                {submitting ? <><Loader2 size={14} className="animate-spin" /> Setting up…</> : 'Create account'}
+              </button>
+            </div>
           </form>
         )}
 
         {/* ── Login form ── */}
-        {mode === 'login' && (
+        {screen === 'login' && (
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <h1 className="text-lg font-semibold text-gray-900">Welcome back</h1>

@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle, Globe, Copy, Check } from 'lucide-react'
+import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle, Globe, Copy, Check, Database, FolderOpen, Upload as UploadIcon, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CLOUD_PROVIDERS, type AIProvider, type CloudProviderId, type PullState, type TestState } from './settingsTypes'
 import ModelPullOverlay from './ModelPullOverlay'
 import OllamaConfig from './OllamaConfig'
 import CloudProviderConfig from './CloudProviderConfig'
 import { ProviderLogo } from './ProviderLogo'
+import { MODE_LIST, type AppMode } from '@/lib/mode'
 
 async function saveSetting(key: string, value: string) {
   await fetch('/api/settings', {
@@ -45,6 +46,17 @@ export default function SettingsPage() {
   const [tunnelInstalled, setTunnelInstalled] = useState(true)
   const [tunnelStarting, setTunnelStarting] = useState(false)
   const [tunnelCopied, setTunnelCopied] = useState(false)
+  // Mode
+  const [appMode, setAppMode] = useState<AppMode>('executive')
+  const [savedMode, setSavedMode] = useState<AppMode>('executive')
+  // Backup
+  const [lastBackup, setLastBackup] = useState<string | null>(null)
+  const [backupPath, setBackupPath] = useState('')
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle')
+  const [backupError, setBackupError] = useState('')
+  const [restoreFile, setRestoreFile] = useState<File | null>(null)
+  const [restoreStatus, setRestoreStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle')
+  const [restoreConfirming, setRestoreConfirming] = useState(false)
 
   useEffect(() => {
     if (window.location.hash === '#danger') {
@@ -75,6 +87,11 @@ export default function SettingsPage() {
       setAiProvider(provider)
       setWebAccess(s.ollama_web_access !== 'false')
       setSavedProvider(provider)
+      const mode = (s.app_mode ?? 'executive') as AppMode
+      setAppMode(mode)
+      setSavedMode(mode)
+      setLastBackup(s.last_backup ?? null)
+      setBackupPath(s.backup_path ?? '')
       setApiKeys({ anthropic: s.anthropic_key ?? '', openai: s.openai_key ?? '', groq: s.groq_key ?? '', google: s.google_key ?? '', xai: s.xai_key ?? '', perplexity: s.perplexity_key ?? '' })
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '' })
       setLoading(false)
@@ -136,15 +153,17 @@ export default function SettingsPage() {
 
   const selectedModel = customModel.trim() || ollamaModel
   const modelChanged = aiProvider === 'ollama' && selectedModel !== savedModel
+  const switchingToOllama = aiProvider === 'ollama' && savedProvider !== 'ollama'
+  const needsPull = modelChanged || switchingToOllama
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
 
-    if (modelChanged) {
+    if (needsPull) {
       try {
         await pullModel(selectedModel)
-        if (savedModel) await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedModel }) }).catch(() => {})
+        if (modelChanged && savedModel) await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedModel }) }).catch(() => {})
       } catch (err) {
         setPull(p => ({ ...p, active: true, error: String(err), status: 'Failed' }))
         setSaving(false); return
@@ -156,6 +175,7 @@ export default function SettingsPage() {
     }
 
     await Promise.all([
+      saveSetting('app_mode', appMode),
       saveSetting('ollama_host', ollamaHost),
       saveSetting('ollama_model', selectedModel),
       saveSetting('ollama_web_access', webAccess ? 'true' : 'false'),
@@ -179,6 +199,7 @@ export default function SettingsPage() {
 
     setSavedModel(selectedModel)
     setSavedProvider(aiProvider)
+    setSavedMode(appMode)
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -223,6 +244,38 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* App Mode */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900">App Mode</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Controls terminology, AI framing, and default categories throughout the app.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {MODE_LIST.map(m => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setAppMode(m.id)}
+                className={cn('text-left p-3 rounded-xl border-2 transition-all',
+                  appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
+                )}
+              >
+                <div className="text-lg mb-1">{m.icon}</div>
+                <div className="text-xs font-semibold">{m.label}</div>
+                <div className={cn('text-[10px] mt-0.5 leading-tight', appMode === m.id ? 'text-gray-300' : 'text-gray-400')}>
+                  {m.tagline}
+                </div>
+                {savedMode === m.id && appMode !== m.id && (
+                  <div className="text-[10px] text-blue-500 mt-0.5">current</div>
+                )}
+              </button>
+            ))}
+          </div>
+          {appMode !== savedMode && (
+            <p className="text-xs text-amber-600">Mode will change on save — nav and AI framing will update immediately.</p>
+          )}
+        </div>
+
         {/* AI Provider */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
           <div>
@@ -256,6 +309,7 @@ export default function SettingsPage() {
               customModel={customModel} setCustomModel={setCustomModel}
               savedModel={savedModel} savedProvider={savedProvider}
               modelChanged={modelChanged} selectedModel={selectedModel}
+              switchingToOllama={switchingToOllama}
               webAccess={webAccess} setWebAccess={setWebAccess}
             />
           )}
@@ -278,8 +332,9 @@ export default function SettingsPage() {
         <button type="submit" disabled={saving}
           className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
           {saving
-            ? <><Loader2 size={14} className="animate-spin" /> {modelChanged ? 'Pulling model…' : 'Saving…'}</>
+            ? <><Loader2 size={14} className="animate-spin" /> {needsPull ? 'Pulling model…' : 'Saving…'}</>
             : saved ? <><CheckCircle size={14} /> Saved</>
+            : switchingToOllama ? <><Download size={14} /> Save & pull local model</>
             : modelChanged ? <><Download size={14} /> Save & switch model</>
             : 'Save settings'}
         </button>
@@ -355,6 +410,164 @@ export default function SettingsPage() {
             </button>
           </div>
         )}
+      </div>
+
+      {/* Backup & Export */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Backup & Export</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Download a copy of your data or restore from a previous backup.</p>
+        </div>
+
+        {/* Last backup */}
+        {lastBackup && (
+          <p className="text-xs text-gray-400">
+            Last backup: {new Date(lastBackup).toLocaleString()}
+          </p>
+        )}
+
+        {/* Download buttons */}
+        <div className="flex gap-2">
+          <a
+            href="/api/backup/export"
+            download
+            onClick={() => setLastBackup(new Date().toISOString())}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Download size={13} /> Export JSON
+          </a>
+          <a
+            href="/api/backup/export-db"
+            download
+            onClick={() => setLastBackup(new Date().toISOString())}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Database size={13} /> Export DB
+          </a>
+        </div>
+        <p className="text-[11px] text-gray-400">JSON export includes all records. DB export is the raw SQLite file that can restore everything.</p>
+
+        {/* Auto-backup to folder */}
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-gray-600">Auto-backup folder</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={backupPath}
+              onChange={e => setBackupPath(e.target.value)}
+              placeholder="/Volumes/MyDrive/Backups"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            />
+            <button
+              type="button"
+              disabled={!backupPath.trim() || backupStatus === 'running'}
+              onClick={async () => {
+                setBackupStatus('running')
+                setBackupError('')
+                try {
+                  const res = await fetch('/api/backup/path', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: backupPath }),
+                  })
+                  const d = await res.json() as { ok?: boolean; error?: string }
+                  if (d.ok) {
+                    setBackupStatus('done')
+                    setLastBackup(new Date().toISOString())
+                    setTimeout(() => setBackupStatus('idle'), 3000)
+                  } else {
+                    setBackupStatus('error')
+                    setBackupError(d.error ?? 'Backup failed')
+                  }
+                } catch (e) {
+                  setBackupStatus('error')
+                  setBackupError(String(e))
+                }
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              {backupStatus === 'running' ? <Loader2 size={13} className="animate-spin" /> : backupStatus === 'done' ? <CheckCircle size={13} className="text-green-500" /> : <FolderOpen size={13} />}
+              {backupStatus === 'running' ? 'Backing up…' : backupStatus === 'done' ? 'Done' : 'Back up now'}
+            </button>
+          </div>
+          {backupStatus === 'error' && <p className="text-xs text-red-600">{backupError}</p>}
+          <p className="text-[11px] text-gray-400">Copies the database and all uploaded files to this path. Useful for external drives.</p>
+        </div>
+
+        {/* Restore */}
+        <div className="space-y-2 pt-1 border-t border-gray-100">
+          <label className="block text-xs font-medium text-gray-600 pt-2">Restore from backup</label>
+          <p className="text-[11px] text-gray-400">Upload a <code className="font-mono">.db</code> file to restore all data. Current data will be overwritten.</p>
+          <input
+            type="file"
+            accept=".db"
+            onChange={e => { setRestoreFile(e.target.files?.[0] ?? null); setRestoreConfirming(false); setRestoreStatus('idle') }}
+            className="block text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-gray-200 file:text-xs file:font-medium file:text-gray-700 file:bg-white hover:file:bg-gray-50 file:cursor-pointer"
+          />
+          {restoreFile && !restoreConfirming && restoreStatus === 'idle' && (
+            <button
+              type="button"
+              onClick={() => setRestoreConfirming(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 text-sm font-medium hover:bg-amber-100 transition-colors"
+            >
+              <RotateCcw size={13} /> Restore {restoreFile.name}
+            </button>
+          )}
+          {restoreConfirming && restoreStatus === 'idle' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700">This will <strong>overwrite all current data</strong>. The page will reload after restore. This cannot be undone unless you have a separate backup.</p>
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setRestoreConfirming(false)}
+                  className="flex-1 border border-gray-200 text-gray-700 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!restoreFile) return
+                    setRestoreStatus('running')
+                    setRestoreConfirming(false)
+                    try {
+                      const form = new FormData()
+                      form.append('file', restoreFile)
+                      const res = await fetch('/api/backup/restore', { method: 'POST', body: form })
+                      const d = await res.json() as { ok?: boolean; reload?: boolean; error?: string }
+                      if (d.ok) {
+                        setRestoreStatus('done')
+                        if (d.reload) setTimeout(() => window.location.reload(), 1200)
+                      } else {
+                        setRestoreStatus('error')
+                        setBackupError(d.error ?? 'Restore failed')
+                      }
+                    } catch (e) {
+                      setRestoreStatus('error')
+                      setBackupError(String(e))
+                    }
+                  }}
+                  className="flex-1 bg-amber-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-amber-700 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <RotateCcw size={12} /> Yes, restore
+                </button>
+              </div>
+            </div>
+          )}
+          {restoreStatus === 'running' && (
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <Loader2 size={13} className="animate-spin" /> Restoring…
+            </div>
+          )}
+          {restoreStatus === 'done' && (
+            <div className="flex items-center gap-2 text-xs text-green-600">
+              <CheckCircle size={13} /> Restored — reloading…
+            </div>
+          )}
+          {restoreStatus === 'error' && (
+            <p className="text-xs text-red-600">{backupError}</p>
+          )}
+        </div>
       </div>
 
       <div className="border-t border-gray-200 pt-6">

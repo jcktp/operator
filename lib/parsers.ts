@@ -7,8 +7,21 @@ export interface ParseResult {
   displayContent?: string // HTML for word docs; JSON for excel/csv
 }
 
+export const IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic'])
+
+export function getMimeType(fileType: string): string {
+  const t = fileType.toLowerCase()
+  if (t === 'jpg' || t === 'jpeg') return 'image/jpeg'
+  if (t === 'png') return 'image/png'
+  if (t === 'webp') return 'image/webp'
+  if (t === 'gif') return 'image/gif'
+  if (t === 'heic') return 'image/heic'
+  return 'application/octet-stream'
+}
+
 export async function extractContent(buffer: Buffer, fileType: string): Promise<ParseResult> {
-  switch (fileType.toLowerCase()) {
+  const ft = fileType.toLowerCase()
+  switch (ft) {
     case 'pdf':  return { text: await extractPdf(buffer) }
     case 'docx':
     case 'doc':  return extractWord(buffer)
@@ -17,7 +30,10 @@ export async function extractContent(buffer: Buffer, fileType: string): Promise<
     case 'csv':  return extractCsv(buffer)
     case 'txt':
     case 'md':   return { text: buffer.toString('utf-8') }
-    default:     return { text: buffer.toString('utf-8') }
+    default:
+      // Image types — caller handles description via AI vision
+      if (IMAGE_TYPES.has(ft)) return { text: '', displayContent: `image:pending` }
+      return { text: buffer.toString('utf-8') }
   }
 }
 

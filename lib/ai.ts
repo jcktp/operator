@@ -2,6 +2,7 @@ import { Ollama } from 'ollama'
 import { parseJsonSafe } from './utils'
 import type { Metric, Insight, Question } from './utils'
 import { PERSONAS, type PersonaId } from './personas'
+import { getModeConfig } from './mode'
 
 // ── Provider types ──────────────────────────────────────────────────────────
 
@@ -395,8 +396,8 @@ async function chatOllamaTools(messages: Message[], systemPrompt: string, temper
     }
     return 'Could not complete tool-calling loop.'
   } catch {
-    // Model may not support tools — fall back to plain chat
-    const fallback = await ollama.chat({ model, messages: msgs.filter(m => m.role !== 'system'), options: { temperature } })
+    // Model may not support tools — fall back to plain chat (keep system message)
+    const fallback = await ollama.chat({ model, messages: msgs, options: { temperature } })
     return fallback.message.content
   }
 }
@@ -538,17 +539,94 @@ export interface ReportComparison {
 
 // ── Analysis functions ──────────────────────────────────────────────────────
 
+// ── Image description (vision) ──────────────────────────────────────────────
+
+export async function describeImage(buffer: Buffer, mimeType: string): Promise<string> {
+  const provider = getProvider()
+  const b64 = buffer.toString('base64')
+
+  try {
+    if (provider === 'anthropic') {
+      const key = process.env.ANTHROPIC_API_KEY
+      if (!key) throw new Error('No key')
+      const model = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001'
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model, max_tokens: 1024,
+          messages: [{ role: 'user', content: [
+            { type: 'image', source: { type: 'base64', media_type: mimeType, data: b64 } },
+            { type: 'text', text: 'Describe this image in detail. Include any visible text, numbers, people (without identifying them), objects, and context that would be useful for research or reporting purposes.' },
+          ] }],
+        }),
+      })
+      const data = await res.json() as { content?: Array<{ text: string }>; error?: { message: string } }
+      if (!res.ok) throw new Error(data.error?.message)
+      return data.content?.[0]?.text ?? '[Image stored]'
+    }
+
+    if (provider === 'openai') {
+      const key = process.env.OPENAI_API_KEY
+      if (!key) throw new Error('No key')
+      const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: [
+            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${b64}` } },
+            { type: 'text', text: 'Describe this image in detail. Include any visible text, numbers, people (without identifying them), objects, and context that would be useful for research or reporting purposes.' },
+          ] }],
+        }),
+      })
+      const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
+      if (!res.ok) throw new Error(data.error?.message)
+      return data.choices?.[0]?.message.content ?? '[Image stored]'
+    }
+
+    if (provider === 'google') {
+      const key = process.env.GOOGLE_API_KEY
+      if (!key) throw new Error('No key')
+      const model = process.env.GOOGLE_MODEL ?? 'gemini-1.5-flash'
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [
+            { inline_data: { mime_type: mimeType, data: b64 } },
+            { text: 'Describe this image in detail. Include any visible text, numbers, people (without identifying them), objects, and context that would be useful for research or reporting purposes.' },
+          ] }] }),
+        }
+      )
+      const data = await res.json() as { candidates?: Array<{ content: { parts: Array<{ text: string }> } }>; error?: { message: string } }
+      if (!res.ok) throw new Error(data.error?.message)
+      return data.candidates?.[0]?.content.parts[0]?.text ?? '[Image stored]'
+    }
+  } catch (e) {
+    console.warn('Image description failed:', e)
+  }
+
+  // Ollama and unsupported providers — store without description
+  return '[Image stored — switch to a cloud AI provider (Anthropic, OpenAI, or Google) to enable automatic image descriptions]'
+}
+
 export async function analyzeReport(
   content: string,
   reportTitle: string,
   area: string,
   directName?: string
 ): Promise<ReportAnalysis> {
+  const modeConfig = getModeConfig(process.env.APP_MODE)
   const truncated = content.slice(0, maxContentLength())
-  const prompt = `You are analyzing a business report for a CEO. Extract data exactly as it appears — do not invent numbers.
+  const prompt = `You are analyzing a ${modeConfig.documentLabel.toLowerCase()} submitted to a ${modeConfig.label.toLowerCase()} professional. Extract data exactly as it appears — do not invent numbers or facts.
 
-Report: ${reportTitle}
-Area: ${area}${directName ? `\nFrom: ${directName}` : ''}
+${modeConfig.documentLabel}: ${reportTitle}
+${modeConfig.collectionLabel}: ${area}${directName ? `\nFrom: ${directName}` : ''}
+
+${modeConfig.analysisFraming}
 
 Content:
 ${truncated}
@@ -557,11 +635,11 @@ Reply with ONLY valid JSON, no other text:
 {
   "summary": "2-3 sentence factual summary",
   "metrics": [{"label": "name", "value": "exact value", "context": "vs plan or prior period if mentioned", "trend": "up|down|flat|unknown", "status": "positive|negative|neutral|warning"}],
-  "insights": [{"type": "observation|anomaly|risk|opportunity", "text": "factual observation from the report", "area": "business area"}],
-  "questions": [{"text": "question to ask the direct", "why": "why it matters", "priority": "high|medium|low"}]
+  "insights": [{"type": "observation|anomaly|risk|opportunity", "text": "factual observation from the document", "area": "${modeConfig.collectionLabel.toLowerCase()}"}],
+  "questions": [{"text": "question to follow up on", "why": "why it matters", "priority": "high|medium|low"}]
 }
 
-Limits: max 10 metrics, 5 insights, 4 questions. Only use data from the report.`
+Limits: max 10 metrics, 5 insights, 4 questions. Only use data from the document.`
 
   const text = await chat([{ role: 'user', content: prompt }])
   const json = extractJson(text)

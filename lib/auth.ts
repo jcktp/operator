@@ -52,7 +52,7 @@ export async function createSession(): Promise<string> {
   return token
 }
 
-export async function setupAuth(name: string, role: string, password: string): Promise<string> {
+export async function setupAuth(name: string, role: string, password: string, mode?: string): Promise<string> {
   const hash = hashPassword(password)
   const token = generateToken()
   await Promise.all([
@@ -62,6 +62,7 @@ export async function setupAuth(name: string, role: string, password: string): P
     upsert('auth_setup_complete', 'true'),
     name ? upsert('ceo_name', name) : Promise.resolve(),
     role ? upsert('user_role', role) : Promise.resolve(),
+    mode ? upsert('app_mode', mode) : Promise.resolve(),
   ])
   return token
 }

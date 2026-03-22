@@ -14,6 +14,7 @@ interface Props {
   savedModel: string
   savedProvider: string
   modelChanged: boolean
+  switchingToOllama: boolean
   selectedModel: string
   webAccess: boolean
   setWebAccess: (v: boolean) => void
@@ -24,7 +25,7 @@ export default function OllamaConfig({
   ollamaModel, setOllamaModel,
   customModel, setCustomModel,
   savedModel, savedProvider,
-  modelChanged, selectedModel,
+  modelChanged, switchingToOllama, selectedModel,
   webAccess, setWebAccess,
 }: Props) {
   const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'ok' | 'error' | 'idle'>('idle')
@@ -134,6 +135,12 @@ export default function OllamaConfig({
         </div>
       </div>
 
+      {switchingToOllama && !modelChanged && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-xs text-blue-700 flex items-start gap-2">
+          <Download size={13} className="shrink-0 mt-0.5" />
+          <span>Saving will pull <strong>{selectedModel}</strong> to your machine. Local AI won't be available until the download completes — this may take a few minutes.</span>
+        </div>
+      )}
       {modelChanged && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-xs text-amber-700 flex items-start gap-2">
           <Download size={13} className="shrink-0 mt-0.5" />

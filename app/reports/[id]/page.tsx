@@ -365,7 +365,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             <span className="ml-1 text-gray-300 hidden group-open:inline">▾</span>
           </summary>
           <div className="mt-3 bg-white border border-gray-200 rounded-xl p-4">
-            <RawContent content={report.rawContent} displayContent={report.displayContent ?? undefined} fileType={report.fileType} />
+            <RawContent content={report.rawContent} displayContent={report.displayContent ?? undefined} fileType={report.fileType} reportId={report.id} />
           </div>
         </details>
       </section>

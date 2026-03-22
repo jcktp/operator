@@ -192,6 +192,24 @@ else
   step "Dependencies already installed"
 fi
 
+# ── 6b. Production build ──────────────────────────────────────────────────────
+# Running in production mode (npm start) uses far less CPU than dev mode.
+# We rebuild whenever package.json changes (new install) or .next is missing.
+BUILD_MARKER=".next/BUILD_ID"
+PACKAGE_HASH_FILE=".next/.package-hash"
+CURRENT_HASH="$(md5 -q package.json 2>/dev/null || md5sum package.json 2>/dev/null | cut -d' ' -f1)"
+STORED_HASH="$(cat "$PACKAGE_HASH_FILE" 2>/dev/null || echo '')"
+
+if [ ! -f "$BUILD_MARKER" ] || [ "$CURRENT_HASH" != "$STORED_HASH" ]; then
+  set_status "Building app…" "First run or update — this takes about a minute"
+  step "Building Operator (production build — only needed on first run or after updates)..."
+  npm run build >> "$LOG_FILE" 2>&1 || error "Build failed. Check $LOG_FILE for details."
+  echo "$CURRENT_HASH" > "$PACKAGE_HASH_FILE"
+  step "Build complete"
+else
+  step "Build already up to date"
+fi
+
 # ── 7. Database ───────────────────────────────────────────────────────────────
 step "Setting up database..."
 # Explicitly export DATABASE_URL so prisma CLI can find it regardless of which
@@ -208,10 +226,10 @@ if lsof -ti ":$PORT" &>/dev/null; then
   sleep 1
 fi
 
-# ── 9. Start Next.js ─────────────────────────────────────────────────────────
+# ── 9. Start Next.js (production mode) ───────────────────────────────────────
 set_status "Starting server…"
 step "Starting Operator server..."
-npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
+npm start -- --port $PORT > "$LOG_FILE" 2>&1 &
 NEXT_PID=$!
 echo $NEXT_PID > "$PID_FILE"
 

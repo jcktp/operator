@@ -2,12 +2,13 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { AREAS } from '@/lib/utils'
-import { Upload, FileText, X, Loader2, CheckCircle, AlertCircle, Plus, Globe, ChevronDown } from 'lucide-react'
+import { Upload, FileText, Image as ImageIcon, X, Loader2, CheckCircle, AlertCircle, Globe, ChevronDown, Plus } from 'lucide-react'
 import { type QueuedItem, type DirectReport, LINK_LABELS, detectLinkType, guessArea, fileId } from './uploadTypes'
+import { useMode } from '@/components/ModeContext'
 
 export default function UploadTab() {
   const router = useRouter()
+  const modeConfig = useMode()
   const [queue, setQueue] = useState<QueuedItem[]>([])
   const [defaultArea, setDefaultArea] = useState('')
   const [directReportId, setDirectReportId] = useState('')
@@ -118,11 +119,15 @@ export default function UploadTab() {
         onClick={() => document.getElementById('file-input')?.click()}
         className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${dragging ? 'border-gray-400 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
       >
-        <input id="file-input" type="file" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.md" className="hidden"
+        <input id="file-input" type="file" multiple accept={modeConfig.acceptedFileTypes} className="hidden"
           onChange={e => { if (e.target.files?.length) addFiles(e.target.files) }} />
         <Upload size={18} className="text-gray-400 mx-auto mb-2" />
         <p className="text-sm text-gray-600 font-medium">Drop files here or click to browse</p>
-        <p className="text-xs text-gray-400 mt-1">PDF, Word, Excel, CSV, text — multiple files at once</p>
+        <p className="text-xs text-gray-400 mt-1">
+          PDF, Word, Excel, CSV, text
+          {modeConfig.acceptedFileTypes.includes('.jpg') ? ', photos (JPG, PNG, WEBP)' : ''}
+          {' '}— multiple files at once
+        </p>
       </div>
 
       {/* Google link input */}
@@ -162,7 +167,11 @@ export default function UploadTab() {
                   {item.status === 'error' && <AlertCircle size={16} className="text-red-500" />}
                   {(item.status === 'uploading' || item.status === 'analyzing') && <Loader2 size={16} className="animate-spin text-blue-500" />}
                   {item.status === 'pending' && item.type === 'link' && <Globe size={16} className="text-indigo-400" />}
-                  {item.status === 'pending' && item.type === 'file' && <FileText size={16} className="text-gray-400" />}
+                  {item.status === 'pending' && item.type === 'file' && (
+                    item.file && item.file.type.startsWith('image/')
+                      ? <ImageIcon size={16} className="text-blue-400" />
+                      : <FileText size={16} className="text-gray-400" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   {item.status === 'pending' ? (
@@ -185,8 +194,8 @@ export default function UploadTab() {
                   <div className="shrink-0 relative">
                     <select value={item.area} onChange={e => updateItem(item.id, { area: e.target.value })}
                       className={`text-xs border rounded-lg pl-2 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-gray-900 bg-white appearance-none cursor-pointer ${!item.area ? 'border-amber-300 text-amber-600' : 'border-gray-200 text-gray-700'}`}>
-                      <option value="">Area…</option>
-                      {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                      <option value="">{modeConfig.uploadAreaLabel}…</option>
+                      {modeConfig.defaultAreas.map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
                     <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
                   </div>
@@ -206,7 +215,7 @@ export default function UploadTab() {
                 <select value={defaultArea} onChange={e => setDefaultArea(e.target.value)}
                   className="text-xs border border-gray-200 rounded-lg pl-2 pr-6 py-1.5 focus:outline-none bg-white appearance-none">
                   <option value="">Select…</option>
-                  {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                  {modeConfig.defaultAreas.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
                 <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
               </div>
