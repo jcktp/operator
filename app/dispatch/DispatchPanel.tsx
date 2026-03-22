@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Send, Trash2, MessageSquare, Paperclip, Link2, Loader2, Globe, GlobeLock } from 'lucide-react'
+import { X, Send, Trash2, MessageSquare, Paperclip, Link2, Loader2, Globe, GlobeLock, Clock, Plus, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { renderMarkdown } from './MarkdownRenderer'
 import { extractFileText } from './extractFileText'
@@ -11,6 +11,13 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   attachmentName?: string
+}
+
+interface ChatSummary {
+  id: string
+  title: string
+  updatedAt: string
+  messages: string // JSON
 }
 
 interface Props {
@@ -35,6 +42,9 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
   const [webAccess, setWebAccess] = useState(true)
   const [persona, setPersona] = useState<PersonaId>('dispatch')
   const [userMemory, setUserMemory] = useState('')
+  const [view, setView] = useState<'chat' | 'history'>('chat')
+  const [history, setHistory] = useState<ChatSummary[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -190,7 +200,36 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
     setMessages([])
     setChatId(null)
     setPendingAttachment(null)
+    setView('chat')
     inputRef.current?.focus()
+  }
+
+  const openHistory = async () => {
+    setView('history')
+    setHistoryLoading(true)
+    try {
+      const res = await fetch('/api/dispatch')
+      const data = await res.json() as { chats?: ChatSummary[] }
+      setHistory(data.chats ?? [])
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  const loadChat = (chat: ChatSummary) => {
+    const msgs = JSON.parse(chat.messages || '[]') as Message[]
+    setMessages(msgs)
+    setChatId(chat.id)
+    setPendingAttachment(null)
+    setView('chat')
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
+
+  const deleteChat = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    await fetch(`/api/dispatch/${id}`, { method: 'DELETE' }).catch(() => {})
+    setHistory(h => h.filter(c => c.id !== id))
+    if (chatId === id) { setMessages([]); setChatId(null) }
   }
 
   const activePersona = PERSONA_LIST.find(p => p.id === persona)!
@@ -207,11 +246,24 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
           <span className="text-xs text-gray-400">{activePersona.tagline}</span>
         </div>
         <div className="flex items-center gap-1">
-          {messages.length > 0 && (
-            <button onClick={clearChat} title="Clear chat"
+          {view === 'history' ? (
+            <button onClick={() => setView('chat')} title="Back to chat"
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-              <Trash2 size={13} />
+              <X size={13} />
             </button>
+          ) : (
+            <>
+              {messages.length > 0 && (
+                <button onClick={clearChat} title="New chat"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                  <Plus size={13} />
+                </button>
+              )}
+              <button onClick={openHistory} title="Chat history"
+                className={cn('p-1.5 rounded-lg transition-colors', view === 'history' ? 'bg-gray-100 text-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100')}>
+                <Clock size={13} />
+              </button>
+            </>
           )}
           {onClose && (
             <button onClick={onClose}
@@ -222,6 +274,85 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
         </div>
       </div>
 
+      {/* History view */}
+      {view === 'history' && (
+        <div className="flex-1 overflow-y-auto flex flex-col">
+          {/* New chat button */}
+          <button
+            onClick={clearChat}
+            className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+          >
+            <Plus size={14} className="text-gray-400" /> New chat
+          </button>
+
+          {historyLoading && (
+            <div className="flex justify-center py-8">
+              <Loader2 size={16} className="animate-spin text-gray-300" />
+            </div>
+          )}
+
+          {!historyLoading && history.length === 0 && (
+            <p className="text-xs text-gray-400 text-center py-8">No previous chats</p>
+          )}
+
+          {/* Memory section */}
+          {!historyLoading && (
+            <div className="mt-auto border-t border-gray-100 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-medium text-gray-500">AI memory</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {userMemory ? `${userMemory.split('\n').filter(Boolean).length} fact${userMemory.split('\n').filter(Boolean).length !== 1 ? 's' : ''} learned` : 'Nothing learned yet'}
+                  </p>
+                </div>
+                {userMemory && (
+                  <button
+                    onClick={async () => {
+                      await fetch('/api/dispatch/memory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memory: '' }) })
+                      setUserMemory('')
+                    }}
+                    className="text-[11px] text-red-400 hover:text-red-600 transition-colors"
+                  >
+                    Clear memory
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!historyLoading && history.length > 0 && history.map(chat => (
+            <button
+              key={chat.id}
+              onClick={() => loadChat(chat)}
+              className={cn(
+                'w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors group',
+                chat.id === chatId && 'bg-gray-50'
+              )}
+            >
+              <MessageSquare size={13} className="text-gray-300 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-gray-800 truncate">{chat.title}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  {new Date(chat.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <ChevronRight size={12} className="text-gray-300 group-hover:text-gray-400" />
+                <button
+                  onClick={e => deleteChat(chat.id, e)}
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-300 hover:text-red-400 transition-all"
+                  title="Delete chat"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Chat view */}
+      {view === 'chat' && <>
       {/* Persona selector — locked once chat starts */}
       <div className="flex gap-1 px-3 pt-2.5 pb-0 shrink-0">
         {PERSONA_LIST.map(p => {
@@ -388,6 +519,7 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
         </div>
         <p className="text-[10px] text-gray-400 mt-1.5 text-center">Enter to send · Shift+Enter for new line</p>
       </div>
+      </>}
     </div>
   )
 }
