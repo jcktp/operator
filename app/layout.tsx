@@ -24,6 +24,9 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   title: 'Operator',
   description: 'Executive reporting, unified.',
+  icons: {
+    icon: '/icon.svg',
+  },
 }
 
 export const viewport: Viewport = {
