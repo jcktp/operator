@@ -36,7 +36,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
         .then(data => {
           if (data.error === 'not_found') { setStage('not_found'); return }
           if (data.error === 'expired') { setStage('expired'); return }
-          if (data.request.status === 'submitted') { setStage('done'); return }
+          if (data.error === 'submitted') { setStage('done'); return }
           setInfo(data.request)
           setStage('ready')
         })

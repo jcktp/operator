@@ -18,5 +18,9 @@ export async function GET(
     return NextResponse.json({ error: 'expired' }, { status: 410 })
   }
 
+  if (request.status === 'submitted') {
+    return NextResponse.json({ error: 'submitted' }, { status: 410 })
+  }
+
   return NextResponse.json({ request })
 }
