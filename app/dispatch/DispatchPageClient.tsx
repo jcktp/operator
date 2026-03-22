@@ -123,7 +123,7 @@ export default function DispatchPageClient({ chats: initial, context }: Props) {
       </div>
 
       {/* Right: dispatch panel */}
-      <div className="flex-1 min-w-0 h-[calc(100vh-140px)] min-h-[500px]">
+      <div className="flex-1 min-w-0 h-[calc(100vh-210px)] min-h-[500px]">
         <DispatchPanel
           key={panelKey}
           context={context}

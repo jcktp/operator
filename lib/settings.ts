@@ -6,6 +6,7 @@ const KEY_MAP: Record<string, string> = {
   ollama_model:       'OLLAMA_MODEL',
   ollama_web_access:  'OLLAMA_WEB_ACCESS',
   ai_provider:        'AI_PROVIDER',
+  ceo_name:           'CEO_NAME',
   user_role:          'USER_ROLE',
   anthropic_key:      'ANTHROPIC_API_KEY',
   openai_key:         'OPENAI_API_KEY',

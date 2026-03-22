@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, FolderOpen, FileText, Trash2, ChevronRight, ChevronDown, Edit2, PenLine } from 'lucide-react'
+import { Plus, FolderOpen, FileText, Trash2, ChevronRight, ChevronDown, Edit2, PenLine, Eye, X } from 'lucide-react'
 import JournalEditor from './JournalEditor'
 
 interface JournalEntry {
@@ -20,7 +20,8 @@ const DEFAULT_FOLDER = 'General'
 
 export default function JournalShell({ entries: initial }: Props) {
   const [entries, setEntries] = useState(initial)
-  const [selectedId, setSelectedId] = useState<string | null>(initial[0]?.id ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'view' | 'edit'>('view')
 
   // Always expand all known folders + General on load
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(() => {
@@ -66,6 +67,7 @@ export default function JournalShell({ entries: initial }: Props) {
     }
     setEntries(prev => [entry, ...prev])
     setSelectedId(entry.id)
+    setViewMode('edit') // new notes open directly in edit mode
     setExpandedFolders(prev => new Set([...prev, entry.folder]))
     setNewNoteFolder(null)
     setNewTitle('')
@@ -92,6 +94,7 @@ export default function JournalShell({ entries: initial }: Props) {
     }
     setEntries(prev => [entry, ...prev])
     setSelectedId(entry.id)
+    setViewMode('edit')
     setExpandedFolders(prev => new Set([...prev, folder]))
   }
 
@@ -211,9 +214,9 @@ export default function JournalShell({ entries: initial }: Props) {
                   {folderEntries.map(entry => (
                     <div
                       key={entry.id}
-                      onClick={() => setSelectedId(entry.id)}
+                      onClick={() => { setSelectedId(entry.id); setViewMode('view') }}
                       className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer group/note transition-colors ${
-                        selectedId === entry.id ? 'bg-gray-900' : 'hover:bg-gray-100'
+                        selectedId === entry.id ? 'bg-gray-100' : 'hover:bg-gray-50'
                       }`}
                     >
                       <FileText size={11} className="shrink-0 text-gray-400" />
@@ -231,20 +234,20 @@ export default function JournalShell({ entries: initial }: Props) {
                           className="flex-1 text-xs bg-transparent border-b border-gray-400 outline-none min-w-0"
                         />
                       ) : (
-                        <span className={`text-xs truncate flex-1 min-w-0 ${selectedId === entry.id ? 'text-white' : 'text-gray-700'}`}>
+                        <span className={`text-xs truncate flex-1 min-w-0 ${selectedId === entry.id ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
                           {entry.title}
                         </span>
                       )}
                       <div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover/note:opacity-100 transition-opacity">
                         <button
                           onClick={e => { e.stopPropagation(); setEditingTitle(entry.id); setEditTitleValue(entry.title) }}
-                          className={`p-0.5 rounded ${selectedId === entry.id ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}
+                          className="p-0.5 rounded text-gray-400 hover:text-gray-700"
                         >
                           <Edit2 size={9} />
                         </button>
                         <button
                           onClick={e => deleteNote(entry.id, e)}
-                          className={`p-0.5 rounded ${selectedId === entry.id ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'}`}
+                          className="p-0.5 rounded text-gray-400 hover:text-red-500"
                         >
                           <Trash2 size={9} />
                         </button>
@@ -266,24 +269,59 @@ export default function JournalShell({ entries: initial }: Props) {
       <div className="flex-1 min-w-0 h-full overflow-y-auto pl-6">
         {selected ? (
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">{selected.folder}</span>
-              <span className="text-xs text-gray-300">/</span>
-              <h2 className="text-sm font-semibold text-gray-900">{selected.title}</h2>
+            {/* Note header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs text-gray-400 shrink-0">{selected.folder}</span>
+                <span className="text-xs text-gray-300 shrink-0">/</span>
+                <h2 className="text-sm font-semibold text-gray-900 truncate">{selected.title}</h2>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {viewMode === 'view' ? (
+                  <button
+                    onClick={() => setViewMode('edit')}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+                  >
+                    <Edit2 size={11} /> Edit
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setViewMode('view')}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                  >
+                    <Eye size={11} /> Done
+                  </button>
+                )}
+                <button
+                  onClick={() => { setSelectedId(null) }}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  title="Close note"
+                >
+                  <X size={13} />
+                </button>
+              </div>
             </div>
-            <JournalEditor
-              key={selected.id}
-              entryId={selected.id}
-              initialContent={selected.content}
-              onContentChange={html =>
-                setEntries(prev => prev.map(e => e.id === selected.id ? { ...e, content: html } : e))
-              }
-            />
+
+            {viewMode === 'edit' ? (
+              <JournalEditor
+                key={selected.id}
+                entryId={selected.id}
+                initialContent={selected.content}
+                onContentChange={html =>
+                  setEntries(prev => prev.map(e => e.id === selected.id ? { ...e, content: html } : e))
+                }
+              />
+            ) : (
+              <div
+                className="bg-white border border-gray-200 rounded-xl px-6 py-5 prose prose-sm max-w-none text-gray-700 min-h-[200px]"
+                dangerouslySetInnerHTML={{ __html: selected.content || '<p class="text-gray-400">Empty note — click Edit to start writing.</p>' }}
+              />
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <FileText size={32} className="text-gray-200 mb-3" />
-            <p className="text-sm text-gray-500 mb-3">No note selected</p>
+            <p className="text-sm text-gray-500 mb-3">Select a note or create a new one</p>
             <button
               onClick={() => openNewNoteForm(DEFAULT_FOLDER)}
               className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"

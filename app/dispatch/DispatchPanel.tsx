@@ -27,6 +27,35 @@ interface Props {
   initialMessage?: string
 }
 
+// ── Suggestion questions ───────────────────────────────────────────────────
+
+function getSuggestions(persona: PersonaId, role: string): string[] {
+  const r = role.toLowerCase()
+  if (persona === 'dispatch') {
+    if (r.includes('cto') || r.includes('tech') || r.includes('engineer'))
+      return ['What are the biggest technical risks right now?', 'Which system or team needs attention?', 'Summarise engineering progress this week']
+    if (r.includes('cfo') || r.includes('finance') || r.includes('financial'))
+      return ['What are the key financial risks?', 'Which area has the most budget pressure?', 'Summarise financial performance this week']
+    if (r.includes('coo') || r.includes('operations'))
+      return ['Where are the operational bottlenecks?', 'Which team is under the most strain?', 'What changed in operations this week?']
+    // Default (CEO / general)
+    return ['What are the biggest risks right now?', 'Which area needs the most attention?', 'Summarise what changed this week']
+  }
+  if (persona === 'debrief') {
+    if (r.includes('cto') || r.includes('tech'))
+      return ["Help me think through a technical decision I'm facing", 'What trade-offs am I not seeing?', "Challenge my assumptions on this architecture"]
+    if (r.includes('cfo') || r.includes('finance'))
+      return ["Help me think through a budget decision", "What financial risks am I underestimating?", "Play devil's advocate on this investment"]
+    return ["Help me think through a decision I'm facing", "What am I not considering here?", "Play devil's advocate on this plan"]
+  }
+  // recon
+  if (r.includes('cto') || r.includes('tech'))
+    return ['What are unconventional approaches to scaling our tech?', "What would a tech-first competitor do differently?", 'Generate 5 ideas for improving developer productivity']
+  if (r.includes('cfo') || r.includes('finance'))
+    return ['What are unconventional ways to improve margins?', "What would a capital-efficient competitor do?", 'Generate 5 ideas for revenue diversification']
+  return ['Generate 5 ideas for growing revenue', "What would a competitor do differently?", "What's an unconventional approach to this problem?"]
+}
+
 // ── Component ─────────────────────────────────────────────────────────────
 
 export default function DispatchPanel({ context, onClose, initialChat, initialMessage }: Props) {
@@ -45,6 +74,8 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
   const [view, setView] = useState<'chat' | 'history'>('chat')
   const [history, setHistory] = useState<ChatSummary[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [userName, setUserName] = useState('')
+  const [userRole, setUserRole] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -58,6 +89,8 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then((d: { settings?: Record<string, string> }) => {
       setWebAccess(d.settings?.ollama_web_access !== 'false')
+      setUserName(d.settings?.ceo_name ?? '')
+      setUserRole(d.settings?.user_role ?? '')
     }).catch(() => {})
     fetch('/api/dispatch/memory').then(r => r.json()).then((d: { memory?: string }) => {
       setUserMemory(d.memory ?? '')
@@ -189,6 +222,10 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
       const withReply = [...next, reply]
       setMessages(withReply)
       await autoSave(withReply, chatId)
+      // Refresh memory in case extractMemoryFacts added new facts in the background
+      fetch('/api/dispatch/memory').then(r => r.json()).then((d: { memory?: string }) => {
+        setUserMemory(d.memory ?? '')
+      }).catch(() => {})
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'Network error — could not reach the AI.' }])
     } finally {
@@ -386,16 +423,17 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
               <MessageSquare size={18} className="text-gray-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700">{activePersona.name}</p>
-              <p className="text-xs text-gray-400 mt-1">{activePersona.description}</p>
+              <p className="text-sm font-medium text-gray-700">
+                {userName ? `Hi ${userName}` : activePersona.name}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {userRole
+                  ? `${activePersona.description} Ready to help you as ${userRole}.`
+                  : activePersona.description}
+              </p>
             </div>
             <div className="flex flex-col gap-2 w-full mt-2">
-              {(persona === 'dispatch'
-                ? ['What are the biggest risks right now?', 'Which area needs the most attention?', 'Summarise what changed this week']
-                : persona === 'debrief'
-                ? ["Help me think through a decision I'm facing", "What am I not considering here?", "Play devil's advocate on this plan"]
-                : ['Generate 5 ideas for growing revenue', "What would a competitor do differently?", "What's an unconventional approach to this problem?"]
-              ).map(s => (
+              {getSuggestions(persona, userRole).map(s => (
                 <button key={s} onClick={() => { setInput(s); inputRef.current?.focus() }}
                   className="text-xs text-left px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:border-gray-300 text-gray-600 transition-colors">
                   {s}
