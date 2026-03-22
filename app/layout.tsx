@@ -26,11 +26,6 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   title: 'Operator',
   description: 'Executive reporting, unified.',
-  icons: {
-    icon: [{ url: '/operator-icon.svg', type: 'image/svg+xml' }],
-    shortcut: '/operator-icon.svg',
-    apple: '/operator-icon.svg',
-  },
 }
 
 export const viewport: Viewport = {
