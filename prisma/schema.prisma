@@ -46,6 +46,7 @@ model Report {
   displayContent String?
   area           String
   reportDate     DateTime?
+  resolvedFlags  String?
   directReportId String?
   directReport   DirectReport? @relation(fields: [directReportId], references: [id])
   createdAt      DateTime      @default(now())
@@ -56,5 +57,23 @@ model Setting {
   id        String   @id @default(uuid())
   key       String   @unique
   value     String
+  updatedAt DateTime @updatedAt
+}
+
+model JournalEntry {
+  id        String   @id @default(uuid())
+  weekStart DateTime
+  content   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([weekStart])
+}
+
+model DispatchChat {
+  id        String   @id @default(uuid())
+  title     String
+  messages  String   @default("[]")
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

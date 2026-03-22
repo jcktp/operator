@@ -254,6 +254,51 @@ Limits: max 8 changes, max 4 newTopics, max 4 removedTopics. Only compare what i
   }
 }
 
+export async function checkResolvedFlags(
+  previousFlags: Array<{ text: string; type: string }>,
+  newContent: string,
+  newInsights: Insight[]
+): Promise<string[]> {
+  if (previousFlags.length === 0) return []
+  const flagsList = previousFlags.map((f, i) => `${i + 1}. [${f.type}] ${f.text}`).join('\n')
+  const newInsightsList = newInsights.map(i => `[${i.type}] ${i.text}`).join('\n') || 'None'
+  const prompt = `Previous report flags:
+${flagsList}
+
+New report content (excerpt):
+${newContent.slice(0, 3000)}
+
+New report flags:
+${newInsightsList}
+
+Which numbered previous flags appear resolved or no longer a concern based on the new report?
+Reply with ONLY valid JSON: {"resolved": [1, 3]} — empty array if none.`
+
+  try {
+    const text = await chat([{ role: 'user', content: prompt }])
+    const json = extractJson(text)
+    const parsed = JSON.parse(json) as { resolved: number[] }
+    if (!Array.isArray(parsed.resolved)) return []
+    return parsed.resolved
+      .filter(i => typeof i === 'number' && i >= 1 && i <= previousFlags.length)
+      .map(i => previousFlags[i - 1].text)
+  } catch {
+    return []
+  }
+}
+
+export async function dispatchChat(
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  context: string
+): Promise<string> {
+  const systemMsg: Message = {
+    role: 'user',
+    content: `You are Dispatch, a sharp AI assistant for a CEO. You have live business context from recent reports:\n\n${context}\n\nBe concise, direct, and factual. If something isn't in the context, say so.`,
+  }
+  const ack: Message = { role: 'assistant', content: 'Got it — I have the business context. What would you like to know?' }
+  return chat([systemMsg, ack, ...messages], 0.3)
+}
+
 export async function generateDashboardInsights(
   reports: Array<{ area: string; summary: string; metrics: string; insights: string }>
 ): Promise<{ crossInsights: Insight[]; topQuestions: Question[]; healthSignal: string }> {

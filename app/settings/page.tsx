@@ -76,7 +76,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
   const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'ok' | 'error' | 'idle'>('idle')
-  const [availableModels, setAvailableModels] = useState<string[]>([])
+  const [ollamaAvailableModels, setOllamaAvailableModels] = useState<string[]>([])
   const [pull, setPull] = useState<PullState>({ active: false, status: '', progress: 0, done: false })
 
   // Dynamic model list
@@ -148,7 +148,7 @@ export default function SettingsPage() {
         body: JSON.stringify({ host: ollamaHost }),
       })
       const data = await res.json()
-      if (res.ok) { setOllamaStatus('ok'); setAvailableModels(data.models ?? []) }
+      if (res.ok) { setOllamaStatus('ok'); setOllamaAvailableModels(data.models ?? []) }
       else setOllamaStatus('error')
     } catch { setOllamaStatus('error') }
   }
@@ -398,7 +398,7 @@ export default function SettingsPage() {
                 </div>
                 {ollamaStatus === 'ok' && (
                   <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
-                    <CheckCircle size={12} /> Connected · {availableModels.length} model{availableModels.length !== 1 ? 's' : ''} available
+                    <CheckCircle size={12} /> Connected · {ollamaAvailableModels.length} model{ollamaAvailableModels.length !== 1 ? 's' : ''} available
                   </p>
                 )}
                 {ollamaStatus === 'error' && (
@@ -429,7 +429,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-1.5">
                   {suggestedModels.map(m => {
-                    const isPulled = availableModels.some(am => am.startsWith(m.id.split(':')[0]))
+                    const isPulled = ollamaAvailableModels.some(am => am.startsWith(m.id.split(':')[0]))
                     const isSelected = ollamaModel === m.id && !customModel
                     const isCurrent = m.id === savedModel && savedProvider === 'ollama'
                     return (

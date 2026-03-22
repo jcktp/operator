@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2 } from 'lucide-react'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare } from 'lucide-react'
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
@@ -14,6 +14,8 @@ const links = [
   { href: '/upload', label: 'Add Report', icon: Upload },
   { href: '/library', label: 'Library', icon: Library },
   { href: '/directs', label: 'Directs', icon: Users },
+  { href: '/journal', label: 'Journal', icon: BookOpen },
+  { href: '/dispatch', label: 'Dispatch', icon: MessageSquare },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 

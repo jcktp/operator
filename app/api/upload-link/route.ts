@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { analyzeReport, compareReports } from '@/lib/ai'
+import { analyzeReport, compareReports, checkResolvedFlags } from '@/lib/ai'
 
 // ── Google link helpers ──────────────────────────────────────────────────────
 
@@ -128,6 +128,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Check which previous flags are now resolved
+    let resolvedFlagsJson: string | null = null
+    if (previousReport?.insights && analysis) {
+      try {
+        type PrevInsight = { type: string; text: string }
+        const prevInsights: PrevInsight[] = JSON.parse(previousReport.insights)
+        const prevFlags = prevInsights.filter(i => i.type === 'risk' || i.type === 'anomaly')
+        if (prevFlags.length > 0) {
+          const resolved = await checkResolvedFlags(prevFlags, rawContent, analysis.insights)
+          if (resolved.length > 0) resolvedFlagsJson = JSON.stringify(resolved)
+        }
+      } catch (e) {
+        console.error('Resolved flags check failed:', e)
+      }
+    }
+
     const report = await prisma.report.create({
       data: {
         title,
@@ -143,6 +159,7 @@ export async function POST(req: NextRequest) {
         insights: analysis?.insights ? JSON.stringify(analysis.insights) : null,
         questions: analysis?.questions ? JSON.stringify(analysis.questions) : null,
         comparison: comparison ? JSON.stringify(comparison) : null,
+        resolvedFlags: resolvedFlagsJson,
         displayContent: null,
       },
       include: { directReport: true },
