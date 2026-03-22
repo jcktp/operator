@@ -4,7 +4,7 @@ import { useDispatch } from './DispatchContext'
 import DispatchPanel from '@/app/dispatch/DispatchPanel'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { open, setOpen, aiContext } = useDispatch()
+  const { open, setOpen, aiContext, pendingMessage, setPendingMessage } = useDispatch()
 
   if (open) {
     return (
@@ -13,7 +13,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <aside className="w-1/4 shrink-0 sticky top-14 h-[calc(100vh-56px)] py-4 pr-4 border-l border-gray-200">
-          <DispatchPanel context={aiContext} onClose={() => setOpen(false)} />
+          <DispatchPanel
+            context={aiContext}
+            onClose={() => { setOpen(false); setPendingMessage('') }}
+            initialMessage={pendingMessage || undefined}
+          />
         </aside>
       </div>
     )

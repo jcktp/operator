@@ -37,6 +37,7 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
   }, [entryId])
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Underline,

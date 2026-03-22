@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Send, Trash2, MessageSquare, Paperclip, Link2, Download, Loader2 } from 'lucide-react'
+import { X, Send, Trash2, MessageSquare, Paperclip, Link2, Loader2, Globe, GlobeLock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { renderMarkdown } from './MarkdownRenderer'
+import { extractFileText } from './extractFileText'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -14,131 +16,14 @@ interface Props {
   context: string
   onClose?: () => void
   initialChat?: { id: string; title: string; messages: Message[] }
-}
-
-// ── Markdown renderer ─────────────────────────────────────────────────────
-
-function renderMarkdown(text: string, onDownload: (code: string, lang: string) => void) {
-  // Split on fenced code blocks first
-  const parts = text.split(/(```[\s\S]*?```)/g)
-  return (
-    <>
-      {parts.map((part, i) => {
-        const codeMatch = part.match(/^```(\w*)\n?([\s\S]*?)```$/)
-        if (codeMatch) {
-          const lang = codeMatch[1] || 'txt'
-          const code = codeMatch[2]
-          return (
-            <div key={i} className="my-2 rounded-xl overflow-hidden border border-gray-200">
-              <div className="flex items-center justify-between bg-gray-800 px-3 py-1.5">
-                <span className="text-[10px] text-gray-400 font-mono">{lang}</span>
-                <button
-                  onClick={() => onDownload(code, lang)}
-                  className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-white transition-colors"
-                >
-                  <Download size={10} /> Download
-                </button>
-              </div>
-              <pre className="bg-gray-900 text-green-400 text-xs px-3 py-2 overflow-x-auto font-mono whitespace-pre">
-                {code}
-              </pre>
-            </div>
-          )
-        }
-        return <span key={i}>{renderInlineBlocks(part)}</span>
-      })}
-    </>
-  )
-}
-
-function renderInlineBlocks(text: string) {
-  const lines = text.split('\n')
-  return (
-    <>
-      {lines.map((line, i) => {
-        if (/^#{1,3}\s/.test(line)) {
-          const level = (line.match(/^#+/) ?? [''])[0].length
-          const content = renderInline(line.replace(/^#+\s/, ''))
-          const cls = level === 1 ? 'font-bold text-base mt-2' : level === 2 ? 'font-semibold mt-1.5' : 'font-semibold'
-          return <div key={i} className={cls}>{content}</div>
-        }
-        if (/^[-*]\s/.test(line)) {
-          return (
-            <div key={i} className="flex gap-1.5 my-0.5">
-              <span className="shrink-0 mt-[6px] w-1 h-1 bg-current rounded-full" />
-              <span>{renderInline(line.replace(/^[-*]\s/, ''))}</span>
-            </div>
-          )
-        }
-        if (/^\d+\.\s/.test(line)) {
-          const num = (line.match(/^\d+/) ?? ['1'])[0]
-          return (
-            <div key={i} className="flex gap-1.5 my-0.5">
-              <span className="shrink-0 text-xs font-medium">{num}.</span>
-              <span>{renderInline(line.replace(/^\d+\.\s/, ''))}</span>
-            </div>
-          )
-        }
-        if (line.trim() === '') return <div key={i} className="h-1.5" />
-        return <p key={i} className="my-0.5">{renderInline(line)}</p>
-      })}
-    </>
-  )
-}
-
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
-  return (
-    <>
-      {parts.map((p, i) => {
-        if (/^\*\*[^*]+\*\*$/.test(p)) return <strong key={i}>{p.slice(2, -2)}</strong>
-        if (/^\*[^*]+\*$/.test(p)) return <em key={i}>{p.slice(1, -1)}</em>
-        if (/^`[^`]+`$/.test(p)) return <code key={i} className="bg-black/10 rounded px-0.5 text-[0.82em] font-mono">{p.slice(1, -1)}</code>
-        return <span key={i}>{p}</span>
-      })}
-    </>
-  )
-}
-
-// ── File text extraction ──────────────────────────────────────────────────
-
-async function extractFileText(file: File): Promise<string> {
-  const name = file.name.toLowerCase()
-
-  if (name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.csv')) {
-    return file.text()
-  }
-
-  if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-    const xlsx = await import('xlsx')
-    const buffer = await file.arrayBuffer()
-    const wb = xlsx.read(buffer, { type: 'array' })
-    return wb.SheetNames.map(sn => {
-      const ws = wb.Sheets[sn]
-      return `Sheet: ${sn}\n${xlsx.utils.sheet_to_csv(ws)}`
-    }).join('\n\n')
-  }
-
-  if (name.endsWith('.pdf')) {
-    const formData = new FormData()
-    formData.append('file', file)
-    const res = await fetch('/api/extract-pdf', { method: 'POST', body: formData })
-    if (res.ok) {
-      const data = await res.json()
-      return data.text ?? ''
-    }
-    return '[PDF content could not be extracted]'
-  }
-
-  // Generic: try to read as text
-  try { return file.text() } catch { return `[Could not read ${file.name}]` }
+  initialMessage?: string
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
 
-export default function DispatchPanel({ context, onClose, initialChat }: Props) {
+export default function DispatchPanel({ context, onClose, initialChat, initialMessage }: Props) {
   const [messages, setMessages] = useState<Message[]>(initialChat?.messages ?? [])
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState(initialMessage ?? '')
   const [loading, setLoading] = useState(false)
   const [chatId, setChatId] = useState<string | null>(initialChat?.id ?? null)
   const [pendingAttachment, setPendingAttachment] = useState<{ name: string; content: string } | null>(null)
@@ -146,6 +31,7 @@ export default function DispatchPanel({ context, onClose, initialChat }: Props) 
   const [urlInput, setUrlInput] = useState('')
   const [fetchingUrl, setFetchingUrl] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
+  const [webAccess, setWebAccess] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -155,6 +41,22 @@ export default function DispatchPanel({ context, onClose, initialChat }: Props) 
   }, [messages, loading])
 
   useEffect(() => { inputRef.current?.focus() }, [])
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then((d: { settings?: Record<string, string> }) => {
+      setWebAccess(d.settings?.ollama_web_access !== 'false')
+    }).catch(() => {})
+  }, [])
+
+  const toggleWebAccess = async () => {
+    const next = !webAccess
+    setWebAccess(next)
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'ollama_web_access', value: next ? 'true' : 'false' }),
+    }).catch(() => {})
+  }
 
   const autoSave = useCallback(async (msgs: Message[], currentId: string | null) => {
     if (msgs.length === 0) return
@@ -425,6 +327,14 @@ export default function DispatchPanel({ context, onClose, initialChat }: Props) 
             className={cn('shrink-0 p-2 rounded-xl transition-colors', showUrlInput ? 'bg-gray-900 text-white' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100')}
           >
             <Link2 size={14} />
+          </button>
+          {/* Online access toggle */}
+          <button
+            onClick={toggleWebAccess}
+            title={webAccess ? 'Online access on — click to disable' : 'Online access off — click to enable'}
+            className={cn('shrink-0 p-2 rounded-xl transition-colors', webAccess ? 'text-green-600 hover:bg-green-50' : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100')}
+          >
+            {webAccess ? <Globe size={14} /> : <GlobeLock size={14} />}
           </button>
           <textarea
             ref={inputRef}

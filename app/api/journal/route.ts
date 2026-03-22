@@ -9,26 +9,36 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { id, title, folder, content } = await req.json()
+  try {
+    const { id, title, folder, content } = await req.json()
 
-  if (id) {
-    // Update existing
-    const entry = await prisma.journalEntry.update({
-      where: { id },
-      data: { title, folder, content },
+    if (id) {
+      // Update existing
+      const update: Record<string, string> = {}
+      if (title !== undefined) update.title = title
+      if (folder !== undefined) update.folder = folder
+      if (content !== undefined) update.content = content
+      const entry = await prisma.journalEntry.update({
+        where: { id },
+        data: update,
+      })
+      return NextResponse.json({ entry })
+    }
+
+    // Create new
+    const entry = await prisma.journalEntry.create({
+      data: {
+        title: title ?? 'Untitled',
+        folder: folder ?? 'General',
+        content: content ?? '',
+        weekStart: null,
+      },
     })
     return NextResponse.json({ entry })
+  } catch (e) {
+    console.error('[journal POST]', e)
+    return NextResponse.json({ error: String(e) }, { status: 500 })
   }
-
-  // Create new
-  const entry = await prisma.journalEntry.create({
-    data: {
-      title: title ?? 'Untitled',
-      folder: folder ?? 'General',
-      content: content ?? '',
-    },
-  })
-  return NextResponse.json({ entry })
 }
 
 export async function DELETE(req: NextRequest) {

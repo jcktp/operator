@@ -1,0 +1,118 @@
+'use client'
+
+import { useState, useCallback } from 'react'
+import { AREAS } from '@/lib/utils'
+import { Loader2, CheckCircle, Link2, Copy, Check } from 'lucide-react'
+import type { DirectReport } from './uploadTypes'
+
+export default function RequestTab() {
+  const [title, setTitle] = useState('')
+  const [area, setArea] = useState('')
+  const [message, setMessage] = useState('')
+  const [directReportId, setDirectReportId] = useState('')
+  const [directs, setDirects] = useState<DirectReport[]>([])
+  const [directsLoaded, setDirectsLoaded] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [link, setLink] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const loadDirects = useCallback(async () => {
+    if (directsLoaded) return
+    const res = await fetch('/api/directs')
+    const data = await res.json() as { directs?: DirectReport[] }
+    setDirects(data.directs ?? [])
+    setDirectsLoaded(true)
+  }, [directsLoaded])
+
+  const generate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title || !area) return
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/report-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, area, message, directReportId }),
+      })
+      const data = await res.json() as { request?: { token: string } }
+      if (res.ok && data.request) setLink(`${window.location.origin}/request/${data.request.token}`)
+    } finally { setGenerating(false) }
+  }
+
+  const copy = () => {
+    navigator.clipboard.writeText(link)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const reset = () => { setLink(''); setTitle(''); setArea(''); setMessage(''); setDirectReportId('') }
+
+  if (link) {
+    return (
+      <div className="space-y-5">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
+          <CheckCircle size={24} className="text-green-500 mx-auto mb-2" />
+          <p className="text-sm font-semibold text-gray-900">Request link ready</p>
+          <p className="text-xs text-gray-500 mt-0.5">Send this to the person you want the report from</p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+          <p className="text-xs font-medium text-gray-500">Shareable link</p>
+          <div className="flex gap-2">
+            <input readOnly value={link}
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-700 bg-gray-50 focus:outline-none" />
+            <button onClick={copy}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors">
+              {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy</>}
+            </button>
+          </div>
+        </div>
+        <button onClick={reset}
+          className="w-full border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+          Create another request
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={generate} className="space-y-5">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">Report title <span className="text-red-400">*</span></label>
+          <input type="text" value={title} onChange={e => setTitle(e.target.value)} required
+            placeholder="e.g. Q1 Engineering Update"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">Business area <span className="text-red-400">*</span></label>
+          <select value={area} onChange={e => setArea(e.target.value)} required
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
+            <option value="">Select area…</option>
+            {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+        <div onClick={loadDirects}>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">From direct report <span className="text-gray-400 font-normal">(optional)</span></label>
+          <select value={directReportId} onChange={e => setDirectReportId(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
+            <option value="">Not specified</option>
+            {directs.map(d => <option key={d.id} value={d.id}>{d.name} — {d.title}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">Message to recipient <span className="text-gray-400 font-normal">(optional)</span></label>
+          <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3}
+            placeholder="e.g. Please include your pipeline numbers and any blockers for this quarter."
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none" />
+        </div>
+      </div>
+      <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs text-gray-500 leading-relaxed">
+        A unique link will be generated. The recipient can open it in any browser — no account or login required.
+      </div>
+      <button type="submit" disabled={!title || !area || generating}
+        className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+        {generating ? <><Loader2 size={14} className="animate-spin" />Generating…</> : <><Link2 size={14} />Generate request link</>}
+      </button>
+    </form>
+  )
+}

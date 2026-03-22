@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/db'
+import { parseJsonSafe } from '@/lib/utils'
+import type { Metric, Insight, Question } from '@/lib/utils'
 import { FileText, Upload } from 'lucide-react'
 import Link from 'next/link'
 import OverviewShell from '@/app/overview/OverviewShell'
@@ -7,15 +9,6 @@ import OnePagerTab from '@/app/overview/OnePagerTab'
 import type { OnePagerReport } from '@/app/overview/OnePagerTab'
 
 export const dynamic = 'force-dynamic'
-
-interface Metric { label: string; value: string; status?: string }
-interface Insight { type: string; text: string }
-interface Question { text: string; why: string; priority: string }
-
-function safeJson<T>(s: string | null | undefined, fallback: T): T {
-  if (!s) return fallback
-  try { return JSON.parse(s) as T } catch { return fallback }
-}
 
 /** Monday of the week containing `date` (UTC) */
 function weekStart(date: Date): number {
@@ -89,9 +82,9 @@ export default async function OverviewPage({
       title: r.title,
       area: r.area,
       summary: r.summary,
-      metrics: safeJson<Metric[]>(r.metrics, []),
-      insights: safeJson<Insight[]>(r.insights, []),
-      questions: safeJson<Question[]>(r.questions, []),
+      metrics: parseJsonSafe<Metric[]>(r.metrics, []),
+      insights: parseJsonSafe<Insight[]>(r.insights, []),
+      questions: parseJsonSafe<Question[]>(r.questions, []),
       createdAt: r.createdAt.toISOString(),
       directName: r.directReport?.name,
       directTitle: r.directReport?.title,
@@ -126,15 +119,15 @@ export default async function OverviewPage({
   const resolvedFlagItems: ResolvedItem[] = []
 
   for (const r of recent.slice(0, 10)) {
-    safeJson<Insight[]>(r.insights, [])
+    parseJsonSafe<Insight[]>(r.insights, [])
       .filter(i => i.type === 'risk' || i.type === 'anomaly')
       .forEach(i => topInsights.push({ text: i.text, type: i.type, reportTitle: r.title, reportId: r.id }))
 
-    safeJson<Question[]>(r.questions, [])
+    parseJsonSafe<Question[]>(r.questions, [])
       .filter(q => q.priority === 'high')
       .forEach(q => topQuestions.push({ text: q.text, reportTitle: r.title, directName: r.directReport?.name, reportId: r.id }))
 
-    safeJson<string[]>(r.resolvedFlags, [])
+    parseJsonSafe<string[]>(r.resolvedFlags, [])
       .forEach(text => resolvedFlagItems.push({ text, area: r.area, reportId: r.id }))
   }
 
@@ -143,7 +136,7 @@ export default async function OverviewPage({
     '',
     'AREAS:',
     ...activeAreas.map(r => {
-      const metrics = safeJson<Metric[]>(r.metrics, []).slice(0, 4)
+      const metrics = parseJsonSafe<Metric[]>(r.metrics, []).slice(0, 4)
       return `- ${r.area}: ${r.summary ?? r.title}${metrics.length ? '\n  Metrics: ' + metrics.map(m => `${m.label} ${m.value}`).join(', ') : ''}`
     }),
   ]
@@ -167,7 +160,7 @@ export default async function OverviewPage({
       area: r.area,
       title: r.title,
       summary: r.summary,
-      metrics: safeJson<Metric[]>(r.metrics, []),
+      metrics: parseJsonSafe<Metric[]>(r.metrics, []),
       createdAt: r.createdAt.toISOString(),
     })),
     topInsights: topInsights.slice(0, 5),

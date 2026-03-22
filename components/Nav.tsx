@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Trash2 } from 'lucide-react'
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
@@ -22,6 +22,7 @@ const links = [
 
 export default function Nav() {
   const pathname = usePathname()
+  const router = useRouter()
   const { shutdown } = useShutdown()
   const { open: dispatchOpen } = useDispatch()
   const [confirmingShutdown, setConfirmingShutdown] = useState(false)
@@ -73,6 +74,19 @@ export default function Nav() {
           {/* Power off — right side */}
           <div className="flex items-center gap-1 shrink-0 ml-2">
             <div className="w-px h-4 bg-gray-200" />
+            {confirmingShutdown && (
+              <>
+                <button
+                  onClick={() => { setConfirmingShutdown(false); router.push('/settings#danger') }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  title="Uninstall Operator"
+                >
+                  <Trash2 size={12} />
+                  <span className="hidden sm:inline">Uninstall</span>
+                </button>
+                <div className="w-px h-4 bg-gray-200" />
+              </>
+            )}
             <button
               onClick={handleShutdown}
               title={confirmingShutdown ? 'Click again to confirm shutdown' : 'Power off'}
@@ -84,7 +98,7 @@ export default function Nav() {
               )}
             >
               <Power size={13} />
-              {confirmingShutdown && <span className="hidden sm:inline">Confirm</span>}
+              {confirmingShutdown && <span className="hidden sm:inline">Shut down</span>}
             </button>
           </div>
 

@@ -7,6 +7,8 @@ interface DispatchContextType {
   setOpen: (open: boolean) => void
   aiContext: string
   setAiContext: (ctx: string) => void
+  pendingMessage: string
+  setPendingMessage: (msg: string) => void
 }
 
 const DispatchContext = createContext<DispatchContextType>({
@@ -14,13 +16,16 @@ const DispatchContext = createContext<DispatchContextType>({
   setOpen: () => {},
   aiContext: '',
   setAiContext: () => {},
+  pendingMessage: '',
+  setPendingMessage: () => {},
 })
 
 export function DispatchProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [aiContext, setAiContext] = useState('')
+  const [pendingMessage, setPendingMessage] = useState('')
   return (
-    <DispatchContext.Provider value={{ open, setOpen, aiContext, setAiContext }}>
+    <DispatchContext.Provider value={{ open, setOpen, aiContext, setAiContext, pendingMessage, setPendingMessage }}>
       {children}
     </DispatchContext.Provider>
   )

@@ -1,15 +1,9 @@
 import { prisma } from '@/lib/db'
+import { parseJsonSafe } from '@/lib/utils'
+import type { Metric, Insight } from '@/lib/utils'
 import DispatchPageClient from './DispatchPageClient'
 
 export const dynamic = 'force-dynamic'
-
-interface Metric { label: string; value: string; status?: string }
-interface Insight { type: string; text: string }
-
-function safeJson<T>(s: string | null | undefined, fallback: T): T {
-  if (!s) return fallback
-  try { return JSON.parse(s) as T } catch { return fallback }
-}
 
 export default async function DispatchPage() {
   const [chats, reports, directs] = await Promise.all([
@@ -24,7 +18,7 @@ export default async function DispatchPage() {
   const activeAreas = Object.values(areaMap)
   const topFlags: string[] = []
   for (const r of reports.slice(0, 10)) {
-    safeJson<Insight[]>(r.insights, [])
+    parseJsonSafe<Insight[]>(r.insights, [])
       .filter(i => i.type === 'risk' || i.type === 'anomaly')
       .forEach(i => topFlags.push(`[${i.type}] ${i.text}`))
   }
@@ -33,14 +27,14 @@ export default async function DispatchPage() {
     '',
     'AREAS:',
     ...activeAreas.map(r => {
-      const metrics = safeJson<Metric[]>(r.metrics, []).slice(0, 4)
+      const metrics = parseJsonSafe<Metric[]>(r.metrics, []).slice(0, 4)
       return `- ${r.area}: ${r.summary ?? r.title}${metrics.length ? '\n  Metrics: ' + metrics.map(m => `${m.label} ${m.value}`).join(', ') : ''}`
     }),
     ...(topFlags.length ? ['', 'ACTIVE FLAGS:', ...topFlags.slice(0, 5).map(f => `- ${f}`)] : []),
   ]
 
   const serialized = chats.map(c => {
-    const messages = safeJson<Array<{ role: string; content: string }>>(c.messages, [])
+    const messages = parseJsonSafe<Array<{ role: string; content: string }>>(c.messages, [])
     return {
       id: c.id,
       title: c.title,

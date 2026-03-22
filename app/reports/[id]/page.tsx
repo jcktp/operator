@@ -1,31 +1,14 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { formatDate, formatRelativeDate, formatFileSize, cn } from '@/lib/utils'
+import { formatDate, formatRelativeDate, formatFileSize, cn, parseJsonSafe } from '@/lib/utils'
+import type { Metric, Insight, Question } from '@/lib/utils'
 import { AreaBadge, InsightTypeBadge, StatusBadge } from '@/components/Badge'
 import { ArrowLeft, FileText, Calendar, User, HelpCircle, TrendingUp, AlertTriangle, GitCompare, Clock } from 'lucide-react'
 import DeleteReportButton from './DeleteButton'
+import DispatchReportButton from './DispatchReportButton'
+import ReportContent from './ReportContent'
 import RawContent from './RawContent'
-
-interface Metric {
-  label: string
-  value: string
-  context?: string
-  trend?: 'up' | 'down' | 'flat' | 'unknown'
-  status?: 'positive' | 'negative' | 'neutral' | 'warning'
-}
-
-interface Insight {
-  type: 'observation' | 'anomaly' | 'risk' | 'opportunity'
-  text: string
-  area?: string
-}
-
-interface Question {
-  text: string
-  why: string
-  priority: 'high' | 'medium' | 'low'
-}
 
 interface ComparisonChange {
   metric: string
@@ -62,15 +45,10 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     select: { id: true, title: true, createdAt: true, summary: true, comparison: true },
   })
 
-  let metrics: Metric[] = []
-  let insights: Insight[] = []
-  let questions: Question[] = []
-  let comparison: Comparison | null = null
-
-  try { metrics = JSON.parse(report.metrics ?? '[]') } catch {}
-  try { insights = JSON.parse(report.insights ?? '[]') } catch {}
-  try { questions = JSON.parse(report.questions ?? '[]') } catch {}
-  try { comparison = report.comparison ? JSON.parse(report.comparison) : null } catch {}
+  const metrics    = parseJsonSafe<Metric[]>(report.metrics, [])
+  const insights   = parseJsonSafe<Insight[]>(report.insights, [])
+  const questions  = parseJsonSafe<Question[]>(report.questions, [])
+  const comparison = parseJsonSafe<Comparison | null>(report.comparison, null)
 
   const highQuestions = questions.filter(q => q.priority === 'high')
   const otherQuestions = questions.filter(q => q.priority !== 'high')
@@ -120,7 +98,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="space-y-8 max-w-3xl">
+    <ReportContent>
       {/* Back */}
       <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors">
         <ArrowLeft size={14} />
@@ -159,7 +137,19 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        <DeleteReportButton id={report.id} />
+        <div className="flex items-center gap-2 shrink-0">
+          <DispatchReportButton
+            reportId={report.id}
+            reportTitle={report.title}
+            reportContext={[
+              `Report: "${report.title}" (${report.area})`,
+              report.summary ? `Summary: ${report.summary}` : '',
+              metrics.length ? `Key metrics: ${metrics.slice(0, 6).map(m => `${m.label} ${m.value}`).join(', ')}` : '',
+              insights.length ? `Insights: ${insights.map(i => `[${i.type}] ${i.text}`).join(' | ')}` : '',
+            ].filter(Boolean).join('\n')}
+          />
+          <DeleteReportButton id={report.id} />
+        </div>
       </div>
 
       {/* Summary */}
@@ -341,7 +331,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
             {history.map(prev => {
               let prevComparison: Comparison | null = null
-              try { prevComparison = prev.comparison ? JSON.parse(prev.comparison) : null } catch {}
+              prevComparison = parseJsonSafe<Comparison | null>(prev.comparison, null)
               return (
                 <Link
                   key={prev.id}
@@ -379,6 +369,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </div>
         </details>
       </section>
-    </div>
+    </ReportContent>
   )
 }

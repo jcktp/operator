@@ -47,6 +47,33 @@ export const AREAS = [
   'Other',
 ]
 
+export function parseJsonSafe<T>(s: string | null | undefined, fallback: T): T {
+  if (!s) return fallback
+  try { return JSON.parse(s) as T } catch { return fallback }
+}
+
+// ── Shared report data types ─────────────────────────────────────────────────
+
+export interface Metric {
+  label: string
+  value: string
+  context?: string
+  trend?: 'up' | 'down' | 'flat' | 'unknown'
+  status?: 'positive' | 'negative' | 'neutral' | 'warning'
+}
+
+export interface Insight {
+  type: 'observation' | 'anomaly' | 'risk' | 'opportunity'
+  text: string
+  area?: string
+}
+
+export interface Question {
+  text: string
+  why: string
+  priority: 'high' | 'medium' | 'low'
+}
+
 export const AREA_COLORS: Record<string, string> = {
   Finance: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'HR & People': 'bg-violet-50 text-violet-700 border-violet-200',

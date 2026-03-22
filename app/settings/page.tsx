@@ -1,69 +1,20 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { CheckCircle, Loader2, AlertCircle, Circle, Download, Trash2, ExternalLink, Zap, Server, RefreshCw } from 'lucide-react'
+import { CheckCircle, Loader2, Download, Server, Zap, Trash2, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CLOUD_PROVIDERS, type AIProvider, type CloudProviderId, type PullState, type TestState } from './settingsTypes'
+import ModelPullOverlay from './ModelPullOverlay'
+import OllamaConfig from './OllamaConfig'
+import CloudProviderConfig from './CloudProviderConfig'
 
-const DEFAULT_MODELS = [
-  { id: 'llama3.2:3b', label: 'Llama 3.2 3B', note: 'Recommended — fast, good quality' },
-  { id: 'llama3.2:1b', label: 'Llama 3.2 1B', note: 'Fastest, lightest' },
-  { id: 'qwen2.5:3b', label: 'Qwen 2.5 3B', note: 'Great at structured output' },
-  { id: 'gemma2:2b', label: 'Gemma 2 2B', note: 'Small and capable' },
-  { id: 'mistral:7b', label: 'Mistral 7B', note: 'Best quality, needs more RAM' },
-  { id: 'phi3.5', label: 'Phi 3.5', note: 'Microsoft small model' },
-]
-
-const CLOUD_PROVIDERS = [
-  {
-    id: 'anthropic' as const,
-    label: 'Anthropic',
-    model: 'claude-haiku-4-5-20251001',
-    placeholder: 'sk-ant-...',
-    docsUrl: 'https://console.anthropic.com/',
-    docsLabel: 'Get key at console.anthropic.com',
-    note: 'Best reasoning quality. Fast Haiku model used.',
-  },
-  {
-    id: 'openai' as const,
-    label: 'OpenAI',
-    model: 'gpt-4o-mini',
-    placeholder: 'sk-...',
-    docsUrl: 'https://platform.openai.com/api-keys',
-    docsLabel: 'Get key at platform.openai.com',
-    note: 'GPT-4o mini — fast and affordable.',
-  },
-  {
-    id: 'groq' as const,
-    label: 'Groq',
-    model: 'llama-3.1-8b-instant',
-    placeholder: 'gsk_...',
-    docsUrl: 'https://console.groq.com/keys',
-    docsLabel: 'Get key at console.groq.com',
-    note: 'Extremely fast inference. Generous free tier.',
-  },
-  {
-    id: 'google' as const,
-    label: 'Google Gemini',
-    model: 'gemini-1.5-flash',
-    placeholder: 'AIza...',
-    docsUrl: 'https://aistudio.google.com/app/apikey',
-    docsLabel: 'Get key at aistudio.google.com',
-    note: 'Gemini 1.5 Flash — large context window.',
-  },
-]
-
-type CloudProviderId = typeof CLOUD_PROVIDERS[number]['id']
-type AIProvider = 'ollama' | CloudProviderId
-
-interface PullState {
-  active: boolean
-  status: string
-  progress: number
-  error?: string
-  done: boolean
+async function saveSetting(key: string, value: string) {
+  await fetch('/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, value }),
+  })
 }
-
-type TestState = 'idle' | 'testing' | 'ok' | 'error'
 
 export default function SettingsPage() {
   const [ollamaHost, setOllamaHost] = useState('http://localhost:11434')
@@ -75,45 +26,27 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'ok' | 'error' | 'idle'>('idle')
-  const [ollamaAvailableModels, setOllamaAvailableModels] = useState<string[]>([])
   const [pull, setPull] = useState<PullState>({ active: false, status: '', progress: 0, done: false })
 
-  // Dynamic model list
-  const [suggestedModels, setSuggestedModels] = useState(DEFAULT_MODELS)
-  const [refreshingModels, setRefreshingModels] = useState(false)
-
-  const refreshModels = async () => {
-    setRefreshingModels(true)
-    try {
-      const res = await fetch('/api/models-refresh')
-      const data = await res.json()
-      if (data.models) setSuggestedModels(data.models)
-    } catch {}
-    setRefreshingModels(false)
-  }
-
-  // AI provider
+  const [webAccess, setWebAccess] = useState(true)
+  const [uninstallPhase, setUninstallPhase] = useState<'idle' | 'confirming' | 'running' | 'done'>('idle')
+  const dangerRef = useRef<HTMLDivElement>(null)
   const [aiProvider, setAiProvider] = useState<AIProvider>('ollama')
   const [savedProvider, setSavedProvider] = useState<AIProvider>('ollama')
-  const [apiKeys, setApiKeys] = useState<Record<CloudProviderId, string>>({
-    anthropic: '', openai: '', groq: '', google: '',
-  })
-  const [testState, setTestState] = useState<Record<CloudProviderId, TestState>>({
-    anthropic: 'idle', openai: 'idle', groq: 'idle', google: 'idle',
-  })
-  const [testError, setTestError] = useState<Record<CloudProviderId, string>>({
-    anthropic: '', openai: '', groq: '', google: '',
-  })
-  const [availableModels, setAvailableModels] = useState<Record<CloudProviderId, string[]>>({
-    anthropic: [], openai: [], groq: [], google: [],
-  })
-  const [selectedModels, setSelectedModels] = useState<Record<CloudProviderId, string>>({
-    anthropic: '', openai: '', groq: '', google: '',
-  })
+  const [apiKeys, setApiKeys] = useState<Record<CloudProviderId, string>>({ anthropic: '', openai: '', groq: '', google: '' })
+  const [testState, setTestState] = useState<Record<CloudProviderId, TestState>>({ anthropic: 'idle', openai: 'idle', groq: 'idle', google: 'idle' })
+  const [testError, setTestError] = useState<Record<CloudProviderId, string>>({ anthropic: '', openai: '', groq: '', google: '' })
+  const [availableModels, setAvailableModels] = useState<Record<CloudProviderId, string[]>>({ anthropic: [], openai: [], groq: [], google: [] })
+  const [selectedModels, setSelectedModels] = useState<Record<CloudProviderId, string>>({ anthropic: '', openai: '', groq: '', google: '' })
 
   useEffect(() => {
-    fetch('/api/settings').then(r => r.json()).then(data => {
+    if (window.location.hash === '#danger') {
+      setTimeout(() => dangerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then((data: { settings?: Record<string, string> }) => {
       const s = data.settings ?? {}
       setOllamaHost(s.ollama_host ?? 'http://localhost:11434')
       setOllamaModel(s.ollama_model ?? 'llama3.2:3b')
@@ -122,36 +55,13 @@ export default function SettingsPage() {
       setCompanyName(s.company_name ?? '')
       const provider = (s.ai_provider ?? 'ollama') as AIProvider
       setAiProvider(provider)
+      setWebAccess(s.ollama_web_access !== 'false')
       setSavedProvider(provider)
-      setApiKeys({
-        anthropic: s.anthropic_key ?? '',
-        openai: s.openai_key ?? '',
-        groq: s.groq_key ?? '',
-        google: s.google_key ?? '',
-      })
-      setSelectedModels({
-        anthropic: s.anthropic_model ?? '',
-        openai: s.openai_model ?? '',
-        groq: s.groq_model ?? '',
-        google: s.google_model ?? '',
-      })
+      setApiKeys({ anthropic: s.anthropic_key ?? '', openai: s.openai_key ?? '', groq: s.groq_key ?? '', google: s.google_key ?? '' })
+      setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '' })
       setLoading(false)
     })
   }, [])
-
-  const checkOllama = async () => {
-    setOllamaStatus('checking')
-    try {
-      const res = await fetch('/api/ollama-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ host: ollamaHost }),
-      })
-      const data = await res.json()
-      if (res.ok) { setOllamaStatus('ok'); setOllamaAvailableModels(data.models ?? []) }
-      else setOllamaStatus('error')
-    } catch { setOllamaStatus('error') }
-  }
 
   const testProvider = async (provider: CloudProviderId) => {
     const key = apiKeys[provider]
@@ -159,18 +69,12 @@ export default function SettingsPage() {
     setTestState(s => ({ ...s, [provider]: 'testing' }))
     setTestError(s => ({ ...s, [provider]: '' }))
     try {
-      const res = await fetch('/api/ai-test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, key }),
-      })
-      const data = await res.json()
+      const res = await fetch('/api/ai-test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider, key }) })
+      const data = await res.json() as { models?: string[]; defaultModel?: string; error?: string }
       if (res.ok) {
         setTestState(s => ({ ...s, [provider]: 'ok' }))
         setAvailableModels(m => ({ ...m, [provider]: data.models ?? [] }))
-        if (data.defaultModel && !selectedModels[provider]) {
-          setSelectedModels(m => ({ ...m, [provider]: data.defaultModel }))
-        }
+        if (data.defaultModel && !selectedModels[provider]) setSelectedModels(m => ({ ...m, [provider]: data.defaultModel! }))
         setAiProvider(provider)
       } else {
         setTestState(s => ({ ...s, [provider]: 'error' }))
@@ -182,43 +86,38 @@ export default function SettingsPage() {
     }
   }
 
+  const pullModel = (model: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+      setPull({ active: true, status: 'Starting…', progress: 0, done: false })
+      fetch('/api/model-pull', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model }) })
+        .then(async res => {
+          if (!res.body) { reject(new Error('No stream')); return }
+          const reader = res.body.getReader()
+          const decoder = new TextDecoder()
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            for (const line of decoder.decode(value, { stream: true }).split('\n')) {
+              if (!line.startsWith('data: ')) continue
+              try {
+                const data = JSON.parse(line.slice(6)) as { error?: string; status?: string; progress?: number }
+                if (data.error) { reject(new Error(data.error)); return }
+                setPull(p => ({ ...p, status: data.status ?? p.status, progress: data.progress ?? p.progress }))
+                if (data.progress === 100 || data.status === 'success') {
+                  setPull(p => ({ ...p, progress: 100, status: 'Done', done: true }))
+                  setTimeout(() => setPull(p => ({ ...p, active: false })), 1500)
+                  resolve(); return
+                }
+              } catch {}
+            }
+          }
+          resolve()
+        })
+        .catch(reject)
+    })
+
   const selectedModel = customModel.trim() || ollamaModel
   const modelChanged = aiProvider === 'ollama' && selectedModel !== savedModel
-
-  const pullModel = (model: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      setPull({ active: true, status: 'Starting…', progress: 0, done: false })
-      fetch('/api/model-pull', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model }),
-      }).then(async res => {
-        if (!res.body) { reject(new Error('No stream')); return }
-        const reader = res.body.getReader()
-        const decoder = new TextDecoder()
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          const text = decoder.decode(value, { stream: true })
-          for (const line of text.split('\n')) {
-            if (!line.startsWith('data: ')) continue
-            try {
-              const data = JSON.parse(line.slice(6))
-              if (data.error) { reject(new Error(data.error)); return }
-              setPull(p => ({ ...p, status: data.status ?? p.status, progress: data.progress ?? p.progress }))
-              if (data.progress === 100 || data.status === 'success') {
-                setPull(p => ({ ...p, progress: 100, status: 'Done', done: true }))
-                setTimeout(() => setPull(p => ({ ...p, active: false })), 1500)
-                resolve()
-                return
-              }
-            } catch {}
-          }
-        }
-        resolve()
-      }).catch(reject)
-    })
-  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -227,47 +126,32 @@ export default function SettingsPage() {
     if (modelChanged) {
       try {
         await pullModel(selectedModel)
-        if (savedModel) {
-          await fetch('/api/model-remove', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: savedModel }),
-          }).catch(() => {})
-        }
+        if (savedModel) await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedModel }) }).catch(() => {})
       } catch (err) {
         setPull(p => ({ ...p, active: true, error: String(err), status: 'Failed' }))
-        setSaving(false)
-        return
+        setSaving(false); return
       }
     }
 
-    // If switching away from Ollama to a cloud provider, remove local model
-    const switchingToCloud = aiProvider !== 'ollama' && savedProvider === 'ollama'
-    if (switchingToCloud && savedModel) {
-      await fetch('/api/model-remove', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: savedModel }),
-      }).catch(() => {})
+    if (aiProvider !== 'ollama' && savedProvider === 'ollama' && savedModel) {
+      await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedModel }) }).catch(() => {})
     }
 
-    const activeCloudProvider = CLOUD_PROVIDERS.find(p => p.id === aiProvider)
-    const keyForProvider = activeCloudProvider ? apiKeys[activeCloudProvider.id] : ''
-
     await Promise.all([
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'ollama_host', value: ollamaHost }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'ollama_model', value: selectedModel }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'ceo_name', value: ceoName }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'company_name', value: companyName }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'ai_provider', value: aiProvider }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'anthropic_key', value: apiKeys.anthropic }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'openai_key', value: apiKeys.openai }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'groq_key', value: apiKeys.groq }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'google_key', value: apiKeys.google }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'anthropic_model', value: selectedModels.anthropic }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'openai_model', value: selectedModels.openai }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'groq_model', value: selectedModels.groq }) }),
-      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'google_model', value: selectedModels.google }) }),
+      saveSetting('ollama_host', ollamaHost),
+      saveSetting('ollama_model', selectedModel),
+      saveSetting('ollama_web_access', webAccess ? 'true' : 'false'),
+      saveSetting('ceo_name', ceoName),
+      saveSetting('company_name', companyName),
+      saveSetting('ai_provider', aiProvider),
+      saveSetting('anthropic_key', apiKeys.anthropic),
+      saveSetting('openai_key', apiKeys.openai),
+      saveSetting('groq_key', apiKeys.groq),
+      saveSetting('google_key', apiKeys.google),
+      saveSetting('anthropic_model', selectedModels.anthropic),
+      saveSetting('openai_model', selectedModels.openai),
+      saveSetting('groq_model', selectedModels.groq),
+      saveSetting('google_model', selectedModels.google),
     ])
 
     setSavedModel(selectedModel)
@@ -277,44 +161,16 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2000)
   }
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={20} className="animate-spin text-gray-400" /></div>
-  }
+  if (loading) return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={20} className="animate-spin text-gray-400" /></div>
 
   return (
     <div className="max-w-lg space-y-6">
-      {/* Model pull overlay */}
       {pull.active && (
-        <div className="fixed inset-0 z-50 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl space-y-5">
-            <div className="flex items-center gap-3">
-              {pull.done
-                ? <CheckCircle size={20} className="text-green-600 shrink-0" />
-                : pull.error
-                ? <AlertCircle size={20} className="text-red-500 shrink-0" />
-                : <Download size={20} className="text-gray-600 shrink-0 animate-bounce" />
-              }
-              <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  {pull.done ? 'Model ready' : pull.error ? 'Pull failed' : `Pulling ${selectedModel}`}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">{pull.error ?? pull.status}</p>
-              </div>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-              <div className="h-full bg-gray-900 rounded-full transition-all duration-500" style={{ width: `${pull.progress}%` }} />
-            </div>
-            <div className="flex items-center justify-between text-xs text-gray-400">
-              <span>{pull.progress}%</span>
-              {!pull.done && !pull.error && <span>This may take a few minutes on first run</span>}
-              {(pull.done || pull.error) && (
-                <button onClick={() => setPull(p => ({ ...p, active: false }))} className="text-gray-500 hover:text-gray-700 font-medium">
-                  Close
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <ModelPullOverlay
+          pull={pull}
+          selectedModel={selectedModel}
+          onClose={() => setPull(p => ({ ...p, active: false }))}
+        />
       )}
 
       <div>
@@ -342,40 +198,21 @@ export default function SettingsPage() {
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
           <div>
             <h2 className="text-sm font-semibold text-gray-900">AI Provider</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Local keeps data on your machine. Cloud providers offer better quality with your own API key.
-            </p>
+            <p className="text-xs text-gray-500 mt-0.5">Local keeps data on your machine. Cloud providers offer better quality with your own API key.</p>
           </div>
 
-          {/* Provider tabs */}
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setAiProvider('ollama')}
-              className={cn(
-                'flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors text-left',
-                aiProvider === 'ollama'
-                  ? 'border-gray-900 bg-gray-50 text-gray-900'
-                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
-              )}
-            >
+            <button type="button" onClick={() => setAiProvider('ollama')}
+              className={cn('flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors text-left',
+                aiProvider === 'ollama' ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
               <Server size={14} className="shrink-0" />
               <span>Local (Ollama)</span>
               {savedProvider === 'ollama' && <span className="ml-auto text-xs text-blue-600 font-medium">active</span>}
             </button>
-
             {CLOUD_PROVIDERS.map(p => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setAiProvider(p.id)}
-                className={cn(
-                  'flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors text-left',
-                  aiProvider === p.id
-                    ? 'border-gray-900 bg-gray-50 text-gray-900'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                )}
-              >
+              <button key={p.id} type="button" onClick={() => setAiProvider(p.id)}
+                className={cn('flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors text-left',
+                  aiProvider === p.id ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
                 <Zap size={14} className="shrink-0" />
                 <span>{p.label}</span>
                 {savedProvider === p.id && <span className="ml-auto text-xs text-blue-600 font-medium">active</span>}
@@ -383,178 +220,29 @@ export default function SettingsPage() {
             ))}
           </div>
 
-          {/* Local Ollama config */}
           {aiProvider === 'ollama' && (
-            <div className="space-y-4 pt-1 border-t border-gray-100">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Ollama host</label>
-                <div className="flex gap-2">
-                  <input type="text" value={ollamaHost} onChange={e => setOllamaHost(e.target.value)}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900" />
-                  <button type="button" onClick={checkOllama}
-                    className="shrink-0 border border-gray-200 text-gray-600 text-xs font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-                    {ollamaStatus === 'checking' ? <Loader2 size={13} className="animate-spin" /> : 'Test'}
-                  </button>
-                </div>
-                {ollamaStatus === 'ok' && (
-                  <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
-                    <CheckCircle size={12} /> Connected · {ollamaAvailableModels.length} model{ollamaAvailableModels.length !== 1 ? 's' : ''} available
-                  </p>
-                )}
-                {ollamaStatus === 'error' && (
-                  <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                    <AlertCircle size={12} /> Can't reach Ollama. Is it running?
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-medium text-gray-600">
-                    Model
-                    {savedModel && savedProvider === 'ollama' && (
-                      <span className="ml-2 text-gray-400 font-normal">current: <code className="font-mono">{savedModel}</code></span>
-                    )}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={refreshModels}
-                    disabled={refreshingModels}
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                    title="Refresh model list"
-                  >
-                    <RefreshCw size={11} className={refreshingModels ? 'animate-spin' : ''} />
-                    Refresh list
-                  </button>
-                </div>
-                <div className="space-y-1.5">
-                  {suggestedModels.map(m => {
-                    const isPulled = ollamaAvailableModels.some(am => am.startsWith(m.id.split(':')[0]))
-                    const isSelected = ollamaModel === m.id && !customModel
-                    const isCurrent = m.id === savedModel && savedProvider === 'ollama'
-                    return (
-                      <label key={m.id} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                        <div className="mt-0.5 shrink-0">
-                          {isSelected
-                            ? <div className="w-3.5 h-3.5 rounded-full bg-gray-900 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-white" /></div>
-                            : <Circle size={14} className="text-gray-300" />
-                          }
-                        </div>
-                        <input type="radio" name="model" value={m.id} checked={isSelected}
-                          onChange={() => { setOllamaModel(m.id); setCustomModel('') }} className="sr-only" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-sm font-medium text-gray-900">{m.label}</span>
-                            <code className="text-xs text-gray-400 font-mono">{m.id}</code>
-                          </div>
-                          <p className="text-xs text-gray-400">{m.note}</p>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {isCurrent && <span className="text-xs text-blue-600 font-medium">active</span>}
-                          {isPulled && !isCurrent && <span className="text-xs text-green-600 font-medium">pulled</span>}
-                        </div>
-                      </label>
-                    )
-                  })}
-                </div>
-
-                <div className="mt-3">
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Or enter any model name</label>
-                  <input type="text" value={customModel} onChange={e => setCustomModel(e.target.value)}
-                    placeholder="e.g. deepseek-r1:1.5b"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900" />
-                </div>
-              </div>
-
-              {modelChanged && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-xs text-amber-700 flex items-start gap-2">
-                  <Download size={13} className="shrink-0 mt-0.5" />
-                  <span>
-                    Saving will pull <strong>{selectedModel}</strong> and remove <strong>{savedModel}</strong>.
-                    This may take a few minutes.
-                  </span>
-                </div>
-              )}
-
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Pull a model manually:</p>
-                <code className="text-xs font-mono text-gray-700">ollama pull {selectedModel}</code>
-              </div>
-            </div>
+            <OllamaConfig
+              ollamaHost={ollamaHost} setOllamaHost={setOllamaHost}
+              ollamaModel={ollamaModel} setOllamaModel={setOllamaModel}
+              customModel={customModel} setCustomModel={setCustomModel}
+              savedModel={savedModel} savedProvider={savedProvider}
+              modelChanged={modelChanged} selectedModel={selectedModel}
+              webAccess={webAccess} setWebAccess={setWebAccess}
+            />
           )}
 
-          {/* Cloud provider config */}
           {CLOUD_PROVIDERS.map(p => aiProvider === p.id && (
-            <div key={p.id} className="space-y-4 pt-1 border-t border-gray-100">
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-gray-600">API Key</label>
-                  <a href={p.docsUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">
-                    {p.docsLabel} <ExternalLink size={10} />
-                  </a>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="password"
-                    value={apiKeys[p.id]}
-                    onChange={e => setApiKeys(k => ({ ...k, [p.id]: e.target.value }))}
-                    placeholder={p.placeholder}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => testProvider(p.id)}
-                    disabled={!apiKeys[p.id].trim() || testState[p.id] === 'testing'}
-                    className="shrink-0 border border-gray-200 text-gray-600 text-xs font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40"
-                  >
-                    {testState[p.id] === 'testing' ? <Loader2 size={13} className="animate-spin" /> : 'Test'}
-                  </button>
-                </div>
-
-                {testState[p.id] === 'ok' && (
-                  <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
-                    <CheckCircle size={12} /> Connected · {availableModels[p.id].length} model{availableModels[p.id].length !== 1 ? 's' : ''} available
-                  </p>
-                )}
-                {testState[p.id] === 'error' && (
-                  <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                    <AlertCircle size={12} /> {testError[p.id]}
-                  </p>
-                )}
-              </div>
-
-              {/* Model picker — shown after models are fetched */}
-              {availableModels[p.id].length > 0 && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Model</label>
-                  <select
-                    value={selectedModels[p.id]}
-                    onChange={e => setSelectedModels(m => ({ ...m, [p.id]: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
-                  >
-                    {availableModels[p.id].map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
-                <p className="text-xs font-medium text-gray-600">About this provider</p>
-                <p className="text-xs text-gray-500">{p.note}</p>
-                <p className="text-xs text-gray-400">Model used: <code className="font-mono">{p.model}</code></p>
-              </div>
-
-              {savedProvider === 'ollama' && savedModel && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-xs text-amber-700 flex items-start gap-2">
-                  <Trash2 size={13} className="shrink-0 mt-0.5" />
-                  <span>
-                    Saving will switch to {p.label} and remove local model <strong>{savedModel}</strong>.
-                  </span>
-                </div>
-              )}
-            </div>
+            <CloudProviderConfig
+              key={p.id}
+              activeProvider={p.id}
+              savedProvider={savedProvider}
+              savedModel={savedModel}
+              apiKeys={apiKeys} setApiKeys={setApiKeys}
+              testState={testState} testError={testError}
+              availableModels={availableModels}
+              selectedModels={selectedModels} setSelectedModels={setSelectedModels}
+              onTest={testProvider}
+            />
           ))}
         </div>
 
@@ -562,12 +250,9 @@ export default function SettingsPage() {
           className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
           {saving
             ? <><Loader2 size={14} className="animate-spin" /> {modelChanged ? 'Pulling model…' : 'Saving…'}</>
-            : saved
-            ? <><CheckCircle size={14} /> Saved</>
-            : modelChanged
-            ? <><Download size={14} /> Save & switch model</>
-            : 'Save settings'
-          }
+            : saved ? <><CheckCircle size={14} /> Saved</>
+            : modelChanged ? <><Download size={14} /> Save & switch model</>
+            : 'Save settings'}
         </button>
       </form>
 
@@ -577,10 +262,92 @@ export default function SettingsPage() {
           Operator is fully local. Reports are saved to <code className="font-mono">~/Documents/Operator Reports/</code>.
           {savedProvider === 'ollama'
             ? ' All analysis runs via Ollama on your machine — no data is sent externally.'
-            : ` Analysis is sent to ${CLOUD_PROVIDERS.find(p => p.id === savedProvider)?.label ?? savedProvider} via their API.`
-          }
+            : ` Analysis is sent to ${CLOUD_PROVIDERS.find(p => p.id === savedProvider)?.label ?? savedProvider} via their API.`}
         </p>
       </div>
+
+      {/* Danger zone */}
+      <div ref={dangerRef} id="danger" className="border-t border-red-100 pt-6">
+        <h2 className="text-sm font-semibold text-red-600 mb-1">Danger zone</h2>
+        <p className="text-xs text-gray-400 mb-4">Irreversible actions. Proceed with caution.</p>
+
+        {uninstallPhase === 'idle' && (
+          <button
+            type="button"
+            onClick={() => setUninstallPhase('confirming')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+          >
+            <Trash2 size={14} /> Uninstall Operator
+          </button>
+        )}
+
+        {uninstallPhase === 'confirming' && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-red-700">This cannot be undone</p>
+                <p className="text-xs text-red-600 mt-1 leading-relaxed">
+                  This will permanently delete:
+                </p>
+                <ul className="text-xs text-red-600 mt-1 space-y-0.5 list-disc list-inside">
+                  <li>All your reports and analysis data</li>
+                  <li>The local Ollama AI model pulled for this app</li>
+                  <li>The entire Operator application folder</li>
+                </ul>
+                <p className="text-xs text-red-500 mt-2">
+                  Ollama itself will <strong>not</strong> be uninstalled. Only the model this app downloaded will be removed.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setUninstallPhase('idle')}
+                className="flex-1 border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setUninstallPhase('running')
+                  try { await fetch('/api/uninstall', { method: 'POST' }) } catch {}
+                  setUninstallPhase('done')
+                }}
+                className="flex-1 bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash2 size={13} /> Yes, delete everything
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Uninstall overlay */}
+      {(uninstallPhase === 'running' || uninstallPhase === 'done') && (
+        <div className="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center">
+          <div className="text-center space-y-6 max-w-sm w-full px-8">
+            {uninstallPhase === 'running' ? (
+              <>
+                <div className="w-10 h-10 mx-auto rounded-full border-2 border-red-900 border-t-red-400 animate-spin" />
+                <p className="text-gray-200 text-sm font-medium">Uninstalling Operator…</p>
+                <p className="text-gray-500 text-xs">Removing models and data</p>
+              </>
+            ) : (
+              <>
+                <div className="w-10 h-10 mx-auto rounded-full bg-gray-800 flex items-center justify-center">
+                  <Trash2 size={16} className="text-gray-400" />
+                </div>
+                <p className="text-gray-200 text-sm font-medium">Operator uninstalled</p>
+                <p className="text-gray-500 text-xs leading-relaxed">
+                  All data and the app folder have been deleted.<br />You can close this tab.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

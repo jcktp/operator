@@ -1,16 +1,11 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
-import { formatRelativeDate, formatDate, AREAS, AREA_COLORS } from '@/lib/utils'
+import { formatRelativeDate, formatDate, AREAS, AREA_COLORS, parseJsonSafe } from '@/lib/utils'
+import type { Metric } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import { FileText, ArrowRight, GitCompare, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import LibraryClearButton from './LibraryClearButton'
-
-interface Metric {
-  label: string
-  value: string
-  status?: 'positive' | 'negative' | 'neutral' | 'warning'
-}
 
 interface Comparison {
   headline: string
@@ -130,12 +125,9 @@ export default async function LibraryPage({
             )}
 
             {reports.map((report, i) => {
-              let metrics: Metric[] = []
-              let comparison: Comparison | null = null
-              let questions: { text: string; priority: string }[] = []
-              try { metrics = JSON.parse(report.metrics ?? '[]') } catch {}
-              try { comparison = report.comparison ? JSON.parse(report.comparison) : null } catch {}
-              try { questions = JSON.parse(report.questions ?? '[]') } catch {}
+              const metrics    = parseJsonSafe<Metric[]>(report.metrics, [])
+              const comparison = parseJsonSafe<Comparison | null>(report.comparison, null)
+              const questions  = parseJsonSafe<{ text: string; priority: string }[]>(report.questions, [])
 
               const highQs = questions.filter(q => q.priority === 'high')
 

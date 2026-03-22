@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
-import { cn, formatRelativeDate } from '@/lib/utils'
+import { cn, formatRelativeDate, parseJsonSafe } from '@/lib/utils'
+import type { Metric, Insight, Question } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import Link from 'next/link'
 import {
@@ -16,9 +17,6 @@ export const dynamic = 'force-dynamic'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
-interface Metric { label: string; value: string; status?: 'positive' | 'negative' | 'neutral' | 'warning' }
-interface Question { text: string; why: string; priority: 'high' | 'medium' | 'low' }
-interface Insight { type: 'observation' | 'anomaly' | 'risk' | 'opportunity'; text: string }
 interface ComparisonChange {
   metric: string; previous: string; current: string
   direction: 'improved' | 'declined' | 'unchanged' | 'new' | 'removed'
@@ -26,11 +24,6 @@ interface ComparisonChange {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-function parseJson<T>(s: string | null | undefined, fallback: T): T {
-  if (!s) return fallback
-  try { return JSON.parse(s) as T } catch { return fallback }
-}
 
 function areaHealthScore(changes: ComparisonChange[]): number {
   if (!changes.length) return 50
@@ -82,8 +75,8 @@ export default async function DashboardPage({
 
   const areaCards = Object.entries(areaGroups).map(([area, reports]) => {
     const latest = reports[0]
-    const metrics = parseJson<Metric[]>(latest.metrics, [])
-    const changes = parseJson<{ changes: ComparisonChange[] }>(latest.comparison, { changes: [] }).changes
+    const metrics = parseJsonSafe<Metric[]>(latest.metrics, [])
+    const changes = parseJsonSafe<{ changes: ComparisonChange[] }>(latest.comparison, { changes: [] }).changes
     const health = areaHealthScore(changes)
     return { area, reports, latest, metrics: metrics.slice(0, 4), changes, health, count: reports.length }
   }).sort((a, b) => b.health - a.health || a.area.localeCompare(b.area))
@@ -97,12 +90,12 @@ export default async function DashboardPage({
   const allQuestions: QuestionItem[] = []
 
   for (const r of allReports.slice(0, 20)) {
-    parseJson<Insight[]>(r.insights, [])
+    parseJsonSafe<Insight[]>(r.insights, [])
       .filter(i => i.type === 'risk' || i.type === 'anomaly')
       .slice(0, 3)
       .forEach(i => allFlags.push({ text: i.text, area: r.area, type: i.type, reportId: r.id }))
 
-    parseJson<Question[]>(r.questions, [])
+    parseJsonSafe<Question[]>(r.questions, [])
       .filter(q => q.priority === 'high')
       .slice(0, 2)
       .forEach(q => allQuestions.push({ text: q.text, area: r.area, directName: r.directReport?.name, reportId: r.id }))
@@ -139,7 +132,7 @@ export default async function DashboardPage({
   // Insight type breakdown
   const insightCounts: Record<string, number> = {}
   for (const r of allReports) {
-    parseJson<Insight[]>(r.insights, []).forEach(i => {
+    parseJsonSafe<Insight[]>(r.insights, []).forEach(i => {
       insightCounts[i.type] = (insightCounts[i.type] || 0) + 1
     })
   }
@@ -154,7 +147,7 @@ export default async function DashboardPage({
   const metricsByArea: MetricAreaDatum[] = areaCards.map(({ area, reports }) => {
     let positive = 0, negative = 0, warning = 0, neutral = 0
     for (const r of reports) {
-      parseJson<Metric[]>(r.metrics, []).forEach(m => {
+      parseJsonSafe<Metric[]>(r.metrics, []).forEach(m => {
         if (m.status === 'positive') positive++
         else if (m.status === 'negative') negative++
         else if (m.status === 'warning') warning++
@@ -167,10 +160,10 @@ export default async function DashboardPage({
   // ── Export data ──────────────────────────────────────────────────────────
 
   const exportRows: ExportRow[] = allReports.map(r => {
-    const metrics = parseJson<Metric[]>(r.metrics, [])
-    const insights = parseJson<Insight[]>(r.insights, [])
-    const questions = parseJson<Question[]>(r.questions, [])
-    const changes = parseJson<{ changes: ComparisonChange[] }>(r.comparison, { changes: [] }).changes
+    const metrics = parseJsonSafe<Metric[]>(r.metrics, [])
+    const insights = parseJsonSafe<Insight[]>(r.insights, [])
+    const questions = parseJsonSafe<Question[]>(r.questions, [])
+    const changes = parseJsonSafe<{ changes: ComparisonChange[] }>(r.comparison, { changes: [] }).changes
     const health = areaHealthScore(changes)
     return {
       title: r.title,
