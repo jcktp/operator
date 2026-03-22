@@ -15,7 +15,7 @@ const ALLOWED_KEYS = new Set([
   'openai_key', 'openai_model',
   'groq_key', 'groq_model',
   'google_key', 'google_model',
-  'ceo_name', 'company_name',
+  'ceo_name', 'company_name', 'user_role',
   'user_memory',
 ])
 

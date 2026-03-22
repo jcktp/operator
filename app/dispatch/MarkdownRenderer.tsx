@@ -3,10 +3,16 @@ import { Download } from 'lucide-react'
 // ── Inline renderer ──────────────────────────────────────────────────────────
 
 function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
+  // Order matters: markdown links before bare URLs, bold/italic/code last
+  const parts = text.split(/(\[[^\]]+\]\(https?:\/\/[^)]+\)|https?:\/\/[^\s)>]+|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
   return (
     <>
       {parts.map((p, i) => {
+        // [label](url)
+        const mdLink = p.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/)
+        if (mdLink) return <a key={i} href={mdLink[2]} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline underline-offset-2 hover:text-blue-800 transition-colors">{mdLink[1]}</a>
+        // bare https:// URL
+        if (/^https?:\/\//.test(p)) return <a key={i} href={p} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline underline-offset-2 hover:text-blue-800 transition-colors break-all">{p}</a>
         if (/^\*\*[^*]+\*\*$/.test(p)) return <strong key={i}>{p.slice(2, -2)}</strong>
         if (/^\*[^*]+\*$/.test(p)) return <em key={i}>{p.slice(1, -1)}</em>
         if (/^`[^`]+`$/.test(p)) return <code key={i} className="bg-black/10 rounded px-0.5 text-[0.82em] font-mono">{p.slice(1, -1)}</code>

@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [customModel, setCustomModel] = useState('')
   const [ceoName, setCeoName] = useState('')
   const [companyName, setCompanyName] = useState('')
+  const [userRole, setUserRole] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -53,6 +54,7 @@ export default function SettingsPage() {
       setSavedModel(s.ollama_model ?? 'llama3.2:3b')
       setCeoName(s.ceo_name ?? '')
       setCompanyName(s.company_name ?? '')
+      setUserRole(s.user_role ?? '')
       const provider = (s.ai_provider ?? 'ollama') as AIProvider
       setAiProvider(provider)
       setWebAccess(s.ollama_web_access !== 'false')
@@ -143,6 +145,7 @@ export default function SettingsPage() {
       saveSetting('ollama_web_access', webAccess ? 'true' : 'false'),
       saveSetting('ceo_name', ceoName),
       saveSetting('company_name', companyName),
+      saveSetting('user_role', userRole),
       saveSetting('ai_provider', aiProvider),
       saveSetting('anthropic_key', apiKeys.anthropic),
       saveSetting('openai_key', apiKeys.openai),
@@ -191,6 +194,12 @@ export default function SettingsPage() {
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Company name</label>
             <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Corp"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Your role</label>
+            <input type="text" value={userRole} onChange={e => setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            <p className="text-[11px] text-gray-400 mt-1">AI personas will tailor their tone and focus to your role.</p>
           </div>
         </div>
 
