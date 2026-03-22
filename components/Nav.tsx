@@ -41,7 +41,7 @@ export default function Nav() {
         <div className="flex items-center justify-between h-14">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group shrink-0 mr-3">
+          <Link href="/" className="flex items-center gap-2 group shrink-0 mr-8">
             <WalkieTalkie />
             <span
               className="text-xl text-gray-900"
