@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { Bot, Database, Activity, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type Level = 'ok' | 'warn' | 'error' | 'loading'
@@ -12,34 +13,25 @@ interface HealthData {
   cpu: { load: number; loadPct: number; status: Level }
 }
 
-const DOT: Record<Level, string> = {
-  ok:      'bg-green-400',
-  warn:    'bg-amber-400',
-  error:   'bg-red-400',
-  loading: 'bg-gray-300',
-}
-
-const LABEL: Record<Level, string> = {
-  ok:      'text-green-600',
+const ICON_COLOR: Record<Level, string> = {
+  ok:      'text-gray-400',
   warn:    'text-amber-500',
   error:   'text-red-500',
-  loading: 'text-gray-400',
+  loading: 'text-gray-300',
 }
 
-const TEXT: Record<Level, string> = {
-  ok:      'All systems operational',
-  warn:    'Attention needed',
-  error:   'Issue detected',
-  loading: 'Checking…',
+const TEXT_COLOR: Record<Level, string> = {
+  ok:      'text-gray-400',
+  warn:    'text-amber-500',
+  error:   'text-red-500',
+  loading: 'text-gray-300',
 }
 
-function Row({ label, value, status }: { label: string; value: string; status: Level }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-gray-400">{label}</span>
-      <span className={cn('font-medium', LABEL[status])}>{value}</span>
-    </div>
-  )
+const DETAIL_COLOR: Record<Level, string> = {
+  ok:      'text-gray-300',
+  warn:    'text-amber-400',
+  error:   'text-red-400',
+  loading: 'text-gray-500',
 }
 
 export default function StatusIndicator() {
@@ -60,7 +52,6 @@ export default function StatusIndicator() {
     return () => clearInterval(id)
   }, [])
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
@@ -70,75 +61,125 @@ export default function StatusIndicator() {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  const status = data?.status ?? 'loading'
-  const pulsing = status === 'warn' || status === 'error'
+  const aiStatus = data?.ai.status ?? 'loading'
+  const memStatus = data?.memory.status ?? 'loading'
+  const cpuStatus = data?.cpu.status ?? 'loading'
+
+  const aiLabel = data
+    ? data.ai.status === 'ok' ? data.ai.label : data.ai.label
+    : '…'
+  const memLabel = data ? `${data.memory.heap} MB` : '…'
+  const cpuLabel = data ? `${data.cpu.loadPct}%` : '…'
+
+  const hasIssue = data && data.status !== 'ok'
 
   return (
     <div ref={ref} className="relative flex items-center">
       <button
         onClick={() => setOpen(v => !v)}
-        title={TEXT[status]}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
+        className={cn(
+          'flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors hover:bg-gray-50',
+          hasIssue && 'bg-amber-50 hover:bg-amber-100'
+        )}
+        title="System status — click for details"
       >
-        <span className="relative flex h-2 w-2">
-          {pulsing && (
-            <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', DOT[status])} />
-          )}
-          <span className={cn('relative inline-flex rounded-full h-2 w-2', DOT[status])} />
+        {/* AI */}
+        <span className="flex items-center gap-1">
+          <Bot size={12} className={cn(ICON_COLOR[aiStatus], aiStatus !== 'ok' && 'animate-pulse')} />
+          <span className={cn('text-[11px] font-medium leading-none', TEXT_COLOR[aiStatus])}>{aiLabel}</span>
         </span>
+
+        {/* Memory */}
+        <span className="flex items-center gap-1">
+          <Database size={11} className={ICON_COLOR[memStatus]} />
+          <span className={cn('text-[11px] font-medium leading-none', TEXT_COLOR[memStatus])}>{memLabel}</span>
+        </span>
+
+        {/* CPU — only show when not ok to save space, always show value */}
+        <span className="flex items-center gap-1">
+          <Activity size={11} className={ICON_COLOR[cpuStatus]} />
+          <span className={cn('text-[11px] font-medium leading-none', TEXT_COLOR[cpuStatus])}>{cpuLabel}</span>
+        </span>
+
+        {hasIssue && <AlertTriangle size={11} className="text-amber-500" />}
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-52 bg-gray-950 text-white rounded-xl shadow-2xl p-3 space-y-2.5">
-          {/* Overall */}
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-800">
-            <span className={cn('relative flex h-2 w-2 shrink-0')}>
-              {pulsing && <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', DOT[status])} />}
-              <span className={cn('relative inline-flex rounded-full h-2 w-2', DOT[status])} />
-            </span>
-            <span className={cn('text-xs font-medium', LABEL[status])}>{TEXT[status]}</span>
+      {open && data && (
+        <div className="absolute right-0 top-full mt-2 z-50 w-60 bg-gray-950 text-white rounded-xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className={cn(
+            'px-4 py-3 text-xs font-semibold',
+            data.status === 'ok' ? 'bg-gray-900 text-gray-300' : data.status === 'warn' ? 'bg-amber-950 text-amber-300' : 'bg-red-950 text-red-300'
+          )}>
+            {data.status === 'ok' ? 'All systems operational' : data.status === 'warn' ? 'Attention needed' : 'Issue detected'}
           </div>
 
-          {data ? (
-            <div className="space-y-1.5 text-xs">
-              <Row
-                label={data.ai.label}
-                value={data.ai.status === 'ok' ? data.ai.detail : data.ai.detail || 'Offline'}
-                status={data.ai.status}
-              />
-              <Row
-                label="Memory"
-                value={`${data.memory.rss} MB`}
-                status={data.memory.status}
-              />
-              <Row
-                label="CPU load"
-                value={`${data.cpu.loadPct}%`}
-                status={data.cpu.status}
-              />
+          <div className="p-3 space-y-3">
+            {/* AI row */}
+            <div className="flex items-start gap-2.5">
+              <Bot size={13} className={cn('mt-0.5 shrink-0', ICON_COLOR[data.ai.status])} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-white">{data.ai.label}</span>
+                  <span className={cn('text-[11px]', DETAIL_COLOR[data.ai.status])}>
+                    {data.ai.status === 'ok' ? 'Online' : 'Offline'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-500 mt-0.5">{data.ai.detail}</p>
+              </div>
             </div>
-          ) : (
-            <p className="text-xs text-gray-500">Loading…</p>
-          )}
 
-          {/* Warnings */}
-          {data && (
-            <div className="space-y-1 pt-1 border-t border-gray-800">
+            {/* Memory row */}
+            <div className="flex items-start gap-2.5">
+              <Database size={13} className={cn('mt-0.5 shrink-0', ICON_COLOR[data.memory.status])} />
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-white">Memory</span>
+                  <span className={cn('text-[11px]', DETAIL_COLOR[data.memory.status])}>
+                    {data.memory.heap} MB heap
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  {data.memory.rss} MB total process · heap used shown
+                </p>
+              </div>
+            </div>
+
+            {/* CPU row */}
+            <div className="flex items-start gap-2.5">
+              <Activity size={13} className={cn('mt-0.5 shrink-0', ICON_COLOR[data.cpu.status])} />
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-white">CPU load</span>
+                  <span className={cn('text-[11px]', DETAIL_COLOR[data.cpu.status])}>
+                    {data.cpu.loadPct}%
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-500 mt-0.5">1-min average · {data.cpu.load} load</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning messages */}
+          {data.status !== 'ok' && (
+            <div className="border-t border-gray-800 px-3 py-2.5 space-y-1">
               {data.ai.status !== 'ok' && (
-                <p className="text-[11px] text-amber-400">
+                <p className="text-[11px] text-amber-400 flex items-start gap-1.5">
+                  <AlertTriangle size={10} className="mt-0.5 shrink-0" />
                   {data.ai.status === 'error' ? `${data.ai.label} is not reachable — check Settings.` : `${data.ai.label}: ${data.ai.detail}`}
                 </p>
               )}
               {data.memory.status !== 'ok' && (
-                <p className="text-[11px] text-amber-400">
-                  {data.memory.status === 'error' ? 'Memory usage critical — consider restarting.' : 'Memory usage is high.'}
+                <p className="text-[11px] text-amber-400 flex items-start gap-1.5">
+                  <AlertTriangle size={10} className="mt-0.5 shrink-0" />
+                  {data.memory.status === 'error' ? 'Heap memory is very high — consider restarting.' : 'Heap memory usage is elevated.'}
                 </p>
               )}
               {data.cpu.status !== 'ok' && (
-                <p className="text-[11px] text-amber-400">High CPU load — system may be slow.</p>
-              )}
-              {data.status === 'ok' && (
-                <p className="text-[11px] text-gray-500">No issues detected.</p>
+                <p className="text-[11px] text-amber-400 flex items-start gap-1.5">
+                  <AlertTriangle size={10} className="mt-0.5 shrink-0" />
+                  High CPU load — the system may feel slow.
+                </p>
               )}
             </div>
           )}

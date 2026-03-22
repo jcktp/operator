@@ -12,10 +12,12 @@ function worst(...levels: Level[]): Level {
 
 export async function GET() {
   // ── App memory ────────────────────────────────────────────────────────────
+  // Use heapUsed, not RSS — RSS includes the entire Next.js/Turbopack process
+  // which is 500-800 MB even at idle in dev mode and is not a useful signal.
   const mem = process.memoryUsage()
-  const rss = Math.round(mem.rss / 1024 / 1024)       // MB
-  const heap = Math.round(mem.heapUsed / 1024 / 1024) // MB
-  const memStatus: Level = rss > 1000 ? 'error' : rss > 500 ? 'warn' : 'ok'
+  const rss = Math.round(mem.rss / 1024 / 1024)       // MB — shown for info only
+  const heap = Math.round(mem.heapUsed / 1024 / 1024) // MB — used for thresholds
+  const memStatus: Level = heap > 900 ? 'error' : heap > 500 ? 'warn' : 'ok'
 
   // ── CPU load ──────────────────────────────────────────────────────────────
   const load1 = loadavg()[0]
