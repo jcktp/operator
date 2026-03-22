@@ -35,6 +35,12 @@ body {
   to   { width: 100% }
 }
 
+@keyframes loading {
+  0%   { transform: translateX(-100%); width: 40% }
+  50%  { transform: translateX(150%);  width: 40% }
+  100% { transform: translateX(150%);  width: 40% }
+}
+
 /* Tiptap editor content */
 .tiptap-editor { font-size: 0.875rem; line-height: 1.7; color: #374151; }
 .tiptap-editor h1 { font-size: 1.125rem; font-weight: 700; color: #111827; margin: 1.25rem 0 0.5rem; }

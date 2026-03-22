@@ -12,6 +12,7 @@ cd "$(dirname "$0")"
 PORT=3000
 PID_FILE="/tmp/operator-next.pid"
 LOG_FILE="/tmp/operator.log"
+STATUS_FILE="/tmp/operator-startup.json"
 
 # ── detect OS ─────────────────────────────────────────────────────────────────
 OS="$(uname -s)"
@@ -30,16 +31,29 @@ open_browser() {
   esac
 }
 
+# Write current status to the file the /starting page polls
+set_status() {
+  local step_msg="$1"
+  local detail_msg="${2:-}"
+  printf '{"step":"%s","detail":"%s","ready":false}' "$step_msg" "$detail_msg" > "$STATUS_FILE"
+}
+
+set_ready() {
+  printf '{"step":"Ready","detail":"","ready":true}' > "$STATUS_FILE"
+}
+
+# Clear any previous run's status
+rm -f "$STATUS_FILE"
+
 bold "\nOperator — starting up (${PLATFORM})\n"
 
-# ── 1. Homebrew (macOS only — needed for Node, Ollama, cloudflared) ───────────
+# ── 1. Homebrew (macOS only) ──────────────────────────────────────────────────
 if [ "$PLATFORM" = "macOS" ]; then
   if ! command -v brew &>/dev/null; then
     step "Homebrew not found — installing..."
     echo -e "${YELLOW}  You may be prompted for your password.${NC}"
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
       || error "Failed to install Homebrew. Install it manually from https://brew.sh then re-run this script."
-    # Add brew to PATH for the rest of this session (Apple Silicon vs Intel paths differ)
     if [ -f /opt/homebrew/bin/brew ]; then
       eval "$(/opt/homebrew/bin/brew shellenv)"
     elif [ -f /usr/local/bin/brew ]; then
@@ -48,7 +62,6 @@ if [ "$PLATFORM" = "macOS" ]; then
     step "Homebrew installed"
   else
     step "Homebrew found ($(brew --version | head -1))"
-    # Ensure brew is on PATH even if it was installed in a non-standard location
     if [ -f /opt/homebrew/bin/brew ]; then
       eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
@@ -110,7 +123,7 @@ if ! command -v ollama &>/dev/null; then
 fi
 step "Ollama found"
 
-# ── 4. cloudflared (optional — enables remote report submissions) ─────────────
+# ── 4. cloudflared (optional) ─────────────────────────────────────────────────
 step "Checking cloudflared (optional — needed for remote report submissions)..."
 if command -v cloudflared &>/dev/null; then
   step "cloudflared found"
@@ -119,7 +132,6 @@ else
   CLOUDFLARED_OK=false
   case "$PLATFORM" in
     macOS)
-      # Homebrew is already installed and on PATH by this point (step 1 above)
       brew install cloudflared && CLOUDFLARED_OK=true \
         || warn "brew install cloudflared failed — remote submissions unavailable."
       ;;
@@ -144,22 +156,19 @@ else
       ;;
     Windows)
       warn "On Windows, install cloudflared manually: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
-      warn "Remote submissions will not be available until cloudflared is installed."
       ;;
     *)
-      warn "Unknown platform — skipping cloudflared. Remote submissions unavailable."
+      warn "Unknown platform — skipping cloudflared."
       ;;
   esac
-  if [ "$CLOUDFLARED_OK" = true ]; then
-    step "cloudflared installed"
-  fi
+  if [ "$CLOUDFLARED_OK" = true ]; then step "cloudflared installed"; fi
 fi
 
 # ── 5. Environment file ───────────────────────────────────────────────────────
 if [ ! -f ".env.local" ]; then
   step "Creating .env.local (first run)..."
-  cat > .env.local <<'EOF'
-DATABASE_URL="file:./prisma/dev.db"
+  cat > .env.local <<EOF
+DATABASE_URL="file:$(pwd)/prisma/dev.db"
 
 # Optional: set API keys here as an alternative to the Settings page in the app.
 # Keys entered in Settings are stored in the local database and take precedence.
@@ -177,7 +186,7 @@ fi
 
 # ── 6. Dependencies ───────────────────────────────────────────────────────────
 if [ ! -d "node_modules" ]; then
-  step "Installing dependencies (first run)..."
+  step "Installing dependencies (first run — this takes a minute)..."
   npm install --loglevel=error
 else
   step "Dependencies already installed"
@@ -185,11 +194,41 @@ fi
 
 # ── 7. Database ───────────────────────────────────────────────────────────────
 step "Setting up database..."
-npx prisma migrate deploy 2>/dev/null || true
+# Explicitly export DATABASE_URL so prisma CLI can find it regardless of which
+# .env file it reads (prisma reads .env; Next.js uses .env.local)
+export DATABASE_URL="file:$(pwd)/prisma/dev.db"
+npx prisma migrate deploy || error "Database migration failed"
 npx prisma generate 2>/dev/null || true
 step "Database ready"
 
-# ── 8. Ollama server ──────────────────────────────────────────────────────────
+# ── 8. Start Next.js ─────────────────────────────────────────────────────────
+set_status "Starting server…"
+step "Starting Operator server..."
+npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
+NEXT_PID=$!
+echo $NEXT_PID > "$PID_FILE"
+
+# ── 9. Wait for Next.js, then open browser immediately ───────────────────────
+step "Waiting for server to be ready..."
+ATTEMPTS=0
+MAX=60
+until curl -sf "http://localhost:$PORT" &>/dev/null; do
+  sleep 1
+  ATTEMPTS=$((ATTEMPTS + 1))
+  if [ $ATTEMPTS -ge $MAX ]; then
+    error "Server didn't start in time. Check $LOG_FILE"
+  fi
+  if ! kill -0 $NEXT_PID 2>/dev/null; then
+    error "Server crashed. Check $LOG_FILE"
+  fi
+done
+
+# Open the browser to the loading screen right away
+step "Opening Operator in your browser..."
+open_browser "http://localhost:$PORT/starting"
+
+# ── 10. Ollama server (browser is already open, user sees loading screen) ─────
+set_status "Starting AI engine…"
 if pgrep -x "ollama" &>/dev/null; then
   step "Ollama already running"
 else
@@ -200,8 +239,7 @@ else
   step "Ollama server started"
 fi
 
-# ── 9. Model ──────────────────────────────────────────────────────────────────
-# Read saved model from database (falls back to default)
+# ── 11. Model ─────────────────────────────────────────────────────────────────
 DEFAULT_MODEL="llama3.2:3b"
 MODEL=$(node -e "
 const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
@@ -220,34 +258,14 @@ if ollama list 2>/dev/null | grep -q "^${MODEL}"; then
   step "Model already available"
 else
   step "Pulling $MODEL — this may take a few minutes on first run..."
+  set_status "Downloading AI model…" "$MODEL — this only happens once"
   ollama pull "$MODEL" || error "Failed to pull model $MODEL"
   step "Model $MODEL ready"
 fi
 
-# ── 10. Start Next.js ────────────────────────────────────────────────────────
-step "Starting Operator server..."
-npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
-NEXT_PID=$!
-echo $NEXT_PID > "$PID_FILE"
-
-# ── 11. Wait for server to be ready ──────────────────────────────────────────
-step "Waiting for server to be ready..."
-ATTEMPTS=0
-MAX=60
-until curl -sf "http://localhost:$PORT" &>/dev/null; do
-  sleep 1
-  ATTEMPTS=$((ATTEMPTS + 1))
-  if [ $ATTEMPTS -ge $MAX ]; then
-    error "Server didn't start in time. Check $LOG_FILE"
-  fi
-  if ! kill -0 $NEXT_PID 2>/dev/null; then
-    error "Server crashed. Check $LOG_FILE"
-  fi
-done
-
-# ── 12. Open browser ─────────────────────────────────────────────────────────
-step "Opening Operator in your browser..."
-open_browser "http://localhost:$PORT"
+# ── 12. All done — signal the loading page to redirect ───────────────────────
+set_ready
+step "Ready!"
 
 bold "\nOperator is running at http://localhost:${PORT}"
 echo -e "Press ${BOLD}Ctrl+C${NC} to stop, or use the power button in the app.\n"
@@ -258,6 +276,7 @@ cleanup() {
   step "Shutting down..."
   [ -f "$PID_FILE" ] && kill "$(cat $PID_FILE)" 2>/dev/null; rm -f "$PID_FILE"
   pkill -x "ollama" 2>/dev/null || true
+  rm -f "$STATUS_FILE"
   step "Stopped. Goodbye."
   exit 0
 }
