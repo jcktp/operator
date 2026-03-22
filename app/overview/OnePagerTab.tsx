@@ -1,0 +1,156 @@
+import Link from 'next/link'
+import { AreaBadge } from '@/components/Badge'
+import { formatRelativeDate } from '@/lib/utils'
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
+import OnePagerClient from '@/app/one-pager/OnePagerClient'
+
+interface Metric { label: string; value: string; status?: string }
+interface Insight { type: string; text: string }
+interface Question { text: string; why: string; priority: string }
+
+export interface OnePagerReport {
+  id: string
+  title: string
+  area: string
+  summary: string | null
+  metrics: Metric[]
+  insights: Insight[]
+  questions: Question[]
+  createdAt: string
+  directName?: string
+  directTitle?: string
+}
+
+interface Props {
+  reports: OnePagerReport[]
+  weekIndex: number
+  totalWeeks: number
+  weekLabel: string
+}
+
+export default function OnePagerTab({ reports, weekIndex, totalWeeks, weekLabel }: Props) {
+  const prevHref = weekIndex < totalWeeks - 1 ? `/?tab=one-pager&week=${weekIndex + 1}` : null
+  const nextHref = weekIndex > 0 ? `/?tab=one-pager&week=${weekIndex - 1}` : null
+
+  return (
+    <div className="max-w-4xl space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <ArrowLeft size={11} /> Overview
+            </Link>
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-900">One Pager</h1>
+          <p className="text-gray-500 text-sm mt-0.5">{reports.length} report{reports.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Week navigation */}
+          <div className="flex items-center gap-1 border border-gray-200 rounded-lg overflow-hidden text-sm">
+            {prevHref ? (
+              <Link href={prevHref} className="px-2 py-1.5 hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-900">
+                <ChevronLeft size={14} />
+              </Link>
+            ) : (
+              <span className="px-2 py-1.5 text-gray-200 cursor-not-allowed"><ChevronLeft size={14} /></span>
+            )}
+            <span className="px-3 py-1.5 text-xs font-medium text-gray-700 border-x border-gray-200">{weekLabel}</span>
+            {nextHref ? (
+              <Link href={nextHref} className="px-2 py-1.5 hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-900">
+                <ChevronRight size={14} />
+              </Link>
+            ) : (
+              <span className="px-2 py-1.5 text-gray-200 cursor-not-allowed"><ChevronRight size={14} /></span>
+            )}
+          </div>
+          <OnePagerClient reportCount={reports.length} />
+        </div>
+      </div>
+
+      {reports.length === 0 ? (
+        <div className="text-center py-16 text-gray-400 text-sm">No reports for this week.</div>
+      ) : (
+        <div className="space-y-6 print:space-y-8">
+          {reports.map((r, i) => (
+            <div
+              key={r.id}
+              className="bg-white border border-gray-200 rounded-2xl p-6 print:border-gray-300 print:rounded-none print:break-inside-avoid"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <AreaBadge area={r.area} />
+                  {r.directName && (
+                    <span className="text-xs text-gray-500">{r.directName}{r.directTitle ? ` · ${r.directTitle}` : ''}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
+                  <span>#{i + 1}</span>
+                  <span>{formatRelativeDate(new Date(r.createdAt))}</span>
+                </div>
+              </div>
+
+              <h2 className="text-base font-semibold text-gray-900 mb-2">{r.title}</h2>
+
+              {r.summary && (
+                <p className="text-sm text-gray-600 leading-relaxed mb-4">{r.summary}</p>
+              )}
+
+              {r.metrics.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Metrics</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {r.metrics.map((m, mi) => (
+                      <div key={mi} className={`rounded-lg px-3 py-2 ${
+                        m.status === 'positive' ? 'bg-green-50' :
+                        m.status === 'negative' ? 'bg-red-50' :
+                        m.status === 'warning'  ? 'bg-amber-50' : 'bg-gray-50'
+                      }`}>
+                        <p className="text-xs text-gray-400 truncate">{m.label}</p>
+                        <p className={`text-sm font-semibold mt-0.5 ${
+                          m.status === 'positive' ? 'text-green-700' :
+                          m.status === 'negative' ? 'text-red-700' :
+                          m.status === 'warning'  ? 'text-amber-700' : 'text-gray-900'
+                        }`}>{m.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {r.insights.filter(ins => ins.type === 'risk' || ins.type === 'anomaly').length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Flags</p>
+                  <div className="space-y-1">
+                    {r.insights.filter(ins => ins.type === 'risk' || ins.type === 'anomaly').map((ins, ii) => (
+                      <div key={ii} className="flex items-start gap-2 text-sm">
+                        <span className={`font-bold text-xs mt-0.5 shrink-0 ${ins.type === 'risk' ? 'text-red-500' : 'text-amber-500'}`}>
+                          {ins.type === 'risk' ? '⚠' : '!'}
+                        </span>
+                        <span className="text-gray-700">{ins.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {r.questions.filter(q => q.priority === 'high').length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Key questions</p>
+                  <div className="space-y-1">
+                    {r.questions.filter(q => q.priority === 'high').map((q, qi) => (
+                      <p key={qi} className="text-sm text-gray-700">? {q.text}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

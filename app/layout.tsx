@@ -3,6 +3,8 @@ import { DM_Sans, DM_Mono, Caveat } from 'next/font/google'
 import './globals.css'
 import Nav from '@/components/Nav'
 import { ShutdownProvider } from '@/components/ShutdownProvider'
+import { DispatchProvider } from '@/components/DispatchContext'
+import MainLayout from '@/components/MainLayout'
 
 const dmSans = DM_Sans({
   variable: '--font-geist-sans',
@@ -43,8 +45,10 @@ export default function RootLayout({
     <html lang="en" className={`${dmSans.variable} ${dmMono.variable} ${caveat.variable} h-full`}>
       <body className="min-h-full bg-[#fafafa]">
         <ShutdownProvider>
-          <Nav />
-          <main className="pt-24 pb-12 max-w-5xl mx-auto px-4 sm:px-6">{children}</main>
+          <DispatchProvider>
+            <Nav />
+            <MainLayout>{children}</MainLayout>
+          </DispatchProvider>
         </ShutdownProvider>
       </body>
     </html>

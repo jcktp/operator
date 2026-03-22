@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { AreaBadge, InsightTypeBadge, StatusBadge } from '@/components/Badge'
 import { ArrowRight, Upload, AlertTriangle, HelpCircle, MessageSquare, CheckCircle2, FileStack } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
-import DispatchPanel from '@/app/dispatch/DispatchPanel'
+import { useDispatch } from '@/components/DispatchContext'
 
 // ── Serialised data shapes ───────────────────────────────────────────────────
 
@@ -48,13 +48,16 @@ export interface OverviewData {
 // ── Shell ────────────────────────────────────────────────────────────────────
 
 export default function OverviewShell({ data }: { data: OverviewData }) {
-  const [dispatchOpen, setDispatchOpen] = useState(false)
+  const { open: dispatchOpen, setOpen: setDispatchOpen, setAiContext } = useDispatch()
   const { stats, activeAreas, topInsights, topQuestions, resolvedFlagItems, recentReports, context } = data
 
+  useEffect(() => {
+    setAiContext(context)
+  }, [context, setAiContext])
+
   return (
-    <div className={cn('flex gap-5 transition-all duration-300', dispatchOpen ? 'items-start' : '')}>
-      {/* ── Main content ────────────────────────────────────────────────── */}
-      <div className="flex-1 min-w-0 space-y-8">
+    <div>
+      <div className="space-y-8">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -66,14 +69,14 @@ export default function OverviewShell({ data }: { data: OverviewData }) {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href="/one-pager"
+              href="/?tab=one-pager"
               className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
             >
               <FileStack size={13} />
               One Pager
             </Link>
             <button
-              onClick={() => setDispatchOpen(o => !o)}
+              onClick={() => setDispatchOpen(!dispatchOpen)}
               className={cn(
                 'inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors',
                 dispatchOpen
@@ -226,12 +229,6 @@ export default function OverviewShell({ data }: { data: OverviewData }) {
         </section>
       </div>
 
-      {/* ── Dispatch panel ───────────────────────────────────────────────── */}
-      {dispatchOpen && (
-        <div className="w-[360px] shrink-0 sticky top-[88px] h-[calc(100vh-108px)]">
-          <DispatchPanel context={context} onClose={() => setDispatchOpen(false)} />
-        </div>
-      )}
     </div>
   )
 }

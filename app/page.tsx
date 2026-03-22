@@ -3,6 +3,8 @@ import { FileText, Upload } from 'lucide-react'
 import Link from 'next/link'
 import OverviewShell from '@/app/overview/OverviewShell'
 import type { OverviewData } from '@/app/overview/OverviewShell'
+import OnePagerTab from '@/app/overview/OnePagerTab'
+import type { OnePagerReport } from '@/app/overview/OnePagerTab'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,11 +17,32 @@ function safeJson<T>(s: string | null | undefined, fallback: T): T {
   try { return JSON.parse(s) as T } catch { return fallback }
 }
 
-export default async function OverviewPage() {
+/** Monday of the week containing `date` (UTC) */
+function weekStart(date: Date): number {
+  const d = new Date(date)
+  d.setUTCHours(0, 0, 0, 0)
+  const day = d.getUTCDay()
+  d.setUTCDate(d.getUTCDate() - ((day + 6) % 7))
+  return d.getTime()
+}
+
+function weekLabel(ts: number, index: number): string {
+  if (index === 0) return 'Latest'
+  const d = new Date(ts)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) + ' week'
+}
+
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; week?: string }>
+}) {
+  const params = await searchParams
+  const tab = params.tab
+
   const [reports, directs] = await Promise.all([
     prisma.report.findMany({
       orderBy: { createdAt: 'desc' },
-      take: 30,
       include: { directReport: true },
     }),
     prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
@@ -43,14 +66,57 @@ export default async function OverviewPage() {
     )
   }
 
+  // ── One Pager tab ───────────────────────────────────────────────────────────
+  if (tab === 'one-pager') {
+    // Group reports into weekly buckets by Monday of their createdAt week
+    const bucketMap: Map<number, typeof reports> = new Map()
+    for (const r of reports) {
+      const key = weekStart(r.createdAt)
+      if (!bucketMap.has(key)) bucketMap.set(key, [])
+      bucketMap.get(key)!.push(r)
+    }
+    // Sorted newest first
+    const buckets = [...bucketMap.entries()].sort((a, b) => b[0] - a[0])
+
+    const weekIndex = Math.min(
+      Math.max(parseInt(params.week ?? '0', 10), 0),
+      buckets.length - 1
+    )
+    const [bucketTs, bucketReports] = buckets[weekIndex] ?? [Date.now(), []]
+
+    const onePagerReports: OnePagerReport[] = bucketReports.map(r => ({
+      id: r.id,
+      title: r.title,
+      area: r.area,
+      summary: r.summary,
+      metrics: safeJson<Metric[]>(r.metrics, []),
+      insights: safeJson<Insight[]>(r.insights, []),
+      questions: safeJson<Question[]>(r.questions, []),
+      createdAt: r.createdAt.toISOString(),
+      directName: r.directReport?.name,
+      directTitle: r.directReport?.title,
+    }))
+
+    return (
+      <OnePagerTab
+        reports={onePagerReports}
+        weekIndex={weekIndex}
+        totalWeeks={buckets.length}
+        weekLabel={weekLabel(bucketTs, weekIndex)}
+      />
+    )
+  }
+
+  // ── Overview tab ────────────────────────────────────────────────────────────
+  const recent = reports.slice(0, 30)
+
   // Most recent report per area
   const areaMap: Record<string, typeof reports[0]> = {}
-  for (const r of reports) {
+  for (const r of recent) {
     if (!areaMap[r.area]) areaMap[r.area] = r
   }
   const activeAreas = Object.values(areaMap)
 
-  // Flags, questions, resolved flags
   type FlagItem = { text: string; type: string; reportTitle: string; reportId: string }
   type QuestionItem = { text: string; reportTitle: string; directName?: string; reportId: string }
   type ResolvedItem = { text: string; area: string; reportId: string }
@@ -59,7 +125,7 @@ export default async function OverviewPage() {
   const topQuestions: QuestionItem[] = []
   const resolvedFlagItems: ResolvedItem[] = []
 
-  for (const r of reports.slice(0, 10)) {
+  for (const r of recent.slice(0, 10)) {
     safeJson<Insight[]>(r.insights, [])
       .filter(i => i.type === 'risk' || i.type === 'anomaly')
       .forEach(i => topInsights.push({ text: i.text, type: i.type, reportTitle: r.title, reportId: r.id }))
@@ -72,7 +138,6 @@ export default async function OverviewPage() {
       .forEach(text => resolvedFlagItems.push({ text, area: r.area, reportId: r.id }))
   }
 
-  // Build Dispatch context string
   const contextLines: string[] = [
     `Business overview — ${reports.length} reports across ${activeAreas.length} areas.`,
     '',
@@ -108,7 +173,7 @@ export default async function OverviewPage() {
     topInsights: topInsights.slice(0, 5),
     topQuestions: topQuestions.slice(0, 5),
     resolvedFlagItems: resolvedFlagItems.slice(0, 6),
-    recentReports: reports.slice(0, 8).map(r => ({
+    recentReports: recent.slice(0, 8).map(r => ({
       id: r.id,
       title: r.title,
       area: r.area,

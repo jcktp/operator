@@ -7,6 +7,7 @@ import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, Bo
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
+import { useDispatch } from '@/components/DispatchContext'
 
 const links = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -22,6 +23,7 @@ const links = [
 export default function Nav() {
   const pathname = usePathname()
   const { shutdown } = useShutdown()
+  const { open: dispatchOpen } = useDispatch()
   const [confirmingShutdown, setConfirmingShutdown] = useState(false)
 
   const handleShutdown = () => {
@@ -35,7 +37,7 @@ export default function Nav() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className={cn(dispatchOpen ? 'w-3/4' : 'max-w-5xl mx-auto', 'px-4 sm:px-6')}>
         <div className="flex items-center justify-between h-16">
 
           <Link href="/" className="flex items-center gap-2.5 group">
