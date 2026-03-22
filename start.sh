@@ -94,7 +94,65 @@ if ! command -v ollama &>/dev/null; then
 fi
 step "Ollama found"
 
-# ── 3. Environment file ───────────────────────────────────────────────────────
+# ── 3. cloudflared (optional — enables remote report submissions) ─────────────
+step "Checking cloudflared (optional — needed for remote report submissions)..."
+if command -v cloudflared &>/dev/null; then
+  step "cloudflared found"
+else
+  warn "cloudflared not found — will attempt to install..."
+  CLOUDFLARED_OK=false
+  case "$PLATFORM" in
+    macOS)
+      # Ensure Homebrew is available
+      if ! command -v brew &>/dev/null; then
+        step "Homebrew not found — installing Homebrew first..."
+        echo -e "${YELLOW}  This will install Homebrew. You may be prompted for your password.${NC}"
+        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && {
+          # Add brew to PATH (Apple Silicon path differs from Intel)
+          [ -f /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+          [ -f /usr/local/bin/brew ]    && eval "$(/usr/local/bin/brew shellenv)"
+          step "Homebrew installed"
+        } || warn "Could not install Homebrew — skipping cloudflared."
+      fi
+      if command -v brew &>/dev/null; then
+        brew install cloudflared && CLOUDFLARED_OK=true \
+          || warn "brew install cloudflared failed — remote submissions unavailable."
+      fi
+      ;;
+    Linux)
+      # Prefer direct binary download — no sudo/package-manager dependency
+      ARCH="$(uname -m)"
+      case "$ARCH" in
+        x86_64)          CF_ARCH="amd64" ;;
+        aarch64|arm64)   CF_ARCH="arm64" ;;
+        armv7l)          CF_ARCH="arm" ;;
+        *)               CF_ARCH="amd64" ;;
+      esac
+      CF_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}"
+      step "Downloading cloudflared binary (${CF_ARCH})..."
+      if curl -fsSL "$CF_URL" -o /tmp/cloudflared-dl; then
+        sudo install -m 0755 /tmp/cloudflared-dl /usr/local/bin/cloudflared \
+          && CLOUDFLARED_OK=true \
+          || warn "Could not move cloudflared to /usr/local/bin — remote submissions unavailable."
+        rm -f /tmp/cloudflared-dl
+      else
+        warn "Could not download cloudflared — remote submissions unavailable."
+      fi
+      ;;
+    Windows)
+      warn "On Windows, install cloudflared manually from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
+      warn "Remote submissions will not be available until cloudflared is installed."
+      ;;
+    *)
+      warn "Unknown platform — skipping cloudflared. Remote submissions unavailable."
+      ;;
+  esac
+  if [ "$CLOUDFLARED_OK" = true ]; then
+    step "cloudflared installed"
+  fi
+fi
+
+# ── 4. Environment file ───────────────────────────────────────────────────────
 if [ ! -f ".env.local" ]; then
   step "Creating .env.local (first run)..."
   cat > .env.local <<'EOF'
@@ -106,6 +164,8 @@ ANTHROPIC_API_KEY=""
 OPENAI_API_KEY=""
 GOOGLE_API_KEY=""
 GROQ_API_KEY=""
+XAI_API_KEY=""
+PERPLEXITY_API_KEY=""
 EOF
   step ".env.local created"
 else
