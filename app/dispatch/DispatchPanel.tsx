@@ -222,24 +222,30 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
         </div>
       </div>
 
-      {/* Messages */}
-      {/* Persona selector */}
+      {/* Persona selector — locked once chat starts */}
       <div className="flex gap-1 px-3 pt-2.5 pb-0 shrink-0">
-        {PERSONA_LIST.map(p => (
-          <button
-            key={p.id}
-            onClick={() => setPersona(p.id)}
-            title={p.description}
-            className={cn(
-              'flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors',
-              persona === p.id
-                ? 'bg-gray-900 text-white'
-                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
-            )}
-          >
-            {p.name}
-          </button>
-        ))}
+        {PERSONA_LIST.map(p => {
+          const locked = messages.length > 0
+          const active = persona === p.id
+          return (
+            <button
+              key={p.id}
+              onClick={() => !locked && setPersona(p.id)}
+              title={locked && !active ? 'Start a new chat to switch persona' : p.description}
+              disabled={locked && !active}
+              className={cn(
+                'flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                active
+                  ? 'bg-gray-900 text-white'
+                  : locked
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+              )}
+            >
+              {p.name}
+            </button>
+          )
+        })}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
