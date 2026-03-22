@@ -1,17 +1,22 @@
 import { prisma } from '@/lib/db'
-import { AREA_COLORS, cn, formatRelativeDate } from '@/lib/utils'
+import { cn, formatRelativeDate } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import Link from 'next/link'
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, HelpCircle, Activity, ArrowRight, Clock } from 'lucide-react'
+import {
+  TrendingUp, TrendingDown, Minus,
+  AlertTriangle, HelpCircle, Activity, ArrowRight, Clock,
+} from 'lucide-react'
 import DashboardFilters from './DashboardFilters'
+import DashboardCharts from './DashboardCharts'
+import ExportButton from './ExportButton'
+import type { AreaHealthDatum, TimelineDatum, InsightTypeDatum, MetricAreaDatum } from './DashboardCharts'
+import type { ExportRow } from './ExportButton'
 
 export const dynamic = 'force-dynamic'
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────────────────────────
 
-interface Metric {
-  label: string; value: string; status?: 'positive' | 'negative' | 'neutral' | 'warning'
-}
+interface Metric { label: string; value: string; status?: 'positive' | 'negative' | 'neutral' | 'warning' }
 interface Question { text: string; why: string; priority: 'high' | 'medium' | 'low' }
 interface Insight { type: 'observation' | 'anomaly' | 'risk' | 'opportunity'; text: string }
 interface ComparisonChange {
@@ -20,11 +25,7 @@ interface ComparisonChange {
   significance: 'high' | 'medium' | 'low'
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function daysBetween(a: Date, b: Date) {
-  return Math.abs(Math.round((b.getTime() - a.getTime()) / 86400000))
-}
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 function parseJson<T>(s: string | null | undefined, fallback: T): T {
   if (!s) return fallback
@@ -42,7 +43,7 @@ function areaHealthScore(changes: ComparisonChange[]): number {
   return Math.max(0, Math.min(100, score))
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────
+// ── Page ────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage({
   searchParams,
@@ -51,7 +52,6 @@ export default async function DashboardPage({
 }) {
   const { area: filterArea, period: filterPeriod = '30', direct: filterDirect } = await searchParams
 
-  // Date cutoff
   const days = parseInt(filterPeriod) || 30
   const since = filterPeriod === 'all' ? new Date(0) : new Date(Date.now() - days * 86400000)
 
@@ -68,12 +68,11 @@ export default async function DashboardPage({
     prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
   ])
 
-  // All areas for filter pills
   const allAreas = await prisma.report.findMany({
     select: { area: true }, distinct: ['area'], orderBy: { area: 'asc' },
   })
 
-  // ── Aggregate by area ───────────────────────────────────────────────────
+  // ── Aggregate by area ────────────────────────────────────────────────────
 
   const areaGroups: Record<string, typeof allReports> = {}
   for (const r of allReports) {
@@ -86,18 +85,13 @@ export default async function DashboardPage({
     const metrics = parseJson<Metric[]>(latest.metrics, [])
     const changes = parseJson<{ changes: ComparisonChange[] }>(latest.comparison, { changes: [] }).changes
     const health = areaHealthScore(changes)
+    return { area, reports, latest, metrics: metrics.slice(0, 4), changes, health, count: reports.length }
+  }).sort((a, b) => b.health - a.health || a.area.localeCompare(b.area))
 
-    // Status counts from latest metrics
-    const positive = metrics.filter(m => m.status === 'positive').length
-    const negative = metrics.filter(m => m.status === 'negative' || m.status === 'warning').length
-
-    return { area, reports, latest, metrics: metrics.slice(0, 4), changes, health, positive, negative, count: reports.length }
-  }).sort((a, b) => a.health - b.health === 0 ? a.area.localeCompare(b.area) : b.health - a.health)
-
-  // ── Cross-area flags & questions ────────────────────────────────────────
+  // ── Flags & questions ────────────────────────────────────────────────────
 
   type FlagItem = { text: string; area: string; type: string; reportId: string }
-  type QuestionItem = { text: string; area: string; directName?: string; reportId: string; priority: string }
+  type QuestionItem = { text: string; area: string; directName?: string; reportId: string }
 
   const allFlags: FlagItem[] = []
   const allQuestions: QuestionItem[] = []
@@ -111,20 +105,88 @@ export default async function DashboardPage({
     parseJson<Question[]>(r.questions, [])
       .filter(q => q.priority === 'high')
       .slice(0, 2)
-      .forEach(q => allQuestions.push({ text: q.text, area: r.area, directName: r.directReport?.name, reportId: r.id, priority: q.priority }))
+      .forEach(q => allQuestions.push({ text: q.text, area: r.area, directName: r.directReport?.name, reportId: r.id }))
   }
 
-  // ── Summary stats ───────────────────────────────────────────────────────
+  // ── Summary stats ────────────────────────────────────────────────────────
 
   const totalReports = allReports.length
   const areasCount = Object.keys(areaGroups).length
   const flagCount = allFlags.length
   const pendingQuestions = allQuestions.length
-
-  // Overall health: average across areas
   const avgHealth = areaCards.length
     ? Math.round(areaCards.reduce((s, a) => s + a.health, 0) / areaCards.length)
     : 50
+
+  // ── Chart data ───────────────────────────────────────────────────────────
+
+  const areaHealth: AreaHealthDatum[] = areaCards.map(a => ({ area: a.area, health: a.health }))
+
+  // Reports over time — group by date bucket
+  const buckets: Record<string, number> = {}
+  for (const r of [...allReports].reverse()) {
+    const d = new Date(r.createdAt)
+    let key: string
+    if (filterPeriod === 'all' || days >= 90) {
+      key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    } else {
+      key = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    }
+    buckets[key] = (buckets[key] || 0) + 1
+  }
+  const reportsOverTime: TimelineDatum[] = Object.entries(buckets).map(([date, count]) => ({ date, count }))
+
+  // Insight type breakdown
+  const insightCounts: Record<string, number> = {}
+  for (const r of allReports) {
+    parseJson<Insight[]>(r.insights, []).forEach(i => {
+      insightCounts[i.type] = (insightCounts[i.type] || 0) + 1
+    })
+  }
+  const insightColors: Record<string, string> = {
+    risk: '#ef4444', anomaly: '#f59e0b', opportunity: '#22c55e', observation: '#6366f1',
+  }
+  const flagsByType: InsightTypeDatum[] = Object.entries(insightCounts)
+    .map(([type, count]) => ({ type: type.charAt(0).toUpperCase() + type.slice(1), count, color: insightColors[type] ?? '#9ca3af' }))
+    .sort((a, b) => b.count - a.count)
+
+  // Metric status per area
+  const metricsByArea: MetricAreaDatum[] = areaCards.map(({ area, reports }) => {
+    let positive = 0, negative = 0, warning = 0, neutral = 0
+    for (const r of reports) {
+      parseJson<Metric[]>(r.metrics, []).forEach(m => {
+        if (m.status === 'positive') positive++
+        else if (m.status === 'negative') negative++
+        else if (m.status === 'warning') warning++
+        else neutral++
+      })
+    }
+    return { area, positive, negative, warning, neutral }
+  })
+
+  // ── Export data ──────────────────────────────────────────────────────────
+
+  const exportRows: ExportRow[] = allReports.map(r => {
+    const metrics = parseJson<Metric[]>(r.metrics, [])
+    const insights = parseJson<Insight[]>(r.insights, [])
+    const questions = parseJson<Question[]>(r.questions, [])
+    const changes = parseJson<{ changes: ComparisonChange[] }>(r.comparison, { changes: [] }).changes
+    const health = areaHealthScore(changes)
+    return {
+      title: r.title,
+      area: r.area,
+      direct: r.directReport?.name ?? '',
+      date: new Date(r.createdAt).toISOString().slice(0, 10),
+      health,
+      positiveMetrics: metrics.filter(m => m.status === 'positive').length,
+      negativeMetrics: metrics.filter(m => m.status === 'negative').length,
+      warningMetrics: metrics.filter(m => m.status === 'warning').length,
+      flags: insights.filter(i => i.type === 'risk' || i.type === 'anomaly').length,
+      questions: questions.filter(q => q.priority === 'high').length,
+    }
+  })
+
+  // ── Empty state ──────────────────────────────────────────────────────────
 
   if (totalReports === 0) {
     return (
@@ -140,7 +202,8 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-8">
-      {/* Header + filters */}
+
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
@@ -149,29 +212,44 @@ export default async function DashboardPage({
             {filterArea && ` · ${filterArea}`}
           </p>
         </div>
-        <DashboardFilters
-          areas={allAreas.map(a => a.area)}
-          directs={directs}
-          activeArea={filterArea}
-          activePeriod={filterPeriod}
-          activeDirect={filterDirect}
-        />
+        <div className="flex flex-wrap items-start gap-2">
+          <ExportButton rows={exportRows} period={filterPeriod} />
+          <DashboardFilters
+            areas={allAreas.map(a => a.area)}
+            directs={directs}
+            activeArea={filterArea}
+            activePeriod={filterPeriod}
+            activeDirect={filterDirect}
+          />
+        </div>
       </div>
 
-      {/* Summary stat strip */}
+      {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Overall health" value={`${avgHealth}%`} sub={avgHealth >= 60 ? 'On track' : avgHealth >= 40 ? 'Watch closely' : 'Needs attention'}
-          color={avgHealth >= 60 ? 'green' : avgHealth >= 40 ? 'amber' : 'red'} />
+        <StatCard
+          label="Overall health"
+          value={`${avgHealth}%`}
+          sub={avgHealth >= 60 ? 'On track' : avgHealth >= 40 ? 'Watch closely' : 'Needs attention'}
+          color={avgHealth >= 60 ? 'green' : avgHealth >= 40 ? 'amber' : 'red'}
+        />
         <StatCard label="Reports" value={String(totalReports)} sub={`across ${areasCount} area${areasCount !== 1 ? 's' : ''}`} color="gray" />
         <StatCard label="Active flags" value={String(flagCount)} sub="risks & anomalies" color={flagCount > 0 ? 'red' : 'green'} />
         <StatCard label="Open questions" value={String(pendingQuestions)} sub="high priority" color={pendingQuestions > 0 ? 'amber' : 'green'} />
       </div>
 
+      {/* Charts */}
+      <DashboardCharts
+        areaHealth={areaHealth}
+        reportsOverTime={reportsOverTime}
+        flagsByType={flagsByType}
+        metricsByArea={metricsByArea}
+      />
+
       {/* Area cards */}
       <section>
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Areas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {areaCards.map(({ area, reports, latest, metrics, changes, health, count }) => {
+          {areaCards.map(({ area, latest, metrics, changes, health, count }) => {
             const improved = changes.filter(c => c.direction === 'improved').length
             const declined = changes.filter(c => c.direction === 'declined').length
             const trend: 'up' | 'down' | 'flat' =
@@ -179,7 +257,6 @@ export default async function DashboardPage({
 
             return (
               <div key={area} className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-gray-300 hover:shadow-sm transition-all">
-                {/* Top bar */}
                 <div className="px-5 pt-5 pb-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -194,14 +271,10 @@ export default async function DashboardPage({
                     </div>
                   </div>
 
-                  {/* Summary */}
                   {latest.summary && (
-                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-4">
-                      {latest.summary}
-                    </p>
+                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-4">{latest.summary}</p>
                   )}
 
-                  {/* Metrics grid */}
                   {metrics.length > 0 && (
                     <div className="grid grid-cols-2 gap-2">
                       {metrics.map((m, i) => (
@@ -209,14 +282,14 @@ export default async function DashboardPage({
                           'rounded-xl px-3 py-2.5',
                           m.status === 'positive' ? 'bg-green-50' :
                           m.status === 'negative' ? 'bg-red-50' :
-                          m.status === 'warning' ? 'bg-amber-50' : 'bg-gray-50'
+                          m.status === 'warning'  ? 'bg-amber-50' : 'bg-gray-50'
                         )}>
                           <p className="text-xs text-gray-400 truncate">{m.label}</p>
                           <p className={cn(
                             'text-base font-semibold mt-0.5',
                             m.status === 'positive' ? 'text-green-700' :
                             m.status === 'negative' ? 'text-red-700' :
-                            m.status === 'warning' ? 'text-amber-700' : 'text-gray-900'
+                            m.status === 'warning'  ? 'text-amber-700' : 'text-gray-900'
                           )}>{m.value}</p>
                         </div>
                       ))}
@@ -224,7 +297,6 @@ export default async function DashboardPage({
                   )}
                 </div>
 
-                {/* Changes strip */}
                 {changes.length > 0 && (
                   <div className="border-t border-gray-100 px-5 py-3 flex gap-4 overflow-x-auto">
                     {changes.slice(0, 3).map((c, i) => (
@@ -242,7 +314,6 @@ export default async function DashboardPage({
                   </div>
                 )}
 
-                {/* Footer */}
                 <div className="border-t border-gray-100 px-5 py-3 flex items-center justify-between">
                   <span className="text-xs text-gray-400">{count} report{count !== 1 ? 's' : ''}</span>
                   <Link href={`/library?area=${encodeURIComponent(area)}`}
@@ -256,27 +327,32 @@ export default async function DashboardPage({
         </div>
       </section>
 
-      {/* Flags + Questions */}
+      {/* Flags + Questions as card grids */}
       {(allFlags.length > 0 || allQuestions.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
           {allFlags.length > 0 && (
             <section>
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <AlertTriangle size={11} /> Flags & Risks
               </h2>
-              <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {allFlags.slice(0, 6).map((f, i) => (
                   <Link key={i} href={`/reports/${f.reportId}`}
-                    className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group">
-                    <span className={cn('shrink-0 text-xs font-bold mt-0.5',
-                      f.type === 'risk' ? 'text-red-500' : 'text-amber-500')}>
-                      {f.type === 'risk' ? '⚠' : '!'}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-700 leading-snug">{f.text}</p>
+                    className="group bg-white border border-gray-200 rounded-xl p-4 hover:border-red-200 hover:shadow-sm transition-all flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        'text-xs font-bold px-1.5 py-0.5 rounded',
+                        f.type === 'risk' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                      )}>
+                        {f.type}
+                      </span>
                       <AreaBadge area={f.area} />
                     </div>
-                    <ArrowRight size={12} className="text-gray-300 group-hover:text-gray-500 shrink-0 mt-1" />
+                    <p className="text-sm text-gray-700 leading-snug line-clamp-3">{f.text}</p>
+                    <span className="text-xs text-gray-400 group-hover:text-gray-600 flex items-center gap-0.5 mt-auto">
+                      View report <ArrowRight size={10} />
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -288,63 +364,33 @@ export default async function DashboardPage({
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <HelpCircle size={11} /> Questions to ask
               </h2>
-              <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {allQuestions.slice(0, 6).map((q, i) => (
                   <Link key={i} href={`/reports/${q.reportId}`}
-                    className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group">
-                    <span className="shrink-0 text-red-400 font-bold text-xs mt-0.5">?</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 font-medium leading-snug">{q.text}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <AreaBadge area={q.area} />
-                        {q.directName && <span className="text-xs text-gray-400">{q.directName}</span>}
-                      </div>
+                    className="group bg-white border border-gray-200 rounded-xl p-4 hover:border-indigo-200 hover:shadow-sm transition-all flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600">?</span>
+                      <AreaBadge area={q.area} />
+                      {q.directName && <span className="text-xs text-gray-400">{q.directName}</span>}
                     </div>
-                    <ArrowRight size={12} className="text-gray-300 group-hover:text-gray-500 shrink-0 mt-1" />
+                    <p className="text-sm text-gray-800 font-medium leading-snug line-clamp-3">{q.text}</p>
+                    <span className="text-xs text-gray-400 group-hover:text-gray-600 flex items-center gap-0.5 mt-auto">
+                      View report <ArrowRight size={10} />
+                    </span>
                   </Link>
                 ))}
               </div>
             </section>
           )}
+
         </div>
       )}
 
-      {/* Activity timeline */}
-      <section>
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Activity</h2>
-        <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
-          {allReports.slice(0, 10).map(r => {
-            const metrics = parseJson<Metric[]>(r.metrics, [])
-            const pos = metrics.filter(m => m.status === 'positive').length
-            const neg = metrics.filter(m => m.status === 'negative' || m.status === 'warning').length
-            return (
-              <Link key={r.id} href={`/reports/${r.id}`}
-                className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition-colors group">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-gray-900 truncate">{r.title}</span>
-                    <AreaBadge area={r.area} />
-                    {r.directReport && <span className="text-xs text-gray-400">{r.directReport.name}</span>}
-                  </div>
-                  {metrics.length > 0 && (
-                    <div className="flex items-center gap-3 mt-0.5">
-                      {pos > 0 && <span className="text-xs text-green-600">↑ {pos} positive</span>}
-                      {neg > 0 && <span className="text-xs text-red-500">↓ {neg} flagged</span>}
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs text-gray-400 shrink-0">{formatRelativeDate(r.createdAt)}</span>
-                <ArrowRight size={13} className="text-gray-300 group-hover:text-gray-500 shrink-0" />
-              </Link>
-            )
-          })}
-        </div>
-      </section>
     </div>
   )
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────
+// ── Sub-components ──────────────────────────────────────────────────────────
 
 function StatCard({ label, value, sub, color }: {
   label: string; value: string; sub: string
