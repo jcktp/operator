@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useDispatch } from './DispatchContext'
 import DispatchPanel from '@/app/dispatch/DispatchPanel'
@@ -8,6 +8,19 @@ import DispatchPanel from '@/app/dispatch/DispatchPanel'
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { open, setOpen, aiContext, pendingMessage, setPendingMessage } = useDispatch()
   const pathname = usePathname()
+  const chirpRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    chirpRef.current = new Audio('/sounds/chirp.mp3')
+  }, [])
+
+  const playChirp = () => {
+    const a = chirpRef.current
+    if (!a) return
+    a.currentTime = 0
+    a.volume = 0.4
+    a.play().catch(() => {})
+  }
 
   if (pathname.startsWith('/request/') || pathname === '/login' || pathname === '/starting') {
     return <>{children}</>
@@ -47,6 +60,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         href="https://github.com/jcktp"
         target="_blank"
         rel="noopener noreferrer"
+        onClick={playChirp}
         className="fixed bottom-4 right-4 flex items-center gap-1.5 text-[10px] text-gray-300 hover:text-gray-500 transition-colors select-none"
       >
         <svg width="10" height="14" viewBox="0 0 16 22" fill="none" aria-hidden="true">
