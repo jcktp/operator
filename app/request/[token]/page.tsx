@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { Upload, Link2, CheckCircle, AlertCircle, Loader2, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import WalkieTalkie from '@/components/WalkieTalkie'
@@ -24,7 +24,7 @@ type Mode = 'file' | 'link'
 type Stage = 'loading' | 'ready' | 'expired' | 'not_found' | 'submitting' | 'done' | 'error'
 
 export default function RequestPage({ params }: { params: Promise<{ token: string }> }) {
-  const [token, setToken] = useState('')
+  const { token } = use(params)
   const [info, setInfo] = useState<RequestInfo | null>(null)
   const [directs, setDirects] = useState<DirectOption[]>([])
   const [submitterName, setSubmitterName] = useState('')
@@ -37,22 +37,27 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
   const [dragging, setDragging] = useState(false)
 
   useEffect(() => {
-    params.then(({ token: t }) => {
-      setToken(t)
-      fetch(`/api/report-requests/${t}`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.error === 'not_found') { setStage('not_found'); return }
-          if (data.error === 'expired') { setStage('expired'); return }
-          if (data.error === 'submitted') { setStage('done'); return }
-          setInfo(data.request)
-          setDirects(data.directs ?? [])
-          if (data.request.directReport?.name) setSubmitterName(data.request.directReport.name)
-          setStage('ready')
-        })
-        .catch(() => setStage('not_found'))
-    })
-  }, [params])
+    fetch(`/api/report-requests/${token}`)
+      .then(async r => {
+        const data = await r.json()
+        if (data.error === 'not_found') { setStage('not_found'); return }
+        if (data.error === 'expired') { setStage('expired'); return }
+        if (data.error === 'submitted') { setStage('done'); return }
+        if (data.error) {
+          setErrorMsg(data.detail ?? data.error)
+          setStage('error')
+          return
+        }
+        setInfo(data.request)
+        setDirects(data.directs ?? [])
+        if (data.request?.directReport?.name) setSubmitterName(data.request.directReport.name)
+        setStage('ready')
+      })
+      .catch(e => {
+        setErrorMsg(String(e))
+        setStage('error')
+      })
+  }, [token])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -117,6 +122,18 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
           <AlertCircle size={32} className="text-gray-300 mx-auto mb-3" />
           <p className="text-gray-600 font-medium">Link not found</p>
           <p className="text-sm text-gray-400 mt-1">This request link doesn't exist or has been removed.</p>
+        </div>
+      </Shell>
+    )
+  }
+
+  if (stage === 'error') {
+    return (
+      <Shell>
+        <div className="text-center py-16">
+          <AlertCircle size={32} className="text-red-300 mx-auto mb-3" />
+          <p className="text-gray-600 font-medium">Something went wrong</p>
+          {errorMsg && <p className="text-xs text-gray-400 mt-2 font-mono">{errorMsg}</p>}
         </div>
       </Shell>
     )

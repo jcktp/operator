@@ -202,7 +202,8 @@ npx prisma generate 2>/dev/null || true
 # We rebuild whenever package.json changes (new install) or .next is missing.
 BUILD_MARKER=".next/BUILD_ID"
 PACKAGE_HASH_FILE=".next/.package-hash"
-CURRENT_HASH="$(md5 -q package.json 2>/dev/null || md5sum package.json 2>/dev/null | cut -d' ' -f1)"
+# Use git commit hash so any code change (not just package.json) triggers a rebuild
+CURRENT_HASH="$(git rev-parse HEAD 2>/dev/null || md5 -q package.json 2>/dev/null || md5sum package.json 2>/dev/null | cut -d' ' -f1 || echo 'no-hash')"
 STORED_HASH="$(cat "$PACKAGE_HASH_FILE" 2>/dev/null || echo '')"
 
 if [ ! -f "$BUILD_MARKER" ] || [ "$CURRENT_HASH" != "$STORED_HASH" ]; then
