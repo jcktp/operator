@@ -15,8 +15,6 @@ import SearchModal from '@/components/SearchModal'
 export default function Nav() {
   const pathname = usePathname()
   const router = useRouter()
-
-  if (pathname.startsWith('/request/') || pathname === '/login' || pathname === '/starting') return null
   const { shutdown } = useShutdown()
   const { open: dispatchOpen } = useDispatch()
   const config = useMode()
@@ -33,6 +31,8 @@ export default function Nav() {
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  const hidden = pathname.startsWith('/request/') || pathname === '/login' || pathname === '/starting'
 
   const links = [
     { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -66,6 +66,8 @@ export default function Nav() {
     setPowerMenuOpen(false)
     shutdown()
   }
+
+  if (hidden) return null
 
   return (
     <>
