@@ -229,115 +229,111 @@ export default function SettingsPage() {
       </div>
 
       <form onSubmit={handleSave} className="space-y-5">
-        {/* Top row: Profile+Mode (left) | AI Provider (right) */}
-        <div className="grid grid-cols-2 gap-5 items-start">
+        {/* 3-column top row: Profile | App Mode | AI Provider + config */}
+        <div className="grid grid-cols-3 gap-5 items-start">
 
-          {/* Left: Profile + App Mode */}
-          <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
-            {/* Profile */}
-            <div className="p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-gray-900">Profile</h2>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Your name</label>
-                  <input type="text" value={ceoName} onChange={e => setCeoName(e.target.value)} placeholder="Alex Chen"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Company</label>
-                  <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Corp"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Your role</label>
-                <input type="text" value={userRole} onChange={e => setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
-              </div>
+          {/* Col 1: Profile */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-gray-900">Profile</h2>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Your name</label>
+              <input type="text" value={ceoName} onChange={e => setCeoName(e.target.value)} placeholder="Alex Chen"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
             </div>
-
-            {/* App Mode */}
-            <div className="p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-900">App Mode</h2>
-                {appMode !== savedMode && (
-                  <span className="text-xs text-amber-600">Saves on submit</span>
-                )}
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {MODE_LIST.map(m => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setAppMode(m.id)}
-                    className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
-                      appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
-                    )}
-                  >
-                    <span className="text-base">{m.icon}</span>
-                    <div className="text-xs font-semibold mt-1">{m.label}</div>
-                    {savedMode === m.id && appMode !== m.id && (
-                      <div className="text-[10px] text-blue-400 mt-0.5">current</div>
-                    )}
-                  </button>
-                ))}
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Company</label>
+              <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Corp"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Your role</label>
+              <input type="text" value={userRole} onChange={e => setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
             </div>
           </div>
 
-          {/* Right: AI Provider selector */}
+          {/* Col 2: App Mode */}
           <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-900">AI Provider</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900">App Mode</h2>
+              {appMode !== savedMode && (
+                <span className="text-xs text-amber-600">Unsaved</span>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setAiProvider('ollama')}
-                className={cn('flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors text-left',
-                  aiProvider === 'ollama' ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
-                <Server size={13} className="shrink-0" />
-                <span>Local (Ollama)</span>
-                {savedProvider === 'ollama' && <span className="ml-auto text-xs text-blue-600 font-medium">active</span>}
-              </button>
-              {CLOUD_PROVIDERS.map(p => (
-                <button key={p.id} type="button" onClick={() => setAiProvider(p.id)}
-                  className={cn('flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors text-left',
-                    aiProvider === p.id ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
-                  <ProviderLogo id={p.id} size={13} />
-                  <span>{p.label}</span>
-                  {savedProvider === p.id && <span className="ml-auto text-xs text-blue-600 font-medium">active</span>}
+              {MODE_LIST.map(m => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setAppMode(m.id)}
+                  className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
+                    appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
+                  )}
+                >
+                  <span className="text-base">{m.icon}</span>
+                  <div className="text-xs font-semibold mt-1">{m.label}</div>
+                  {savedMode === m.id && appMode !== m.id && (
+                    <div className="text-[10px] text-blue-400 mt-0.5">current</div>
+                  )}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Col 3: AI Provider selector + config in one column */}
+          <div className="space-y-3">
+            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-gray-900">AI Provider</h2>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => setAiProvider('ollama')}
+                  className={cn('flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors text-left',
+                    aiProvider === 'ollama' ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
+                  <Server size={13} className="shrink-0" />
+                  <span>Local (Ollama)</span>
+                  {savedProvider === 'ollama' && <span className="ml-auto text-xs text-blue-600 font-medium">active</span>}
+                </button>
+                {CLOUD_PROVIDERS.map(p => (
+                  <button key={p.id} type="button" onClick={() => setAiProvider(p.id)}
+                    className={cn('flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors text-left',
+                      aiProvider === p.id ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
+                    <ProviderLogo id={p.id} size={13} />
+                    <span>{p.label}</span>
+                    {savedProvider === p.id && <span className="ml-auto text-xs text-blue-600 font-medium">active</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Provider config sits directly below selector in same column */}
+            {aiProvider === 'ollama' && (
+              <div className="bg-white border border-gray-200 rounded-xl p-5">
+                <OllamaConfig
+                  ollamaHost={ollamaHost} setOllamaHost={setOllamaHost}
+                  ollamaModel={ollamaModel} setOllamaModel={setOllamaModel}
+                  customModel={customModel} setCustomModel={setCustomModel}
+                  savedModel={savedModel} savedProvider={savedProvider}
+                  modelChanged={modelChanged} selectedModel={selectedModel}
+                  switchingToOllama={switchingToOllama}
+                  webAccess={webAccess} setWebAccess={setWebAccess}
+                />
+              </div>
+            )}
+            {CLOUD_PROVIDERS.map(p => aiProvider === p.id && (
+              <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-5">
+                <CloudProviderConfig
+                  activeProvider={p.id}
+                  savedProvider={savedProvider}
+                  savedModel={savedModel}
+                  apiKeys={apiKeys} setApiKeys={setApiKeys}
+                  testState={testState} testError={testError}
+                  availableModels={availableModels}
+                  selectedModels={selectedModels} setSelectedModels={setSelectedModels}
+                  onTest={testProvider}
+                />
+              </div>
+            ))}
+          </div>
         </div>
-
-        {/* AI Provider config — only shown when a provider is selected and needs config */}
-        {aiProvider === 'ollama' && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <OllamaConfig
-              ollamaHost={ollamaHost} setOllamaHost={setOllamaHost}
-              ollamaModel={ollamaModel} setOllamaModel={setOllamaModel}
-              customModel={customModel} setCustomModel={setCustomModel}
-              savedModel={savedModel} savedProvider={savedProvider}
-              modelChanged={modelChanged} selectedModel={selectedModel}
-              switchingToOllama={switchingToOllama}
-              webAccess={webAccess} setWebAccess={setWebAccess}
-            />
-          </div>
-        )}
-
-        {CLOUD_PROVIDERS.map(p => aiProvider === p.id && (
-          <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-5">
-            <CloudProviderConfig
-              activeProvider={p.id}
-              savedProvider={savedProvider}
-              savedModel={savedModel}
-              apiKeys={apiKeys} setApiKeys={setApiKeys}
-              testState={testState} testError={testError}
-              availableModels={availableModels}
-              selectedModels={selectedModels} setSelectedModels={setSelectedModels}
-              onTest={testProvider}
-            />
-          </div>
-        ))}
 
         <button type="submit" disabled={saving}
           className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
