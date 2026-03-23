@@ -61,7 +61,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           {/* PTT button */}
           <rect x="3" y="15" width="10" height="4" rx="1.5" fill="currentColor" opacity="0.8" />
         </svg>
-        built for purpose
+        Built with purpose by Jorick.
       </a>
     </>
   )

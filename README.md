@@ -258,4 +258,4 @@ operator/
 
 ---
 
-built for purpose
+Built with purpose by Jorick.
