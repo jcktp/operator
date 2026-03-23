@@ -192,29 +192,10 @@ else
   step "Dependencies already installed"
 fi
 
-# ── 6b. Prisma generate + production build ────────────────────────────────────
-# Generate must run before build so TypeScript can see Prisma's generated types.
+# ── 6b. Prisma generate ───────────────────────────────────────────────────────
 export DATABASE_URL="file:$(pwd)/prisma/dev.db"
 step "Generating Prisma client..."
 npx prisma generate 2>/dev/null || true
-
-# Running in production mode (npm start) uses far less CPU than dev mode.
-# We rebuild whenever package.json changes (new install) or .next is missing.
-BUILD_MARKER=".next/BUILD_ID"
-PACKAGE_HASH_FILE=".next/.package-hash"
-# Use git commit hash so any code change (not just package.json) triggers a rebuild
-CURRENT_HASH="$(git rev-parse HEAD 2>/dev/null || md5 -q package.json 2>/dev/null || md5sum package.json 2>/dev/null | cut -d' ' -f1 || echo 'no-hash')"
-STORED_HASH="$(cat "$PACKAGE_HASH_FILE" 2>/dev/null || echo '')"
-
-if [ ! -f "$BUILD_MARKER" ] || [ "$CURRENT_HASH" != "$STORED_HASH" ]; then
-  set_status "Building app…" "First run or update — this takes about a minute"
-  step "Building Operator (production build — only needed on first run or after updates)..."
-  npm run build >> "$LOG_FILE" 2>&1 || error "Build failed. Check $LOG_FILE for details."
-  echo "$CURRENT_HASH" > "$PACKAGE_HASH_FILE"
-  step "Build complete"
-else
-  step "Build already up to date"
-fi
 
 # ── 7. Database ───────────────────────────────────────────────────────────────
 step "Setting up database..."
@@ -228,14 +209,14 @@ if lsof -ti ":$PORT" &>/dev/null; then
   sleep 1
 fi
 
-# ── 9. Start Next.js (production mode) ───────────────────────────────────────
+# ── 9. Start Next.js (dev mode — changes visible on refresh, no rebuild needed) ──
 set_status "Starting server…"
 step "Starting Operator server..."
-npm start -- --port $PORT > "$LOG_FILE" 2>&1 &
+npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
 NEXT_PID=$!
 echo $NEXT_PID > "$PID_FILE"
 
-# ── 10. Wait for HTTP, then pre-warm /starting before opening browser ─────────
+# ── 10. Wait for server, then open browser ────────────────────────────────────
 step "Waiting for server to be ready..."
 ATTEMPTS=0
 MAX=60
@@ -250,14 +231,7 @@ until curl -sf "http://localhost:$PORT" &>/dev/null; do
   fi
 done
 
-# Pre-warm the routes so Turbopack compiles them before the browser loads them.
-# Without this the browser gets HTML but the JS chunks aren't ready yet.
-step "Compiling pages…"
-curl -sf "http://localhost:$PORT/api/startup-status" > /dev/null 2>&1 || true
-curl -sf "http://localhost:$PORT/starting" > /dev/null 2>&1 || true
-sleep 2  # brief pause for chunk writes to complete
-
-# Open the browser — chunks are compiled, no blank page
+# Open the browser
 step "Opening Operator in your browser..."
 open_browser "http://localhost:$PORT/starting"
 
