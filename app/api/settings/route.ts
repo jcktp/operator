@@ -17,6 +17,7 @@ const ALLOWED_KEYS = new Set([
   'google_key', 'google_model',
   'xai_key', 'xai_model',
   'perplexity_key', 'perplexity_model',
+  'app_mode',
   'ceo_name', 'company_name', 'user_role',
   'user_memory',
 ])
