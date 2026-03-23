@@ -22,5 +22,10 @@ export async function GET(
     return NextResponse.json({ error: 'submitted' }, { status: 410 })
   }
 
-  return NextResponse.json({ request })
+  const directs = await prisma.directReport.findMany({
+    select: { id: true, name: true, title: true },
+    orderBy: { name: 'asc' },
+  })
+
+  return NextResponse.json({ request, directs })
 }

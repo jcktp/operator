@@ -5,6 +5,12 @@ import { Upload, Link2, CheckCircle, AlertCircle, Loader2, FileText } from 'luci
 import { cn } from '@/lib/utils'
 import WalkieTalkie from '@/components/WalkieTalkie'
 
+interface DirectOption {
+  id: string
+  name: string
+  title: string
+}
+
 interface RequestInfo {
   title: string
   area: string
@@ -20,6 +26,8 @@ type Stage = 'loading' | 'ready' | 'expired' | 'not_found' | 'submitting' | 'don
 export default function RequestPage({ params }: { params: Promise<{ token: string }> }) {
   const [token, setToken] = useState('')
   const [info, setInfo] = useState<RequestInfo | null>(null)
+  const [directs, setDirects] = useState<DirectOption[]>([])
+  const [submitterName, setSubmitterName] = useState('')
   const [stage, setStage] = useState<Stage>('loading')
   const [mode, setMode] = useState<Mode>('file')
   const [file, setFile] = useState<File | null>(null)
@@ -38,6 +46,8 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
           if (data.error === 'expired') { setStage('expired'); return }
           if (data.error === 'submitted') { setStage('done'); return }
           setInfo(data.request)
+          setDirects(data.directs ?? [])
+          if (data.request.directReport?.name) setSubmitterName(data.request.directReport.name)
           setStage('ready')
         })
         .catch(() => setStage('not_found'))
@@ -65,12 +75,13 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
         const formData = new FormData()
         formData.append('file', file!)
         if (reportDate) formData.append('reportDate', reportDate)
+        if (submitterName.trim()) formData.append('submitterName', submitterName.trim())
         res = await fetch(`/api/report-requests/${token}/submit`, { method: 'POST', body: formData })
       } else {
         res = await fetch(`/api/report-requests/${token}/submit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ googleUrl: googleUrl.trim(), reportDate }),
+          body: JSON.stringify({ googleUrl: googleUrl.trim(), reportDate, submitterName: submitterName.trim() || undefined }),
         })
       }
 
@@ -152,6 +163,36 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
           <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
             <p className="text-sm text-gray-600 leading-relaxed">{info.message}</p>
           </div>
+        )}
+      </div>
+
+      {/* Submitter name */}
+      <div className="mb-6">
+        <label className="block text-xs font-medium text-gray-500 mb-1.5">
+          Your name <span className="font-normal text-gray-400">(optional)</span>
+        </label>
+        {info?.directReport ? (
+          <div className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50">
+            {info.directReport.name}
+          </div>
+        ) : (
+          <>
+            <input
+              type="text"
+              list="directs-list"
+              value={submitterName}
+              onChange={e => setSubmitterName(e.target.value)}
+              placeholder="Your name"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            />
+            {directs.length > 0 && (
+              <datalist id="directs-list">
+                {directs.map(d => (
+                  <option key={d.id} value={d.name} />
+                ))}
+              </datalist>
+            )}
+          </>
         )}
       </div>
 

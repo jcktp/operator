@@ -9,6 +9,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const { open, setOpen, aiContext, pendingMessage, setPendingMessage } = useDispatch()
   const pathname = usePathname()
 
+  if (pathname.startsWith('/request/') || pathname === '/login' || pathname === '/starting') {
+    return <>{children}</>
+  }
+
   // Close the side dispatch panel when navigating away from overview/report pages
   useEffect(() => {
     if (open && pathname !== '/' && !pathname.startsWith('/reports/')) {

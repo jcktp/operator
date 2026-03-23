@@ -32,12 +32,14 @@ export async function POST(
     let reportDate: Date | null = null
 
     const contentType = req.headers.get('content-type') ?? ''
+    let submitterName: string | null = null
 
     if (contentType.includes('multipart/form-data')) {
       // File upload
       const formData = await req.formData()
       const file = formData.get('file') as File | null
       const dateStr = formData.get('reportDate') as string | null
+      submitterName = (formData.get('submitterName') as string | null) || null
 
       if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
@@ -47,8 +49,9 @@ export async function POST(
       if (dateStr) reportDate = new Date(dateStr)
     } else {
       // JSON with Google URL
-      const body = await req.json() as { googleUrl?: string; reportDate?: string }
-      const { googleUrl, reportDate: dateStr } = body
+      const body = await req.json() as { googleUrl?: string; reportDate?: string; submitterName?: string }
+      const { googleUrl, reportDate: dateStr, submitterName: sName } = body
+      submitterName = sName || null
 
       if (!googleUrl || !isGoogleUrl(googleUrl)) {
         return NextResponse.json({ error: 'Invalid Google Sheets or Docs URL' }, { status: 400 })
@@ -71,11 +74,22 @@ export async function POST(
     // Save to reports folder
     try { saveReportFile(buffer, fileName, request.area) } catch {}
 
+    // Resolve directReportId: use request's linked direct, or match by submitter name
+    let resolvedDirectId = request.directReportId || null
+    if (!resolvedDirectId && submitterName) {
+      const matched = await prisma.directReport.findFirst({
+        where: { name: { equals: submitterName, mode: 'insensitive' } },
+        select: { id: true },
+      })
+      if (matched) resolvedDirectId = matched.id
+    }
+    const directReportName = request.directReport?.name ?? submitterName ?? undefined
+
     // Find previous report for comparison
     const previousReport = await prisma.report.findFirst({
       where: {
         area: request.area,
-        ...(request.directReportId ? { directReportId: request.directReportId } : {}),
+        ...(resolvedDirectId ? { directReportId: resolvedDirectId } : {}),
         summary: { not: null },
         metrics: { not: null },
       },
@@ -85,7 +99,7 @@ export async function POST(
     // AI analysis
     let analysis = null
     try {
-      analysis = await analyzeReport(rawContent, request.title, request.area, request.directReport?.name)
+      analysis = await analyzeReport(rawContent, request.title, request.area, directReportName)
     } catch (e) {
       console.error('AI analysis failed:', e)
     }
@@ -115,7 +129,7 @@ export async function POST(
         rawContent,
         displayContent,
         area: request.area,
-        directReportId: request.directReportId || null,
+        directReportId: resolvedDirectId,
         reportDate,
         summary: analysis?.summary ?? null,
         metrics: analysis?.metrics ? JSON.stringify(analysis.metrics) : null,

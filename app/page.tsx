@@ -3,11 +3,14 @@ import { parseJsonSafe } from '@/lib/utils'
 import type { Metric, Insight, Question } from '@/lib/utils'
 import { FileText, Upload } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import OverviewShell from '@/app/overview/OverviewShell'
 import type { OverviewData } from '@/app/overview/OverviewShell'
 import OnePagerTab from '@/app/overview/OnePagerTab'
 import type { OnePagerReport } from '@/app/overview/OnePagerTab'
 import { getModeConfig } from '@/lib/mode'
+import { isValidSession, SESSION_COOKIE } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,6 +34,12 @@ export default async function OverviewPage({
 }: {
   searchParams: Promise<{ tab?: string; week?: string }>
 }) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(SESSION_COOKIE)?.value
+  if (!(await isValidSession(token))) {
+    redirect('/login')
+  }
+
   const params = await searchParams
   const tab = params.tab
 

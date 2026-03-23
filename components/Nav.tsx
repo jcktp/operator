@@ -15,6 +15,8 @@ import SearchModal from '@/components/SearchModal'
 export default function Nav() {
   const pathname = usePathname()
   const router = useRouter()
+
+  if (pathname.startsWith('/request/') || pathname === '/login' || pathname === '/starting') return null
   const { shutdown } = useShutdown()
   const { open: dispatchOpen } = useDispatch()
   const config = useMode()
