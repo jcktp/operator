@@ -113,6 +113,15 @@ You should see files like `start.sh`, `package.json`, `README.md`, and folders l
 
 ### Step 4 — Run
 
+There are two scripts depending on how you want to use it:
+
+| Script | Mode | Best for |
+|---|---|---|
+| `bash start.sh` | Development — changes visible on browser refresh, no rebuild needed | Running it yourself, day-to-day use |
+| `bash start-prod.sh` | Production — runs a full build first, then serves the optimised output | Sharing with others, or when you want maximum stability |
+
+If you're just running Operator for yourself, use `start.sh`. If you've downloaded it from GitHub and want the production version, use `start-prod.sh`.
+
 ```bash
 bash start.sh
 ```
