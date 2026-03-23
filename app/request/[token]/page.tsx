@@ -187,34 +187,26 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
       </div>
 
       {/* Submitter name */}
-      <div className="mb-6">
-        <label className="block text-xs font-medium text-gray-500 mb-1.5">
-          Your name <span className="font-normal text-gray-400">(optional)</span>
-        </label>
-        {info?.directReport ? (
-          <div className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50">
-            {info.directReport.name}
-          </div>
-        ) : (
-          <>
-            <input
-              type="text"
-              list="directs-list"
-              value={submitterName}
-              onChange={e => setSubmitterName(e.target.value)}
-              placeholder="Your name"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-            />
-            {directs.length > 0 && (
-              <datalist id="directs-list">
-                {directs.map(d => (
-                  <option key={d.id} value={d.name} />
-                ))}
-              </datalist>
-            )}
-          </>
-        )}
-      </div>
+      {!info?.directReport && (
+        <div className="mb-6">
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">
+            Your name <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <input
+            type="text"
+            list="directs-list"
+            value={submitterName}
+            onChange={e => setSubmitterName(e.target.value)}
+            placeholder="Your name"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          />
+          {directs.length > 0 && (
+            <datalist id="directs-list">
+              {directs.map(d => <option key={d.id} value={d.name} />)}
+            </datalist>
+          )}
+        </div>
+      )}
 
       {/* Mode toggle */}
       <div className="flex bg-gray-100 rounded-lg p-1 gap-1 mb-6">

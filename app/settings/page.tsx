@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSetMode } from '@/components/ModeContext'
-import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle, Globe, Copy, Check, Database, FolderOpen, Upload as UploadIcon, RotateCcw } from 'lucide-react'
+import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle, Globe, Copy, Check, Database, FolderOpen, Upload as UploadIcon, RotateCcw, X, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CLOUD_PROVIDERS, type AIProvider, type CloudProviderId, type PullState, type TestState } from './settingsTypes'
 import ModelPullOverlay from './ModelPullOverlay'
@@ -63,6 +63,9 @@ export default function SettingsPage() {
   const [restoreConfirming, setRestoreConfirming] = useState(false)
   // Sound
   const [soundEnabled, setSoundEnabled] = useState(true)
+  // Custom areas
+  const [customAreas, setCustomAreas] = useState<string[]>([])
+  const [newArea, setNewArea] = useState('')
   // Tabs
   type Tab = 'profile' | 'ai' | 'remote' | 'backup' | 'danger'
   const [tab, setTab] = useState<Tab>('profile')
@@ -104,6 +107,8 @@ export default function SettingsPage() {
       localStorage.setItem('sound_enabled', sound ? 'true' : 'false')
       setApiKeys({ anthropic: s.anthropic_key ?? '', openai: s.openai_key ?? '', groq: s.groq_key ?? '', google: s.google_key ?? '', xai: s.xai_key ?? '', perplexity: s.perplexity_key ?? '' })
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '' })
+      const savedAreas = s.custom_areas ? JSON.parse(s.custom_areas) as string[] : null
+      setCustomAreas(savedAreas ?? ['Finance', 'HR & People', 'Sales', 'Marketing', 'Operations', 'Product', 'Engineering', 'Legal', 'Customer Success', 'Recruitment', 'Strategy', 'Other'])
       setLoading(false)
     })
   }, [])
@@ -206,6 +211,7 @@ export default function SettingsPage() {
       saveSetting('xai_model', selectedModels.xai),
       saveSetting('perplexity_model', selectedModels.perplexity),
       saveSetting('sound_enabled', soundEnabled ? 'true' : 'false'),
+      saveSetting('custom_areas', JSON.stringify(customAreas)),
     ])
     localStorage.setItem('sound_enabled', soundEnabled ? 'true' : 'false')
 
@@ -323,6 +329,48 @@ export default function SettingsPage() {
                     'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
                     soundEnabled ? 'translate-x-4' : 'translate-x-0'
                   )} />
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-gray-900">Business areas</h2>
+              <p className="text-xs text-gray-400">These areas appear when uploading reports and creating request links.</p>
+              <div className="flex flex-wrap gap-2">
+                {customAreas.map(area => (
+                  <span key={area} className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-gray-100 text-xs text-gray-700 rounded-md">
+                    {area}
+                    <button type="button" onClick={() => setCustomAreas(a => a.filter(x => x !== area))}
+                      className="text-gray-400 hover:text-gray-700 transition-colors">
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newArea}
+                  onChange={e => setNewArea(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const v = newArea.trim()
+                      if (v && !customAreas.includes(v)) { setCustomAreas(a => [...a, v]); setNewArea('') }
+                    }
+                  }}
+                  placeholder="Add area…"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const v = newArea.trim()
+                    if (v && !customAreas.includes(v)) { setCustomAreas(a => [...a, v]); setNewArea('') }
+                  }}
+                  className="px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  Add
                 </button>
               </div>
             </div>

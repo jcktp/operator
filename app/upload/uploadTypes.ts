@@ -17,6 +17,7 @@ export interface DirectReport {
   id: string
   name: string
   title: string
+  area: string
 }
 
 export const LINK_LABELS: Record<LinkType, string> = {

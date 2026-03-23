@@ -1,9 +1,43 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
-import { AREAS } from '@/lib/utils'
-import { Loader2, CheckCircle, Link2, Copy, Check, AlertTriangle, Globe } from 'lucide-react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { Loader2, CheckCircle, Link2, Copy, Check, AlertTriangle, Globe, ChevronDown } from 'lucide-react'
 import type { DirectReport } from './uploadTypes'
+
+const FALLBACK_AREAS = ['Finance', 'HR & People', 'Sales', 'Marketing', 'Operations', 'Product', 'Engineering', 'Legal', 'Customer Success', 'Recruitment', 'Strategy', 'Other']
+
+function CustomDropdown({ value, placeholder, options, onChange }: { value: string; placeholder: string; options: { label: string; value: string }[]; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white h-[38px]">
+        <span className={value ? 'text-gray-900' : 'text-gray-400'}>{options.find(o => o.value === value)?.label || placeholder}</span>
+        <ChevronDown size={14} className="text-gray-400 shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-md py-1 max-h-48 overflow-y-auto">
+          <button type="button" onClick={() => { onChange(''); setOpen(false) }}
+            className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50">
+            {placeholder}
+          </button>
+          {options.map(o => (
+            <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false) }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 text-gray-900">
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function RequestTab() {
   const [title, setTitle] = useState('')
@@ -11,7 +45,7 @@ export default function RequestTab() {
   const [message, setMessage] = useState('')
   const [directReportId, setDirectReportId] = useState('')
   const [directs, setDirects] = useState<DirectReport[]>([])
-  const [directsLoaded, setDirectsLoaded] = useState(false)
+  const [areas, setAreas] = useState<string[]>(FALLBACK_AREAS)
   const [generating, setGenerating] = useState(false)
   const [link, setLink] = useState('')
   const [copied, setCopied] = useState(false)
@@ -26,13 +60,42 @@ export default function RequestTab() {
       .catch(() => {})
   }, [])
 
-  const loadDirects = useCallback(async () => {
-    if (directsLoaded) return
-    const res = await fetch('/api/directs')
-    const data = await res.json() as { directs?: DirectReport[] }
-    setDirects(data.directs ?? [])
-    setDirectsLoaded(true)
-  }, [directsLoaded])
+  useEffect(() => {
+    fetch('/api/directs')
+      .then(r => r.json())
+      .then((data: { directs?: DirectReport[] }) => {
+        setDirects(data.directs ?? [])
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then((data: { settings?: Record<string, string> }) => {
+        const s = data.settings ?? {}
+        if (s.custom_areas) {
+          try {
+            const parsed = JSON.parse(s.custom_areas) as string[]
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setAreas(parsed)
+              return
+            }
+          } catch {}
+        }
+        setAreas(FALLBACK_AREAS)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!directReportId) return
+    const d = directs.find(d => d.id === directReportId)
+    if (d) {
+      setTitle(`${d.name}'s Report`)
+      setArea(d.area)
+    }
+  }, [directReportId, directs])
 
   const generate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -110,6 +173,15 @@ export default function RequestTab() {
       )}
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
         <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">From direct report <span className="text-gray-400 font-normal">(optional)</span></label>
+          <CustomDropdown
+            value={directReportId}
+            placeholder="Not specified"
+            options={directs.map(d => ({ label: `${d.name} — ${d.title}`, value: d.id }))}
+            onChange={setDirectReportId}
+          />
+        </div>
+        <div>
           <label className="block text-xs font-medium text-gray-700 mb-1.5">Report title <span className="text-red-400">*</span></label>
           <input type="text" value={title} onChange={e => setTitle(e.target.value)} required
             placeholder="e.g. Q1 Engineering Update"
@@ -117,19 +189,12 @@ export default function RequestTab() {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1.5">Business area <span className="text-red-400">*</span></label>
-          <select value={area} onChange={e => setArea(e.target.value)} required
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
-            <option value="">Select area…</option>
-            {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
-        </div>
-        <div onClick={loadDirects}>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">From direct report <span className="text-gray-400 font-normal">(optional)</span></label>
-          <select value={directReportId} onChange={e => setDirectReportId(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
-            <option value="">Not specified</option>
-            {directs.map(d => <option key={d.id} value={d.id}>{d.name} — {d.title}</option>)}
-          </select>
+          <CustomDropdown
+            value={area}
+            placeholder="Select area…"
+            options={areas.map(a => ({ label: a, value: a }))}
+            onChange={setArea}
+          />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1.5">Message to recipient <span className="text-gray-400 font-normal">(optional)</span></label>
