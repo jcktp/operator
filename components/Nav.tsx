@@ -8,6 +8,7 @@ import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
 import { useDispatch } from '@/components/DispatchContext'
+import { playShutdownBeep } from '@/lib/beep'
 import { useMode } from '@/components/ModeContext'
 import StatusIndicator from '@/components/StatusIndicator'
 import SearchModal from '@/components/SearchModal'
@@ -62,8 +63,9 @@ export default function Nav() {
     router.push('/login')
   }
 
-  const handleShutdown = () => {
+  const handleShutdown = async () => {
     setPowerMenuOpen(false)
+    await playShutdownBeep()
     shutdown()
   }
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import WalkieTalkie from '@/components/WalkieTalkie'
+import { playStartupBeep } from '@/lib/beep'
 
 interface Status {
   step: string
@@ -32,6 +33,7 @@ export default function StartingPage() {
         if (cancelled) return
         setStatus(data)
         if (data.ready) {
+          await playStartupBeep()
           router.replace('/')
           return
         }
