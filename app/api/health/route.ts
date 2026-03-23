@@ -42,7 +42,7 @@ export async function GET() {
 
   try {
     const rows = await prisma.setting.findMany()
-    const s = Object.fromEntries(rows.map(r => [r.key, r.value]))
+    const s = Object.fromEntries(rows.map((r: { key: string; value: string }) => [r.key, r.value]))
     const provider = s.ai_provider ?? 'ollama'
 
     aiLabel = PROVIDER_LABELS[provider] ?? provider

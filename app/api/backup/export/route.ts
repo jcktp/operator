@@ -32,8 +32,8 @@ export async function GET() {
       journalEntries: journal,
       dispatchChats: chats,
       settings: settings
-        .filter(s => !REDACTED.has(s.key))
-        .map(s => ({ key: s.key, value: s.value })),
+        .filter((s: { key: string; value: string }) => !REDACTED.has(s.key))
+        .map((s: { key: string; value: string }) => ({ key: s.key, value: s.value })),
     }
 
     const jsonBuffer = Buffer.from(JSON.stringify(exportData, null, 2), 'utf-8')

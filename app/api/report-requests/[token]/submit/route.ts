@@ -77,10 +77,9 @@ export async function POST(
     // Resolve directReportId: use request's linked direct, or match by submitter name
     let resolvedDirectId = request.directReportId || null
     if (!resolvedDirectId && submitterName) {
-      const matched = await prisma.directReport.findFirst({
-        where: { name: { equals: submitterName, mode: 'insensitive' } },
-        select: { id: true },
-      })
+      const allDirects = await prisma.directReport.findMany({ select: { id: true, name: true } })
+      const lower = submitterName.toLowerCase()
+      const matched = allDirects.find((d: { id: string; name: string }) => d.name.toLowerCase() === lower)
       if (matched) resolvedDirectId = matched.id
     }
     const directReportName = request.directReport?.name ?? submitterName ?? undefined

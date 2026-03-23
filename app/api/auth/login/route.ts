@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const rows = await prisma.setting.findMany({
     where: { key: { in: ['auth_password_hash', 'auth_setup_complete'] } },
   })
-  const s = Object.fromEntries(rows.map(r => [r.key, r.value]))
+  const s = Object.fromEntries(rows.map((r: { key: string; value: string }) => [r.key, r.value]))
 
   if (s.auth_setup_complete !== 'true') {
     return NextResponse.json({ error: 'Not set up' }, { status: 400 })
