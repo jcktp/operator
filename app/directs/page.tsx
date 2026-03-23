@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { formatRelativeDate } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
@@ -37,6 +37,7 @@ export default function DirectsPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!form.area) return
     setSaving(true)
     await fetch('/api/directs', {
       method: 'POST',
@@ -119,18 +120,11 @@ export default function DirectsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Area *</label>
-              <div className="relative">
-                <select
-                  value={form.area}
-                  onChange={e => setForm(f => ({ ...f, area: e.target.value }))}
-                  required
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white appearance-none h-[38px] pr-8"
-                >
-                  <option value="">Select…</option>
-                  {modeConfig.defaultAreas.map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
-                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
+              <AreaDropdown
+                value={form.area}
+                options={modeConfig.defaultAreas}
+                onChange={v => setForm(f => ({ ...f, area: v }))}
+              />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
@@ -195,6 +189,46 @@ export default function DirectsPage() {
                 {deletingId === d.id ? 'Confirm' : <Trash2 size={13} />}
               </button>
             </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AreaDropdown({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white h-[38px]"
+      >
+        <span className={value ? 'text-gray-900' : 'text-gray-400'}>{value || 'Select…'}</span>
+        <ChevronDown size={14} className="text-gray-400 shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-md py-1 max-h-48 overflow-y-auto">
+          {options.map(o => (
+            <button
+              key={o}
+              type="button"
+              onClick={() => { onChange(o); setOpen(false) }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 text-gray-900"
+            >
+              {o}
+            </button>
           ))}
         </div>
       )}
