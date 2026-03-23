@@ -16,7 +16,7 @@ import SearchModal from '@/components/SearchModal'
 export default function Nav() {
   const pathname = usePathname()
   const router = useRouter()
-  const { shutdown } = useShutdown()
+  const { shutdown, forceShutdown } = useShutdown()
   const { open: dispatchOpen } = useDispatch()
   const config = useMode()
   const [powerMenuOpen, setPowerMenuOpen] = useState(false)
@@ -66,7 +66,7 @@ export default function Nav() {
   const handleShutdown = async () => {
     setPowerMenuOpen(false)
     await playShutdownBeep()
-    shutdown()
+    forceShutdown()
   }
 
   if (hidden) return null

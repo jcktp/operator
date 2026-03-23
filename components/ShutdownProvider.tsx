@@ -4,9 +4,10 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 
 interface ShutdownContextType {
   shutdown: () => void
+  forceShutdown: () => void
 }
 
-const ShutdownContext = createContext<ShutdownContextType>({ shutdown: () => {} })
+const ShutdownContext = createContext<ShutdownContextType>({ shutdown: () => {}, forceShutdown: () => {} })
 
 export function useShutdown() {
   return useContext(ShutdownContext)
@@ -21,20 +22,29 @@ export function ShutdownProvider({ children }: { children: ReactNode }) {
       try {
         await fetch('/api/shutdown', { method: 'POST' })
       } catch {}
-      // Give the server a moment then show done state
       setTimeout(() => setPhase('done'), 800)
       setTimeout(() => {
         try { window.close() } catch {}
       }, 3200)
     } else {
       setPhase('confirming')
-      // Auto-cancel confirm after 3s
       setTimeout(() => setPhase(p => p === 'confirming' ? 'idle' : p), 3000)
     }
   }, [phase])
 
+  const forceShutdown = useCallback(async () => {
+    setPhase('shutting-down')
+    try {
+      await fetch('/api/shutdown', { method: 'POST' })
+    } catch {}
+    setTimeout(() => setPhase('done'), 800)
+    setTimeout(() => {
+      try { window.close() } catch {}
+    }, 3200)
+  }, [])
+
   return (
-    <ShutdownContext.Provider value={{ shutdown }}>
+    <ShutdownContext.Provider value={{ shutdown, forceShutdown }}>
       {children}
       {(phase === 'shutting-down' || phase === 'done') && (
         <div className="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center">

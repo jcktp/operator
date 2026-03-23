@@ -10,26 +10,20 @@ function getAudioContext(): AudioContext | null {
   }
 }
 
-function tone(
-  ctx: AudioContext,
-  startFreq: number,
-  endFreq: number,
-  startTime: number,
-  duration: number,
-  volume = 0.22,
-) {
+function rogerTone(ctx: AudioContext, freq: number, startTime: number, duration: number, volume = 0.18) {
   const osc = ctx.createOscillator()
   const gain = ctx.createGain()
   osc.connect(gain)
   gain.connect(ctx.destination)
 
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(startFreq, startTime)
-  osc.frequency.linearRampToValueAtTime(endFreq, startTime + duration * 0.85)
+  // Square wave = classic buzzy walkie-talkie electronic tone (not a whistle)
+  osc.type = 'square'
+  osc.frequency.setValueAtTime(freq, startTime)
 
+  // Hard click-in, short tail off
   gain.gain.setValueAtTime(0, startTime)
-  gain.gain.linearRampToValueAtTime(volume, startTime + 0.015)
-  gain.gain.setValueAtTime(volume, startTime + duration - 0.06)
+  gain.gain.linearRampToValueAtTime(volume, startTime + 0.01)
+  gain.gain.setValueAtTime(volume, startTime + duration - 0.05)
   gain.gain.linearRampToValueAtTime(0, startTime + duration)
 
   osc.start(startTime)
@@ -37,30 +31,28 @@ function tone(
 }
 
 /**
- * Play the walkie-talkie startup beep (two quick ascending tones — "channel open").
- * Returns a promise that resolves once the sound finishes.
+ * Startup beep — two short square-wave tones stepping up, like a channel opening.
  */
 export function playStartupBeep(): Promise<void> {
   return new Promise(resolve => {
     const ctx = getAudioContext()
     if (!ctx) { resolve(); return }
     const now = ctx.currentTime
-    tone(ctx, 900,  1200, now,        0.14)
-    tone(ctx, 1200, 1600, now + 0.18, 0.18)
-    setTimeout(() => { ctx.close(); resolve() }, 600)
+    rogerTone(ctx, 1050, now,        0.12)
+    rogerTone(ctx, 1350, now + 0.16, 0.12)
+    setTimeout(() => { ctx.close(); resolve() }, 500)
   })
 }
 
 /**
- * Play the walkie-talkie shutdown beep (one descending tone — "signing off").
- * Returns a promise that resolves once the sound finishes.
+ * Shutdown beep — single classic Roger beep, flat tone, like end of transmission.
  */
 export function playShutdownBeep(): Promise<void> {
   return new Promise(resolve => {
     const ctx = getAudioContext()
     if (!ctx) { resolve(); return }
     const now = ctx.currentTime
-    tone(ctx, 1500, 800, now, 0.38)
-    setTimeout(() => { ctx.close(); resolve() }, 600)
+    rogerTone(ctx, 1100, now, 0.45)
+    setTimeout(() => { ctx.close(); resolve() }, 650)
   })
 }
