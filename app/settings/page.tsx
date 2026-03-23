@@ -61,6 +61,8 @@ export default function SettingsPage() {
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
   const [restoreStatus, setRestoreStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle')
   const [restoreConfirming, setRestoreConfirming] = useState(false)
+  // Sound
+  const [soundEnabled, setSoundEnabled] = useState(true)
   // Tabs
   type Tab = 'profile' | 'ai' | 'remote' | 'backup' | 'danger'
   const [tab, setTab] = useState<Tab>('profile')
@@ -97,6 +99,9 @@ export default function SettingsPage() {
       setSavedMode(mode)
       setLastBackup(s.last_backup ?? null)
       setBackupPath(s.backup_path ?? '')
+      const sound = s.sound_enabled !== 'false'
+      setSoundEnabled(sound)
+      localStorage.setItem('sound_enabled', sound ? 'true' : 'false')
       setApiKeys({ anthropic: s.anthropic_key ?? '', openai: s.openai_key ?? '', groq: s.groq_key ?? '', google: s.google_key ?? '', xai: s.xai_key ?? '', perplexity: s.perplexity_key ?? '' })
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '' })
       setLoading(false)
@@ -200,7 +205,9 @@ export default function SettingsPage() {
       saveSetting('google_model', selectedModels.google),
       saveSetting('xai_model', selectedModels.xai),
       saveSetting('perplexity_model', selectedModels.perplexity),
+      saveSetting('sound_enabled', soundEnabled ? 'true' : 'false'),
     ])
+    localStorage.setItem('sound_enabled', soundEnabled ? 'true' : 'false')
 
     setSavedModel(selectedModel)
     setSavedProvider(aiProvider)
@@ -295,6 +302,28 @@ export default function SettingsPage() {
                     {savedMode === m.id && appMode !== m.id && <div className="text-[10px] text-blue-400 mt-0.5">current</div>}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Sound effects</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Walkie-talkie chirp on startup and shutdown</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSoundEnabled(v => !v)}
+                  className={cn(
+                    'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                    soundEnabled ? 'bg-gray-900' : 'bg-gray-200'
+                  )}
+                >
+                  <span className={cn(
+                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
+                    soundEnabled ? 'translate-x-4' : 'translate-x-0'
+                  )} />
+                </button>
               </div>
             </div>
           </>

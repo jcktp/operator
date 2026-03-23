@@ -6,8 +6,13 @@ function getAudio(): HTMLAudioElement | null {
   return audio
 }
 
+function isSoundEnabled(): boolean {
+  try { return localStorage.getItem('sound_enabled') !== 'false' } catch { return true }
+}
+
 function playChirp(volume = 0.4): Promise<void> {
   return new Promise(resolve => {
+    if (!isSoundEnabled()) { resolve(); return }
     const a = getAudio()
     if (!a) { resolve(); return }
     a.currentTime = 0
