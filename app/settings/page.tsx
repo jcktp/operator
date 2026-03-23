@@ -214,7 +214,7 @@ export default function SettingsPage() {
   if (loading) return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={20} className="animate-spin text-gray-400" /></div>
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="max-w-4xl space-y-6">
       {pull.active && (
         <ModelPullOverlay
           pull={pull}
@@ -229,61 +229,64 @@ export default function SettingsPage() {
       </div>
 
       <form onSubmit={handleSave} className="space-y-5">
-        {/* Profile + App Mode + AI Provider selector — all visible together */}
-        <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+        {/* Top row: Profile+Mode (left) | AI Provider (right) */}
+        <div className="grid grid-cols-2 gap-5 items-start">
 
-          {/* Profile */}
-          <div className="p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-900">Profile</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Your name</label>
-                <input type="text" value={ceoName} onChange={e => setCeoName(e.target.value)} placeholder="Alex Chen"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          {/* Left: Profile + App Mode */}
+          <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+            {/* Profile */}
+            <div className="p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-gray-900">Profile</h2>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Your name</label>
+                  <input type="text" value={ceoName} onChange={e => setCeoName(e.target.value)} placeholder="Alex Chen"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Company</label>
+                  <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Corp"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Company</label>
-                <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Corp"
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Your role</label>
+                <input type="text" value={userRole} onChange={e => setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Your role</label>
-              <input type="text" value={userRole} onChange={e => setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+
+            {/* App Mode */}
+            <div className="p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-900">App Mode</h2>
+                {appMode !== savedMode && (
+                  <span className="text-xs text-amber-600">Saves on submit</span>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {MODE_LIST.map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setAppMode(m.id)}
+                    className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
+                      appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
+                    )}
+                  >
+                    <span className="text-base">{m.icon}</span>
+                    <div className="text-xs font-semibold mt-1">{m.label}</div>
+                    {savedMode === m.id && appMode !== m.id && (
+                      <div className="text-[10px] text-blue-400 mt-0.5">current</div>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* App Mode */}
-          <div className="p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900">App Mode</h2>
-              {appMode !== savedMode && (
-                <span className="text-xs text-amber-600">Saves on submit</span>
-              )}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {MODE_LIST.map(m => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setAppMode(m.id)}
-                  className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
-                    appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
-                  )}
-                >
-                  <span className="text-base">{m.icon}</span>
-                  <div className="text-xs font-semibold mt-1">{m.label}</div>
-                  {savedMode === m.id && appMode !== m.id && (
-                    <div className="text-[10px] text-blue-400 mt-0.5">current</div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* AI Provider selector */}
-          <div className="p-5 space-y-3">
+          {/* Right: AI Provider selector */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
             <h2 className="text-sm font-semibold text-gray-900">AI Provider</h2>
             <div className="grid grid-cols-2 gap-2">
               <button type="button" onClick={() => setAiProvider('ollama')}

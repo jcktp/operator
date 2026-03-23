@@ -3,9 +3,9 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Trash2, Search } from 'lucide-react'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut } from 'lucide-react'
 import { useShutdown } from '@/components/ShutdownProvider'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
 import { useDispatch } from '@/components/DispatchContext'
 import { useMode } from '@/components/ModeContext'
@@ -20,8 +20,19 @@ export default function Nav() {
   const { shutdown } = useShutdown()
   const { open: dispatchOpen } = useDispatch()
   const config = useMode()
-  const [confirmingShutdown, setConfirmingShutdown] = useState(false)
+  const [powerMenuOpen, setPowerMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const powerMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (powerMenuRef.current && !powerMenuRef.current.contains(e.target as Node)) {
+        setPowerMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
   const links = [
     { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -45,13 +56,15 @@ export default function Nav() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const handleLogout = async () => {
+    setPowerMenuOpen(false)
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+  }
+
   const handleShutdown = () => {
-    if (!confirmingShutdown) {
-      setConfirmingShutdown(true)
-      setTimeout(() => setConfirmingShutdown(false), 3000)
-    } else {
-      shutdown()
-    }
+    setPowerMenuOpen(false)
+    shutdown()
   }
 
   return (
@@ -100,36 +113,42 @@ export default function Nav() {
             <span className="hidden lg:inline text-gray-300">⌘K</span>
           </button>
 
-          {/* Power off — right side */}
+          {/* Power menu — right side */}
           <div className="flex items-center gap-1 shrink-0 ml-2">
             <StatusIndicator />
             <div className="w-px h-4 bg-gray-200" />
-            {confirmingShutdown && (
-              <>
-                <button
-                  onClick={() => { setConfirmingShutdown(false); router.push('/settings#danger') }}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                  title="Uninstall Operator"
-                >
-                  <Trash2 size={12} />
-                  <span className="hidden sm:inline">Uninstall</span>
-                </button>
-                <div className="w-px h-4 bg-gray-200" />
-              </>
-            )}
-            <button
-              onClick={handleShutdown}
-              title={confirmingShutdown ? 'Click again to confirm shutdown' : 'Power off'}
-              className={cn(
-                'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
-                confirmingShutdown
-                  ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                  : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
+            <div className="relative" ref={powerMenuRef}>
+              <button
+                onClick={() => setPowerMenuOpen(s => !s)}
+                title="Power menu"
+                className={cn(
+                  'flex items-center gap-0.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
+                  powerMenuOpen ? 'bg-gray-100 text-gray-700' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
+                )}
+              >
+                <Power size={13} />
+                <ChevronDown size={10} />
+              </button>
+              {powerMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[130px] z-50">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    <LogOut size={12} />
+                    Log out
+                  </button>
+                  <div className="mx-2 my-1 h-px bg-gray-100" />
+                  <button
+                    onClick={handleShutdown}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    <Power size={12} />
+                    Shut down
+                  </button>
+                </div>
               )}
-            >
-              <Power size={13} />
-              {confirmingShutdown && <span className="hidden sm:inline">Shut down</span>}
-            </button>
+            </div>
           </div>
 
         </div>
