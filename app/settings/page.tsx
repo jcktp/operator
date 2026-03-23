@@ -108,8 +108,7 @@ export default function SettingsPage() {
       setApiKeys({ anthropic: s.anthropic_key ?? '', openai: s.openai_key ?? '', groq: s.groq_key ?? '', google: s.google_key ?? '', xai: s.xai_key ?? '', perplexity: s.perplexity_key ?? '' })
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '' })
       const savedAreas = s.custom_areas ? JSON.parse(s.custom_areas) as string[] : null
-      const mode = (s.app_mode ?? 'executive') as AppMode
-      setCustomAreas(savedAreas ?? getModeConfig(mode).defaultAreas)
+      setCustomAreas(savedAreas ?? getModeConfig(s.app_mode ?? 'executive').defaultAreas)
       setLoading(false)
     })
   }, [])
