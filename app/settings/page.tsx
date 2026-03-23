@@ -92,7 +92,7 @@ export default function SettingsPage() {
       setUserRole(s.user_role ?? '')
       const provider = (s.ai_provider ?? 'ollama') as AIProvider
       setAiProvider(provider)
-      setWebAccess(s.ollama_web_access !== 'false')
+      setWebAccess(s.ollama_web_access === 'true')
       setSavedProvider(provider)
       const mode = (s.app_mode ?? 'executive') as AppMode
       setAppMode(mode)

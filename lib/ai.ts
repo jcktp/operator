@@ -62,7 +62,7 @@ const TOOL_FETCH = {
 type ToolDef = { name: string; description: string; parameters: { type: 'object'; properties: Record<string, { type: string; description: string }>; required: string[] } }
 
 function availableTools(): ToolDef[] {
-  if (process.env.OLLAMA_WEB_ACCESS === 'false') return []
+  if (process.env.OLLAMA_WEB_ACCESS !== 'true') return []
   const tools: ToolDef[] = [TOOL_WEATHER, TOOL_FETCH]
   if (process.env.BRAVE_SEARCH_KEY) tools.push(TOOL_SEARCH)
   return tools
