@@ -10,7 +10,7 @@ import ModelPullOverlay from './ModelPullOverlay'
 import OllamaConfig from './OllamaConfig'
 import CloudProviderConfig from './CloudProviderConfig'
 import { ProviderLogo } from './ProviderLogo'
-import { MODE_LIST, type AppMode } from '@/lib/mode'
+import { MODE_LIST, getModeConfig, type AppMode } from '@/lib/mode'
 
 async function saveSetting(key: string, value: string) {
   await fetch('/api/settings', {
@@ -108,7 +108,8 @@ export default function SettingsPage() {
       setApiKeys({ anthropic: s.anthropic_key ?? '', openai: s.openai_key ?? '', groq: s.groq_key ?? '', google: s.google_key ?? '', xai: s.xai_key ?? '', perplexity: s.perplexity_key ?? '' })
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '' })
       const savedAreas = s.custom_areas ? JSON.parse(s.custom_areas) as string[] : null
-      setCustomAreas(savedAreas ?? ['Finance', 'HR & People', 'Sales', 'Marketing', 'Operations', 'Product', 'Engineering', 'Legal', 'Customer Success', 'Recruitment', 'Strategy', 'Other'])
+      const mode = (s.app_mode ?? 'executive') as AppMode
+      setCustomAreas(savedAreas ?? getModeConfig(mode).defaultAreas)
       setLoading(false)
     })
   }, [])
@@ -335,7 +336,7 @@ export default function SettingsPage() {
 
             <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
               <h2 className="text-sm font-semibold text-gray-900">Business areas</h2>
-              <p className="text-xs text-gray-400">These areas appear when uploading reports and creating request links.</p>
+              <p className="text-xs text-gray-400">These areas appear when uploading reports and creating request links. Defaults are set by your app mode.</p>
               <div className="flex flex-wrap gap-2">
                 {customAreas.map(area => (
                   <span key={area} className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-gray-100 text-xs text-gray-700 rounded-md">
