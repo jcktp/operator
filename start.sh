@@ -192,7 +192,12 @@ else
   step "Dependencies already installed"
 fi
 
-# ── 6b. Production build ──────────────────────────────────────────────────────
+# ── 6b. Prisma generate + production build ────────────────────────────────────
+# Generate must run before build so TypeScript can see Prisma's generated types.
+export DATABASE_URL="file:$(pwd)/prisma/dev.db"
+step "Generating Prisma client..."
+npx prisma generate 2>/dev/null || true
+
 # Running in production mode (npm start) uses far less CPU than dev mode.
 # We rebuild whenever package.json changes (new install) or .next is missing.
 BUILD_MARKER=".next/BUILD_ID"
@@ -212,11 +217,7 @@ fi
 
 # ── 7. Database ───────────────────────────────────────────────────────────────
 step "Setting up database..."
-# Explicitly export DATABASE_URL so prisma CLI can find it regardless of which
-# .env file it reads (prisma reads .env; Next.js uses .env.local)
-export DATABASE_URL="file:$(pwd)/prisma/dev.db"
 npx prisma migrate deploy || error "Database migration failed"
-npx prisma generate 2>/dev/null || true
 step "Database ready"
 
 # ── 8. Kill any existing server on this port ─────────────────────────────────
