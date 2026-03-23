@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { Upload, Link2, CheckCircle, AlertCircle, Loader2, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import WalkieTalkie from '@/components/WalkieTalkie'
@@ -24,7 +24,7 @@ type Mode = 'file' | 'link'
 type Stage = 'loading' | 'ready' | 'expired' | 'not_found' | 'submitting' | 'done' | 'error'
 
 export default function RequestPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = use(params)
+  const [token, setToken] = useState('')
   const [info, setInfo] = useState<RequestInfo | null>(null)
   const [directs, setDirects] = useState<DirectOption[]>([])
   const [submitterName, setSubmitterName] = useState('')
@@ -37,27 +37,30 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
   const [dragging, setDragging] = useState(false)
 
   useEffect(() => {
-    fetch(`/api/report-requests/${token}`)
-      .then(async r => {
-        const data = await r.json()
-        if (data.error === 'not_found') { setStage('not_found'); return }
-        if (data.error === 'expired') { setStage('expired'); return }
-        if (data.error === 'submitted') { setStage('done'); return }
-        if (data.error) {
-          setErrorMsg(data.detail ?? data.error)
+    params.then(({ token: t }) => {
+      setToken(t)
+      fetch(`/api/report-requests/${t}`)
+        .then(async r => {
+          const data = await r.json()
+          if (data.error === 'not_found') { setStage('not_found'); return }
+          if (data.error === 'expired') { setStage('expired'); return }
+          if (data.error === 'submitted') { setStage('done'); return }
+          if (data.error) {
+            setErrorMsg(data.detail ?? data.error)
+            setStage('error')
+            return
+          }
+          setInfo(data.request)
+          setDirects(data.directs ?? [])
+          if (data.request?.directReport?.name) setSubmitterName(data.request.directReport.name)
+          setStage('ready')
+        })
+        .catch(e => {
+          setErrorMsg(String(e))
           setStage('error')
-          return
-        }
-        setInfo(data.request)
-        setDirects(data.directs ?? [])
-        if (data.request?.directReport?.name) setSubmitterName(data.request.directReport.name)
-        setStage('ready')
-      })
-      .catch(e => {
-        setErrorMsg(String(e))
-        setStage('error')
-      })
-  }, [token])
+        })
+    })
+  }, [params])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
