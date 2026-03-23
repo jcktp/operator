@@ -96,13 +96,13 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
       const data = await res.json()
       if (!res.ok) {
         setErrorMsg(data.error ?? 'Submission failed')
-        setStage('error')
+        setStage('ready')
       } else {
         setStage('done')
       }
     } catch {
       setErrorMsg('Network error — please try again')
-      setStage('error')
+      setStage('ready')
     }
   }
 
@@ -311,7 +311,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
       </div>
 
       {/* Error */}
-      {stage === 'error' && errorMsg && (
+      {errorMsg && (
         <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-sm text-red-600 flex items-start gap-2">
           <AlertCircle size={14} className="shrink-0 mt-0.5" />
           {errorMsg}

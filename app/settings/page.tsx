@@ -61,11 +61,12 @@ export default function SettingsPage() {
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
   const [restoreStatus, setRestoreStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle')
   const [restoreConfirming, setRestoreConfirming] = useState(false)
+  // Tabs
+  type Tab = 'profile' | 'ai' | 'remote' | 'backup' | 'danger'
+  const [tab, setTab] = useState<Tab>('profile')
 
   useEffect(() => {
-    if (window.location.hash === '#danger') {
-      setTimeout(() => dangerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300)
-    }
+    if (window.location.hash === '#danger') setTab('danger')
   }, [])
 
   useEffect(() => {
@@ -213,8 +214,16 @@ export default function SettingsPage() {
 
   if (loading) return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={20} className="animate-spin text-gray-400" /></div>
 
+  const TABS: { id: Tab; label: string }[] = [
+    { id: 'profile', label: 'Profile' },
+    { id: 'ai', label: 'AI' },
+    { id: 'remote', label: 'Remote' },
+    { id: 'backup', label: 'Backup' },
+    { id: 'danger', label: 'Danger' },
+  ]
+
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-lg space-y-6">
       {pull.active && (
         <ModelPullOverlay
           pull={pull}
@@ -228,60 +237,72 @@ export default function SettingsPage() {
         <p className="text-gray-500 text-sm mt-0.5">Configure your Operator workspace.</p>
       </div>
 
+      {/* Tab bar */}
+      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={cn(
+              'flex-1 py-1.5 rounded-md text-xs font-medium transition-colors',
+              tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       <form onSubmit={handleSave} className="space-y-5">
-        {/* 3-column top row: Profile | App Mode | AI Provider + config */}
-        <div className="grid grid-cols-3 gap-5 items-start">
+        {/* Profile tab */}
+        {tab === 'profile' && (
+          <>
+            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-gray-900">Profile</h2>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Your name</label>
+                  <input type="text" value={ceoName} onChange={e => setCeoName(e.target.value)} placeholder="Alex Chen"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Company</label>
+                  <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Corp"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Your role</label>
+                <input type="text" value={userRole} onChange={e => setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+              </div>
+            </div>
 
-          {/* Col 1: Profile */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-900">Profile</h2>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Your name</label>
-              <input type="text" value={ceoName} onChange={e => setCeoName(e.target.value)} placeholder="Alex Chen"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-900">App Mode</h2>
+                {appMode !== savedMode && <span className="text-xs text-amber-600">Unsaved</span>}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {MODE_LIST.map(m => (
+                  <button key={m.id} type="button" onClick={() => setAppMode(m.id)}
+                    className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
+                      appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
+                    )}>
+                    <span className="text-base">{m.icon}</span>
+                    <div className="text-xs font-semibold mt-1">{m.label}</div>
+                    {savedMode === m.id && appMode !== m.id && <div className="text-[10px] text-blue-400 mt-0.5">current</div>}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Company</label>
-              <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Corp"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Your role</label>
-              <input type="text" value={userRole} onChange={e => setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
-            </div>
-          </div>
+          </>
+        )}
 
-          {/* Col 2: App Mode */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900">App Mode</h2>
-              {appMode !== savedMode && (
-                <span className="text-xs text-amber-600">Unsaved</span>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {MODE_LIST.map(m => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setAppMode(m.id)}
-                  className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
-                    appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
-                  )}
-                >
-                  <span className="text-base">{m.icon}</span>
-                  <div className="text-xs font-semibold mt-1">{m.label}</div>
-                  {savedMode === m.id && appMode !== m.id && (
-                    <div className="text-[10px] text-blue-400 mt-0.5">current</div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Col 3: AI Provider selector + config in one column */}
-          <div className="space-y-3">
+        {/* AI tab */}
+        {tab === 'ai' && (
+          <>
             <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
               <h2 className="text-sm font-semibold text-gray-900">AI Provider</h2>
               <div className="grid grid-cols-2 gap-2">
@@ -303,8 +324,6 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
-
-            {/* Provider config sits directly below selector in same column */}
             {aiProvider === 'ollama' && (
               <div className="bg-white border border-gray-200 rounded-xl p-5">
                 <OllamaConfig
@@ -332,22 +351,24 @@ export default function SettingsPage() {
                 />
               </div>
             ))}
-          </div>
-        </div>
+          </>
+        )}
 
-        <button type="submit" disabled={saving}
-          className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-          {saving
-            ? <><Loader2 size={14} className="animate-spin" /> {needsPull ? 'Pulling model…' : 'Saving…'}</>
-            : saved ? <><CheckCircle size={14} /> Saved</>
-            : switchingToOllama ? <><Download size={14} /> Save & pull local model</>
-            : modelChanged ? <><Download size={14} /> Save & switch model</>
-            : 'Save settings'}
-        </button>
+        {(tab === 'profile' || tab === 'ai') && (
+          <button type="submit" disabled={saving}
+            className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            {saving
+              ? <><Loader2 size={14} className="animate-spin" /> {needsPull ? 'Pulling model…' : 'Saving…'}</>
+              : saved ? <><CheckCircle size={14} /> Saved</>
+              : switchingToOllama ? <><Download size={14} /> Save & pull local model</>
+              : modelChanged ? <><Download size={14} /> Save & switch model</>
+              : 'Save settings'}
+          </button>
+        )}
       </form>
 
-      {/* Remote Submissions */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+      {/* Remote tab */}
+      {tab === 'remote' && <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-gray-900">Remote Submissions</h2>
           <p className="text-xs text-gray-500 mt-0.5">
@@ -416,10 +437,10 @@ export default function SettingsPage() {
             </button>
           </div>
         )}
-      </div>
+      </div>}
 
-      {/* Backup & Export */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+      {/* Backup tab */}
+      {tab === 'backup' && <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-gray-900">Backup & Export</h2>
           <p className="text-xs text-gray-500 mt-0.5">Download a copy of your data or restore from a previous backup.</p>
@@ -574,20 +595,21 @@ export default function SettingsPage() {
             <p className="text-xs text-red-600">{backupError}</p>
           )}
         </div>
-      </div>
+      </div>}
 
-      <div className="border-t border-gray-200 pt-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-1">About Operator</h2>
-        <p className="text-xs text-gray-400 leading-relaxed">
-          Operator is fully local. Reports are saved to <code className="font-mono">~/Documents/Operator Reports/</code>.
-          {savedProvider === 'ollama'
-            ? ' All analysis runs via Ollama on your machine — no data is sent externally.'
-            : ` Analysis is sent to ${CLOUD_PROVIDERS.find(p => p.id === savedProvider)?.label ?? savedProvider} via their API.`}
-        </p>
-      </div>
+      {/* Danger tab */}
+      {tab === 'danger' && <div className="space-y-5">
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">About Operator</h2>
+          <p className="text-xs text-gray-400 leading-relaxed">
+            Operator is fully local. Reports are saved to <code className="font-mono">~/Documents/Operator Reports/</code>.
+            {savedProvider === 'ollama'
+              ? ' All analysis runs via Ollama on your machine — no data is sent externally.'
+              : ` Analysis is sent to ${CLOUD_PROVIDERS.find(p => p.id === savedProvider)?.label ?? savedProvider} via their API.`}
+          </p>
+        </div>
 
-      {/* Danger zone */}
-      <div ref={dangerRef} id="danger" className="border-t border-red-100 pt-6">
+        <div ref={dangerRef} id="danger" className="bg-white border border-red-100 rounded-xl p-5">
         <h2 className="text-sm font-semibold text-red-600 mb-1">Danger zone</h2>
         <p className="text-xs text-gray-400 mb-4">Irreversible actions. Proceed with caution.</p>
 
@@ -642,7 +664,8 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </div>}
 
       {/* Uninstall overlay */}
       {(uninstallPhase === 'running' || uninstallPhase === 'done') && (
