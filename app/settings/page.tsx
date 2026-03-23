@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle, Globe, Copy, Check, Database, FolderOpen, Upload as UploadIcon, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CLOUD_PROVIDERS, type AIProvider, type CloudProviderId, type PullState, type TestState } from './settingsTypes'
@@ -19,6 +20,7 @@ async function saveSetting(key: string, value: string) {
 }
 
 export default function SettingsPage() {
+  const router = useRouter()
   const [ollamaHost, setOllamaHost] = useState('http://localhost:11434')
   const [ollamaModel, setOllamaModel] = useState('llama3.2:3b')
   const [savedModel, setSavedModel] = useState('llama3.2:3b')
@@ -203,6 +205,7 @@ export default function SettingsPage() {
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+    router.refresh()
   }
 
   if (loading) return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={20} className="animate-spin text-gray-400" /></div>
