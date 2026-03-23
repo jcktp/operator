@@ -1,9 +1,17 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { getModeConfig, type ModeConfig } from '@/lib/mode'
 
-const ModeContext = createContext<ModeConfig>(getModeConfig('executive'))
+interface ModeContextValue {
+  config: ModeConfig
+  setMode: (mode: string) => void
+}
+
+const ModeContext = createContext<ModeContextValue>({
+  config: getModeConfig('executive'),
+  setMode: () => {},
+})
 
 export function ModeProvider({
   initialMode,
@@ -18,9 +26,17 @@ export function ModeProvider({
     setConfig(getModeConfig(initialMode))
   }, [initialMode])
 
-  return <ModeContext.Provider value={config}>{children}</ModeContext.Provider>
+  const setMode = useCallback((mode: string) => {
+    setConfig(getModeConfig(mode))
+  }, [])
+
+  return <ModeContext.Provider value={{ config, setMode }}>{children}</ModeContext.Provider>
 }
 
 export function useMode(): ModeConfig {
-  return useContext(ModeContext)
+  return useContext(ModeContext).config
+}
+
+export function useSetMode(): (mode: string) => void {
+  return useContext(ModeContext).setMode
 }
