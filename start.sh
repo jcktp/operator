@@ -289,6 +289,8 @@ step "Model: $MODEL"
 
 if ollama list 2>/dev/null | grep -q "^${MODEL}"; then
   step "Model already available"
+  # Brief pause so the loading screen is always visible on startup
+  sleep 2
 else
   step "Pulling $MODEL — this may take a few minutes on first run..."
   set_status "Downloading AI model…" "$MODEL — this only happens once"
