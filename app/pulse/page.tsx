@@ -75,15 +75,44 @@ export default function PulsePage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ name: '', url: '', type: '' })
   const [savingEdit, setSavingEdit] = useState(false)
+  // Auto-refresh
+  const [autoRefreshMinutes, setAutoRefreshMinutes] = useState<number>(() => {
+    if (typeof window !== 'undefined') return parseInt(localStorage.getItem('pulse_autorefresh') ?? '0') || 0
+    return 0
+  })
+  const [autoRefreshing, setAutoRefreshing] = useState(false)
+  const [lastAutoRefresh, setLastAutoRefresh] = useState<Date | null>(null)
+  const feedsRef = useRef<PulseFeed[]>([])
 
   const load = useCallback(async () => {
     const res = await fetch('/api/pulse')
     const data = await res.json() as { feeds: PulseFeed[] }
-    setFeeds(data.feeds ?? [])
+    const feeds = data.feeds ?? []
+    setFeeds(feeds)
+    feedsRef.current = feeds
     setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  // Auto-refresh interval
+  useEffect(() => {
+    localStorage.setItem('pulse_autorefresh', String(autoRefreshMinutes))
+    if (!autoRefreshMinutes) return
+    const ms = autoRefreshMinutes * 60 * 1000
+    const id = setInterval(async () => {
+      const enabled = feedsRef.current.filter(f => f.enabled)
+      if (!enabled.length) return
+      setAutoRefreshing(true)
+      for (const f of enabled) {
+        await fetch(`/api/pulse/${f.id}`, { method: 'POST' }).catch(() => {})
+      }
+      setAutoRefreshing(false)
+      setLastAutoRefresh(new Date())
+      await load()
+    }, ms)
+    return () => clearInterval(id)
+  }, [autoRefreshMinutes, load])
 
   const allItems: (PulseItem & { feedName: string; feedType: string })[] = feeds
     .filter(f => f.enabled && (activeFeed === null || f.id === activeFeed))
@@ -176,15 +205,41 @@ export default function PulsePage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Pulse</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Live feeds — RSS, Reddit, YouTube, Bluesky, Mastodon, and webhooks.</p>
+          <p className="text-gray-500 text-sm mt-0.5">
+            Live feeds — RSS, Reddit, YouTube, Bluesky, Mastodon, and webhooks.
+          </p>
+          {lastAutoRefresh && (
+            <p className="text-xs text-gray-400 mt-0.5">
+              {autoRefreshing
+                ? <span className="flex items-center gap-1"><RefreshCw size={10} className="animate-spin" /> Refreshing…</span>
+                : `Auto-refreshed ${formatRelativeDate(lastAutoRefresh.toISOString())}`}
+            </p>
+          )}
         </div>
-        <button
-          onClick={() => setShowAdd(s => !s)}
-          className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
-        >
-          {showAdd ? <X size={14} /> : <Plus size={14} />}
-          {showAdd ? 'Cancel' : 'Add feed'}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Auto-refresh picker */}
+          <div className="flex items-center gap-1.5">
+            {autoRefreshing && <RefreshCw size={12} className="animate-spin text-gray-400" />}
+            <select
+              value={autoRefreshMinutes}
+              onChange={e => setAutoRefreshMinutes(parseInt(e.target.value))}
+              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 text-gray-600"
+            >
+              <option value={0}>No auto-refresh</option>
+              <option value={5}>Every 5 min</option>
+              <option value={15}>Every 15 min</option>
+              <option value={30}>Every 30 min</option>
+              <option value={60}>Every hour</option>
+            </select>
+          </div>
+          <button
+            onClick={() => setShowAdd(s => !s)}
+            className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            {showAdd ? <X size={14} /> : <Plus size={14} />}
+            {showAdd ? 'Cancel' : 'Add feed'}
+          </button>
+        </div>
       </div>
 
       {/* Add feed form */}
