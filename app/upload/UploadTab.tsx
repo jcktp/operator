@@ -2,9 +2,17 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, FileText, Image as ImageIcon, X, Loader2, CheckCircle, AlertCircle, Globe, ChevronDown, Plus } from 'lucide-react'
+import { Upload, FileText, Image as ImageIcon, X, Loader2, CheckCircle, AlertCircle, Globe, ChevronDown, Plus, GitMerge } from 'lucide-react'
 import { type QueuedItem, type DirectReport, LINK_LABELS, detectLinkType, guessArea, fileId } from './uploadTypes'
 import { useMode } from '@/components/ModeContext'
+
+interface SeriesCandidate {
+  count: number
+  area: string
+  directReportId: string | null
+  existingSeriesId: string | null
+  reportId: string
+}
 
 export default function UploadTab() {
   const router = useRouter()
@@ -18,6 +26,9 @@ export default function UploadTab() {
   const [submitting, setSubmitting] = useState(false)
   const [allDone, setAllDone] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [seriesCandidate, setSeriesCandidate] = useState<SeriesCandidate | null>(null)
+  const [seriesLinked, setSeriesLinked] = useState(false)
+  const [seriesLinking, setSeriesLinking] = useState(false)
   const [linkInput, setLinkInput] = useState('')
   const [linkError, setLinkError] = useState('')
 
@@ -91,9 +102,14 @@ export default function UploadTab() {
             body: JSON.stringify({ url: item.url, title: item.title, area: item.area, directReportId: directReportId || null, reportDate: reportDate || null }),
           })
         }
-        const data = await res.json() as { error?: string; report?: { id: string } }
+        const data = await res.json() as { error?: string; report?: { id: string }; seriesCandidate?: SeriesCandidate }
         if (!res.ok) updateItem(item.id, { status: 'error', error: data.error ?? 'Failed' })
-        else updateItem(item.id, { status: 'done', reportId: data.report?.id })
+        else {
+          updateItem(item.id, { status: 'done', reportId: data.report?.id })
+          if (data.seriesCandidate && data.report?.id) {
+            setSeriesCandidate({ ...data.seriesCandidate, reportId: data.report.id })
+          }
+        }
       } catch {
         updateItem(item.id, { status: 'error', error: 'Network error' })
       }
@@ -274,6 +290,56 @@ export default function UploadTab() {
             </button>
           )}
         </div>
+      )}
+
+      {/* Series confirmation */}
+      {seriesCandidate && !seriesLinked && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <GitMerge size={16} className="text-indigo-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-indigo-900">Recurring report detected</p>
+              <p className="text-xs text-indigo-700 mt-0.5">
+                This looks like report #{seriesCandidate.count + 1} in a recurring series for <strong>{seriesCandidate.area}</strong>.
+                Link them as a series to enable period-over-period tracking?
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={seriesLinking}
+              onClick={async () => {
+                setSeriesLinking(true)
+                await fetch(`/api/reports/${seriesCandidate.reportId}/series`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    seriesId: seriesCandidate.existingSeriesId ?? undefined,
+                    area: seriesCandidate.area,
+                    directReportId: seriesCandidate.directReportId,
+                  }),
+                })
+                setSeriesLinking(false)
+                setSeriesLinked(true)
+              }}
+              className="flex items-center gap-1.5 bg-indigo-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {seriesLinking ? <Loader2 size={12} className="animate-spin" /> : <GitMerge size={12} />}
+              Yes, link as series
+            </button>
+            <button type="button" onClick={() => setSeriesCandidate(null)}
+              className="text-xs text-indigo-500 hover:text-indigo-700 px-3 py-1.5">
+              Skip
+            </button>
+          </div>
+        </div>
+      )}
+
+      {seriesLinked && (
+        <p className="text-xs text-green-600 flex items-center gap-1.5">
+          <CheckCircle size={13} /> Linked to recurring series — period-over-period comparisons are now enabled.
+        </p>
       )}
     </form>
   )

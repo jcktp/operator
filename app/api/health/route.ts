@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { cpus, loadavg } from 'os'
+import { cpus, loadavg, homedir } from 'os'
+import * as fs from 'fs'
+import * as path from 'path'
 import { prisma } from '@/lib/db'
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -13,6 +15,19 @@ const PROVIDER_LABELS: Record<string, string> = {
 }
 
 type Level = 'ok' | 'warn' | 'error'
+
+function folderSizeBytes(dir: string): number {
+  try {
+    let total = 0
+    const entries = fs.readdirSync(dir, { withFileTypes: true })
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) total += folderSizeBytes(full)
+      else total += fs.statSync(full).size
+    }
+    return total
+  } catch { return 0 }
+}
 
 function worst(...levels: Level[]): Level {
   if (levels.includes('error')) return 'error'
@@ -35,14 +50,31 @@ export async function GET() {
   const loadPct = Math.round((load1 / cores) * 100)
   const cpuStatus: Level = loadPct > 90 ? 'error' : loadPct > 70 ? 'warn' : 'ok'
 
+  // ── Settings ──────────────────────────────────────────────────────────────
+  let s: Record<string, string> = {}
+  try {
+    const rows = await prisma.setting.findMany()
+    s = Object.fromEntries(rows.map((r: { key: string; value: string }) => [r.key, r.value]))
+  } catch { /* leave s empty; each section uses its own fallback */ }
+
+  // ── Storage usage ─────────────────────────────────────────────────────────
+  const dbPath = path.join(process.cwd(), 'prisma', 'dev.db')
+  const reportsPath = path.join(homedir(), 'Documents', 'Operator Reports')
+  const dbBytes = (() => { try { return fs.statSync(dbPath).size } catch { return 0 } })()
+  const reportsBytes = folderSizeBytes(reportsPath)
+  const totalBytes = dbBytes + reportsBytes
+  const totalGb = totalBytes / (1024 ** 3)
+  const totalMb = Math.round(totalBytes / (1024 ** 2))
+
+  const thresholdGb = parseFloat(s['storage_threshold_gb'] ?? '5')
+  const storageStatus: Level = totalGb > thresholdGb ? 'error' : totalGb > thresholdGb * 0.8 ? 'warn' : 'ok'
+
   // ── AI reachability ───────────────────────────────────────────────────────
   let aiStatus: Level = 'ok'
   let aiLabel = 'Unknown'
   let aiDetail = ''
 
   try {
-    const rows = await prisma.setting.findMany()
-    const s = Object.fromEntries(rows.map((r: { key: string; value: string }) => [r.key, r.value]))
     const provider = s.ai_provider ?? 'ollama'
 
     aiLabel = PROVIDER_LABELS[provider] ?? provider
@@ -78,9 +110,10 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    status: worst(aiStatus, memStatus, cpuStatus),
+    status: worst(aiStatus, memStatus, cpuStatus, storageStatus),
     ai: { status: aiStatus, label: aiLabel, detail: aiDetail },
     memory: { rss, heap, status: memStatus },
     cpu: { load: Math.round(load1 * 10) / 10, loadPct, status: cpuStatus },
+    storage: { totalMb, totalGb: Math.round(totalGb * 10) / 10, status: storageStatus, thresholdGb },
   })
 }

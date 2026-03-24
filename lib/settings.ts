@@ -5,6 +5,7 @@ const KEY_MAP: Record<string, string> = {
   ollama_host:        'OLLAMA_HOST',
   ollama_model:       'OLLAMA_MODEL',
   ollama_web_access:  'OLLAMA_WEB_ACCESS',
+  air_gap_mode:       'AIR_GAP_MODE',
   ai_provider:        'AI_PROVIDER',
   app_mode:           'APP_MODE',
   ceo_name:           'CEO_NAME',

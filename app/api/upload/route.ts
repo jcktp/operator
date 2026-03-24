@@ -4,6 +4,7 @@ import { loadAiSettings } from '@/lib/settings'
 import { extractContent, getFileType, IMAGE_TYPES, getMimeType } from '@/lib/parsers'
 import { analyzeReport, compareReports, checkResolvedFlags, describeImage } from '@/lib/ai'
 import { saveReportFile } from '@/lib/reports-folder'
+import { logAction } from '@/lib/audit'
 import { join } from 'path'
 
 export async function POST(req: NextRequest) {
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
       if (direct) directName = direct.name
     }
 
-    // Find the most recent prior report for the same area (for comparison)
+    // Find the most recent prior report for the same area (for comparison + series detection)
     const previousReport = await prisma.report.findFirst({
       where: {
         area,
@@ -87,6 +88,17 @@ export async function POST(req: NextRequest) {
       },
       orderBy: { createdAt: 'desc' },
     })
+
+    // Series candidate: reports from same source (directReport + area) with 2+ existing
+    const seriesCount = directReportId ? await prisma.report.count({
+      where: { area, directReportId },
+    }) : 0
+    const seriesCandidate = seriesCount >= 1 ? {
+      count: seriesCount,
+      area,
+      directReportId,
+      existingSeriesId: previousReport?.seriesId ?? null,
+    } : null
 
     // Run AI analysis
     let analysis = null
@@ -149,7 +161,8 @@ export async function POST(req: NextRequest) {
       include: { directReport: true },
     })
 
-    return NextResponse.json({ report, hasPrevious: !!previousReport })
+    void logAction('report:upload', `${title} (${area})`)
+    return NextResponse.json({ report, hasPrevious: !!previousReport, seriesCandidate })
   } catch (e) {
     console.error('Upload error:', e)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })

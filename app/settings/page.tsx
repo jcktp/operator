@@ -66,6 +66,11 @@ export default function SettingsPage() {
   // Custom areas
   const [customAreas, setCustomAreas] = useState<string[]>([])
   const [newArea, setNewArea] = useState('')
+  // Security
+  const [autoLockMinutes, setAutoLockMinutes] = useState(0)
+  const [airGapMode, setAirGapMode] = useState(false)
+  const [auditLogs, setAuditLogs] = useState<{ id: string; action: string; detail: string | null; createdAt: string }[]>([])
+  const [loadingAudit, setLoadingAudit] = useState(false)
   // Tabs
   type Tab = 'profile' | 'ai' | 'remote' | 'backup' | 'danger'
   const [tab, setTab] = useState<Tab>('profile')
@@ -109,6 +114,8 @@ export default function SettingsPage() {
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '' })
       const savedAreas = s.custom_areas ? JSON.parse(s.custom_areas) as string[] : null
       setCustomAreas(savedAreas ?? getModeConfig(s.app_mode ?? 'executive').defaultAreas)
+      setAutoLockMinutes(parseInt(s.auto_lock_minutes ?? '0') || 0)
+      setAirGapMode(s.air_gap_mode === 'true')
       setLoading(false)
     })
   }, [])
@@ -212,6 +219,8 @@ export default function SettingsPage() {
       saveSetting('perplexity_model', selectedModels.perplexity),
       saveSetting('sound_enabled', soundEnabled ? 'true' : 'false'),
       saveSetting('custom_areas', JSON.stringify(customAreas)),
+      saveSetting('auto_lock_minutes', String(autoLockMinutes)),
+      saveSetting('air_gap_mode', airGapMode ? 'true' : 'false'),
     ])
     localStorage.setItem('sound_enabled', soundEnabled ? 'true' : 'false')
 
@@ -373,6 +382,56 @@ export default function SettingsPage() {
                   Add
                 </button>
               </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-gray-900">Security</h2>
+
+              {/* Auto-lock */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">Auto-lock</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Lock after inactivity and require password</p>
+                </div>
+                <select
+                  value={autoLockMinutes}
+                  onChange={e => setAutoLockMinutes(parseInt(e.target.value))}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
+                >
+                  <option value={0}>Never</option>
+                  <option value={5}>5 min</option>
+                  <option value={10}>10 min</option>
+                  <option value={15}>15 min</option>
+                  <option value={30}>30 min</option>
+                  <option value={60}>1 hour</option>
+                </select>
+              </div>
+
+              {/* Air-gap mode */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">Air-gap mode</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Block all outbound network calls (cloud AI, web search, feeds)</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAirGapMode(v => !v)}
+                  className={cn(
+                    'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                    airGapMode ? 'bg-red-500' : 'bg-gray-200'
+                  )}
+                >
+                  <span className={cn(
+                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
+                    airGapMode ? 'translate-x-4' : 'translate-x-0'
+                  )} />
+                </button>
+              </div>
+              {airGapMode && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  Air-gap active — only Ollama (local) analysis works. Cloud providers and Pulse feeds are disabled.
+                </p>
+              )}
             </div>
           </>
         )}
@@ -676,6 +735,41 @@ export default function SettingsPage() {
 
       {/* Danger tab */}
       {tab === 'danger' && <div className="space-y-5">
+        {/* Audit log */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-900">Audit log</h2>
+            <button
+              type="button"
+              disabled={loadingAudit}
+              onClick={async () => {
+                setLoadingAudit(true)
+                const res = await fetch('/api/audit')
+                const data = await res.json() as { logs: { id: string; action: string; detail: string | null; createdAt: string }[] }
+                setAuditLogs(data.logs ?? [])
+                setLoadingAudit(false)
+              }}
+              className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+            >
+              {loadingAudit ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
+              Load
+            </button>
+          </div>
+          {auditLogs.length === 0 ? (
+            <p className="text-xs text-gray-400">Click Load to view recent actions.</p>
+          ) : (
+            <div className="space-y-1 max-h-60 overflow-y-auto">
+              {auditLogs.map(log => (
+                <div key={log.id} className="flex items-start gap-2 text-xs py-1 border-b border-gray-50 last:border-0">
+                  <span className="text-gray-400 shrink-0 tabular-nums">{new Date(log.createdAt).toLocaleString()}</span>
+                  <span className="font-mono text-gray-700 shrink-0">{log.action}</span>
+                  {log.detail && <span className="text-gray-400 truncate">{log.detail}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-gray-900 mb-1">About Operator</h2>
           <p className="text-xs text-gray-400 leading-relaxed">

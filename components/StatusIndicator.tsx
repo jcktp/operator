@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Bot, Database, Activity, AlertTriangle } from 'lucide-react'
+import { Bot, Database, Activity, AlertTriangle, HardDrive } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type Level = 'ok' | 'warn' | 'error' | 'loading'
@@ -11,6 +11,7 @@ interface HealthData {
   ai: { status: Level; label: string; detail: string }
   memory: { rss: number; heap: number; status: Level }
   cpu: { load: number; loadPct: number; status: Level }
+  storage: { totalMb: number; totalGb: number; status: Level; thresholdGb: number }
 }
 
 const ICON_COLOR: Record<Level, string> = {
@@ -64,12 +65,18 @@ export default function StatusIndicator() {
   const aiStatus = data?.ai.status ?? 'loading'
   const memStatus = data?.memory.status ?? 'loading'
   const cpuStatus = data?.cpu.status ?? 'loading'
+  const storageStatus = data?.storage.status ?? 'loading'
 
   const aiLabel = data
     ? data.ai.status === 'ok' ? data.ai.label : data.ai.label
     : '…'
   const memLabel = data ? `${data.memory.heap} MB` : '…'
   const cpuLabel = data ? `${data.cpu.loadPct}%` : '…'
+  const storageLabel = data
+    ? data.storage.totalMb < 1024
+      ? `${data.storage.totalMb} MB`
+      : `${data.storage.totalGb} GB`
+    : '…'
 
   const hasIssue = data && data.status !== 'ok'
 
@@ -93,6 +100,12 @@ export default function StatusIndicator() {
         <span className="flex items-center gap-1">
           <Database size={11} className={ICON_COLOR[memStatus]} />
           <span className={cn('text-[11px] font-medium leading-none', TEXT_COLOR[memStatus])}>{memLabel}</span>
+        </span>
+
+        {/* Storage */}
+        <span className="flex items-center gap-1">
+          <HardDrive size={11} className={ICON_COLOR[storageStatus]} />
+          <span className={cn('text-[11px] font-medium leading-none', TEXT_COLOR[storageStatus])}>{storageLabel}</span>
         </span>
 
         {/* CPU — only show when not ok to save space, always show value */}
@@ -145,6 +158,22 @@ export default function StatusIndicator() {
               </div>
             </div>
 
+            {/* Storage row */}
+            <div className="flex items-start gap-2.5">
+              <HardDrive size={13} className={cn('mt-0.5 shrink-0', ICON_COLOR[data.storage.status])} />
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-white">Storage</span>
+                  <span className={cn('text-[11px]', DETAIL_COLOR[data.storage.status])}>
+                    {data.storage.totalMb < 1024 ? `${data.storage.totalMb} MB` : `${data.storage.totalGb} GB`}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  used of {data.storage.thresholdGb} GB threshold
+                </p>
+              </div>
+            </div>
+
             {/* CPU row */}
             <div className="flex items-start gap-2.5">
               <Activity size={13} className={cn('mt-0.5 shrink-0', ICON_COLOR[data.cpu.status])} />
@@ -179,6 +208,12 @@ export default function StatusIndicator() {
                 <p className="text-[11px] text-amber-400 flex items-start gap-1.5">
                   <AlertTriangle size={10} className="mt-0.5 shrink-0" />
                   High CPU load — the system may feel slow.
+                </p>
+              )}
+              {data.storage.status !== 'ok' && (
+                <p className="text-[11px] text-amber-400 flex items-start gap-1.5">
+                  <AlertTriangle size={10} className="mt-0.5 shrink-0" />
+                  {data.storage.status === 'error' ? 'Storage is over the threshold — consider clearing old reports.' : 'Storage usage is approaching the threshold.'}
                 </p>
               )}
             </div>

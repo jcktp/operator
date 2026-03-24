@@ -1,17 +1,26 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useDispatch } from './DispatchContext'
 import DispatchPanel from '@/app/dispatch/DispatchPanel'
+import IdleGuard from './IdleGuard'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { open, setOpen, aiContext, pendingMessage, setPendingMessage } = useDispatch()
   const pathname = usePathname()
   const chirpRef = useRef<HTMLAudioElement | null>(null)
+  const [autoLockMinutes, setAutoLockMinutes] = useState(0)
 
   useEffect(() => {
     chirpRef.current = new Audio('/sounds/chirp.mp3')
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then((d: { settings?: Record<string, string> }) => {
+        const v = parseInt(d.settings?.auto_lock_minutes ?? '0')
+        if (!isNaN(v)) setAutoLockMinutes(v)
+      })
+      .catch(() => {})
   }, [])
 
   // Close the side dispatch panel when navigating away from overview/report pages
@@ -34,9 +43,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return <>{children}</>
   }
 
+  // Idle auto-lock (runs on all authenticated pages)
+
   if (open) {
     return (
       <div className="flex pt-14 min-h-screen">
+        <IdleGuard autoLockMinutes={autoLockMinutes} />
         <main className="flex-1 min-w-0 py-8 px-4 sm:px-6">
           {children}
         </main>
@@ -53,6 +65,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <>
+      <IdleGuard autoLockMinutes={autoLockMinutes} />
       <main className="pt-20 pb-12 max-w-5xl mx-auto px-4 sm:px-6">
         {children}
       </main>

@@ -31,6 +31,14 @@ model ReportRequest {
   expiresAt      DateTime?
 }
 
+model ReportSeries {
+  id        String   @id @default(uuid())
+  name      String
+  area      String
+  createdAt DateTime @default(now())
+  reports   Report[]
+}
+
 model Report {
   id             String        @id @default(uuid())
   title          String
@@ -48,10 +56,43 @@ model Report {
   reportDate     DateTime?
   resolvedFlags  String?
   imagePath      String?
+  isLongitudinal Boolean       @default(false)
+  seriesId       String?
+  series         ReportSeries? @relation(fields: [seriesId], references: [id])
   directReportId String?
   directReport   DirectReport? @relation(fields: [directReportId], references: [id])
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  detail    String?
+  createdAt DateTime @default(now())
+}
+
+model PulseFeed {
+  id          String      @id @default(uuid())
+  name        String
+  url         String
+  type        String      // rss | reddit | youtube | webhook
+  enabled     Boolean     @default(true)
+  lastFetched DateTime?
+  createdAt   DateTime    @default(now())
+  items       PulseItem[]
+}
+
+model PulseItem {
+  id             String    @id @default(uuid())
+  feedId         String
+  feed           PulseFeed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  title          String
+  url            String?
+  summary        String?
+  publishedAt    DateTime?
+  savedToJournal Boolean   @default(false)
+  createdAt      DateTime  @default(now())
 }
 
 model Setting {

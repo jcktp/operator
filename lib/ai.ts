@@ -404,8 +404,11 @@ async function chatOllamaTools(messages: Message[], systemPrompt: string, temper
 
 // ── Simple chat (no tools) ──────────────────────────────────────────────────
 
-async function chat(messages: Message[], temperature = 0.1): Promise<string> {
+async function chat(messages: Message[], temperature = 0.1, jsonMode = false): Promise<string> {
   const provider = getProvider()
+  if (process.env.AIR_GAP_MODE === 'true' && provider !== 'ollama') {
+    throw new Error('Air-gap mode is enabled — cloud AI providers are blocked. Switch to Ollama in Settings.')
+  }
   switch (provider) {
     case 'anthropic': {
       const key = process.env.ANTHROPIC_API_KEY
@@ -427,7 +430,7 @@ async function chat(messages: Message[], temperature = 0.1): Promise<string> {
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages, temperature }),
+        body: JSON.stringify({ model, messages, temperature, ...(jsonMode ? { response_format: { type: 'json_object' } } : {}) }),
       })
       const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
       if (!res.ok) throw new Error(data.error?.message ?? 'OpenAI error')
@@ -436,11 +439,11 @@ async function chat(messages: Message[], temperature = 0.1): Promise<string> {
     case 'groq': {
       const key = process.env.GROQ_API_KEY
       if (!key) throw new Error('GROQ_API_KEY not set')
-      const model = process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant'
+      const model = process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile'
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages, temperature }),
+        body: JSON.stringify({ model, messages, temperature, ...(jsonMode ? { response_format: { type: 'json_object' } } : {}) }),
       })
       const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
       if (!res.ok) throw new Error(data.error?.message ?? 'Groq error')
@@ -453,7 +456,7 @@ async function chat(messages: Message[], temperature = 0.1): Promise<string> {
       const res = await fetch('https://api.x.ai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages: [{ role: 'system', content: '' }, ...messages], temperature }),
+        body: JSON.stringify({ model, messages: [{ role: 'system', content: '' }, ...messages], temperature, ...(jsonMode ? { response_format: { type: 'json_object' } } : {}) }),
       })
       const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
       if (!res.ok) throw new Error(data.error?.message ?? 'xAI error')
@@ -482,7 +485,7 @@ async function chat(messages: Message[], temperature = 0.1): Promise<string> {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature } }),
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature, ...(jsonMode ? { responseMimeType: 'application/json' } : {}) } }),
         }
       )
       const data = await res.json() as { candidates?: Array<{ content: { parts: Array<{ text: string }> } }>; error?: { message: string } }
@@ -493,7 +496,7 @@ async function chat(messages: Message[], temperature = 0.1): Promise<string> {
       const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
       const model = process.env.OLLAMA_MODEL ?? 'llama3.2:3b'
       const ollama = new Ollama({ host })
-      const response = await ollama.chat({ model, messages, options: { temperature } })
+      const response = await ollama.chat({ model, messages, options: { temperature, ...(jsonMode ? { format: 'json' } : {}) } })
       return response.message.content
     }
   }
@@ -502,12 +505,25 @@ async function chat(messages: Message[], temperature = 0.1): Promise<string> {
 // ── JSON extraction ─────────────────────────────────────────────────────────
 
 function extractJson(text: string): string {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (fenced) return fenced[1].trim()
-  const start = text.indexOf('{')
-  const end = text.lastIndexOf('}')
-  if (start !== -1 && end !== -1 && end > start) return text.slice(start, end + 1)
-  throw new Error('No JSON found in response')
+  // Strip leading/trailing whitespace
+  const t = text.trim()
+
+  // Try fenced code blocks first (```json ... ``` or ``` ... ```)
+  const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fenced) {
+    const candidate = fenced[1].trim()
+    try { JSON.parse(candidate); return candidate } catch {}
+  }
+
+  // Find outermost { }
+  const start = t.indexOf('{')
+  const end = t.lastIndexOf('}')
+  if (start !== -1 && end > start) {
+    const candidate = t.slice(start, end + 1)
+    try { JSON.parse(candidate); return candidate } catch {}
+  }
+
+  throw new Error(`No valid JSON in response (len=${t.length}, preview=${t.slice(0, 100)})`)
 }
 
 // ── Public interfaces ──────────────────────────────────────────────────────
@@ -613,6 +629,10 @@ export async function describeImage(buffer: Buffer, mimeType: string): Promise<s
   return '[Image stored — switch to a cloud AI provider (Anthropic, OpenAI, or Google) to enable automatic image descriptions]'
 }
 
+function isCloudProvider(): boolean {
+  return getProvider() !== 'ollama'
+}
+
 export async function analyzeReport(
   content: string,
   reportTitle: string,
@@ -621,31 +641,68 @@ export async function analyzeReport(
 ): Promise<ReportAnalysis> {
   const modeConfig = getModeConfig(process.env.APP_MODE)
   const truncated = content.slice(0, maxContentLength())
-  const prompt = `You are analyzing a ${modeConfig.documentLabel.toLowerCase()} submitted to a ${modeConfig.label.toLowerCase()} professional. Extract data exactly as it appears — do not invent numbers or facts.
+  const from = directName ? `\nSubmitted by: ${directName}` : ''
 
-${modeConfig.documentLabel}: ${reportTitle}
-${modeConfig.collectionLabel}: ${area}${directName ? `\nFrom: ${directName}` : ''}
+  const cloudPrompt = `You are a senior analyst reviewing a ${modeConfig.documentLabel.toLowerCase()} for a ${modeConfig.label.toLowerCase()}.
+
+Document: ${reportTitle}
+Area: ${area}${from}
 
 ${modeConfig.analysisFraming}
 
-Content:
+STRICT RULES:
+- Only surface numbers and facts that appear verbatim in the document. Never calculate, infer, or estimate figures.
+- Do not invent metrics, trends, or observations not explicitly stated.
+- If a value is not present, omit it rather than guessing.
+
+Document content:
 ${truncated}
 
-Reply with ONLY valid JSON, no other text:
+Return ONLY valid JSON with this exact structure:
 {
-  "summary": "2-3 sentence factual summary",
-  "metrics": [{"label": "name", "value": "exact value", "context": "vs plan or prior period if mentioned", "trend": "up|down|flat|unknown", "status": "positive|negative|neutral|warning"}],
-  "insights": [{"type": "observation|anomaly|risk|opportunity", "text": "factual observation from the document", "area": "${modeConfig.collectionLabel.toLowerCase()}"}],
-  "questions": [{"text": "question to follow up on", "why": "why it matters", "priority": "high|medium|low"}]
+  "summary": "2-3 sentence factual summary of what this report covers and its key findings",
+  "metrics": [
+    {"label": "metric name", "value": "exact value as written in document", "context": "comparison or target if stated", "trend": "up|down|flat|unknown", "status": "positive|negative|neutral|warning"}
+  ],
+  "insights": [
+    {"type": "observation|anomaly|risk|opportunity", "text": "specific factual observation directly from the document", "area": "${area.toLowerCase()}"}
+  ],
+  "questions": [
+    {"text": "specific follow-up question", "why": "why this matters to the ${modeConfig.label.toLowerCase()}", "priority": "high|medium|low"}
+  ]
 }
 
-Limits: max 10 metrics, 5 insights, 4 questions. Only use data from the document.`
+Limits: max 10 metrics, 5 insights, 4 questions. Use only data from the document.`
 
-  const text = await chat([{ role: 'user', content: prompt }])
-  const json = extractJson(text)
-  const parsed = JSON.parse(json) as ReportAnalysis
+  const ollamaPrompt = `Analyze this ${modeConfig.documentLabel.toLowerCase()}. Extract only facts that appear in the text — never calculate or invent numbers.
+
+Document: ${reportTitle} (${area})${from}
+
+${truncated}
+
+Reply with ONLY valid JSON:
+{
+  "summary": "2-3 sentence summary",
+  "metrics": [{"label": "name", "value": "exact value from text", "context": "context if stated", "trend": "up|down|flat|unknown", "status": "positive|negative|neutral|warning"}],
+  "insights": [{"type": "observation|anomaly|risk|opportunity", "text": "observation from document", "area": "${area.toLowerCase()}"}],
+  "questions": [{"text": "follow-up question", "why": "why it matters", "priority": "high|medium|low"}]
+}
+Limits: max 10 metrics, 5 insights, 4 questions.`
+
+  const prompt = isCloudProvider() ? cloudPrompt : ollamaPrompt
+  const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
+
+  let parsed: ReportAnalysis
+  try {
+    const json = extractJson(text)
+    parsed = JSON.parse(json) as ReportAnalysis
+  } catch (e) {
+    console.error('analyzeReport JSON parse failed:', e, 'raw response:', text.slice(0, 500))
+    return { summary: '', metrics: [], insights: [], questions: [] }
+  }
+
   return {
-    summary: parsed.summary ?? '',
+    summary: typeof parsed.summary === 'string' ? parsed.summary : '',
     metrics: Array.isArray(parsed.metrics) ? parsed.metrics : [],
     insights: Array.isArray(parsed.insights) ? parsed.insights : [],
     questions: Array.isArray(parsed.questions) ? parsed.questions : [],
@@ -683,7 +740,7 @@ Reply with ONLY valid JSON:
 
 Limits: max 8 changes, max 4 newTopics, max 4 removedTopics.`
 
-  const text = await chat([{ role: 'user', content: prompt }])
+  const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
   const json = extractJson(text)
   const parsed = JSON.parse(json) as ReportComparison
   return {
@@ -769,7 +826,7 @@ ${recent.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content.slice(0, 30
 Reply with ONLY valid JSON: {"facts": ["fact 1", "fact 2"]} — or {"facts": []} if nothing new.`
 
   try {
-    const text = await chat([{ role: 'user', content: prompt }], 0.1)
+    const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
     const json = extractJson(text)
     const parsed = JSON.parse(json) as { facts?: unknown }
     if (!Array.isArray(parsed.facts)) return []
@@ -813,7 +870,7 @@ Reply with ONLY valid JSON, no other text:
 
 Limits: max 4 crossInsights, 4 topQuestions. Only use what the reports contain.`
 
-  const text = await chat([{ role: 'user', content: prompt }])
+  const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
   const json = extractJson(text)
   const parsed = JSON.parse(json)
   return {

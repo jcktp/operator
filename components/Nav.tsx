@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut } from 'lucide-react'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from 'lucide-react'
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
@@ -42,6 +42,7 @@ export default function Nav() {
     { href: '/library', label: config.navLibrary, icon: Library },
     { href: '/directs', label: config.navPeople, icon: Users },
     { href: '/journal', label: config.navJournal, icon: BookOpen },
+    { href: '/pulse', label: 'Pulse', icon: Radio },
     { href: '/dispatch', label: 'Dispatch', icon: MessageSquare },
     { href: '/settings', label: 'Settings', icon: Settings },
   ]

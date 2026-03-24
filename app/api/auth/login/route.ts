@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyPassword, createSession, getFailedAttempts, SESSION_COOKIE, MAX_ATTEMPTS } from '@/lib/auth'
 import { triggerUninstall } from '@/lib/uninstall'
+import { logAction } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   const { password } = await req.json() as { password?: string }
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     const left = MAX_ATTEMPTS - newAttempts
+    void logAction('auth:login_failed', `Attempts: ${newAttempts}`)
     return NextResponse.json({
       error: `Incorrect password. ${left} attempt${left !== 1 ? 's' : ''} remaining before permanent deletion.`,
       attemptsLeft: left,
@@ -50,6 +52,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Success
+  await logAction('auth:login', 'Successful login')
   const token = await createSession()
   const res = NextResponse.json({ ok: true })
   res.cookies.set(SESSION_COOKIE, token, {
