@@ -25,39 +25,39 @@ interface PulseFeed {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  rss:     'RSS',
-  reddit:  'Reddit',
-  youtube: 'YouTube',
-  twitter: 'X / Twitter',
-  threads: 'Threads',
-  webhook: 'Webhook',
+  rss:      'RSS',
+  reddit:   'Reddit',
+  youtube:  'YouTube',
+  bluesky:  'Bluesky',
+  mastodon: 'Mastodon',
+  webhook:  'Webhook',
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  rss:     'bg-orange-50 text-orange-700 border-orange-200',
-  reddit:  'bg-red-50 text-red-700 border-red-200',
-  youtube: 'bg-red-50 text-red-800 border-red-300',
-  twitter: 'bg-gray-900 text-white border-gray-800',
-  threads: 'bg-gray-100 text-gray-800 border-gray-300',
-  webhook: 'bg-purple-50 text-purple-700 border-purple-200',
+  rss:      'bg-orange-50 text-orange-700 border-orange-200',
+  reddit:   'bg-red-50 text-red-700 border-red-200',
+  youtube:  'bg-red-50 text-red-800 border-red-300',
+  bluesky:  'bg-sky-50 text-sky-700 border-sky-200',
+  mastodon: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  webhook:  'bg-purple-50 text-purple-700 border-purple-200',
 }
 
 const TYPE_HINT: Record<string, string> = {
-  rss:     'RSS or Atom feed URL',
-  reddit:  'Subreddit name or URL — e.g. r/news',
-  youtube: 'YouTube channel URL or channel ID starting with UC',
-  twitter: 'X/Twitter username or profile URL — requires Bearer Token in Settings → AI',
-  threads: 'Threads @handle or profile URL — e.g. @username',
-  webhook: 'URL returning JSON array of { title, url, summary, publishedAt }',
+  rss:      'RSS or Atom feed URL',
+  reddit:   'Subreddit name or URL — e.g. r/news',
+  youtube:  'YouTube channel URL or channel ID starting with UC',
+  bluesky:  'Handle (e.g. you.bsky.social) for public posts, or type "timeline" for your home feed (requires credentials in Settings → AI → Social)',
+  mastodon: '@user@instance.social for a public profile, or just instance domain (e.g. mastodon.social) for your home timeline (requires token in Settings → AI → Social)',
+  webhook:  'URL returning JSON array of { title, url, summary, publishedAt }',
 }
 
 const TYPE_PLACEHOLDER: Record<string, string> = {
-  rss:     'https://example.com/feed.xml',
-  reddit:  'r/MachineLearning',
-  youtube: 'youtube.com/channel/UC…',
-  twitter: '@handle or twitter.com/handle',
-  threads: '@handle or threads.net/@handle',
-  webhook: 'https://example.com/webhook',
+  rss:      'https://example.com/feed.xml',
+  reddit:   'r/MachineLearning',
+  youtube:  'youtube.com/channel/UC…',
+  bluesky:  'you.bsky.social  or  timeline',
+  mastodon: '@you@mastodon.social  or  mastodon.social',
+  webhook:  'https://example.com/webhook',
 }
 
 export default function PulsePage() {
@@ -169,7 +169,7 @@ export default function PulsePage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Pulse</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Live feeds — RSS, Reddit, YouTube, X/Twitter, Threads, and webhooks.</p>
+          <p className="text-gray-500 text-sm mt-0.5">Live feeds — RSS, Reddit, YouTube, Bluesky, Mastodon, and webhooks.</p>
         </div>
         <button
           onClick={() => setShowAdd(s => !s)}
@@ -232,7 +232,7 @@ export default function PulsePage() {
             <Rss size={20} className="text-gray-400" />
           </div>
           <p className="text-sm text-gray-500">No feeds yet.</p>
-          <p className="text-xs text-gray-400 mt-1">Add RSS, Reddit, YouTube, X/Twitter, or Threads feeds.</p>
+          <p className="text-xs text-gray-400 mt-1">Add RSS, Reddit, YouTube, Bluesky, or Mastodon feeds.</p>
         </div>
       ) : (
         <div className="flex gap-6 items-start">
@@ -400,7 +400,7 @@ export default function PulsePage() {
 function TypeDropdown({ value, onChange, compact }: { value: string; onChange: (v: string) => void; compact?: boolean }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const options = ['rss', 'reddit', 'youtube', 'twitter', 'threads', 'webhook']
+  const options = ['rss', 'reddit', 'youtube', 'bluesky', 'mastodon', 'webhook']
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

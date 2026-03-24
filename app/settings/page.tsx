@@ -45,7 +45,9 @@ export default function SettingsPage() {
   const [testError, setTestError] = useState<Record<CloudProviderId, string>>({ anthropic: '', openai: '', groq: '', google: '', xai: '', perplexity: '' })
   const [availableModels, setAvailableModels] = useState<Record<CloudProviderId, string[]>>({ anthropic: [], openai: [], groq: [], google: [], xai: [], perplexity: [] })
   const [selectedModels, setSelectedModels] = useState<Record<CloudProviderId, string>>({ anthropic: '', openai: '', groq: '', google: '', xai: '', perplexity: '' })
-  const [twitterBearerToken, setTwitterBearerToken] = useState('')
+  const [bskyIdentifier, setBskyIdentifier] = useState('')
+  const [bskyAppPassword, setBskyAppPassword] = useState('')
+  const [mastodonToken, setMastodonToken] = useState('')
   const [tunnelRunning, setTunnelRunning] = useState(false)
   const [tunnelUrl, setTunnelUrl] = useState<string | null>(null)
   const [tunnelInstalled, setTunnelInstalled] = useState(true)
@@ -112,7 +114,9 @@ export default function SettingsPage() {
       setSoundEnabled(sound)
       localStorage.setItem('sound_enabled', sound ? 'true' : 'false')
       setApiKeys({ anthropic: s.anthropic_key ?? '', openai: s.openai_key ?? '', groq: s.groq_key ?? '', google: s.google_key ?? '', xai: s.xai_key ?? '', perplexity: s.perplexity_key ?? '' })
-      setTwitterBearerToken(s.twitter_bearer_token ?? '')
+      setBskyIdentifier(s.bluesky_identifier ?? '')
+      setBskyAppPassword(s.bluesky_app_password ?? '')
+      setMastodonToken(s.mastodon_access_token ?? '')
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '' })
       const savedAreas = s.custom_areas ? JSON.parse(s.custom_areas) as string[] : null
       setCustomAreas(savedAreas ?? getModeConfig(s.app_mode ?? 'executive').defaultAreas)
@@ -219,7 +223,9 @@ export default function SettingsPage() {
       saveSetting('google_model', selectedModels.google),
       saveSetting('xai_model', selectedModels.xai),
       saveSetting('perplexity_model', selectedModels.perplexity),
-      saveSetting('twitter_bearer_token', twitterBearerToken),
+      saveSetting('bluesky_identifier', bskyIdentifier),
+      saveSetting('bluesky_app_password', bskyAppPassword),
+      saveSetting('mastodon_access_token', mastodonToken),
       saveSetting('sound_enabled', soundEnabled ? 'true' : 'false'),
       saveSetting('custom_areas', JSON.stringify(customAreas)),
       saveSetting('auto_lock_minutes', String(autoLockMinutes)),
@@ -492,25 +498,54 @@ export default function SettingsPage() {
             ))}
 
             {/* Social APIs */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">Social APIs</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Used by Pulse feeds — not required for report analysis.</p>
+                <h2 className="text-sm font-semibold text-gray-900">Social</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Sign in to see your home timeline in Pulse. Not required for public profile feeds.</p>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">X / Twitter Bearer Token</label>
-                <input
-                  type="password"
-                  value={twitterBearerToken}
-                  onChange={e => setTwitterBearerToken(e.target.value)}
-                  placeholder="AAAA…"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
-                />
-                <p className="text-[11px] text-gray-400 mt-1">
-                  Get a Bearer Token from{' '}
-                  <span className="text-gray-500">developer.x.com → Keys and tokens → Bearer Token</span>.
-                  Only needed for X/Twitter feeds in Pulse.
-                </p>
+
+              {/* Bluesky */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-700">Bluesky</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Handle</label>
+                    <input
+                      type="text"
+                      value={bskyIdentifier}
+                      onChange={e => setBskyIdentifier(e.target.value)}
+                      placeholder="you.bsky.social"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">App password</label>
+                    <input
+                      type="password"
+                      value={bskyAppPassword}
+                      onChange={e => setBskyAppPassword(e.target.value)}
+                      placeholder="xxxx-xxxx-xxxx-xxxx"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-gray-400">Generate an app password at bsky.app → Settings → App Passwords. Then add a Bluesky feed in Pulse with URL set to <code className="font-mono">timeline</code>.</p>
+              </div>
+
+              {/* Mastodon */}
+              <div className="space-y-2 pt-3 border-t border-gray-100">
+                <p className="text-xs font-semibold text-gray-700">Mastodon</p>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Access token</label>
+                  <input
+                    type="password"
+                    value={mastodonToken}
+                    onChange={e => setMastodonToken(e.target.value)}
+                    placeholder="Paste token here"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
+                  />
+                </div>
+                <p className="text-[11px] text-gray-400">Generate at your instance → Preferences → Development → New application (read:statuses scope). Then add a Mastodon feed in Pulse with URL set to your instance domain, e.g. <code className="font-mono">mastodon.social</code>.</p>
               </div>
             </div>
           </>

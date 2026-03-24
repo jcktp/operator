@@ -18,8 +18,10 @@ const KEY_MAP: Record<string, string> = {
   groq_key:           'GROQ_API_KEY',
   xai_key:            'XAI_API_KEY',
   perplexity_key:     'PERPLEXITY_API_KEY',
-  anthropic_model:    'ANTHROPIC_MODEL',
-  twitter_bearer_token: 'TWITTER_BEARER_TOKEN',
+  anthropic_model:        'ANTHROPIC_MODEL',
+  bluesky_identifier:     'BLUESKY_IDENTIFIER',
+  bluesky_app_password:   'BLUESKY_APP_PASSWORD',
+  mastodon_access_token:  'MASTODON_ACCESS_TOKEN',
   openai_model:       'OPENAI_MODEL',
   google_model:       'GOOGLE_MODEL',
   groq_model:         'GROQ_MODEL',
@@ -27,7 +29,7 @@ const KEY_MAP: Record<string, string> = {
   perplexity_model:   'PERPLEXITY_MODEL',
 }
 
-const ENCRYPTED_KEYS = new Set(['anthropic_key', 'openai_key', 'google_key', 'groq_key', 'xai_key', 'perplexity_key', 'twitter_bearer_token'])
+const ENCRYPTED_KEYS = new Set(['anthropic_key', 'openai_key', 'google_key', 'groq_key', 'xai_key', 'perplexity_key', 'bluesky_app_password', 'mastodon_access_token'])
 
 /**
  * Loads AI provider settings from the database into process.env.
