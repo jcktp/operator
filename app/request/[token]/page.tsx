@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Upload, Link2, CheckCircle, AlertCircle, Loader2, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import WalkieTalkie from '@/components/WalkieTalkie'
+import { getModeConfig } from '@/lib/mode'
 
 interface DirectOption {
   id: string
@@ -27,39 +28,64 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
   const [token, setToken] = useState('')
   const [info, setInfo] = useState<RequestInfo | null>(null)
   const [directs, setDirects] = useState<DirectOption[]>([])
+  const [mode, setMode] = useState<string | null>(null)
   const [submitterName, setSubmitterName] = useState('')
   const [stage, setStage] = useState<Stage>('loading')
-  const [mode, setMode] = useState<Mode>('file')
+  const [uploadMode, setUploadMode] = useState<Mode>('file')
   const [file, setFile] = useState<File | null>(null)
   const [googleUrl, setGoogleUrl] = useState('')
   const [reportDate, setReportDate] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [dragging, setDragging] = useState(false)
 
+  const modeConfig = getModeConfig(mode)
+
+  const loadRequest = (t: string) => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15_000)
+    fetch(`/api/report-requests/${t}`, { signal: controller.signal, headers: { 'Accept': 'application/json' } })
+      .then(async r => {
+        const text = await r.text()
+        clearTimeout(timeout)
+        let data: Record<string, unknown>
+        try {
+          data = JSON.parse(text)
+        } catch {
+          const preview = text.replace(/<[^>]+>/g, '').trim().slice(0, 120)
+          setErrorMsg(`HTTP ${r.status}: ${preview || 'Empty response'}`)
+          setStage('error')
+          return
+        }
+        if (data.error === 'not_found') { setStage('not_found'); return }
+        if (data.error === 'expired') { setStage('expired'); return }
+        if (data.error === 'submitted') { setStage('done'); return }
+        if (data.error) {
+          setErrorMsg(String(data.detail ?? data.error))
+          setStage('error')
+          return
+        }
+        setInfo(data.request as RequestInfo)
+        setDirects((data.directs ?? []) as DirectOption[])
+        setMode((data.mode as string | null) ?? null)
+        if ((data.request as RequestInfo)?.directReport?.name) {
+          setSubmitterName((data.request as RequestInfo).directReport!.name)
+        }
+        setStage('ready')
+      })
+      .catch(e => {
+        clearTimeout(timeout)
+        const msg = e?.name === 'AbortError' ? 'Request timed out. Check your connection and try again.' : String(e)
+        setErrorMsg(msg)
+        setStage('error')
+      })
+  }
+
   useEffect(() => {
     params.then(({ token: t }) => {
       setToken(t)
-      fetch(`/api/report-requests/${t}`)
-        .then(async r => {
-          const data = await r.json()
-          if (data.error === 'not_found') { setStage('not_found'); return }
-          if (data.error === 'expired') { setStage('expired'); return }
-          if (data.error === 'submitted') { setStage('done'); return }
-          if (data.error) {
-            setErrorMsg(data.detail ?? data.error)
-            setStage('error')
-            return
-          }
-          setInfo(data.request)
-          setDirects(data.directs ?? [])
-          if (data.request?.directReport?.name) setSubmitterName(data.request.directReport.name)
-          setStage('ready')
-        })
-        .catch(e => {
-          setErrorMsg(String(e))
-          setStage('error')
-        })
+      loadRequest(t)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params])
 
   const handleDrop = (e: React.DragEvent) => {
@@ -69,9 +95,13 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
     if (f) setFile(f)
   }
 
+  const needsName = !info?.directReport
+  const canSubmit = (uploadMode === 'file' ? !!file : googleUrl.trim().length > 0)
+    && !!reportDate
+    && (!needsName || submitterName.trim().length > 0)
+
   const submit = async () => {
-    if (mode === 'file' && !file) return
-    if (mode === 'link' && !googleUrl.trim()) return
+    if (!canSubmit) return
 
     setStage('submitting')
     setErrorMsg('')
@@ -79,16 +109,20 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
     try {
       let res: Response
 
-      if (mode === 'file') {
+      if (uploadMode === 'file') {
         const formData = new FormData()
         formData.append('file', file!)
-        if (reportDate) formData.append('reportDate', reportDate)
+        formData.append('reportDate', reportDate)
         if (submitterName.trim()) formData.append('submitterName', submitterName.trim())
-        res = await fetch(`/api/report-requests/${token}/submit`, { method: 'POST', body: formData })
+        res = await fetch(`/api/report-requests/${token}/submit`, {
+          method: 'POST',
+          body: formData,
+          headers: { 'Accept': 'application/json' },
+        })
       } else {
         res = await fetch(`/api/report-requests/${token}/submit`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify({ googleUrl: googleUrl.trim(), reportDate, submitterName: submitterName.trim() || undefined }),
         })
       }
@@ -124,7 +158,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
         <div className="text-center py-16">
           <AlertCircle size={32} className="text-gray-300 mx-auto mb-3" />
           <p className="text-gray-600 font-medium">Link not found</p>
-          <p className="text-sm text-gray-400 mt-1">This request link doesn't exist or has been removed.</p>
+          <p className="text-sm text-gray-400 mt-1">This request link doesn&apos;t exist or has been removed.</p>
         </div>
       </Shell>
     )
@@ -136,7 +170,13 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
         <div className="text-center py-16">
           <AlertCircle size={32} className="text-red-300 mx-auto mb-3" />
           <p className="text-gray-600 font-medium">Something went wrong</p>
-          {errorMsg && <p className="text-xs text-gray-400 mt-2 font-mono">{errorMsg}</p>}
+          {errorMsg && <p className="text-xs text-gray-400 mt-2 max-w-xs mx-auto">{errorMsg}</p>}
+          <button
+            onClick={() => { setStage('loading'); setErrorMsg(''); loadRequest(token) }}
+            className="mt-4 text-sm text-gray-500 underline underline-offset-2"
+          >
+            Try again
+          </button>
         </div>
       </Shell>
     )
@@ -161,20 +201,18 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
           <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
             <CheckCircle size={28} className="text-green-500" />
           </div>
-          <p className="text-gray-900 font-semibold text-lg">Report submitted</p>
-          <p className="text-sm text-gray-400 mt-1">Thanks — it's been received and is being reviewed.</p>
+          <p className="text-gray-900 font-semibold text-lg">{modeConfig.documentLabel} submitted</p>
+          <p className="text-sm text-gray-400 mt-1">Thanks — it&apos;s been received and is being reviewed.</p>
         </div>
       </Shell>
     )
   }
 
-  const canSubmit = mode === 'file' ? !!file : googleUrl.trim().length > 0
-
   return (
     <Shell>
       {/* Context */}
       <div className="mb-8">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Report request</p>
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{modeConfig.documentLabel} request</p>
         <h1 className="text-2xl font-semibold text-gray-900">{info?.title}</h1>
         {info?.directReport && (
           <p className="text-sm text-gray-500 mt-1">For {info.directReport.name}</p>
@@ -186,11 +224,11 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
         )}
       </div>
 
-      {/* Submitter name */}
-      {!info?.directReport && (
-        <div className="mb-6">
+      {/* Your name — required when not pre-linked to a direct */}
+      {needsName && (
+        <div className="mb-5">
           <label className="block text-xs font-medium text-gray-500 mb-1.5">
-            Your name <span className="font-normal text-gray-400">(optional)</span>
+            Your name <span className="text-red-400">*</span>
           </label>
           <input
             type="text"
@@ -208,23 +246,36 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
         </div>
       )}
 
-      {/* Mode toggle */}
-      <div className="flex bg-gray-100 rounded-lg p-1 gap-1 mb-6">
+      {/* Report date — required */}
+      <div className="mb-5">
+        <label className="block text-xs font-medium text-gray-500 mb-1.5">
+          {modeConfig.documentLabel} date <span className="text-red-400">*</span>
+        </label>
+        <input
+          type="date"
+          value={reportDate}
+          onChange={e => setReportDate(e.target.value)}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+        />
+      </div>
+
+      {/* Upload mode toggle */}
+      <div className="flex bg-gray-100 rounded-lg p-1 gap-1 mb-5">
         <button
-          onClick={() => setMode('file')}
+          onClick={() => setUploadMode('file')}
           className={cn(
             'flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors',
-            mode === 'file' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            uploadMode === 'file' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
           )}
         >
           <Upload size={14} />
           Upload file
         </button>
         <button
-          onClick={() => setMode('link')}
+          onClick={() => setUploadMode('link')}
           className={cn(
             'flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors',
-            mode === 'link' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            uploadMode === 'link' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
           )}
         >
           <Link2 size={14} />
@@ -233,7 +284,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
       </div>
 
       {/* File upload */}
-      {mode === 'file' && (
+      {uploadMode === 'file' && (
         <div className="space-y-4">
           {!file ? (
             <div
@@ -271,36 +322,21 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
       )}
 
       {/* Google link */}
-      {mode === 'link' && (
+      {uploadMode === 'link' && (
         <div className="space-y-3">
-          <div>
-            <input
-              type="url"
-              value={googleUrl}
-              onChange={e => setGoogleUrl(e.target.value)}
-              placeholder="https://docs.google.com/spreadsheets/d/..."
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
-            />
-          </div>
+          <input
+            type="url"
+            value={googleUrl}
+            onChange={e => setGoogleUrl(e.target.value)}
+            placeholder="https://docs.google.com/spreadsheets/d/..."
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
+          />
           <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 text-xs text-blue-700 leading-relaxed">
-            Make sure the document is shared with <strong>"Anyone with the link"</strong> — otherwise it can't be fetched.
+            Make sure the document is shared with <strong>&quot;Anyone with the link&quot;</strong> — otherwise it can&apos;t be fetched.
             Works with Google Sheets and Google Docs.
           </div>
         </div>
       )}
-
-      {/* Report date */}
-      <div className="mt-4">
-        <label className="block text-xs font-medium text-gray-500 mb-1.5">
-          Report date <span className="font-normal text-gray-400">(optional)</span>
-        </label>
-        <input
-          type="date"
-          value={reportDate}
-          onChange={e => setReportDate(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-        />
-      </div>
 
       {/* Error */}
       {errorMsg && (
@@ -317,9 +353,9 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
         className="mt-6 w-full bg-gray-900 text-white text-sm font-medium px-4 py-3 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {stage === 'submitting' ? (
-          <><Loader2 size={15} className="animate-spin" /> Submitting & analyzing…</>
+          <><Loader2 size={15} className="animate-spin" /> Submitting & analysing…</>
         ) : (
-          'Submit report'
+          `Submit ${modeConfig.documentLabel.toLowerCase()}`
         )}
       </button>
     </Shell>
@@ -329,7 +365,6 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#fafafa]">
-      {/* Minimal header */}
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-lg mx-auto px-6 py-4 flex items-center gap-2.5">
           <WalkieTalkie />

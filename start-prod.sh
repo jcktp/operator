@@ -121,45 +121,25 @@ if ! command -v ollama &>/dev/null; then
 fi
 step "Ollama found"
 
-# ── 4. cloudflared (optional) ─────────────────────────────────────────────────
-step "Checking cloudflared (optional — needed for remote report submissions)..."
-if command -v cloudflared &>/dev/null; then
-  step "cloudflared found"
-else
-  warn "cloudflared not found — will attempt to install..."
-  CLOUDFLARED_OK=false
+# ── 4. cloudflared (optional — installed in background, non-blocking) ─────────
+install_cloudflared_bg() {
   case "$PLATFORM" in
     macOS)
-      brew install cloudflared && CLOUDFLARED_OK=true \
-        || warn "brew install cloudflared failed — remote submissions unavailable."
-      ;;
+      brew install cloudflared >/dev/null 2>&1 || true ;;
     Linux)
       ARCH="$(uname -m)"
-      case "$ARCH" in
-        x86_64)        CF_ARCH="amd64" ;;
-        aarch64|arm64) CF_ARCH="arm64" ;;
-        armv7l)        CF_ARCH="arm" ;;
-        *)             CF_ARCH="amd64" ;;
-      esac
+      case "$ARCH" in x86_64) CF_ARCH="amd64" ;; aarch64|arm64) CF_ARCH="arm64" ;; *) CF_ARCH="amd64" ;; esac
       CF_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}"
-      step "Downloading cloudflared binary (${CF_ARCH})..."
-      if curl -fsSL "$CF_URL" -o /tmp/cloudflared-dl; then
-        sudo install -m 0755 /tmp/cloudflared-dl /usr/local/bin/cloudflared \
-          && CLOUDFLARED_OK=true \
-          || warn "Could not install cloudflared — remote submissions unavailable."
-        rm -f /tmp/cloudflared-dl
-      else
-        warn "Could not download cloudflared — remote submissions unavailable."
-      fi
-      ;;
-    Windows)
-      warn "On Windows, install cloudflared manually: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
-      ;;
-    *)
-      warn "Unknown platform — skipping cloudflared."
-      ;;
+      curl -fsSL "$CF_URL" -o /tmp/cloudflared-dl 2>/dev/null \
+        && sudo install -m 0755 /tmp/cloudflared-dl /usr/local/bin/cloudflared 2>/dev/null \
+        && rm -f /tmp/cloudflared-dl || true ;;
   esac
-  if [ "$CLOUDFLARED_OK" = true ]; then step "cloudflared installed"; fi
+}
+if command -v cloudflared &>/dev/null; then
+  step "cloudflared ready"
+else
+  warn "cloudflared not found — installing in background..."
+  install_cloudflared_bg &
 fi
 
 # ── 5. Environment file ───────────────────────────────────────────────────────
@@ -190,15 +170,39 @@ else
   step "Dependencies already installed"
 fi
 
-# ── 6b. Prisma generate ───────────────────────────────────────────────────────
+# ── 6b. Prisma generate (skip if client already up to date) ──────────────────
 export DATABASE_URL="file:$(pwd)/prisma/dev.db"
-step "Generating Prisma client..."
-npx prisma generate 2>/dev/null || true
+PRISMA_CLIENT="node_modules/.prisma/client/index.js"
+PRISMA_SCHEMA="prisma/schema.prisma"
+if [ ! -f "$PRISMA_CLIENT" ] || [ "$PRISMA_SCHEMA" -nt "$PRISMA_CLIENT" ]; then
+  step "Generating Prisma client..."
+  npx prisma generate 2>/dev/null || true
+else
+  step "Prisma client up to date"
+fi
 
-# ── 7. Database ───────────────────────────────────────────────────────────────
-step "Setting up database..."
-npx prisma migrate deploy || error "Database migration failed"
-step "Database ready"
+# ── 7. Database (skip migrate if DB exists and no pending migrations) ─────────
+DB_FILE="prisma/dev.db"
+MIGRATIONS_DIR="prisma/migrations"
+if [ ! -f "$DB_FILE" ]; then
+  step "Setting up database..."
+  npx prisma migrate deploy || error "Database migration failed"
+  step "Database ready"
+else
+  NEEDS_MIGRATE=false
+  if [ -d "$MIGRATIONS_DIR" ]; then
+    while IFS= read -r -d '' f; do
+      if [ "$f" -nt "$DB_FILE" ]; then NEEDS_MIGRATE=true; break; fi
+    done < <(find "$MIGRATIONS_DIR" -name "*.sql" -print0 2>/dev/null)
+  fi
+  if [ "$NEEDS_MIGRATE" = true ]; then
+    step "Applying database migrations..."
+    npx prisma migrate deploy || error "Database migration failed"
+    step "Database ready"
+  else
+    step "Database up to date"
+  fi
+fi
 
 # ── 8. Kill any existing server on this port ─────────────────────────────────
 if lsof -ti ":$PORT" &>/dev/null; then

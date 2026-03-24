@@ -660,7 +660,7 @@ ${truncated}
 
 Return ONLY valid JSON with this exact structure:
 {
-  "summary": "2-3 sentence factual summary of what this report covers and its key findings",
+  "summary": "4-6 sentence narrative summary written in a direct, conversational tone for the ${modeConfig.label.toLowerCase()}. Cover what this report is about, the key findings or themes, any notable strengths or concerns, and what stands out most. Write as if briefing the reader verbally — not a dry abstract.",
   "metrics": [
     {"label": "metric name", "value": "exact value as written in document", "context": "comparison or target if stated", "trend": "up|down|flat|unknown", "status": "positive|negative|neutral|warning"}
   ],
@@ -682,7 +682,7 @@ ${truncated}
 
 Reply with ONLY valid JSON:
 {
-  "summary": "2-3 sentence summary",
+  "summary": "4-6 sentence narrative summary covering what this report is about, key findings, notable strengths or concerns, and what stands out most — conversational tone, as if briefing the reader verbally",
   "metrics": [{"label": "name", "value": "exact value from text", "context": "context if stated", "trend": "up|down|flat|unknown", "status": "positive|negative|neutral|warning"}],
   "insights": [{"type": "observation|anomaly|risk|opportunity", "text": "observation from document", "area": "${area.toLowerCase()}"}],
   "questions": [{"text": "follow-up question", "why": "why it matters", "priority": "high|medium|low"}]

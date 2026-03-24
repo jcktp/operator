@@ -24,6 +24,8 @@ export default function UploadTab() {
   const [directs, setDirects] = useState<DirectReport[]>([])
   const [directsLoaded, setDirectsLoaded] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [processingIndex, setProcessingIndex] = useState(0)
+  const [processingTotal, setProcessingTotal] = useState(0)
   const [allDone, setAllDone] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [seriesCandidate, setSeriesCandidate] = useState<SeriesCandidate | null>(null)
@@ -82,8 +84,13 @@ export default function UploadTab() {
     if (pendingItems.length === 0 || submitting) return
     if (pendingItems.find(q => !q.area)) { alert('Please select an area for all files'); return }
     setSubmitting(true)
+    setProcessingIndex(1)
+    setProcessingTotal(pendingItems.length)
 
+    let idx = 0
     for (const item of pendingItems) {
+      idx++
+      setProcessingIndex(idx)
       updateItem(item.id, { status: 'analyzing' })
       try {
         let res: Response
@@ -271,7 +278,7 @@ export default function UploadTab() {
 
       <button type="submit" disabled={queue.length === 0 || !allHaveArea || submitting || pendingCount === 0}
         className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-        {submitting ? <><Loader2 size={15} className="animate-spin" />Processing {doneCount + 1} of {queue.length}…</>
+        {submitting ? <><Loader2 size={15} className="animate-spin" />Processing {processingIndex} of {processingTotal}…</>
         : allDone ? <><CheckCircle size={15} />{doneCount} report{doneCount !== 1 ? 's' : ''} added{errorCount > 0 && ` · ${errorCount} failed`}</>
         : !allHaveArea && pendingCount > 0 ? <>Select an area for all files to continue</>
         : <><Upload size={15} />Upload & analyse {pendingCount > 0 ? `${pendingCount} report${pendingCount !== 1 ? 's' : ''}` : ''}</>}

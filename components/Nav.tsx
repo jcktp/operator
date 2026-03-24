@@ -7,7 +7,6 @@ import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, Bo
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
-import { useDispatch } from '@/components/DispatchContext'
 import { playShutdownBeep } from '@/lib/beep'
 import { useMode } from '@/components/ModeContext'
 import StatusIndicator from '@/components/StatusIndicator'
@@ -17,11 +16,17 @@ export default function Nav() {
   const pathname = usePathname()
   const router = useRouter()
   const { shutdown, forceShutdown } = useShutdown()
-  const { open: dispatchOpen } = useDispatch()
+
   const config = useMode()
   const [powerMenuOpen, setPowerMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const powerMenuRef = useRef<HTMLDivElement>(null)
+  const libraryWrapRef = useRef<HTMLDivElement>(null)
+  const [newReport, setNewReport] = useState<{ name: string } | null>(null)
+  const [notifShowing, setNotifShowing] = useState(false)
+  const [notifLeft, setNotifLeft] = useState(0)
+  const lastReportIdRef = useRef<string | null>(null)
+  const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -58,6 +63,46 @@ export default function Nav() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await fetch('/api/reports?limit=1')
+        const data = await res.json()
+        const latest = data.reports?.[0]
+        if (!latest) return
+        if (lastReportIdRef.current === null) {
+          lastReportIdRef.current = latest.id
+          return
+        }
+        if (latest.id !== lastReportIdRef.current) {
+          lastReportIdRef.current = latest.id
+          const name = latest.directReport?.name ?? 'someone'
+          const rect = libraryWrapRef.current?.getBoundingClientRect()
+          if (rect) setNotifLeft(rect.left)
+          setNewReport({ name })
+          setNotifShowing(true)
+          if (notifTimerRef.current) clearTimeout(notifTimerRef.current)
+          notifTimerRef.current = setTimeout(() => {
+            setNotifShowing(false)
+            setTimeout(() => setNewReport(null), 200)
+          }, 6000)
+        }
+      } catch {}
+    }
+    check()
+    const interval = setInterval(check, 30_000)
+    return () => {
+      clearInterval(interval)
+      if (notifTimerRef.current) clearTimeout(notifTimerRef.current)
+    }
+  }, [])
+
+  const dismissNotif = () => {
+    if (notifTimerRef.current) clearTimeout(notifTimerRef.current)
+    setNotifShowing(false)
+    setTimeout(() => setNewReport(null), 200)
+  }
+
   const handleLogout = async () => {
     setPowerMenuOpen(false)
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -74,8 +119,26 @@ export default function Nav() {
 
   return (
     <>
+    {newReport && (
+      <div
+        className={cn(
+          'fixed z-40 transition-all duration-200',
+          notifShowing ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1 pointer-events-none'
+        )}
+        style={{ top: 60, left: notifLeft }}
+      >
+        <Link
+          href="/library"
+          onClick={dismissNotif}
+          className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg shadow-md px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+          Report received from <span className="font-medium ml-1">{newReport.name}</span>
+        </Link>
+      </div>
+    )}
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-      <div className={cn(dispatchOpen ? 'w-3/4' : 'w-full', 'px-4 sm:px-6')}>
+      <div className="w-full px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
 
           {/* Logo */}
@@ -91,21 +154,30 @@ export default function Nav() {
 
           {/* Nav links — left-aligned, fills remaining space */}
           <div className="flex items-center gap-0.5 flex-1">
-            {links.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
-                  pathname === href || (href !== '/' && pathname.startsWith(href))
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                )}
-              >
-                <Icon size={13} />
-                <span className="hidden sm:inline">{label}</span>
-              </Link>
-            ))}
+            {links.map(({ href, label, icon: Icon }) => {
+              const isActive = pathname === href || (href !== '/' && pathname.startsWith(href))
+              const linkClass = cn(
+                'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+                isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+              )
+              if (href === '/library') {
+                return (
+                  <div key={href} ref={libraryWrapRef}>
+                    <Link href={href} className={linkClass} onClick={dismissNotif}>
+                      <Icon size={13} />
+                      <span className="hidden sm:inline">{label}</span>
+                      {newReport && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 ml-0.5" />}
+                    </Link>
+                  </div>
+                )
+              }
+              return (
+                <Link key={href} href={href} className={linkClass}>
+                  <Icon size={13} />
+                  <span className="hidden sm:inline">{label}</span>
+                </Link>
+              )
+            })}
           </div>
 
           {/* Search */}

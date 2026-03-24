@@ -23,12 +23,15 @@ export async function GET(
       return NextResponse.json({ error: 'submitted' }, { status: 410 })
     }
 
-    const directs = await prisma.directReport.findMany({
-      select: { id: true, name: true, title: true },
-      orderBy: { name: 'asc' },
-    })
+    const [directs, modeRow] = await Promise.all([
+      prisma.directReport.findMany({
+        select: { id: true, name: true, title: true },
+        orderBy: { name: 'asc' },
+      }),
+      prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    ])
 
-    return NextResponse.json({ request, directs })
+    return NextResponse.json({ request, directs, mode: modeRow?.value ?? null })
   } catch (e) {
     console.error('Report request lookup error:', e)
     return NextResponse.json({ error: 'server_error', detail: String(e) }, { status: 500 })

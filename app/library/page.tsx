@@ -6,6 +6,7 @@ import { FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import LibraryClearButton from './LibraryClearButton'
 import LibrarySearch from './LibrarySearch'
+import { getModeConfig } from '@/lib/mode'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,13 +17,15 @@ export default async function LibraryPage({
 }) {
   const { area: selectedArea } = await searchParams
 
-  const [allReports, directs] = await Promise.all([
+  const [allReports, directs, modeRow] = await Promise.all([
     prisma.report.findMany({
       orderBy: { createdAt: 'desc' },
       include: { directReport: true },
     }),
     prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
+  const modeConfig = getModeConfig(modeRow?.value)
 
   // Filter by area if selected
   const reports = selectedArea
@@ -48,9 +51,9 @@ export default async function LibraryPage({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Library</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{modeConfig.navLibrary}</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            All reports, by area. Full history with diffs and questions.
+            All {modeConfig.documentLabelPlural.toLowerCase()}, by {modeConfig.collectionLabel.toLowerCase()}. Full history with diffs and questions.
           </p>
         </div>
         {allReports.length > 0 && <LibraryClearButton />}

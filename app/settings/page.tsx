@@ -75,7 +75,7 @@ export default function SettingsPage() {
   const [auditLogs, setAuditLogs] = useState<{ id: string; action: string; detail: string | null; createdAt: string }[]>([])
   const [loadingAudit, setLoadingAudit] = useState(false)
   // Tabs
-  type Tab = 'profile' | 'ai' | 'remote' | 'backup' | 'danger'
+  type Tab = 'profile' | 'ai' | 'pulse' | 'remote' | 'backup' | 'danger'
   const [tab, setTab] = useState<Tab>('profile')
 
   useEffect(() => {
@@ -248,6 +248,7 @@ export default function SettingsPage() {
   const TABS: { id: Tab; label: string }[] = [
     { id: 'profile', label: 'Profile' },
     { id: 'ai', label: 'AI' },
+    { id: 'pulse', label: 'Pulse' },
     { id: 'remote', label: 'Remote' },
     { id: 'backup', label: 'Backup' },
     { id: 'danger', label: 'Danger' },
@@ -405,7 +406,7 @@ export default function SettingsPage() {
                 <select
                   value={autoLockMinutes}
                   onChange={e => setAutoLockMinutes(parseInt(e.target.value))}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
                 >
                   <option value={0}>Never</option>
                   <option value={5}>5 min</option>
@@ -497,58 +498,65 @@ export default function SettingsPage() {
               </div>
             ))}
 
-            {/* Social APIs */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900">Social</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Sign in to see your home timeline in Pulse. Not required for public profile feeds.</p>
-              </div>
+          </>
+        )}
 
-              {/* Bluesky */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-700">Bluesky</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Handle</label>
-                    <input
-                      type="text"
-                      value={bskyIdentifier}
-                      onChange={e => setBskyIdentifier(e.target.value)}
-                      placeholder="you.bsky.social"
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">App password</label>
-                    <input
-                      type="password"
-                      value={bskyAppPassword}
-                      onChange={e => setBskyAppPassword(e.target.value)}
-                      placeholder="xxxx-xxxx-xxxx-xxxx"
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
-                    />
-                  </div>
-                </div>
-                <p className="text-[11px] text-gray-400">Generate an app password at bsky.app → Settings → App Passwords. Then add a Bluesky feed in Pulse with URL set to <code className="font-mono">timeline</code>.</p>
-              </div>
+        {tab === 'pulse' && (
+          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">Social accounts</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Sign in to see your home timeline in Pulse. Not required for public profile feeds.</p>
+            </div>
 
-              {/* Mastodon */}
-              <div className="space-y-2 pt-3 border-t border-gray-100">
-                <p className="text-xs font-semibold text-gray-700">Mastodon</p>
+            {/* Bluesky */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-700">Bluesky</p>
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Access token</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Handle</label>
+                  <input
+                    type="text"
+                    value={bskyIdentifier}
+                    onChange={e => setBskyIdentifier(e.target.value)}
+                    placeholder="you.bsky.social"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">App password</label>
                   <input
                     type="password"
-                    value={mastodonToken}
-                    onChange={e => setMastodonToken(e.target.value)}
-                    placeholder="Paste token here"
+                    value={bskyAppPassword}
+                    onChange={e => setBskyAppPassword(e.target.value)}
+                    placeholder="xxxx-xxxx-xxxx-xxxx"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
                   />
                 </div>
-                <p className="text-[11px] text-gray-400">Generate at your instance → Preferences → Development → New application (read:statuses scope). Then add a Mastodon feed in Pulse with URL set to your instance domain, e.g. <code className="font-mono">mastodon.social</code>.</p>
               </div>
+              <p className="text-[11px] text-gray-400">Generate an app password at bsky.app → Settings → App Passwords. Then add a Bluesky feed in Pulse with URL set to <code className="font-mono">timeline</code>.</p>
             </div>
-          </>
+
+            {/* Mastodon */}
+            <div className="space-y-2 pt-3 border-t border-gray-100">
+              <p className="text-xs font-semibold text-gray-700">Mastodon</p>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Access token</label>
+                <input
+                  type="password"
+                  value={mastodonToken}
+                  onChange={e => setMastodonToken(e.target.value)}
+                  placeholder="Paste token here"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
+                />
+              </div>
+              <p className="text-[11px] text-gray-400">Generate at your instance → Preferences → Development → New application (read:statuses scope). Then add a Mastodon feed in Pulse with URL set to your instance domain, e.g. <code className="font-mono">mastodon.social</code>.</p>
+            </div>
+
+            <button type="submit" disabled={saving}
+              className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : 'Save'}
+            </button>
+          </div>
         )}
 
         {(tab === 'profile' || tab === 'ai') && (
@@ -576,9 +584,7 @@ export default function SettingsPage() {
         {!tunnelInstalled ? (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700 space-y-1.5">
             <p className="font-medium">cloudflared not installed</p>
-            <p>Remote submissions require Cloudflare Tunnel. Install it with:</p>
-            <code className="block bg-amber-100 rounded px-2 py-1 font-mono text-amber-800">brew install cloudflared</code>
-            <p className="text-amber-600">Then reload this page.</p>
+            <p>Run <code className="bg-amber-100 rounded px-1 font-mono">./start.sh</code> — it installs cloudflared automatically.</p>
           </div>
         ) : tunnelRunning && tunnelUrl ? (
           <div className="space-y-3">

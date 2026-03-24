@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { parseJsonSafe } from '@/lib/utils'
 import type { Metric, Insight, Question } from '@/lib/utils'
+import type { AreaMetricData, MetricPoint } from '@/components/MetricsCharts'
 import { FileText, Upload } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
@@ -13,6 +14,19 @@ import { getModeConfig } from '@/lib/mode'
 import { isValidSession, SESSION_COOKIE } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
+
+function parseMetricNumeric(value: string): number | null {
+  let s = value.trim().replace(/[£$€¥₹]/g, '').replace(/,/g, '').replace(/%$/, '')
+  const suffixMatch = s.match(/^([-\d.]+)\s*([kmb])$/i)
+  if (suffixMatch) {
+    const n = parseFloat(suffixMatch[1])
+    const mult = ({ k: 1e3, m: 1e6, b: 1e9 } as Record<string, number>)[suffixMatch[2].toLowerCase()] ?? 1
+    return isNaN(n) ? null : n * mult
+  }
+  const numMatch = s.match(/^([-\d.]+)/)
+  if (numMatch) { const n = parseFloat(numMatch[1]); return isNaN(n) ? null : n }
+  return null
+}
 
 /** Monday of the week containing `date` (UTC) */
 function weekStart(date: Date): number {
@@ -159,6 +173,37 @@ export default async function OverviewPage({
     topQuestions.slice(0, 5).forEach(q => contextLines.push(`- ${q.text}${q.directName ? ` (ask ${q.directName})` : ''}`))
   }
 
+  // ── Metric time-series per area ─────────────────────────────────────────────
+  // Group all recent reports by area, sorted oldest→newest
+  const byArea: Record<string, typeof reports> = {}
+  for (const r of [...recent].reverse()) {
+    if (!byArea[r.area]) byArea[r.area] = []
+    byArea[r.area].push(r)
+  }
+
+  const areaMetrics: AreaMetricData[] = Object.entries(byArea).map(([area, areaReports]) => {
+    // Track first-seen label text per normalized key
+    const labelText: Record<string, string> = {}
+    const labelPoints: Record<string, MetricPoint[]> = {}
+    for (const r of areaReports) {
+      for (const m of parseJsonSafe<Metric[]>(r.metrics, [])) {
+        const key = m.label.trim().toLowerCase()
+        if (!labelText[key]) labelText[key] = m.label.trim()
+        if (!labelPoints[key]) labelPoints[key] = []
+        labelPoints[key].push({
+          date: (r.reportDate ?? r.createdAt).toISOString(),
+          displayValue: m.value,
+          numericValue: parseMetricNumeric(m.value),
+          status: m.status,
+        })
+      }
+    }
+    const metrics = Object.keys(labelPoints)
+      .filter(key => labelPoints[key].length >= 2)
+      .map(key => ({ label: labelText[key], points: labelPoints[key] }))
+    return { area, metrics }
+  })
+
   const data: OverviewData = {
     stats: {
       totalReports: reports.length,
@@ -185,6 +230,7 @@ export default async function OverviewPage({
       directTitle: r.directReport?.title,
     })),
     context: contextLines.join('\n'),
+    areaMetrics: areaMetrics.filter(a => a.metrics.length > 0),
   }
 
   return <OverviewShell data={data} />

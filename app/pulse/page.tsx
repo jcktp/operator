@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Rss, Plus, Trash2, RefreshCw, BookOpen, X, ExternalLink, Loader2, ChevronDown, Pencil, Check } from 'lucide-react'
+import { Rss, Plus, Trash2, RefreshCw, BookOpen, X, ExternalLink, Loader2, ChevronDown, Pencil, Check, Globe, ChevronLeft, ChevronRight, Eraser } from 'lucide-react'
 import { formatRelativeDate } from '@/lib/utils'
+import { PULSE_DIRECTORY, DIRECTORY_CATEGORIES } from '@/lib/pulse-directory'
 
 interface PulseItem {
   id: string
@@ -71,10 +72,16 @@ export default function PulsePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', url: '', type: 'rss' })
   const [adding, setAdding] = useState(false)
+  // Clear feed state
+  const [clearingId, setClearingId] = useState<string | null>(null)
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ name: '', url: '', type: '' })
   const [savingEdit, setSavingEdit] = useState(false)
+  // Directory
+  const [showDirectory, setShowDirectory] = useState(false)
+  const [dirCategory, setDirCategory] = useState('All')
+  const [addingFromDir, setAddingFromDir] = useState<Set<string>>(new Set())
   // Auto-refresh
   const [autoRefreshMinutes, setAutoRefreshMinutes] = useState<number>(() => {
     if (typeof window !== 'undefined') return parseInt(localStorage.getItem('pulse_autorefresh') ?? '0') || 0
@@ -83,6 +90,9 @@ export default function PulsePage() {
   const [autoRefreshing, setAutoRefreshing] = useState(false)
   const [lastAutoRefresh, setLastAutoRefresh] = useState<Date | null>(null)
   const feedsRef = useRef<PulseFeed[]>([])
+  // Pagination
+  const [page, setPage] = useState(1)
+  const ITEMS_PER_PAGE = 20
 
   const load = useCallback(async () => {
     const res = await fetch('/api/pulse')
@@ -138,6 +148,19 @@ export default function PulsePage() {
     await load()
   }
 
+  const existingUrls = new Set(feeds.map(f => f.url))
+
+  const handleAddFromDir = async (name: string, url: string) => {
+    setAddingFromDir(s => new Set(s).add(url))
+    await fetch('/api/pulse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, url, type: 'rss' }),
+    })
+    await load()
+    setAddingFromDir(s => { const n = new Set(s); n.delete(url); return n })
+  }
+
   const handleRefresh = async (id: string) => {
     setRefreshingId(id)
     setRefreshError(null)
@@ -160,6 +183,21 @@ export default function PulsePage() {
     await fetch(`/api/pulse/${id}`, { method: 'DELETE' })
     if (activeFeed === id) setActiveFeed(null)
     setDeletingId(null)
+    await load()
+  }
+
+  const handleClearFeed = async (id: string) => {
+    if (clearingId !== id) {
+      setClearingId(id)
+      setTimeout(() => setClearingId(null), 3000)
+      return
+    }
+    await fetch(`/api/pulse/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear' }),
+    })
+    setClearingId(null)
     await load()
   }
 
@@ -188,6 +226,16 @@ export default function PulsePage() {
     setFeeds(fs => fs.map(f => ({
       ...f,
       items: f.items.map(i => i.id === itemId ? { ...i, savedToJournal: true } : i),
+    })))
+  }
+
+  const handleUnsaveFromJournal = async (itemId: string) => {
+    setSavingItemId(itemId)
+    await fetch(`/api/pulse/items/${itemId}`, { method: 'DELETE' })
+    setSavingItemId(null)
+    setFeeds(fs => fs.map(f => ({
+      ...f,
+      items: f.items.map(i => i.id === itemId ? { ...i, savedToJournal: false } : i),
     })))
   }
 
@@ -220,20 +268,21 @@ export default function PulsePage() {
           {/* Auto-refresh picker */}
           <div className="flex items-center gap-1.5">
             {autoRefreshing && <RefreshCw size={12} className="animate-spin text-gray-400" />}
-            <select
-              value={autoRefreshMinutes}
-              onChange={e => setAutoRefreshMinutes(parseInt(e.target.value))}
-              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 text-gray-600"
-            >
-              <option value={0}>No auto-refresh</option>
-              <option value={5}>Every 5 min</option>
-              <option value={15}>Every 15 min</option>
-              <option value={30}>Every 30 min</option>
-              <option value={60}>Every hour</option>
-            </select>
+            <RefreshDropdown value={autoRefreshMinutes} onChange={setAutoRefreshMinutes} />
           </div>
           <button
-            onClick={() => setShowAdd(s => !s)}
+            onClick={() => { setShowDirectory(s => !s); setShowAdd(false) }}
+            className={`inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+              showDirectory
+                ? 'bg-gray-100 text-gray-700 border-gray-200'
+                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <Globe size={14} />
+            Browse directory
+          </button>
+          <button
+            onClick={() => { setShowAdd(s => !s); setShowDirectory(false) }}
             className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
           >
             {showAdd ? <X size={14} /> : <Plus size={14} />}
@@ -288,6 +337,62 @@ export default function PulsePage() {
         </form>
       )}
 
+      {/* Feed directory */}
+      {showDirectory && (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-900">Feed directory</h2>
+            <span className="text-xs text-gray-400">{PULSE_DIRECTORY.length} sources</span>
+          </div>
+          {/* Category filter */}
+          <div className="px-5 py-2.5 border-b border-gray-100 flex gap-1.5 flex-wrap">
+            {DIRECTORY_CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setDirCategory(cat)}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  dirCategory === cat
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          {/* Feed list */}
+          <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+            {PULSE_DIRECTORY.filter(e => dirCategory === 'All' || e.category === dirCategory).map(entry => {
+              const alreadyAdded = existingUrls.has(entry.url)
+              const isAdding = addingFromDir.has(entry.url)
+              return (
+                <div key={entry.url} className="flex items-center justify-between px-5 py-2.5 hover:bg-gray-50/60">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900">{entry.name}</span>
+                      <span className="text-[11px] text-gray-400 border border-gray-200 rounded-full px-1.5 py-px">{entry.category}</span>
+                    </div>
+                  </div>
+                  <button
+                    disabled={alreadyAdded || isAdding}
+                    onClick={() => handleAddFromDir(entry.name, entry.url)}
+                    className={`ml-3 shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors ${
+                      alreadyAdded
+                        ? 'border-green-200 text-green-600 bg-green-50 cursor-default'
+                        : isAdding
+                        ? 'border-gray-200 text-gray-400 cursor-wait'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    {isAdding ? <Loader2 size={11} className="animate-spin" /> : alreadyAdded ? 'Added' : 'Add'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {feeds.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
@@ -301,7 +406,7 @@ export default function PulsePage() {
           {/* Sidebar — feed list */}
           <aside className="w-56 shrink-0 space-y-1">
             <button
-              onClick={() => setActiveFeed(null)}
+              onClick={() => { setActiveFeed(null); setPage(1) }}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
                 activeFeed === null ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'
               }`}
@@ -351,7 +456,7 @@ export default function PulsePage() {
                 ) : (
                   <div className="group relative">
                     <button
-                      onClick={() => { setActiveFeed(f.id === activeFeed ? null : f.id); setEditingId(null) }}
+                      onClick={() => { setActiveFeed(f.id === activeFeed ? null : f.id); setEditingId(null); setPage(1) }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
                         activeFeed === f.id ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'
                       }`}
@@ -385,6 +490,13 @@ export default function PulsePage() {
                         <Pencil size={11} />
                       </button>
                       <button
+                        onClick={() => handleClearFeed(f.id)}
+                        className={`p-1 rounded ${clearingId === f.id ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-amber-500 hover:bg-gray-100'}`}
+                        title={clearingId === f.id ? 'Click again to clear all items' : 'Clear feed items'}
+                      >
+                        <Eraser size={11} />
+                      </button>
+                      <button
                         onClick={() => handleDelete(f.id)}
                         className={`p-1 rounded ${deletingId === f.id ? 'text-red-600 bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'}`}
                         title={deletingId === f.id ? 'Click again to confirm delete' : 'Delete feed'}
@@ -406,58 +518,149 @@ export default function PulsePage() {
                 <p className="text-xs text-gray-400 mt-1">Refresh a feed to load items.</p>
               </div>
             ) : (
-              allItems.map(item => (
-                <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded border ${TYPE_COLORS[item.feedType] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                          {item.feedName}
-                        </span>
-                        {item.publishedAt && (
-                          <span className="text-xs text-gray-400">{formatRelativeDate(item.publishedAt)}</span>
+              <>
+                {allItems.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map(item => (
+                  <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded border ${TYPE_COLORS[item.feedType] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                            {item.feedName}
+                          </span>
+                          {item.publishedAt && (
+                            <span className="text-xs text-gray-400">{formatRelativeDate(item.publishedAt)}</span>
+                          )}
+                        </div>
+                        <p className="text-sm font-medium text-gray-900 leading-snug">{item.title}</p>
+                        {item.summary && item.summary !== item.title && (
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.summary}</p>
                         )}
                       </div>
-                      <p className="text-sm font-medium text-gray-900 leading-snug">{item.title}</p>
-                      {item.summary && item.summary !== item.title && (
-                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.summary}</p>
-                      )}
-                    </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {item.url && (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100"
-                          title="Open source"
-                        >
-                          <ExternalLink size={13} />
-                        </a>
-                      )}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {item.url && (
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100"
+                            title="Open source"
+                          >
+                            <ExternalLink size={13} />
+                          </a>
+                        )}
+                        {item.savedToJournal ? (
+                          <div className="flex items-center gap-1">
+                            <a href="/journal?folder=Pulse"
+                              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-green-200 text-green-600 bg-green-50 hover:bg-green-100 transition-colors"
+                              title="Saved to Journal — click to view"
+                            >
+                              <BookOpen size={11} />
+                              Saved
+                            </a>
+                            <button
+                              onClick={() => handleUnsaveFromJournal(item.id)}
+                              disabled={savingItemId === item.id}
+                              className="p-1 rounded text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors"
+                              title="Remove from Journal"
+                            >
+                              {savingItemId === item.id ? <Loader2 size={10} className="animate-spin" /> : <X size={10} />}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleSaveToJournal(item.id)}
+                            disabled={savingItemId === item.id}
+                            className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+                            title="Save to Journal"
+                          >
+                            {savingItemId === item.id ? <Loader2 size={11} className="animate-spin" /> : <BookOpen size={11} />}
+                            Save
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Pagination */}
+                {allItems.length > ITEMS_PER_PAGE && (
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-xs text-gray-400">
+                      {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, allItems.length)} of {allItems.length}
+                    </span>
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleSaveToJournal(item.id)}
-                        disabled={item.savedToJournal || savingItemId === item.id}
-                        className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border transition-colors ${
-                          item.savedToJournal
-                            ? 'border-green-200 text-green-600 bg-green-50 cursor-default'
-                            : 'border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                        }`}
-                        title="Save to Journal"
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
                       >
-                        {savingItemId === item.id
-                          ? <Loader2 size={11} className="animate-spin" />
-                          : <BookOpen size={11} />
-                        }
-                        {item.savedToJournal ? 'Saved' : 'Save'}
+                        <ChevronLeft size={13} />
+                      </button>
+                      <span className="text-xs text-gray-600 px-2">Page {page} of {Math.ceil(allItems.length / ITEMS_PER_PAGE)}</span>
+                      <button
+                        onClick={() => setPage(p => Math.min(Math.ceil(allItems.length / ITEMS_PER_PAGE), p + 1))}
+                        disabled={page >= Math.ceil(allItems.length / ITEMS_PER_PAGE)}
+                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
+                      >
+                        <ChevronRight size={13} />
                       </button>
                     </div>
                   </div>
-                </div>
-              ))
+                )}
+              </>
             )}
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const REFRESH_OPTIONS = [
+  { value: 0, label: 'No auto-refresh' },
+  { value: 5, label: 'Every 5 min' },
+  { value: 15, label: 'Every 15 min' },
+  { value: 30, label: 'Every 30 min' },
+  { value: 60, label: 'Every hour' },
+]
+
+function RefreshDropdown({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const label = REFRESH_OPTIONS.find(o => o.value === value)?.label ?? 'No auto-refresh'
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-left flex items-center gap-1.5 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
+      >
+        <span>{label}</span>
+        <ChevronDown size={13} className="text-gray-400" />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-20 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-md py-1">
+          {REFRESH_OPTIONS.map(o => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => { onChange(o.value); setOpen(false) }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${value === o.value ? 'text-gray-900 font-medium' : 'text-gray-700'}`}
+            >
+              {o.label}
+            </button>
+          ))}
         </div>
       )}
     </div>

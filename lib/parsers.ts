@@ -44,9 +44,11 @@ export async function extractText(buffer: Buffer, fileType: string): Promise<str
 
 async function extractPdf(buffer: Buffer): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require('pdf-parse')
-  const data = await pdfParse(buffer)
-  return data.text
+  const { PDFParse } = require('pdf-parse')
+  const parser = new PDFParse({ data: buffer })
+  const result = await parser.getText()
+  await parser.destroy()
+  return result.text
 }
 
 async function extractWord(buffer: Buffer): Promise<ParseResult> {

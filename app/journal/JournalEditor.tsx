@@ -7,7 +7,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { useCallback, useRef, useState } from 'react'
 import {
   Bold, Italic, UnderlineIcon, Heading2, List, ListOrdered,
-  Check, Loader2, Wand2, Download, Printer,
+  Check, Loader2, Wand2, Download, Printer, Mic, MicOff,
 } from 'lucide-react'
 
 interface Props {
@@ -19,7 +19,10 @@ interface Props {
 export default function JournalEditor({ entryId, initialContent, onContentChange }: Props) {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [fixingGrammar, setFixingGrammar] = useState(false)
+  const [dictating, setDictating] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
 
   const save = useCallback(async (html: string) => {
     setStatus('saving')
@@ -56,6 +59,60 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
       timerRef.current = setTimeout(() => save(html), 800)
     },
   })
+
+  const toggleDictation = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR: any = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
+    if (!SR) {
+      alert('Speech recognition is not supported in this browser.')
+      return
+    }
+
+    if (dictating && recognitionRef.current) {
+      recognitionRef.current.stop()
+      recognitionRef.current = null
+      setDictating(false)
+      return
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition: any = new SR()
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.lang = 'en-US'
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      const results = Array.from(event.results as ArrayLike<SpeechRecognitionResult>)
+      const transcript = results
+        .slice(event.resultIndex)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((r: any) => r[0].transcript as string)
+        .join(' ')
+      if (transcript && editor) {
+        editor.commands.insertContent(transcript + ' ')
+        const html = editor.getHTML()
+        onContentChange?.(html)
+        if (timerRef.current) clearTimeout(timerRef.current)
+        timerRef.current = setTimeout(() => save(html), 800)
+      }
+    }
+
+    recognition.onerror = () => {
+      setDictating(false)
+      recognitionRef.current = null
+    }
+
+    recognition.onend = () => {
+      setDictating(false)
+      recognitionRef.current = null
+    }
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setDictating(true)
+    editor?.commands.focus()
+  }
 
   const fixGrammar = async () => {
     if (!editor || fixingGrammar) return
@@ -133,6 +190,20 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
           <ListOrdered size={13} />
         </ToolButton>
         <div className="flex-1" />
+        {/* Dictation */}
+        <button
+          onClick={toggleDictation}
+          title={dictating ? 'Stop dictation' : 'Dictate (voice to text)'}
+          className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors ${
+            dictating
+              ? 'text-red-600 bg-red-50 hover:bg-red-100 animate-pulse'
+              : 'text-gray-500 hover:bg-gray-100'
+          }`}
+        >
+          {dictating ? <MicOff size={12} /> : <Mic size={12} />}
+          <span>{dictating ? 'Stop' : 'Dictate'}</span>
+        </button>
+        <div className="w-px h-4 bg-gray-200 mx-1" />
         {/* AI grammar fix */}
         <button
           onClick={fixGrammar}

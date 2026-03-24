@@ -26,9 +26,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   return NextResponse.json({ ok: true })
 }
 
-// POST /api/pulse/[id] — refresh feed
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// POST /api/pulse/[id] — refresh feed, or clear items with { action: 'clear' }
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+
+  const body = await req.json().catch(() => ({})) as { action?: string }
+  if (body.action === 'clear') {
+    await prisma.pulseItem.deleteMany({ where: { feedId: id } })
+    return NextResponse.json({ ok: true })
+  }
+
   const feed = await prisma.pulseFeed.findUnique({ where: { id } })
   if (!feed) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 

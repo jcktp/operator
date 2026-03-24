@@ -6,6 +6,9 @@ import { AreaBadge, InsightTypeBadge, StatusBadge } from '@/components/Badge'
 import { ArrowRight, Upload, AlertTriangle, HelpCircle, MessageSquare, CheckCircle2, FileStack } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { useDispatch } from '@/components/DispatchContext'
+import { useMode } from '@/components/ModeContext'
+import { MetricsChartsSection } from '@/components/MetricsCharts'
+import type { AreaMetricData } from '@/components/MetricsCharts'
 
 // ── Serialised data shapes ───────────────────────────────────────────────────
 
@@ -43,13 +46,15 @@ export interface OverviewData {
   resolvedFlagItems: ResolvedFlagItem[]
   recentReports: RecentReport[]
   context: string
+  areaMetrics?: AreaMetricData[]
 }
 
 // ── Shell ────────────────────────────────────────────────────────────────────
 
 export default function OverviewShell({ data }: { data: OverviewData }) {
   const { open: dispatchOpen, setOpen: setDispatchOpen, setAiContext } = useDispatch()
-  const { stats, activeAreas, topInsights, topQuestions, resolvedFlagItems, recentReports, context } = data
+  const mode = useMode()
+  const { stats, activeAreas, topInsights, topQuestions, resolvedFlagItems, recentReports, context, areaMetrics } = data
 
   useEffect(() => {
     setAiContext(context)
@@ -63,8 +68,8 @@ export default function OverviewShell({ data }: { data: OverviewData }) {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Overview</h1>
             <p className="text-gray-500 text-sm mt-0.5">
-              {stats.totalReports} report{stats.totalReports !== 1 ? 's' : ''} across {stats.areasCount} area{stats.areasCount !== 1 ? 's' : ''}
-              {stats.directsCount > 0 && ` · ${stats.directsCount} direct${stats.directsCount !== 1 ? 's' : ''}`}
+              {stats.totalReports} {stats.totalReports !== 1 ? mode.documentLabelPlural.toLowerCase() : mode.documentLabel.toLowerCase()} across {stats.areasCount} {stats.areasCount !== 1 ? mode.collectionLabelPlural.toLowerCase() : mode.collectionLabel.toLowerCase()}
+              {stats.directsCount > 0 && ` · ${stats.directsCount} ${stats.directsCount !== 1 ? mode.personLabelPlural.toLowerCase() : mode.personLabel.toLowerCase()}`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -92,14 +97,14 @@ export default function OverviewShell({ data }: { data: OverviewData }) {
               className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
             >
               <Upload size={14} />
-              Add report
+              {mode.navDocuments}
             </Link>
           </div>
         </div>
 
         {/* Areas */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By Area</h2>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By {mode.collectionLabel}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {activeAreas.map(report => (
               <Link
@@ -128,7 +133,7 @@ export default function OverviewShell({ data }: { data: OverviewData }) {
                   </div>
                 )}
                 <div className="mt-3 flex items-center gap-1 text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
-                  <span>View report</span><ArrowRight size={11} />
+                  <span>View {mode.documentLabel.toLowerCase()}</span><ArrowRight size={11} />
                 </div>
               </Link>
             ))}
@@ -158,6 +163,11 @@ export default function OverviewShell({ data }: { data: OverviewData }) {
               ))}
             </div>
           </section>
+        )}
+
+        {/* Metric trends charts */}
+        {areaMetrics && areaMetrics.length > 0 && (
+          <MetricsChartsSection areas={areaMetrics} />
         )}
 
         {/* Flags + Questions */}
@@ -205,7 +215,7 @@ export default function OverviewShell({ data }: { data: OverviewData }) {
 
         {/* Recent reports */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Reports</h2>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent {mode.documentLabelPlural}</h2>
           <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
             {recentReports.map(report => (
               <Link key={report.id} href={`/reports/${report.id}`}

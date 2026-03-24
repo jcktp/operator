@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isCloudflaredInstalled, isTunnelRunning, getTunnelUrl, startTunnel, stopTunnel } from '@/lib/tunnel'
+import { isCloudflaredInstalled, isTunnelRunning, getTunnelUrl, startTunnel, stopTunnel, getLocalNetworkUrl } from '@/lib/tunnel'
 
 export async function GET() {
   return NextResponse.json({
     installed: isCloudflaredInstalled(),
     running: isTunnelRunning(),
     url: getTunnelUrl(),
+    localUrl: getLocalNetworkUrl(),
   })
 }
 

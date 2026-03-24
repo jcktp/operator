@@ -47,15 +47,20 @@ export default function RequestTab() {
   const [directs, setDirects] = useState<DirectReport[]>([])
   const [areas, setAreas] = useState<string[]>(FALLBACK_AREAS)
   const [generating, setGenerating] = useState(false)
+  const [generatingStep, setGeneratingStep] = useState('')
   const [link, setLink] = useState('')
   const [copied, setCopied] = useState(false)
   const [tunnelUrl, setTunnelUrl] = useState<string | null>(null)
+  const [localUrl, setLocalUrl] = useState<string | null>(null)
+  const [tunnelInstalled, setTunnelInstalled] = useState(true)
 
   useEffect(() => {
     fetch('/api/tunnel')
       .then(r => r.json())
-      .then((d: { running: boolean; url: string | null }) => {
+      .then((d: { running: boolean; url: string | null; localUrl: string | null; installed: boolean }) => {
         if (d.running && d.url) setTunnelUrl(d.url)
+        if (d.localUrl) setLocalUrl(d.localUrl)
+        setTunnelInstalled(d.installed !== false)
       })
       .catch(() => {})
   }, [])
@@ -101,6 +106,27 @@ export default function RequestTab() {
     e.preventDefault()
     if (!title || !area) return
     setGenerating(true)
+
+    let resolvedTunnelUrl = tunnelUrl
+
+    // Auto-start tunnel if cloudflared is installed and no tunnel is running yet
+    if (!resolvedTunnelUrl && tunnelInstalled) {
+      setGeneratingStep('Starting remote tunnel…')
+      try {
+        const startRes = await fetch('/api/tunnel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'start' }),
+        })
+        const startData = await startRes.json() as { url?: string | null }
+        if (startData.url) {
+          resolvedTunnelUrl = startData.url
+          setTunnelUrl(startData.url)
+        }
+      } catch { /* fall back to localUrl */ }
+    }
+
+    setGeneratingStep('Creating request…')
     try {
       const res = await fetch('/api/report-requests', {
         method: 'POST',
@@ -109,10 +135,13 @@ export default function RequestTab() {
       })
       const data = await res.json() as { request?: { token: string } }
       if (res.ok && data.request) {
-        const baseUrl = tunnelUrl ?? window.location.origin
+        const baseUrl = resolvedTunnelUrl ?? localUrl ?? window.location.origin
         setLink(`${baseUrl}/request/${data.request.token}`)
       }
-    } finally { setGenerating(false) }
+    } finally {
+      setGenerating(false)
+      setGeneratingStep('')
+    }
   }
 
   const copy = () => {
@@ -131,7 +160,20 @@ export default function RequestTab() {
           <p className="text-sm font-semibold text-gray-900">Request link ready</p>
           <p className="text-xs text-gray-500 mt-0.5">Send this to the person you want the report from</p>
         </div>
-        {!tunnelUrl && (
+        {tunnelUrl && (
+          <div className="flex items-center gap-1.5 text-[10px] text-green-600 font-medium px-1">
+            <Globe size={10} /> Remote access active — link works anywhere
+          </div>
+        )}
+        {!tunnelUrl && localUrl && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex gap-2">
+            <Globe size={13} className="text-blue-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-700">
+              Link uses your local network address ({localUrl}) — works for anyone on the <strong>same WiFi</strong>. For external access, enable remote access in <strong>Settings → Remote Submissions</strong>.
+            </p>
+          </div>
+        )}
+        {!tunnelUrl && !localUrl && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
             <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700">
@@ -142,7 +184,6 @@ export default function RequestTab() {
         <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-1.5">
             <p className="text-xs font-medium text-gray-500">Shareable link</p>
-            {tunnelUrl && <span className="flex items-center gap-1 text-[10px] text-green-600 font-medium"><Globe size={10} /> Remote access active</span>}
           </div>
           <div className="flex gap-2">
             <input readOnly value={link}
@@ -163,7 +204,15 @@ export default function RequestTab() {
 
   return (
     <form onSubmit={generate} className="space-y-5">
-      {!tunnelUrl && (
+      {!tunnelUrl && localUrl && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex gap-2">
+          <Globe size={13} className="text-blue-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-700">
+            Link will use your local network address — works on <strong>same WiFi</strong>. For external sharing, enable remote access in Settings.
+          </p>
+        </div>
+      )}
+      {!tunnelUrl && !localUrl && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
           <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-700">
@@ -208,7 +257,7 @@ export default function RequestTab() {
       </div>
       <button type="submit" disabled={!title || !area || generating}
         className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-        {generating ? <><Loader2 size={14} className="animate-spin" />Generating…</> : <><Link2 size={14} />Generate request link</>}
+        {generating ? <><Loader2 size={14} className="animate-spin" />{generatingStep || 'Generating…'}</> : <><Link2 size={14} />Generate request link</>}
       </button>
     </form>
   )
