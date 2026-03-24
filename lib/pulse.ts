@@ -38,7 +38,7 @@ function clean(s: string): string {
 
 function parseItems(xml: string): FeedItem[] {
   const items: FeedItem[] = []
-  const re = /<(?:item|entry)(?: [^>]*)?>( [\s\S]*?)<\/(?:item|entry)>/gi
+  const re = /<(?:item|entry)(?: [^>]*)?>([\s\S]*?)<\/(?:item|entry)>/gi
   let m: RegExpExecArray | null
 
   while ((m = re.exec(xml)) !== null) {

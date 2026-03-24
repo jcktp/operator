@@ -32,14 +32,20 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const feed = await prisma.pulseFeed.findUnique({ where: { id } })
   if (!feed) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const items = await fetchFeedItems(feed.url, feed.type)
+  let items
+  try {
+    items = await fetchFeedItems(feed.url, feed.type)
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 502 })
+  }
+
   let added = 0
   for (const item of items) {
     try {
       await prisma.pulseItem.create({ data: { ...item, feedId: id } })
       added++
     } catch {
-      // skip duplicates (no unique constraint but URL+feedId combo avoids exact dups)
+      // skip exact duplicates
     }
   }
   await prisma.pulseFeed.update({ where: { id }, data: { lastFetched: new Date() } })

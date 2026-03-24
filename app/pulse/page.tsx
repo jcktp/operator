@@ -66,6 +66,7 @@ export default function PulsePage() {
   const [showAdd, setShowAdd] = useState(false)
   const [activeFeed, setActiveFeed] = useState<string | null>(null)
   const [refreshingId, setRefreshingId] = useState<string | null>(null)
+  const [refreshError, setRefreshError] = useState<{ id: string; message: string } | null>(null)
   const [savingItemId, setSavingItemId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', url: '', type: 'rss' })
@@ -110,9 +111,15 @@ export default function PulsePage() {
 
   const handleRefresh = async (id: string) => {
     setRefreshingId(id)
-    await fetch(`/api/pulse/${id}`, { method: 'POST' })
+    setRefreshError(null)
+    const res = await fetch(`/api/pulse/${id}`, { method: 'POST' })
     setRefreshingId(null)
-    await load()
+    if (!res.ok) {
+      const data = await res.json() as { error?: string }
+      setRefreshError({ id, message: data.error ?? 'Refresh failed' })
+    } else {
+      await load()
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -299,6 +306,11 @@ export default function PulsePage() {
                         {f.items.length}
                       </span>
                     </button>
+
+                    {/* Refresh error */}
+                    {refreshError?.id === f.id && (
+                      <p className="text-[10px] text-red-500 px-3 pb-1 leading-snug">{refreshError.message}</p>
+                    )}
 
                     {/* Feed actions — shown on hover */}
                     <div className="absolute right-1 top-1 hidden group-hover:flex items-center gap-0.5 bg-white/90 rounded">
