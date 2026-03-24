@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { fetchFeedItems } from '@/lib/pulse'
 
+// PUT /api/pulse/[id] — edit feed name / url / type
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const body = await req.json() as { name?: string; url?: string; type?: string; enabled?: boolean }
+  const feed = await prisma.pulseFeed.update({
+    where: { id },
+    data: {
+      ...(body.name !== undefined ? { name: body.name } : {}),
+      ...(body.url !== undefined ? { url: body.url } : {}),
+      ...(body.type !== undefined ? { type: body.type } : {}),
+      ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
+    },
+    include: { items: { orderBy: { publishedAt: 'desc' }, take: 50 } },
+  })
+  return NextResponse.json({ feed })
+}
+
 // DELETE /api/pulse/[id]
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

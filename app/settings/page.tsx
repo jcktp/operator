@@ -45,6 +45,7 @@ export default function SettingsPage() {
   const [testError, setTestError] = useState<Record<CloudProviderId, string>>({ anthropic: '', openai: '', groq: '', google: '', xai: '', perplexity: '' })
   const [availableModels, setAvailableModels] = useState<Record<CloudProviderId, string[]>>({ anthropic: [], openai: [], groq: [], google: [], xai: [], perplexity: [] })
   const [selectedModels, setSelectedModels] = useState<Record<CloudProviderId, string>>({ anthropic: '', openai: '', groq: '', google: '', xai: '', perplexity: '' })
+  const [twitterBearerToken, setTwitterBearerToken] = useState('')
   const [tunnelRunning, setTunnelRunning] = useState(false)
   const [tunnelUrl, setTunnelUrl] = useState<string | null>(null)
   const [tunnelInstalled, setTunnelInstalled] = useState(true)
@@ -111,6 +112,7 @@ export default function SettingsPage() {
       setSoundEnabled(sound)
       localStorage.setItem('sound_enabled', sound ? 'true' : 'false')
       setApiKeys({ anthropic: s.anthropic_key ?? '', openai: s.openai_key ?? '', groq: s.groq_key ?? '', google: s.google_key ?? '', xai: s.xai_key ?? '', perplexity: s.perplexity_key ?? '' })
+      setTwitterBearerToken(s.twitter_bearer_token ?? '')
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '' })
       const savedAreas = s.custom_areas ? JSON.parse(s.custom_areas) as string[] : null
       setCustomAreas(savedAreas ?? getModeConfig(s.app_mode ?? 'executive').defaultAreas)
@@ -217,6 +219,7 @@ export default function SettingsPage() {
       saveSetting('google_model', selectedModels.google),
       saveSetting('xai_model', selectedModels.xai),
       saveSetting('perplexity_model', selectedModels.perplexity),
+      saveSetting('twitter_bearer_token', twitterBearerToken),
       saveSetting('sound_enabled', soundEnabled ? 'true' : 'false'),
       saveSetting('custom_areas', JSON.stringify(customAreas)),
       saveSetting('auto_lock_minutes', String(autoLockMinutes)),
@@ -487,6 +490,29 @@ export default function SettingsPage() {
                 />
               </div>
             ))}
+
+            {/* Social APIs */}
+            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">Social APIs</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Used by Pulse feeds — not required for report analysis.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">X / Twitter Bearer Token</label>
+                <input
+                  type="password"
+                  value={twitterBearerToken}
+                  onChange={e => setTwitterBearerToken(e.target.value)}
+                  placeholder="AAAA…"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Get a Bearer Token from{' '}
+                  <span className="text-gray-500">developer.x.com → Keys and tokens → Bearer Token</span>.
+                  Only needed for X/Twitter feeds in Pulse.
+                </p>
+              </div>
+            </div>
           </>
         )}
 

@@ -74,6 +74,15 @@ function parseItems(xml: string): FeedItem[] {
   return items.slice(0, 50)
 }
 
+function normaliseThreadsUrl(input: string): string {
+  // Accept @handle, threads.net/@handle, or full URL
+  const handleMatch = input.match(/(?:threads\.net\/)?@([A-Za-z0-9._]+)/)
+  if (handleMatch) return `https://www.threads.net/@${handleMatch[1]}/rss`
+  if (input.startsWith('@')) return `https://www.threads.net/${input}/rss`
+  if (input.startsWith('http')) return input.endsWith('/rss') ? input : `${input.replace(/\/$/, '')}/rss`
+  return `https://www.threads.net/@${input}/rss`
+}
+
 function normaliseRedditUrl(input: string): string {
   // Accept r/subreddit, reddit.com/r/subreddit, full URL
   const m = input.match(/(?:reddit\.com\/)?r\/([A-Za-z0-9_]+)/)
@@ -96,10 +105,51 @@ function normaliseYouTubeUrl(input: string): string {
   return input
 }
 
+async function fetchTwitterItems(handle: string, bearerToken: string): Promise<FeedItem[]> {
+  const username = handle
+    .replace(/^@/, '')
+    .replace(/.*(?:twitter|x)\.com\//, '')
+    .split('/')[0]
+    .split('?')[0]
+
+  // Resolve username → user ID
+  const userRes = await fetch(
+    `https://api.twitter.com/2/users/by/username/${username}`,
+    { headers: { Authorization: `Bearer ${bearerToken}` }, signal: AbortSignal.timeout(10_000) }
+  )
+  if (!userRes.ok) throw new Error(`X/Twitter user lookup failed (HTTP ${userRes.status}) — check bearer token`)
+  const userData = await userRes.json() as { data?: { id: string }; errors?: Array<{ detail: string }> }
+  const userId = userData.data?.id
+  if (!userId) throw new Error(userData.errors?.[0]?.detail ?? 'X/Twitter user not found')
+
+  // Fetch recent tweets (exclude retweets + replies for a cleaner feed)
+  const tweetsRes = await fetch(
+    `https://api.twitter.com/2/users/${userId}/tweets?tweet.fields=created_at,text&max_results=20&exclude=retweets,replies`,
+    { headers: { Authorization: `Bearer ${bearerToken}` }, signal: AbortSignal.timeout(10_000) }
+  )
+  if (!tweetsRes.ok) throw new Error(`X/Twitter timeline fetch failed (HTTP ${tweetsRes.status})`)
+  const tweetsData = await tweetsRes.json() as { data?: Array<{ id: string; text: string; created_at?: string }> }
+
+  return (tweetsData.data ?? []).map(t => ({
+    title: t.text.slice(0, 120) + (t.text.length > 120 ? '…' : ''),
+    url: `https://x.com/${username}/status/${t.id}`,
+    summary: t.text,
+    publishedAt: t.created_at ? new Date(t.created_at) : null,
+  }))
+}
+
 export async function fetchFeedItems(url: string, type: string): Promise<FeedItem[]> {
+  // Twitter/X — uses API v2, not RSS
+  if (type === 'twitter') {
+    const bearerToken = process.env.TWITTER_BEARER_TOKEN ?? ''
+    if (!bearerToken) throw new Error('X/Twitter Bearer Token not configured — add it in Settings → AI → Social APIs')
+    return fetchTwitterItems(url, bearerToken)
+  }
+
   let fetchUrl = url
   if (type === 'reddit') fetchUrl = normaliseRedditUrl(url)
   if (type === 'youtube') fetchUrl = normaliseYouTubeUrl(url)
+  if (type === 'threads') fetchUrl = normaliseThreadsUrl(url)
 
   const res = await fetch(fetchUrl, {
     headers: { 'User-Agent': 'Operator/1.0 (feed reader)' },

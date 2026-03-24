@@ -19,6 +19,7 @@ const KEY_MAP: Record<string, string> = {
   xai_key:            'XAI_API_KEY',
   perplexity_key:     'PERPLEXITY_API_KEY',
   anthropic_model:    'ANTHROPIC_MODEL',
+  twitter_bearer_token: 'TWITTER_BEARER_TOKEN',
   openai_model:       'OPENAI_MODEL',
   google_model:       'GOOGLE_MODEL',
   groq_model:         'GROQ_MODEL',
@@ -26,7 +27,7 @@ const KEY_MAP: Record<string, string> = {
   perplexity_model:   'PERPLEXITY_MODEL',
 }
 
-const ENCRYPTED_KEYS = new Set(['anthropic_key', 'openai_key', 'google_key', 'groq_key', 'xai_key', 'perplexity_key'])
+const ENCRYPTED_KEYS = new Set(['anthropic_key', 'openai_key', 'google_key', 'groq_key', 'xai_key', 'perplexity_key', 'twitter_bearer_token'])
 
 /**
  * Loads AI provider settings from the database into process.env.
