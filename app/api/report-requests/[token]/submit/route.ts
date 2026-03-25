@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
 import { extractContent, getFileType } from '@/lib/parsers'
@@ -24,8 +24,6 @@ export async function POST(
       return NextResponse.json({ error: 'This request link has expired' }, { status: 410 })
     }
 
-    await loadAiSettings()
-
     let buffer: Buffer
     let fileType: string
     let fileName: string
@@ -35,7 +33,6 @@ export async function POST(
     let submitterName: string | null = null
 
     if (contentType.includes('multipart/form-data')) {
-      // File upload
       const formData = await req.formData()
       const file = formData.get('file') as File | null
       const dateStr = formData.get('reportDate') as string | null
@@ -48,7 +45,6 @@ export async function POST(
       fileName = file.name
       if (dateStr) reportDate = new Date(dateStr)
     } else {
-      // JSON with Google URL
       const body = await req.json() as { googleUrl?: string; reportDate?: string; submitterName?: string }
       const { googleUrl, reportDate: dateStr, submitterName: sName } = body
       submitterName = sName || null
@@ -74,7 +70,7 @@ export async function POST(
     // Save to reports folder
     try { saveReportFile(buffer, fileName, request.area) } catch {}
 
-    // Resolve directReportId: use request's linked direct, or match by submitter name
+    // Resolve directReportId
     let resolvedDirectId = request.directReportId || null
     if (!resolvedDirectId && submitterName) {
       const allDirects = await prisma.directReport.findMany({ select: { id: true, name: true } })
@@ -84,41 +80,7 @@ export async function POST(
     }
     const directReportName = request.directReport?.name ?? submitterName ?? undefined
 
-    // Find previous report for comparison
-    const previousReport = await prisma.report.findFirst({
-      where: {
-        area: request.area,
-        ...(resolvedDirectId ? { directReportId: resolvedDirectId } : {}),
-        summary: { not: null },
-        metrics: { not: null },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
-
-    // AI analysis
-    let analysis = null
-    try {
-      analysis = await analyzeReport(rawContent, request.title, request.area, directReportName)
-    } catch (e) {
-      console.error('AI analysis failed:', e)
-    }
-
-    // Comparison
-    let comparison = null
-    if (previousReport && analysis && previousReport.summary && previousReport.metrics) {
-      try {
-        comparison = await compareReports(
-          previousReport.summary,
-          previousReport.metrics,
-          analysis.summary,
-          JSON.stringify(analysis.metrics),
-          request.area
-        )
-      } catch (e) {
-        console.error('Comparison failed:', e)
-      }
-    }
-
+    // Create report immediately with raw content — analysis runs after response is sent
     const report = await prisma.report.create({
       data: {
         title: request.title,
@@ -130,11 +92,11 @@ export async function POST(
         area: request.area,
         directReportId: resolvedDirectId,
         reportDate,
-        summary: analysis?.summary ?? null,
-        metrics: analysis?.metrics ? JSON.stringify(analysis.metrics) : null,
-        insights: analysis?.insights ? JSON.stringify(analysis.insights) : null,
-        questions: analysis?.questions ? JSON.stringify(analysis.questions) : null,
-        comparison: comparison ? JSON.stringify(comparison) : null,
+        summary: null,
+        metrics: null,
+        insights: null,
+        questions: null,
+        comparison: null,
       },
     })
 
@@ -142,6 +104,54 @@ export async function POST(
     await prisma.reportRequest.update({
       where: { token },
       data: { status: 'submitted' },
+    })
+
+    // Run AI analysis after the response is sent — submitter sees confirmation immediately
+    after(async () => {
+      try {
+        await loadAiSettings()
+
+        const previousReport = await prisma.report.findFirst({
+          where: {
+            area: request.area,
+            id: { not: report.id },
+            ...(resolvedDirectId ? { directReportId: resolvedDirectId } : {}),
+            summary: { not: null },
+            metrics: { not: null },
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+
+        const analysis = await analyzeReport(rawContent, request.title, request.area, directReportName)
+
+        let comparison = null
+        if (previousReport && previousReport.summary && previousReport.metrics) {
+          try {
+            comparison = await compareReports(
+              previousReport.summary,
+              previousReport.metrics,
+              analysis.summary,
+              JSON.stringify(analysis.metrics),
+              request.area
+            )
+          } catch (e) {
+            console.error('Comparison failed:', e)
+          }
+        }
+
+        await prisma.report.update({
+          where: { id: report.id },
+          data: {
+            summary: analysis.summary,
+            metrics: JSON.stringify(analysis.metrics),
+            insights: JSON.stringify(analysis.insights),
+            questions: JSON.stringify(analysis.questions),
+            comparison: comparison ? JSON.stringify(comparison) : null,
+          },
+        })
+      } catch (e) {
+        console.error('Background AI analysis failed:', e)
+      }
     })
 
     return NextResponse.json({ ok: true, reportId: report.id })

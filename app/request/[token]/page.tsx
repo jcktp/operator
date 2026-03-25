@@ -353,11 +353,16 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
         className="mt-6 w-full bg-gray-900 text-white text-sm font-medium px-4 py-3 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {stage === 'submitting' ? (
-          <><Loader2 size={15} className="animate-spin" /> Submitting & analysing…</>
+          <><Loader2 size={15} className="animate-spin" /> Submitting…</>
         ) : (
           `Submit ${modeConfig.documentLabel.toLowerCase()}`
         )}
       </button>
+      {stage === 'submitting' && (
+        <p className="mt-3 text-center text-xs text-gray-400">
+          Uploading your file — please don't close this tab until you see confirmation.
+        </p>
+      )}
     </Shell>
   )
 }
