@@ -31,7 +31,6 @@ open_browser() {
   esac
 }
 
-# Write current status to the file the /starting page polls
 set_status() {
   local step_msg="$1"
   local detail_msg="${2:-}"
@@ -42,10 +41,9 @@ set_ready() {
   printf '{"step":"Ready","detail":"","ready":true}' > "$STATUS_FILE"
 }
 
-# Clear any previous run's status
 rm -f "$STATUS_FILE"
 
-bold "\nOperator — starting up in dev mode (${PLATFORM})\n"
+bold "\nOperator — starting up in production mode (${PLATFORM})\n"
 
 # ── 1. Homebrew (macOS only) ──────────────────────────────────────────────────
 if [ "$PLATFORM" = "macOS" ]; then
@@ -191,7 +189,6 @@ if [ ! -f "$DB_FILE" ]; then
   npx prisma migrate deploy || error "Database migration failed"
   step "Database ready"
 else
-  # Check if any migration files are newer than the DB — if so, run migrations
   NEEDS_MIGRATE=false
   if [ -d "$MIGRATIONS_DIR" ]; then
     while IFS= read -r -d '' f; do
@@ -228,17 +225,23 @@ node -e "
     .then(() => process.exit(0)).catch(() => process.exit(0));
 " 2>/dev/null || true
 
-# ── 9. Start Next.js (dev mode — hot reload, see changes instantly) ──────────
+# ── 9. Build ──────────────────────────────────────────────────────────────────
+set_status "Building…"
+step "Building Operator (production)..."
+npm run build || error "Build failed. Check the output above for errors."
+step "Build complete"
+
+# ── 10. Start Next.js (production mode) ───────────────────────────────────────
 set_status "Starting server…"
-step "Starting Operator (dev mode)..."
-npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
+step "Starting Operator server..."
+npm start -- --port $PORT > "$LOG_FILE" 2>&1 &
 NEXT_PID=$!
 echo $NEXT_PID > "$PID_FILE"
 
-# ── 10. Wait for server, then open browser ────────────────────────────────────
+# ── 11. Wait for server, then open browser ────────────────────────────────────
 step "Waiting for server to be ready..."
 ATTEMPTS=0
-MAX=120
+MAX=60
 until curl -sf "http://localhost:$PORT" &>/dev/null; do
   sleep 1
   ATTEMPTS=$((ATTEMPTS + 1))
@@ -250,11 +253,10 @@ until curl -sf "http://localhost:$PORT" &>/dev/null; do
   fi
 done
 
-# Open the browser
 step "Opening Operator in your browser..."
 open_browser "http://localhost:$PORT/starting"
 
-# ── 11. Ollama server (browser is already open, user sees loading screen) ─────
+# ── 12. Ollama server ─────────────────────────────────────────────────────────
 set_status "Starting AI engine…"
 if pgrep -x "ollama" &>/dev/null; then
   step "Ollama already running"
@@ -266,9 +268,24 @@ else
   step "Ollama server started"
 fi
 
-# ── 12. Model ─────────────────────────────────────────────────────────────────
-DEFAULT_MODEL="llama3.2:3b"
-MODEL=$(node -e "
+# ── 13. Model (only when Ollama is the active AI provider) ───────────────────
+AI_PROVIDER=$(node -e "
+const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+const { PrismaClient } = require('@prisma/client');
+const path = require('path');
+const adapter = new PrismaBetterSqlite3({ url: path.resolve(process.cwd(), 'prisma', 'dev.db') });
+const prisma = new PrismaClient({ adapter });
+prisma.setting.findUnique({ where: { key: 'ai_provider' } })
+  .then(s => { console.log(s?.value || 'ollama'); process.exit(0); })
+  .catch(() => { console.log('ollama'); process.exit(0); });
+" 2>/dev/null || echo "ollama")
+
+if [ "$AI_PROVIDER" != "ollama" ]; then
+  step "Cloud AI provider ($AI_PROVIDER) — skipping model download"
+  sleep 2
+else
+  DEFAULT_MODEL="llama3.2:3b"
+  MODEL=$(node -e "
 const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
@@ -279,31 +296,30 @@ prisma.setting.findUnique({ where: { key: 'ollama_model' } })
   .catch(() => { console.log('${DEFAULT_MODEL}'); process.exit(0); });
 " 2>/dev/null || echo "$DEFAULT_MODEL")
 
-step "Model: $MODEL"
+  step "Model: $MODEL"
 
-if ollama list 2>/dev/null | grep -q "^${MODEL}"; then
-  step "Model already available"
-  # Brief pause so the loading screen is always visible on startup
-  sleep 2
-else
-  step "Pulling $MODEL — this may take a few minutes on first run..."
-  set_status "Downloading AI model…" "$MODEL — this only happens once"
-  ollama pull "$MODEL" || error "Failed to pull model $MODEL"
-  step "Model $MODEL ready"
+  if ollama list 2>/dev/null | grep -q "^${MODEL}"; then
+    step "Model already available"
+    sleep 2
+  else
+    step "Pulling $MODEL — this may take a few minutes on first run..."
+    set_status "Downloading AI model…" "$MODEL — this only happens once"
+    ollama pull "$MODEL" || error "Failed to pull model $MODEL"
+    step "Model $MODEL ready"
+  fi
 fi
 
-# ── 13. All done — signal the loading page to redirect ───────────────────────
+# ── 14. All done ──────────────────────────────────────────────────────────────
 set_ready
 step "Ready!"
 
 bold "\nOperator is running at http://localhost:${PORT}"
 echo -e "Press ${BOLD}Ctrl+C${NC} to stop, or use the power button in the app.\n"
 
-# ── 14. Shutdown handler ─────────────────────────────────────────────────────
+# ── 15. Shutdown handler ─────────────────────────────────────────────────────
 cleanup() {
   echo ""
   step "Shutting down..."
-  # Invalidate session so user must log in again on next startup
   node -e "
     const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
     const { PrismaClient } = require('@prisma/client');
@@ -321,6 +337,5 @@ cleanup() {
 }
 trap cleanup SIGINT SIGTERM
 
-# If Next.js exits on its own (e.g., via /api/shutdown), clean up
 wait $NEXT_PID 2>/dev/null || true
 cleanup

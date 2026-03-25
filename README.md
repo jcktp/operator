@@ -3,7 +3,7 @@
 > Local-first executive reporting — AI analysis of your direct reports' submissions, running entirely on your machine.
 
 ![Local-first](https://img.shields.io/badge/runs%20locally-no%20cloud%20required-black?style=flat-square)
-![Ollama](https://img.shields.io/badge/AI-Ollama%20%7C%20Claude%20%7C%20GPT-black?style=flat-square)
+![Ollama](https://img.shields.io/badge/AI-Ollama%20%7C%20Claude%20%7C%20GPT%20%7C%20Gemini%20%7C%20Groq%20%7C%20xAI%20%7C%20Perplexity%20%7C%20Mistral-black?style=flat-square)
 ![SQLite](https://img.shields.io/badge/database-SQLite-black?style=flat-square)
 ![Next.js](https://img.shields.io/badge/framework-Next.js%2016-black?style=flat-square)
 
@@ -35,7 +35,7 @@ Upload reports from your direct reports — CSV, Excel, PDF, Word, or plain text
 | **~4 GB free disk space** | For the default model (`llama3.2:3b`) |
 | **8 GB RAM minimum** | 16 GB recommended for comfortable local inference |
 
-Cloud AI providers (Anthropic, OpenAI, Google Gemini, Groq, xAI, Perplexity) are optional — use any of them instead of or alongside Ollama.
+Cloud AI providers (Anthropic, OpenAI, Google Gemini, Groq, xAI, Perplexity, Mistral) are optional — use any of them instead of or alongside Ollama.
 
 ---
 
@@ -117,13 +117,13 @@ There are two scripts depending on how you want to use it:
 
 | Script | Mode | Best for |
 |---|---|---|
-| `bash start.sh` | Development — changes visible on browser refresh, no rebuild needed | Running it yourself, day-to-day use |
-| `bash start-prod.sh` | Production — runs a full build first, then serves the optimised output | Sharing with others, or when you want maximum stability |
+| `bash start.sh` | Production — runs a full build first, then serves the optimised output | Sharing with others, or when you want maximum stability |
+| `bash start-dev.sh` | Development — changes visible on browser refresh, no rebuild needed | Running it yourself, day-to-day use |
 
-If you're just running Operator for yourself, use `start.sh`. If you've downloaded it from GitHub and want the production version, use `start-prod.sh`.
+If you've downloaded it from GitHub and want the most stable version, use `start.sh`. If you're actively developing or just running it for yourself, use `start-dev.sh`.
 
 ```bash
-bash start.sh
+bash start-dev.sh
 ```
 
 That's it. The script handles everything automatically:
@@ -136,7 +136,7 @@ That's it. The script handles everything automatically:
 6. Installs npm dependencies
 7. Sets up and migrates the SQLite database
 8. Starts the Ollama server
-9. Pulls the default AI model (`llama3.2:3b`) — **this takes a few minutes the very first time**
+9. Pulls the default AI model (`llama3.2:3b`) — **this takes a few minutes the very first time** (skipped if you've configured a cloud provider)
 10. Starts the app on port 3000 and opens it in your browser
 
 ```
@@ -165,7 +165,7 @@ Press Ctrl+C to stop, or use the power button in the app.
 
 To stop the app, press **Ctrl+C** in the terminal window, or click the power button inside the app.
 
-> **Every subsequent run:** Just open a terminal, `cd` to the operator folder, and run `bash start.sh` again. All setup steps are skipped — it starts in a few seconds.
+> **Every subsequent run:** Just open a terminal, `cd` to the operator folder, and run `bash start-dev.sh` again. All setup steps are skipped — it starts in a few seconds.
 
 ---
 
@@ -204,6 +204,7 @@ Enter API keys in **Settings → AI**. Keys are stored encrypted in the local SQ
 | Groq | `gsk_...` | console.groq.com |
 | xAI (Grok) | `xai-...` | console.x.ai |
 | Perplexity | `pplx-...` | perplexity.ai/settings/api |
+| Mistral | `...` | console.mistral.ai/api-keys |
 
 ---
 
@@ -238,7 +239,8 @@ operator/
 ├── prisma/                # Database schema and migrations
 │   └── dev.db             # SQLite database (created on first run, gitignored)
 ├── public/                # Static assets
-├── start.sh               # One-command startup script
+├── start.sh               # Production startup script
+├── start-dev.sh           # Development startup script
 └── .env.local             # Environment variables (created on first run, gitignored)
 ```
 

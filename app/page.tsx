@@ -46,7 +46,7 @@ function weekLabel(ts: number, index: number): string {
 export default async function OverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; week?: string; from?: string; to?: string }>
+  searchParams: Promise<{ tab?: string; week?: string; from?: string; to?: string; area?: string }>
 }) {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value
@@ -58,6 +58,7 @@ export default async function OverviewPage({
   const tab = params.tab
   const filterFrom = params.from
   const filterTo = params.to
+  const selectedArea = params.area
 
   const fromDate = filterFrom ? new Date(filterFrom) : null
   const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
@@ -138,14 +139,25 @@ export default async function OverviewPage({
   }
 
   // ── Overview tab ────────────────────────────────────────────────────────────
-  const recent = reports.slice(0, 30)
 
-  // Most recent report per area
-  const areaMap: Record<string, typeof reports[0]> = {}
-  for (const r of recent) {
-    if (!areaMap[r.area]) areaMap[r.area] = r
+  // Area counts for sidebar (from full date-filtered set)
+  const areaCounts: Record<string, number> = {}
+  for (const r of reports) areaCounts[r.area] = (areaCounts[r.area] ?? 0) + 1
+  const sidebarAreas = Object.keys(areaCounts).sort().map(name => ({ name, count: areaCounts[name] }))
+
+  const recent = (selectedArea ? reports.filter(r => r.area === selectedArea) : reports).slice(0, 30)
+
+  // Most recent report per area (all areas view) OR up to 6 recent reports (single area view)
+  let activeAreas: typeof reports
+  if (selectedArea) {
+    activeAreas = recent.slice(0, 6)
+  } else {
+    const areaMap: Record<string, typeof reports[0]> = {}
+    for (const r of recent) {
+      if (!areaMap[r.area]) areaMap[r.area] = r
+    }
+    activeAreas = Object.values(areaMap)
   }
-  const activeAreas = Object.values(areaMap)
 
   type FlagItem = { text: string; type: string; reportTitle: string; reportId: string }
   type QuestionItem = { text: string; reportTitle: string; directName?: string; reportId: string }
@@ -220,9 +232,11 @@ export default async function OverviewPage({
   const data: OverviewData = {
     stats: {
       totalReports: reports.length,
-      areasCount: activeAreas.length,
+      areasCount: selectedArea ? 1 : activeAreas.length,
       directsCount: directs.length,
     },
+    areas: sidebarAreas,
+    selectedArea,
     activeAreas: activeAreas.map(r => ({
       id: r.id,
       area: r.area,

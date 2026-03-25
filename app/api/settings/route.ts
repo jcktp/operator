@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/api-auth'
 
 // Keys that contain sensitive credentials — never returned in plaintext
 const SENSITIVE_KEYS = new Set([
-  'anthropic_key', 'openai_key', 'groq_key', 'google_key', 'xai_key', 'perplexity_key',
+  'anthropic_key', 'openai_key', 'groq_key', 'google_key', 'xai_key', 'perplexity_key', 'mistral_key',
 ])
 
 // Only these keys are allowed to be written
@@ -18,6 +18,7 @@ const ALLOWED_KEYS = new Set([
   'google_key', 'google_model',
   'xai_key', 'xai_model',
   'perplexity_key', 'perplexity_model',
+  'mistral_key', 'mistral_model',
   'app_mode',
   'ceo_name', 'company_name', 'user_role',
   'user_memory',

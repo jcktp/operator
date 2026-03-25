@@ -6,7 +6,7 @@ import { getModeConfig } from './mode'
 
 // ── Provider types ──────────────────────────────────────────────────────────
 
-export type AIProvider = 'ollama' | 'anthropic' | 'openai' | 'google' | 'groq' | 'xai' | 'perplexity'
+export type AIProvider = 'ollama' | 'anthropic' | 'openai' | 'google' | 'groq' | 'xai' | 'perplexity' | 'mistral'
 
 function getProvider(): AIProvider {
   return (process.env.AI_PROVIDER as AIProvider) ?? 'ollama'
@@ -174,6 +174,7 @@ async function chatWithTools(messages: Message[], systemPrompt: string, temperat
     case 'xai':        return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.x.ai/v1/chat/completions', process.env.XAI_API_KEY!, process.env.XAI_MODEL ?? 'grok-3-mini')
     // Perplexity sonar models search the web natively — don't pass tool_choice
     case 'perplexity': return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.perplexity.ai/chat/completions', process.env.PERPLEXITY_API_KEY!, process.env.PERPLEXITY_MODEL ?? 'llama-3.1-sonar-small-128k-online', true)
+    case 'mistral':    return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.mistral.ai/v1/chat/completions', process.env.MISTRAL_API_KEY!, process.env.MISTRAL_MODEL ?? 'mistral-small-latest')
     default:           return chatOllamaTools(messages, systemPrompt, temperature)
   }
 }
@@ -299,7 +300,7 @@ async function chatOpenAITools(
 async function chatGoogleTools(messages: Message[], systemPrompt: string, temperature: number): Promise<string> {
   const key = process.env.GOOGLE_API_KEY
   if (!key) throw new Error('GOOGLE_API_KEY not set')
-  const model = process.env.GOOGLE_MODEL ?? 'gemini-1.5-flash'
+  const model = process.env.GOOGLE_MODEL ?? 'gemini-2.5-flash'
   const tools = availableTools()
 
   const functionDeclarations = tools.map(t => ({
@@ -478,7 +479,7 @@ async function chat(messages: Message[], temperature = 0.1, jsonMode = false): P
     case 'google': {
       const key = process.env.GOOGLE_API_KEY
       if (!key) throw new Error('GOOGLE_API_KEY not set')
-      const model = process.env.GOOGLE_MODEL ?? 'gemini-1.5-flash'
+      const model = process.env.GOOGLE_MODEL ?? 'gemini-2.5-flash'
       const prompt = messages.map(m => m.content).join('\n\n')
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
@@ -605,7 +606,7 @@ export async function describeImage(buffer: Buffer, mimeType: string): Promise<s
     if (provider === 'google') {
       const key = process.env.GOOGLE_API_KEY
       if (!key) throw new Error('No key')
-      const model = process.env.GOOGLE_MODEL ?? 'gemini-1.5-flash'
+      const model = process.env.GOOGLE_MODEL ?? 'gemini-2.5-flash'
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
         {

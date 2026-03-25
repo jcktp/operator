@@ -198,9 +198,8 @@ export default function SettingsPage() {
       }
     }
 
-    if (aiProvider !== 'ollama' && savedProvider === 'ollama' && savedModel) {
-      await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedModel }) }).catch(() => {})
-    }
+    // Note: local model is intentionally kept on disk when switching to a cloud provider
+    // so it's still available if the user switches back.
 
     await Promise.all([
       saveSetting('app_mode', appMode),
@@ -217,12 +216,14 @@ export default function SettingsPage() {
       saveSetting('google_key', apiKeys.google),
       saveSetting('xai_key', apiKeys.xai),
       saveSetting('perplexity_key', apiKeys.perplexity),
+      saveSetting('mistral_key', apiKeys.mistral),
       saveSetting('anthropic_model', selectedModels.anthropic),
       saveSetting('openai_model', selectedModels.openai),
       saveSetting('groq_model', selectedModels.groq),
       saveSetting('google_model', selectedModels.google),
       saveSetting('xai_model', selectedModels.xai),
       saveSetting('perplexity_model', selectedModels.perplexity),
+      saveSetting('mistral_model', selectedModels.mistral),
       saveSetting('bluesky_identifier', bskyIdentifier),
       saveSetting('bluesky_app_password', bskyAppPassword),
       saveSetting('mastodon_access_token', mastodonToken),
