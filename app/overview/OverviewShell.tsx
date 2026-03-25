@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AreaBadge, InsightTypeBadge, StatusBadge } from '@/components/Badge'
-import { ArrowRight, Upload, AlertTriangle, HelpCircle, MessageSquare, CheckCircle2, FileStack } from 'lucide-react'
+import { ArrowRight, Upload, AlertTriangle, HelpCircle, MessageSquare, CheckCircle2, FileStack, Loader2, X, Sparkles } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { useDispatch } from '@/components/DispatchContext'
 import { useMode } from '@/components/ModeContext'
 import { MetricsChartsSection } from '@/components/MetricsCharts'
 import type { AreaMetricData } from '@/components/MetricsCharts'
+import PeriodDropdown from '@/components/PeriodDropdown'
 
 // ── Serialised data shapes ───────────────────────────────────────────────────
 
@@ -51,14 +52,33 @@ export interface OverviewData {
 
 // ── Shell ────────────────────────────────────────────────────────────────────
 
-export default function OverviewShell({ data }: { data: OverviewData }) {
+export default function OverviewShell({ data, activeFrom, activeTo }: { data: OverviewData; activeFrom?: string; activeTo?: string }) {
   const { open: dispatchOpen, setOpen: setDispatchOpen, setAiContext } = useDispatch()
   const mode = useMode()
   const { stats, activeAreas, topInsights, topQuestions, resolvedFlagItems, recentReports, context, areaMetrics } = data
 
+  const [catchMeUpOpen, setCatchMeUpOpen] = useState(false)
+  const [catchMeUpLoading, setCatchMeUpLoading] = useState(false)
+  const [catchMeUpText, setCatchMeUpText] = useState<string | null>(null)
+
   useEffect(() => {
     setAiContext(context)
   }, [context, setAiContext])
+
+  const handleCatchMeUp = async () => {
+    setCatchMeUpOpen(true)
+    if (catchMeUpText) return
+    setCatchMeUpLoading(true)
+    try {
+      const res = await fetch('/api/catch-me-up')
+      const data = await res.json() as { digest: string }
+      setCatchMeUpText(data.digest)
+    } catch {
+      setCatchMeUpText('Unable to generate digest. Check your AI provider settings.')
+    } finally {
+      setCatchMeUpLoading(false)
+    }
+  }
 
   return (
     <div>
@@ -73,6 +93,14 @@ export default function OverviewShell({ data }: { data: OverviewData }) {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <PeriodDropdown activeFrom={activeFrom} activeTo={activeTo} basePath="/" />
+            <button
+              onClick={handleCatchMeUp}
+              className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
+            >
+              <Sparkles size={13} />
+              Catch me up
+            </button>
             <Link
               href="/?tab=one-pager"
               className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
@@ -101,6 +129,30 @@ export default function OverviewShell({ data }: { data: OverviewData }) {
             </Link>
           </div>
         </div>
+
+        {/* Catch Me Up panel */}
+        {catchMeUpOpen && (
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 relative">
+            <button
+              onClick={() => setCatchMeUpOpen(false)}
+              className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={14} />
+            </button>
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={13} className="text-gray-500" />
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Catch me up</span>
+            </div>
+            {catchMeUpLoading ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
+                <Loader2 size={14} className="animate-spin" />
+                Generating digest…
+              </div>
+            ) : (
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{catchMeUpText}</p>
+            )}
+          </div>
+        )}
 
         {/* Areas */}
         <section>

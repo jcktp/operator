@@ -21,7 +21,7 @@ export default function DispatchReportButton({ reportTitle, reportContext }: Pro
   return (
     <button
       onClick={handleClick}
-      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+      className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
       title="Chat about this report in Dispatch"
     >
       <MessageSquare size={12} />

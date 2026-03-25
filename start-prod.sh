@@ -211,6 +211,20 @@ if lsof -ti ":$PORT" &>/dev/null; then
   sleep 1
 fi
 
+# ── 8b. Clear previous session so user must log in fresh ─────────────────────
+step "Clearing previous session..."
+node -e "
+  const path = require('path');
+  const db = path.resolve(process.cwd(), 'prisma', 'dev.db');
+  if (!require('fs').existsSync(db)) process.exit(0);
+  const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+  const { PrismaClient } = require('@prisma/client');
+  const adapter = new PrismaBetterSqlite3({ url: db });
+  const prisma = new PrismaClient({ adapter });
+  prisma.setting.updateMany({ where: { key: 'auth_session_token' }, data: { value: '' } })
+    .then(() => process.exit(0)).catch(() => process.exit(0));
+" 2>/dev/null || true
+
 # ── 9. Build ──────────────────────────────────────────────────────────────────
 set_status "Building…"
 step "Building Operator (production)..."

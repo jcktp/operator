@@ -9,6 +9,7 @@ import DeleteReportButton from './DeleteButton'
 import DispatchReportButton from './DispatchReportButton'
 import ReportContent from './ReportContent'
 import RawContent from './RawContent'
+import CopyNarrativeButton from './CopyNarrativeButton'
 
 interface ComparisonChange {
   metric: string
@@ -138,6 +139,16 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <CopyNarrativeButton
+            title={report.title}
+            area={report.area}
+            directName={report.directReport?.name}
+            reportDate={report.reportDate ? formatDate(report.reportDate) : undefined}
+            summary={report.summary ?? undefined}
+            metrics={metrics}
+            insights={insights}
+            questions={questions}
+          />
           <DispatchReportButton
             reportId={report.id}
             reportTitle={report.title}

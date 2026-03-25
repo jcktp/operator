@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, FileText, BookOpen, Loader2 } from 'lucide-react'
+import { Search, FileText, BookOpen, Loader2, Layers } from 'lucide-react'
 import { AREA_COLORS } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -26,15 +26,38 @@ interface SearchResults {
   journal: JournalHit[]
 }
 
+interface TopicMatch {
+  field: 'summary' | 'metric' | 'insight' | 'question'
+  text: string
+}
+
+interface TopicHit {
+  reportId: string
+  reportTitle: string
+  area: string
+  directName?: string
+  date: string
+  matches: TopicMatch[]
+}
+
 type ResultItem =
   | { kind: 'report'; data: ReportHit }
   | { kind: 'journal'; data: JournalHit }
+
+const FIELD_LABEL: Record<TopicMatch['field'], string> = {
+  summary: 'Summary',
+  metric: 'Metric',
+  insight: 'Flag',
+  question: 'Question',
+}
 
 export default function SearchModal({ onClose }: { onClose: () => void }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
+  const [mode, setMode] = useState<'search' | 'topic'>('search')
   const [results, setResults] = useState<SearchResults | null>(null)
+  const [topicHits, setTopicHits] = useState<TopicHit[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [activeIdx, setActiveIdx] = useState(0)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -65,8 +88,9 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
     onClose()
   }, [router, onClose])
 
-  // Keyboard nav
+  // Keyboard nav (only for regular search mode)
   useEffect(() => {
+    if (mode !== 'search') return
     const onKey = (e: KeyboardEvent) => {
       const items = flatItems()
       if (!items.length) return
@@ -76,28 +100,36 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [flatItems, navigate, activeIdx])
+  }, [flatItems, navigate, activeIdx, mode])
 
   // Debounced search
   useEffect(() => {
     setActiveIdx(0)
-    if (query.length < 2) { setResults(null); return }
+    setResults(null)
+    setTopicHits(null)
+    if (query.length < 2) return
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        const data = await res.json() as SearchResults
-        setResults(data)
+        if (mode === 'search') {
+          const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+          const data = await res.json() as SearchResults
+          setResults(data)
+        } else {
+          const res = await fetch(`/api/topic-search?q=${encodeURIComponent(query)}`)
+          const data = await res.json() as { hits: TopicHit[] }
+          setTopicHits(data.hits)
+        }
       } finally {
         setLoading(false)
       }
-    }, 200)
+    }, 300)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [query])
+  }, [query, mode])
 
   const items = flatItems()
-  const hasResults = items.length > 0
+  const hasResults = mode === 'search' ? items.length > 0 : (topicHits?.length ?? 0) > 0
   const showEmpty = !loading && query.length >= 2 && !hasResults
 
   return (
@@ -109,43 +141,73 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
         className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
-          {loading
-            ? <Loader2 size={16} className="text-gray-400 shrink-0 animate-spin" />
-            : <Search size={16} className="text-gray-400 shrink-0" />
-          }
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search reports, insights, journal…"
-            className="flex-1 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent"
-          />
-          <kbd className="hidden sm:inline text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">Esc</kbd>
+        {/* Mode tabs + input */}
+        <div className="border-b border-gray-100">
+          <div className="flex gap-0 border-b border-gray-100">
+            <button
+              onClick={() => setMode('search')}
+              className={cn(
+                'flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px',
+                mode === 'search'
+                  ? 'text-gray-900 border-gray-900'
+                  : 'text-gray-400 border-transparent hover:text-gray-600'
+              )}
+            >
+              <Search size={11} /> Search
+            </button>
+            <button
+              onClick={() => setMode('topic')}
+              className={cn(
+                'flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px',
+                mode === 'topic'
+                  ? 'text-gray-900 border-gray-900'
+                  : 'text-gray-400 border-transparent hover:text-gray-600'
+              )}
+            >
+              <Layers size={11} /> Research topic
+            </button>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3">
+            {loading
+              ? <Loader2 size={16} className="text-gray-400 shrink-0 animate-spin" />
+              : <Search size={16} className="text-gray-400 shrink-0" />
+            }
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder={mode === 'search' ? 'Search reports, insights, journal…' : 'Research a topic across all reports…'}
+              className="flex-1 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent"
+            />
+            <kbd className="hidden sm:inline text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">Esc</kbd>
+          </div>
         </div>
 
         {/* Results */}
         {(hasResults || showEmpty) && (
-          <div className="max-h-[400px] overflow-y-auto py-2">
+          <div className="max-h-[420px] overflow-y-auto py-2">
             {showEmpty && (
-              <p className="text-sm text-gray-400 text-center py-8">No results for &ldquo;{query}&rdquo;</p>
+              <p className="text-sm text-gray-400 text-center py-8">
+                {mode === 'topic'
+                  ? `No reports mention "${query}"`
+                  : `No results for "${query}"`}
+              </p>
             )}
 
-            {hasResults && (
+            {/* Regular search results */}
+            {mode === 'search' && hasResults && (
               <>
                 {results!.reports.length > 0 && (
                   <div>
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-1.5">Reports</p>
                     {results!.reports.map((r, i) => {
-                      const idx = i
                       const color = AREA_COLORS[r.area]
-                      const isActive = activeIdx === idx
+                      const isActive = activeIdx === i
                       return (
                         <button
                           key={r.id}
                           onClick={() => navigate({ kind: 'report', data: r })}
-                          onMouseEnter={() => setActiveIdx(idx)}
+                          onMouseEnter={() => setActiveIdx(i)}
                           className={cn(
                             'w-full text-left px-4 py-2.5 flex items-start gap-3 transition-colors',
                             isActive ? 'bg-gray-50' : 'hover:bg-gray-50'
@@ -209,18 +271,58 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
                 )}
               </>
             )}
+
+            {/* Topic research results */}
+            {mode === 'topic' && hasResults && topicHits && (
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-1.5">
+                  {topicHits.length} {topicHits.length === 1 ? 'report' : 'reports'} mention &ldquo;{query}&rdquo;
+                </p>
+                {topicHits.map(hit => {
+                  const color = AREA_COLORS[hit.area]
+                  return (
+                    <button
+                      key={hit.reportId}
+                      onClick={() => { router.push(`/reports/${hit.reportId}`); onClose() }}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                    >
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-medium border', color)}>
+                          {hit.area}
+                        </span>
+                        <span className="text-sm font-medium text-gray-900 truncate">{hit.reportTitle}</span>
+                        {hit.directName && <span className="text-xs text-gray-400">{hit.directName}</span>}
+                        <span className="text-[10px] text-gray-400 ml-auto">{hit.date}</span>
+                      </div>
+                      <div className="space-y-1">
+                        {hit.matches.map((m, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <span className="text-[10px] text-gray-400 shrink-0 mt-0.5 w-14 text-right">{FIELD_LABEL[m.field]}</span>
+                            <p className="text-xs text-gray-600 line-clamp-2">{m.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
         {/* Hint when empty */}
         {!hasResults && !showEmpty && query.length < 2 && (
           <div className="px-4 py-6 text-center">
-            <p className="text-xs text-gray-400">Search across reports, insights, metrics, and journal entries</p>
+            <p className="text-xs text-gray-400">
+              {mode === 'search'
+                ? 'Search across reports, insights, metrics, and journal entries'
+                : 'Find every mention of a topic across all reports — metrics, flags, and summaries'}
+            </p>
           </div>
         )}
 
         {/* Footer */}
-        {hasResults && (
+        {mode === 'search' && hasResults && (
           <div className="border-t border-gray-100 px-4 py-2 flex items-center gap-4">
             <span className="text-[10px] text-gray-400 flex items-center gap-1.5">
               <kbd className="border border-gray-200 rounded px-1 py-0.5">↑↓</kbd> navigate

@@ -46,7 +46,7 @@ function weekLabel(ts: number, index: number): string {
 export default async function OverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; week?: string }>
+  searchParams: Promise<{ tab?: string; week?: string; from?: string; to?: string }>
 }) {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value
@@ -56,9 +56,22 @@ export default async function OverviewPage({
 
   const params = await searchParams
   const tab = params.tab
+  const filterFrom = params.from
+  const filterTo = params.to
+
+  const fromDate = filterFrom ? new Date(filterFrom) : null
+  const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
 
   const [reports, directs, modeRow] = await Promise.all([
     prisma.report.findMany({
+      where: {
+        ...(fromDate || toDate ? {
+          createdAt: {
+            ...(fromDate ? { gte: fromDate } : {}),
+            ...(toDate ? { lte: toDate } : {}),
+          },
+        } : {}),
+      },
       orderBy: { createdAt: 'desc' },
       include: { directReport: true },
     }),
@@ -233,5 +246,5 @@ export default async function OverviewPage({
     areaMetrics: areaMetrics.filter(a => a.metrics.length > 0),
   }
 
-  return <OverviewShell data={data} />
+  return <OverviewShell data={data} activeFrom={filterFrom} activeTo={filterTo} />
 }

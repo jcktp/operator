@@ -25,7 +25,7 @@ export default function DeleteReportButton({ id }: { id: string }) {
     <button
       onClick={handleDelete}
       disabled={deleting}
-      className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+      className={`shrink-0 inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors ${
         confirming
           ? 'border-red-300 bg-red-50 text-red-600 hover:bg-red-100'
           : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'

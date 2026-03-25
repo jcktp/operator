@@ -45,7 +45,7 @@ set_ready() {
 # Clear any previous run's status
 rm -f "$STATUS_FILE"
 
-bold "\nOperator — starting up (${PLATFORM})\n"
+bold "\nOperator — starting up in dev mode (${PLATFORM})\n"
 
 # ── 1. Homebrew (macOS only) ──────────────────────────────────────────────────
 if [ "$PLATFORM" = "macOS" ]; then
@@ -214,15 +214,24 @@ if lsof -ti ":$PORT" &>/dev/null; then
   sleep 1
 fi
 
-# ── 9. Build + start Next.js (production mode — fast, low memory, tunnel-ready) ─
-set_status "Building…"
-step "Building Operator..."
-npm run build >> "$LOG_FILE" 2>&1 || error "Build failed. Check $LOG_FILE"
-step "Build complete"
+# ── 8b. Clear previous session so user must log in fresh ─────────────────────
+step "Clearing previous session..."
+node -e "
+  const path = require('path');
+  const db = path.resolve(process.cwd(), 'prisma', 'dev.db');
+  if (!require('fs').existsSync(db)) process.exit(0);
+  const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+  const { PrismaClient } = require('@prisma/client');
+  const adapter = new PrismaBetterSqlite3({ url: db });
+  const prisma = new PrismaClient({ adapter });
+  prisma.setting.updateMany({ where: { key: 'auth_session_token' }, data: { value: '' } })
+    .then(() => process.exit(0)).catch(() => process.exit(0));
+" 2>/dev/null || true
 
+# ── 9. Start Next.js (dev mode — hot reload, see changes instantly) ──────────
 set_status "Starting server…"
-step "Starting Operator server..."
-npm run start -- --port $PORT > "$LOG_FILE" 2>&1 &
+step "Starting Operator (dev mode)..."
+npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
 NEXT_PID=$!
 echo $NEXT_PID > "$PID_FILE"
 
@@ -240,9 +249,6 @@ until curl -sf "http://localhost:$PORT" &>/dev/null; do
     error "Server crashed. Check $LOG_FILE"
   fi
 done
-
-# Pre-warm API routes so first tunnel request doesn't hit a cold compile
-curl -sf "http://localhost:$PORT/api/report-requests/__warmup__" > /dev/null 2>&1 || true
 
 # Open the browser
 step "Opening Operator in your browser..."

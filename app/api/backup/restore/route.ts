@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { writeFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
+import { requireAuth } from '@/lib/api-auth'
 
 // Restores from an uploaded .db file
 // The client must reload after this completes
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const dbUrl = process.env.DATABASE_URL ?? ''
     const dbPath = dbUrl.replace(/^file:/, '')

@@ -41,19 +41,24 @@ function areaHealthScore(changes: ComparisonChange[]): number {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ area?: string; period?: string; direct?: string }>
+  searchParams: Promise<{ area?: string; from?: string; to?: string; direct?: string }>
 }) {
-  const { area: filterArea, period: filterPeriod = '30', direct: filterDirect } = await searchParams
+  const { area: filterArea, from: filterFrom, to: filterTo, direct: filterDirect } = await searchParams
 
-  const days = parseInt(filterPeriod) || 30
-  const since = filterPeriod === 'all' ? new Date(0) : new Date(Date.now() - days * 86400000)
+  const fromDate = filterFrom ? new Date(filterFrom) : null
+  const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
 
   const [allReports, directs] = await Promise.all([
     prisma.report.findMany({
       where: {
         ...(filterArea ? { area: filterArea } : {}),
         ...(filterDirect ? { directReportId: filterDirect } : {}),
-        ...(filterPeriod !== 'all' ? { createdAt: { gte: since } } : {}),
+        ...(fromDate || toDate ? {
+          createdAt: {
+            ...(fromDate ? { gte: fromDate } : {}),
+            ...(toDate ? { lte: toDate } : {}),
+          },
+        } : {}),
       },
       orderBy: { createdAt: 'desc' },
       include: { directReport: true },
@@ -116,15 +121,16 @@ export default async function DashboardPage({
   const areaHealth: AreaHealthDatum[] = areaCards.map(a => ({ area: a.area, health: a.health }))
 
   // Reports over time — group by date bucket
+  // Use monthly buckets if range > 90 days or no range set; daily otherwise
+  const rangeMs = fromDate && toDate ? toDate.getTime() - fromDate.getTime() : null
+  const useMonthly = !rangeMs || rangeMs > 90 * 86400000
+
   const buckets: Record<string, number> = {}
   for (const r of [...allReports].reverse()) {
     const d = new Date(r.createdAt)
-    let key: string
-    if (filterPeriod === 'all' || days >= 90) {
-      key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    } else {
-      key = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    }
+    const key = useMonthly
+      ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      : `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     buckets[key] = (buckets[key] || 0) + 1
   }
   const reportsOverTime: TimelineDatum[] = Object.entries(buckets).map(([date, count]) => ({ date, count }))
@@ -183,11 +189,24 @@ export default async function DashboardPage({
 
   if (totalReports === 0) {
     return (
-      <div className="space-y-6">
-        <DashboardFilters areas={allAreas.map(a => a.area)} directs={directs} />
+      <div className="space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+            <p className="text-sm text-gray-500 mt-0.5">No reports match the current filters.</p>
+          </div>
+          <DashboardFilters
+            areas={allAreas.map(a => a.area)}
+            directs={directs}
+            activeArea={filterArea}
+            activeFrom={filterFrom}
+            activeTo={filterTo}
+            activeDirect={filterDirect}
+          />
+        </div>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Activity size={32} className="text-gray-200 mb-4" />
-          <p className="text-gray-500 text-sm">No reports match the current filters.</p>
+          <p className="text-gray-500 text-sm">No reports in this period.</p>
         </div>
       </div>
     )
@@ -206,12 +225,13 @@ export default async function DashboardPage({
           </p>
         </div>
         <div className="flex flex-wrap items-start gap-2">
-          <ExportButton rows={exportRows} period={filterPeriod} />
+          <ExportButton rows={exportRows} period={filterFrom && filterTo ? `${filterFrom} – ${filterTo}` : 'all'} />
           <DashboardFilters
             areas={allAreas.map(a => a.area)}
             directs={directs}
             activeArea={filterArea}
-            activePeriod={filterPeriod}
+            activeFrom={filterFrom}
+            activeTo={filterTo}
             activeDirect={filterDirect}
           />
         </div>

@@ -25,6 +25,8 @@ const caveat = Caveat({
   weight: ['600', '700'],
 })
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Operator',
   description: 'Executive reporting, unified.',

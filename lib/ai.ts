@@ -879,3 +879,29 @@ Limits: max 4 crossInsights, 4 topQuestions. Only use what the reports contain.`
     topQuestions: Array.isArray(parsed.topQuestions) ? parsed.topQuestions : [],
   }
 }
+
+export async function generateCatchMeUp(
+  reports: Array<{ area: string; directName?: string; date: string; summary: string; metrics: string; insights: string }>
+): Promise<string> {
+  if (reports.length === 0) return 'No reports to catch up on yet.'
+
+  const modeConfig = getModeConfig(process.env.APP_MODE)
+
+  const reportsText = reports.slice(0, 15).map(r => {
+    let metricsData: Metric[] = []
+    let insightsData: Insight[] = []
+    try { metricsData = JSON.parse(r.metrics || '[]') } catch {}
+    try { insightsData = JSON.parse(r.insights || '[]') } catch {}
+    const from = r.directName ? ` from ${r.directName}` : ''
+    const metricStr = metricsData.slice(0, 3).map(m => `${m.label} ${m.value}`).join(', ')
+    const riskStr = insightsData.filter(i => i.type === 'risk' || i.type === 'anomaly').slice(0, 2).map(i => i.text).join('; ')
+    return `[${r.area}${from}, ${r.date}] ${r.summary}${metricStr ? ` | Metrics: ${metricStr}` : ''}${riskStr ? ` | Flags: ${riskStr}` : ''}`
+  }).join('\n')
+
+  const prompt = `You are briefing a ${modeConfig.label.toLowerCase()} who hasn't checked their reports in a while. Write a "catch me up" digest — a flowing narrative of 4-6 paragraphs covering what's been happening across the business. Lead with the most important developments, then cover each key area, and close with the top things they should act on or ask about. Write conversationally, as if speaking to them directly. No bullet points.
+
+Recent ${modeConfig.documentLabelPlural.toLowerCase()}:
+${reportsText}`
+
+  return chat([{ role: 'user', content: prompt }], 0.4)
+}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { encrypt, decrypt } from '@/lib/encryption'
+import { requireAuth } from '@/lib/api-auth'
 
 // Keys that contain sensitive credentials — never returned in plaintext
 const SENSITIVE_KEYS = new Set([
@@ -22,7 +23,9 @@ const ALLOWED_KEYS = new Set([
   'user_memory',
 ])
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const settings = await prisma.setting.findMany()
   const map: Record<string, string> = {}
   for (const s of settings) {
@@ -38,6 +41,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const body = await req.json() as { key?: string; value?: string }
   const { key, value } = body
 

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from 'lucide-react'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from '@/components/icons'
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
@@ -26,6 +26,7 @@ export default function Nav() {
   const [notifShowing, setNotifShowing] = useState(false)
   const [notifLeft, setNotifLeft] = useState(0)
   const lastReportIdRef = useRef<string | null>(null)
+  const lastReportCreatedAtRef = useRef<string | null>(null)
   const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -72,10 +73,15 @@ export default function Nav() {
         if (!latest) return
         if (lastReportIdRef.current === null) {
           lastReportIdRef.current = latest.id
+          lastReportCreatedAtRef.current = latest.createdAt
           return
         }
-        if (latest.id !== lastReportIdRef.current) {
+        const isNewer = lastReportCreatedAtRef.current
+          ? new Date(latest.createdAt) > new Date(lastReportCreatedAtRef.current)
+          : latest.id !== lastReportIdRef.current
+        if (isNewer) {
           lastReportIdRef.current = latest.id
+          lastReportCreatedAtRef.current = latest.createdAt
           const name = latest.directReport?.name ?? 'someone'
           const rect = libraryWrapRef.current?.getBoundingClientRect()
           if (rect) setNotifLeft(rect.left)

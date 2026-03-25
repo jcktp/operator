@@ -387,7 +387,7 @@ export default function SettingsPage() {
                     const v = newArea.trim()
                     if (v && !customAreas.includes(v)) { setCustomAreas(a => [...a, v]); setNewArea('') }
                   }}
-                  className="px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors"
+                  className="px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   Add
                 </button>
