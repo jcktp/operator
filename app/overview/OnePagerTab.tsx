@@ -67,7 +67,7 @@ export default function OnePagerTab({ reports, weekIndex, totalWeeks, weekLabel 
               <span className="px-2 py-1.5 text-gray-200 cursor-not-allowed"><ChevronRight size={14} /></span>
             )}
           </div>
-          <OnePagerClient reportCount={reports.length} />
+          <OnePagerClient reportCount={reports.length} reports={reports} weekLabel={weekLabel} />
         </div>
       </div>
 

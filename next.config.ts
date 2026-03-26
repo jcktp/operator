@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['pdf-parse', '@prisma/client', 'prisma'],
+  serverExternalPackages: ['pdf-parse', '@prisma/client', 'prisma', '@prisma/adapter-better-sqlite3', 'better-sqlite3'],
   allowedDevOrigins: ['*.trycloudflare.com', '*.cloudflareaccess.com'],
   turbopack: {},
   experimental: {

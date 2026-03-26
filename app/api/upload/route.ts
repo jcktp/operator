@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
         area,
         directReportId: directReportId || null,
         reportDate: reportDate ? new Date(reportDate) : null,
-        summary: analysis?.summary ?? null,
+        summary: analysis?.summary?.trim() || null,
         metrics: analysis?.metrics ? JSON.stringify(analysis.metrics) : null,
         insights: analysis?.insights ? JSON.stringify(analysis.insights) : null,
         questions: analysis?.questions ? JSON.stringify(analysis.questions) : null,

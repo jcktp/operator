@@ -50,7 +50,7 @@ export default async function OnePagerPage() {
           <h1 className="text-2xl font-semibold text-gray-900">One Pager</h1>
           <p className="text-gray-500 text-sm mt-0.5">All {reports.length} reports in one view</p>
         </div>
-        <OnePagerClient reportCount={reports.length} />
+        <OnePagerClient reportCount={reports.length} reports={serialized} />
       </div>
 
       <div className="space-y-6 print:space-y-8">

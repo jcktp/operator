@@ -218,7 +218,7 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
                     <AreaBadge area={report.area} />
                     <span className="text-xs text-gray-400">{formatRelativeDate(new Date(report.createdAt))}</span>
                   </div>
-                  <p className="text-sm text-gray-700 line-clamp-2 mb-3">{report.summary ?? report.title}</p>
+                  <p className="text-sm text-gray-700 line-clamp-2 mb-3">{report.summary || report.title}</p>
                   {report.metrics.length > 0 && (
                     <div className="space-y-1.5 border-t border-gray-100 pt-3">
                       {report.metrics.slice(0, 3).map((m, i) => (
