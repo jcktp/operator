@@ -14,6 +14,8 @@ interface SeriesCandidate {
   reportId: string
 }
 
+const QUEUE_LIMIT = 5
+
 export default function UploadTab() {
   const router = useRouter()
   const modeConfig = useMode()
@@ -254,6 +256,11 @@ export default function UploadTab() {
               className="w-full flex items-center justify-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 py-2 border border-dashed border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
               <Plus size={13} /> Add more files
             </button>
+          )}
+          {pendingCount > QUEUE_LIMIT && (
+            <p className="text-xs text-amber-600 text-center px-2">
+              Analysing {pendingCount} files at once can be slow and may heat up your machine — consider uploading in smaller batches if you&apos;re using a local AI model.
+            </p>
           )}
         </div>
       )}

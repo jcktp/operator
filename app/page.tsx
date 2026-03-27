@@ -11,6 +11,7 @@ import type { OverviewData } from '@/app/overview/OverviewShell'
 import OnePagerTab from '@/app/overview/OnePagerTab'
 import type { OnePagerReport } from '@/app/overview/OnePagerTab'
 import { getModeConfig } from '@/lib/mode'
+import { getReportLabels } from '@/lib/mode-labels'
 import { isValidSession, SESSION_COOKIE } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -134,6 +135,7 @@ export default async function OverviewPage({
         weekIndex={weekIndex}
         totalWeeks={buckets.length}
         weekLabel={weekLabel(bucketTs, weekIndex)}
+        modeId={modeConfig.id}
       />
     )
   }
@@ -180,22 +182,23 @@ export default async function OverviewPage({
       .forEach(text => resolvedFlagItems.push({ text, area: r.area, reportId: r.id }))
   }
 
+  const labels = getReportLabels(modeConfig.id)
   const contextLines: string[] = [
-    `Business overview — ${reports.length} reports across ${activeAreas.length} areas.`,
+    `${modeConfig.label} overview — ${reports.length} ${modeConfig.documentLabelPlural.toLowerCase()} across ${activeAreas.length} ${modeConfig.collectionLabelPlural.toLowerCase()}.`,
     '',
-    'AREAS:',
+    `${modeConfig.collectionLabelPlural.toUpperCase()}:`,
     ...activeAreas.map(r => {
       const metrics = parseJsonSafe<Metric[]>(r.metrics, []).slice(0, 4)
-      return `- ${r.area}: ${r.summary ?? r.title}${metrics.length ? '\n  Metrics: ' + metrics.map(m => `${m.label} ${m.value}`).join(', ') : ''}`
+      return `- ${r.area}: ${r.summary ?? r.title}${metrics.length ? '\n  ' + labels.onePagerMetrics + ': ' + metrics.map(m => `${m.label} ${m.value}`).join(', ') : ''}`
     }),
   ]
   if (topInsights.length > 0) {
-    contextLines.push('', 'ACTIVE FLAGS:')
+    contextLines.push('', `ACTIVE ${labels.flagsPanel.toUpperCase()}:`)
     topInsights.slice(0, 5).forEach(f => contextLines.push(`- [${f.type}] ${f.text}`))
   }
   if (topQuestions.length > 0) {
-    contextLines.push('', 'OPEN QUESTIONS:')
-    topQuestions.slice(0, 5).forEach(q => contextLines.push(`- ${q.text}${q.directName ? ` (ask ${q.directName})` : ''}`))
+    contextLines.push('', `${labels.questionsPanel.toUpperCase()}:`)
+    topQuestions.slice(0, 5).forEach(q => contextLines.push(`- ${q.text}${q.directName ? ` (${labels.questionsPersonPrefix.toLowerCase()} ${q.directName})` : ''}`))
   }
 
   // ── Metric time-series per area ─────────────────────────────────────────────

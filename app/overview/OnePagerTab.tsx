@@ -3,6 +3,8 @@ import { AreaBadge } from '@/components/Badge'
 import { formatRelativeDate } from '@/lib/utils'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import OnePagerClient from '@/app/one-pager/OnePagerClient'
+import { getModeConfig } from '@/lib/mode'
+import { getReportLabels } from '@/lib/mode-labels'
 
 interface Metric { label: string; value: string; status?: string }
 interface Insight { type: string; text: string }
@@ -26,9 +28,12 @@ interface Props {
   weekIndex: number
   totalWeeks: number
   weekLabel: string
+  modeId?: string
 }
 
-export default function OnePagerTab({ reports, weekIndex, totalWeeks, weekLabel }: Props) {
+export default function OnePagerTab({ reports, weekIndex, totalWeeks, weekLabel, modeId }: Props) {
+  const modeConfig = getModeConfig(modeId)
+  const labels = getReportLabels(modeId)
   const prevHref = weekIndex < totalWeeks - 1 ? `/?tab=one-pager&week=${weekIndex + 1}` : null
   const nextHref = weekIndex > 0 ? `/?tab=one-pager&week=${weekIndex - 1}` : null
 
@@ -46,7 +51,7 @@ export default function OnePagerTab({ reports, weekIndex, totalWeeks, weekLabel 
             </Link>
           </div>
           <h1 className="text-2xl font-semibold text-gray-900">One Pager</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{reports.length} report{reports.length !== 1 ? 's' : ''}</p>
+          <p className="text-gray-500 text-sm mt-0.5">{reports.length} {reports.length !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}</p>
         </div>
         <div className="flex items-center gap-2">
           {/* Week navigation */}
@@ -72,7 +77,7 @@ export default function OnePagerTab({ reports, weekIndex, totalWeeks, weekLabel 
       </div>
 
       {reports.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 text-sm">No reports for this week.</div>
+        <div className="text-center py-16 text-gray-400 text-sm">No {modeConfig.documentLabelPlural.toLowerCase()} for this period.</div>
       ) : (
         <div className="space-y-6 print:space-y-8">
           {reports.map((r, i) => (
@@ -101,7 +106,7 @@ export default function OnePagerTab({ reports, weekIndex, totalWeeks, weekLabel 
 
               {r.metrics.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Metrics</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{labels.onePagerMetrics}</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {r.metrics.map((m, mi) => (
                       <div key={mi} className={`rounded-lg px-3 py-2 ${
@@ -123,7 +128,7 @@ export default function OnePagerTab({ reports, weekIndex, totalWeeks, weekLabel 
 
               {r.insights.filter(ins => ins.type === 'risk' || ins.type === 'anomaly').length > 0 && (
                 <div className="mb-3">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Flags</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{labels.onePagerFlags}</p>
                   <div className="space-y-1">
                     {r.insights.filter(ins => ins.type === 'risk' || ins.type === 'anomaly').map((ins, ii) => (
                       <div key={ii} className="flex items-start gap-2 text-sm">
@@ -139,7 +144,7 @@ export default function OnePagerTab({ reports, weekIndex, totalWeeks, weekLabel 
 
               {r.questions.filter(q => q.priority === 'high').length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Key questions</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{labels.onePagerQuestions}</p>
                   <div className="space-y-1">
                     {r.questions.filter(q => q.priority === 'high').map((q, qi) => (
                       <p key={qi} className="text-sm text-gray-700">? {q.text}</p>

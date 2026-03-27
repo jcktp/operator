@@ -7,6 +7,7 @@ import { ArrowRight, Upload, AlertTriangle, HelpCircle, MessageSquare, CheckCirc
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { useDispatch } from '@/components/DispatchContext'
 import { useMode } from '@/components/ModeContext'
+import { getReportLabels } from '@/lib/mode-labels'
 import { MetricsChartsSection } from '@/components/MetricsCharts'
 import type { AreaMetricData } from '@/components/MetricsCharts'
 import PeriodDropdown from '@/components/PeriodDropdown'
@@ -57,6 +58,7 @@ export interface OverviewData {
 export default function OverviewShell({ data, activeFrom, activeTo }: { data: OverviewData; activeFrom?: string; activeTo?: string }) {
   const { open: dispatchOpen, setOpen: setDispatchOpen, setAiContext } = useDispatch()
   const mode = useMode()
+  const labels = getReportLabels(mode.id)
   const { stats, areas, selectedArea, activeAreas, topInsights, topQuestions, resolvedFlagItems, recentReports, context, areaMetrics } = data
 
   function areaHref(area?: string) {
@@ -247,7 +249,7 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
             <section>
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <CheckCircle2 size={11} className="text-green-500" />
-                Resolved since last report
+                {labels.resolvedPanel}
               </h2>
               <div className="bg-green-50 border border-green-100 rounded-xl divide-y divide-green-100">
                 {resolvedFlagItems.map((f, i) => (
@@ -278,7 +280,7 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
               {topInsights.length > 0 && (
                 <section>
                   <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <AlertTriangle size={11} /> Flags & Risks
+                    <AlertTriangle size={11} /> {labels.flagsPanel}
                   </h2>
                   <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
                     {topInsights.map((insight, i) => (
@@ -297,7 +299,7 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
               {topQuestions.length > 0 && (
                 <section>
                   <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <HelpCircle size={11} /> Questions to ask
+                    <HelpCircle size={11} /> {labels.questionsPanel}
                   </h2>
                   <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
                     {topQuestions.map((q, i) => (
@@ -305,7 +307,7 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
                         className="block px-4 py-3 hover:bg-gray-50 transition-colors">
                         <p className="text-sm text-gray-800 font-medium">{q.text}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {q.directName ? `Ask ${q.directName}` : q.reportTitle}
+                          {q.directName ? `${labels.questionsPersonPrefix} ${q.directName}` : q.reportTitle}
                         </p>
                       </Link>
                     ))}

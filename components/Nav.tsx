@@ -84,7 +84,9 @@ export default function Nav() {
         if (isNewer) {
           lastReportIdRef.current = latest.id
           lastReportCreatedAtRef.current = latest.createdAt
-          const name = latest.directReport?.name ?? 'someone'
+          // Only notify for remote submissions (reports that have a directReport attached)
+          if (!latest.directReport) return
+          const name = latest.directReport.name
           const rect = libraryWrapRef.current?.getBoundingClientRect()
           if (rect) setNotifLeft(rect.left)
           setNewReport({ name })

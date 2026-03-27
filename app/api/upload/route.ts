@@ -108,37 +108,40 @@ export async function POST(req: NextRequest) {
       console.error('AI analysis failed:', e)
     }
 
-    // Run comparison against previous report
+    // Run comparison and flag checks in parallel (both depend on analysis but not each other)
     let comparison = null
-    if (previousReport && analysis && previousReport.summary && previousReport.metrics) {
-      try {
-        comparison = await compareReports(
-          previousReport.summary,
-          previousReport.metrics,
-          analysis.summary,
-          JSON.stringify(analysis.metrics),
-          area
-        )
-      } catch (e) {
-        console.error('Comparison failed:', e)
-      }
-    }
-
-    // Check which previous flags are now resolved
     let resolvedFlagsJson: string | null = null
-    if (previousReport?.insights && analysis) {
-      try {
-        type PrevInsight = { type: string; text: string }
-        const prevInsights: PrevInsight[] = JSON.parse(previousReport.insights)
-        const prevFlags = prevInsights.filter(i => i.type === 'risk' || i.type === 'anomaly')
-        if (prevFlags.length > 0) {
-          const resolved = await checkResolvedFlags(prevFlags, rawContent, analysis.insights)
-          if (resolved.length > 0) resolvedFlagsJson = JSON.stringify(resolved)
-        }
-      } catch (e) {
-        console.error('Resolved flags check failed:', e)
-      }
-    }
+
+    type PrevInsight = { type: string; text: string }
+
+    await Promise.all([
+      // Comparison against previous report
+      (async () => {
+        if (!previousReport || !analysis || !previousReport.summary || !previousReport.metrics) return
+        try {
+          comparison = await compareReports(
+            previousReport.summary,
+            previousReport.metrics,
+            analysis.summary,
+            JSON.stringify(analysis.metrics),
+            area
+          )
+        } catch (e) { console.error('Comparison failed:', e) }
+      })(),
+
+      // Check which previous flags are now resolved
+      (async () => {
+        if (!previousReport?.insights || !analysis) return
+        try {
+          const prevInsights: PrevInsight[] = JSON.parse(previousReport.insights)
+          const prevFlags = prevInsights.filter(i => i.type === 'risk' || i.type === 'anomaly')
+          if (prevFlags.length > 0) {
+            const resolved = await checkResolvedFlags(prevFlags, rawContent, analysis.insights)
+            if (resolved.length > 0) resolvedFlagsJson = JSON.stringify(resolved)
+          }
+        } catch (e) { console.error('Resolved flags check failed:', e) }
+      })(),
+    ])
 
     const report = await prisma.report.create({
       data: {
@@ -161,82 +164,70 @@ export async function POST(req: NextRequest) {
       include: { directReport: true },
     })
 
-    // Journalism mode: additional analysis steps
+    // Journalism mode: additional analysis steps — all run in parallel
     if (process.env.APP_MODE === 'journalism') {
-      // Entity extraction
-      try {
-        const entities = await extractEntities(rawContent, title, area)
-        if (entities.length > 0) {
-          await prisma.reportEntity.createMany({
-            data: entities.map(e => ({
-              reportId: report.id,
-              type: e.type,
-              name: e.name,
-              context: e.context ?? null,
-            })),
-          })
-        }
-      } catch (e) { console.error('Entity extraction failed:', e) }
-
-      // Timeline extraction
-      try {
-        const events = await extractTimeline(rawContent, title)
-        if (events.length > 0) {
-          await prisma.timelineEvent.createMany({
-            data: events.map(e => ({
-              reportId: report.id,
-              dateText: e.dateText,
-              dateSortKey: e.dateSortKey ?? null,
-              event: e.event,
-            })),
-          })
-        }
-      } catch (e) { console.error('Timeline extraction failed:', e) }
-
-      // Redaction detection + journalism comparison
+      let entitiesResult: Awaited<ReturnType<typeof extractEntities>> = []
+      let eventsResult: Awaited<ReturnType<typeof extractTimeline>> = []
       let redactionsJson: string | null = null
       let journalismComparisonJson: string | null = null
-
-      try {
-        const redactions = await detectRedactions(rawContent, title)
-        if (redactions.length > 0) redactionsJson = JSON.stringify(redactions)
-      } catch (e) { console.error('Redaction detection failed:', e) }
-
-      if (previousReport?.rawContent && previousReport.rawContent.trim().length > 10) {
-        try {
-          const jComp = await compareDocumentsJournalism(
-            previousReport.rawContent,
-            previousReport.title,
-            rawContent,
-            title
-          )
-          journalismComparisonJson = JSON.stringify(jComp)
-        } catch (e) { console.error('Journalism comparison failed:', e) }
-      }
-
-      // Verification checklist
       let verificationChecklistJson: string | null = null
-      try {
-        const checklist = await generateVerificationChecklist(rawContent, title, area)
-        if (checklist.length > 0) verificationChecklistJson = JSON.stringify(checklist)
-      } catch (e) { console.error('Verification checklist failed:', e) }
 
-      if (redactionsJson || journalismComparisonJson || verificationChecklistJson) {
-        await prisma.reportJournalism.upsert({
-          where: { reportId: report.id },
-          create: {
-            reportId: report.id,
-            redactions: redactionsJson,
-            journalismComparison: journalismComparisonJson,
-            verificationChecklist: verificationChecklistJson,
-          },
-          update: {
-            redactions: redactionsJson,
-            journalismComparison: journalismComparisonJson,
-            verificationChecklist: verificationChecklistJson,
-          },
-        })
-      }
+      await Promise.all([
+        (async () => {
+          try { entitiesResult = await extractEntities(rawContent, title, area) }
+          catch (e) { console.error('Entity extraction failed:', e) }
+        })(),
+        (async () => {
+          try { eventsResult = await extractTimeline(rawContent, title) }
+          catch (e) { console.error('Timeline extraction failed:', e) }
+        })(),
+        (async () => {
+          try {
+            const redactions = await detectRedactions(rawContent, title)
+            if (redactions.length > 0) redactionsJson = JSON.stringify(redactions)
+          } catch (e) { console.error('Redaction detection failed:', e) }
+        })(),
+        (async () => {
+          if (!previousReport?.rawContent || previousReport.rawContent.trim().length <= 10) return
+          try {
+            const jComp = await compareDocumentsJournalism(
+              previousReport.rawContent, previousReport.title, rawContent, title
+            )
+            journalismComparisonJson = JSON.stringify(jComp)
+          } catch (e) { console.error('Journalism comparison failed:', e) }
+        })(),
+        (async () => {
+          try {
+            const checklist = await generateVerificationChecklist(rawContent, title, area)
+            if (checklist.length > 0) verificationChecklistJson = JSON.stringify(checklist)
+          } catch (e) { console.error('Verification checklist failed:', e) }
+        })(),
+      ])
+
+      // Persist results
+      await Promise.all([
+        entitiesResult.length > 0
+          ? prisma.reportEntity.createMany({
+              data: entitiesResult.map(e => ({
+                reportId: report.id, type: e.type, name: e.name, context: e.context ?? null,
+              })),
+            })
+          : Promise.resolve(),
+        eventsResult.length > 0
+          ? prisma.timelineEvent.createMany({
+              data: eventsResult.map(e => ({
+                reportId: report.id, dateText: e.dateText, dateSortKey: e.dateSortKey ?? null, event: e.event,
+              })),
+            })
+          : Promise.resolve(),
+        (redactionsJson || journalismComparisonJson || verificationChecklistJson)
+          ? prisma.reportJournalism.upsert({
+              where: { reportId: report.id },
+              create: { reportId: report.id, redactions: redactionsJson, journalismComparison: journalismComparisonJson, verificationChecklist: verificationChecklistJson },
+              update: { redactions: redactionsJson, journalismComparison: journalismComparisonJson, verificationChecklist: verificationChecklistJson },
+            })
+          : Promise.resolve(),
+      ])
     }
 
     void logAction('report:upload', `${title} (${area})`)

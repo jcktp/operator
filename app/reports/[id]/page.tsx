@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { formatDate, formatRelativeDate, formatFileSize, cn, parseJsonSafe } from '@/lib/utils'
 import type { Metric, Insight, Question } from '@/lib/utils'
+import { getModeConfig } from '@/lib/mode'
+import { getReportLabels } from '@/lib/mode-labels'
 import { AreaBadge, InsightTypeBadge, StatusBadge } from '@/components/Badge'
 import { ArrowLeft, FileText, Calendar, User, HelpCircle, TrendingUp, AlertTriangle, GitCompare, Clock } from 'lucide-react'
 import DeleteReportButton from './DeleteButton'
@@ -54,9 +56,11 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     select: { id: true, title: true, createdAt: true, summary: true, comparison: true },
   })
 
-  // Check journalism mode
+  // Mode config
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-  const isJournalism = modeRow?.value === 'journalism'
+  const modeConfig = getModeConfig(modeRow?.value)
+  const isJournalism = modeConfig.id === 'journalism'
+  const labels = getReportLabels(modeConfig.id)
 
   // Journalism data (only fetched in journalism mode)
   const [entities, timelineEvents, journalismRow] = isJournalism
@@ -176,7 +180,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             <AreaBadge area={report.area} />
             <span className="text-xs text-gray-400">{formatRelativeDate(report.createdAt)}</span>
             {history.length > 0 && (
-              <span className="text-xs text-gray-400">· {history.length} prior report{history.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-gray-400">· {history.length} prior {history.length !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}</span>
             )}
           </div>
           <h1 className="text-2xl font-semibold text-gray-900">{report.title}</h1>
@@ -239,7 +243,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <GitCompare size={11} />
-            {isJournalism ? 'Document comparison' : 'What changed from last report'}
+            {labels.comparison}
           </h2>
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             {comparison.headline && (
@@ -310,7 +314,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <TrendingUp size={11} />
-            Key Metrics
+            {labels.metrics}
             {periodLabel && (
               <span className="ml-1 text-gray-300 font-normal normal-case tracking-normal">
                 · vs prior report ({periodLabel})
@@ -352,7 +356,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <AlertTriangle size={11} />
-            Observations & Flags
+            {labels.flags}
           </h2>
           <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
             {insights.map((insight, i) => (
@@ -373,7 +377,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <HelpCircle size={11} />
-            Questions to ask{report.directReport ? ` ${report.directReport.name}` : ''}
+            {labels.questionsHeading}{report.directReport ? ` — ${report.directReport.name}` : ''}
           </h2>
           <div className="space-y-3">
             {[...highQuestions, ...otherQuestions].map((q, i) => (
@@ -443,7 +447,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <Clock size={11} />
-            Previous {report.area} reports
+            Previous {report.area} {modeConfig.documentLabelPlural.toLowerCase()}
           </h2>
           <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
             {history.map(prev => {
@@ -477,7 +481,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <details className="group">
           <summary className="cursor-pointer text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 list-none hover:text-gray-600 transition-colors">
             <FileText size={11} />
-            Report Content
+            {labels.content}
             <span className="ml-1 text-gray-300 group-open:hidden">▸</span>
             <span className="ml-1 text-gray-300 hidden group-open:inline">▾</span>
           </summary>
