@@ -1,6 +1,6 @@
 # Operator
 
-> Local-first executive reporting — AI analysis of your direct reports' submissions, running entirely on your machine.
+> Local-first AI workspace — analyse documents, run investigations, track teams, and manage cases. Runs entirely on your machine.
 
 ![Local-first](https://img.shields.io/badge/runs%20locally-no%20cloud%20required-black?style=flat-square)
 ![Ollama](https://img.shields.io/badge/AI-Ollama%20%7C%20Claude%20%7C%20GPT%20%7C%20Gemini%20%7C%20Groq%20%7C%20xAI%20%7C%20Perplexity%20%7C%20Mistral-black?style=flat-square)
@@ -11,17 +11,49 @@
 
 ## What it does
 
-Upload reports from your direct reports — CSV, Excel, PDF, Word, or plain text — and get structured AI analysis: summaries, key metrics, risk flags, follow-up questions, and period-over-period comparisons.
+Upload documents and get structured AI analysis — summaries, key metrics, risk flags, entity extraction, timelines, and period-over-period comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
 
 | Feature | Description |
 |---|---|
-| **Report analysis** | AI extracts summary, metrics, risks, opportunities, and follow-up questions from each document |
-| **Library** | Every report stored with full history; compare two periods side by side |
-| **Dashboard** | Cross-area overview with AI-generated health signals across all reports |
-| **Dispatch** | AI chat assistant with access to all your report context; remembers facts across conversations |
-| **Journal** | Private note-taking space with folder organisation and AI grammar correction |
-| **Remote submissions** | Shareable link so direct reports can submit files from any device, no app required |
+| **Document analysis** | AI extracts summaries, metrics, risks, opportunities, and follow-up questions from each upload |
+| **Library** | Every document stored with full history; compare two versions side by side |
+| **Dashboard** | Cross-area overview with AI-generated health signals across all documents |
+| **Dispatch** | AI chat with 3 mode-specific personas; has access to all your document context and remembers facts across conversations |
+| **Journal** | Private note-taking with folder organisation and AI grammar correction |
+| **Remote submissions** | Shareable link so others can submit files from any device, no app required |
 | **Works offline** | Local LLM via Ollama — no data leaves your machine unless you choose a cloud provider |
+
+---
+
+## App modes
+
+Switch modes in **Settings** to adapt the interface, AI framing, and terminology to your use case.
+
+| Mode | Use case | Dispatch personas |
+|---|---|---|
+| **Executive** | Business reporting & team oversight | Dispatch · Debrief · Recon |
+| **Journalism** | Field notes, sources & story research | Analyst · Editor · Scout |
+| **Team Lead** | Team updates, blockers & sprint tracking | Tracker · Retro · Spark |
+| **Market Research** | Interviews, surveys & pattern discovery | Signal · Probe · Horizon |
+| **Legal** | Case files, evidence & matter management | Clerk · Counsel · Brief |
+| **Consulting** | Client engagements, deliverables & progress | Mapper · Partner · Ideate |
+
+Each mode renames navigation labels, document types, and areas to match the domain, and gives the AI personas purpose-built instructions and system prompts.
+
+### Journalism mode extras
+
+Journalism mode adds a layer of investigative tooling on top of the standard document pipeline:
+
+| Feature | Description |
+|---|---|
+| **Entity extraction** | Named persons, organisations, locations, dates, and financial figures extracted from every document |
+| **Entity graph** | Force-directed visualisation of entity co-occurrence across your story archive |
+| **Timeline** | Automatic chronological timeline extracted from document content |
+| **Combined timeline** | Select multiple documents in the library to merge their timelines |
+| **Redaction detection** | Flags documents with suspected redacted content; filter the library by redacted docs |
+| **Document comparison** | AI summary of what changed or was added between two versions of a document |
+| **Verification checklist** | Per-document checklist of claims that require independent verification |
+| **Source protection** | Prominent reminder that source identities should not be entered into any AI system |
 
 ---
 
@@ -61,8 +93,6 @@ git clone https://github.com/jcktp/operator.git
 
 Move the `operator` folder somewhere permanent on your machine — not in Downloads where it might get cleaned up.
 
-A good home is your user folder or a dedicated projects directory:
-
 ```
 ~/operator                    # directly in your home folder
 ~/Projects/operator           # inside a Projects folder
@@ -88,17 +118,8 @@ mv ~/Downloads/operator ~/Projects/operator
 
 Open **Terminal** (macOS: `Cmd + Space` → type Terminal → Enter).
 
-Then navigate to wherever you placed the folder:
-
 ```bash
-# If you moved it to your home folder
-cd ~/operator
-
-# If you moved it to Projects
 cd ~/Projects/operator
-
-# If you're not sure where it is, find it
-find ~ -name "operator" -type d 2>/dev/null
 ```
 
 Confirm you're in the right place:
@@ -119,8 +140,6 @@ There are two scripts depending on how you want to use it:
 |---|---|---|
 | `bash start.sh` | Production — runs a full build first, then serves the optimised output | Sharing with others, or when you want maximum stability |
 | `bash start-dev.sh` | Development — changes visible on browser refresh, no rebuild needed | Running it yourself, day-to-day use |
-
-If you've downloaded it from GitHub and want the most stable version, use `start.sh`. If you're actively developing or just running it for yourself, use `start-dev.sh`.
 
 ```bash
 bash start-dev.sh
@@ -174,7 +193,7 @@ To stop the app, press **Ctrl+C** in the terminal window, or click the power but
 Once Operator is running, go to **Settings** to personalise it:
 
 1. **Profile** — enter your name, company, and role. The AI will address you by name and tailor its responses to your context.
-2. **App mode** — choose between Executive, Team Lead, and other modes to adjust the navigation and AI framing.
+2. **App mode** — choose the mode that matches your use case. This adapts the navigation, terminology, AI framing, and Dispatch personas.
 3. **AI provider** — defaults to Ollama (local). To use a cloud model, enter an API key for any supported provider and select it.
 
 ---
@@ -208,14 +227,14 @@ Enter API keys in **Settings → AI**. Keys are stored encrypted in the local SQ
 
 ---
 
-## Remote report submissions
+## Remote submissions
 
-Direct reports can submit files to you from any device — no app required. Enable this in **Settings → Remote**:
+Others can submit files to you from any device — no app required. Enable this in **Settings → Remote**:
 
 1. Click **Enable remote access** — starts a Cloudflare Quick Tunnel
 2. Copy the generated public URL (e.g. `https://random-name.trycloudflare.com`)
-3. Share it with your direct reports — they open it in any browser and upload their file
-4. The report lands directly in your Operator Library
+3. Share it — recipients open it in any browser and upload their file
+4. The document lands directly in your Operator library
 
 The tunnel is temporary (new URL each session) and shuts down when you close Operator.
 
@@ -226,16 +245,20 @@ The tunnel is temporary (new URL each session) and shuts down when you close Ope
 ```
 operator/
 ├── app/                   # Next.js App Router pages and API routes
-│   ├── api/               # Backend API routes (AI, reports, settings, etc.)
-│   ├── dashboard/         # Cross-area dashboard
-│   ├── dispatch/          # AI chat (Dispatch, Debrief, Recon)
+│   ├── api/               # Backend API routes (AI, documents, settings, etc.)
+│   ├── dispatch/          # AI chat panel
+│   ├── entities/          # Entity overview and relationship graph (journalism)
 │   ├── journal/           # Private notes
-│   ├── library/           # Report browser
-│   ├── reports/           # Individual report view
+│   ├── library/           # Document browser
+│   ├── reports/           # Individual document view
 │   ├── settings/          # App configuration
-│   └── upload/            # File upload and report generation
+│   └── upload/            # File upload and document analysis
 ├── components/            # Shared React components
-├── lib/                   # Core logic (AI, settings, encryption, personas, tunnel)
+├── lib/                   # Core logic (AI, providers, personas, encryption, tunnel)
+│   ├── ai.ts              # Analysis functions and Dispatch chat
+│   ├── ai-providers.ts    # Provider implementations (Ollama, Anthropic, OpenAI, etc.)
+│   ├── personas/          # Per-mode AI persona definitions (one file per mode)
+│   └── mode.ts            # App mode configurations
 ├── prisma/                # Database schema and migrations
 │   └── dev.db             # SQLite database (created on first run, gitignored)
 ├── public/                # Static assets
