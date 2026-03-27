@@ -46,7 +46,7 @@ export default function UploadTab() {
     const newItems: QueuedItem[] = Array.from(files).map(f => ({
       id: fileId(), type: 'file', file: f,
       title: f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
-      area: guessArea(f.name),
+      area: guessArea(f.name, modeConfig.defaultAreas),
       status: 'pending',
     }))
     setQueue(prev => [...prev, ...newItems])
