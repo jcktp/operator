@@ -63,6 +63,15 @@ model Report {
   directReport   DirectReport? @relation(fields: [directReportId], references: [id])
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  // Journalism back-relations
+  entities       ReportEntity[]
+  timelineEvents TimelineEvent[]
+  journalism     ReportJournalism?
+
+  @@index([area])
+  @@index([directReportId])
+  @@index([createdAt])
+  @@index([area, directReportId])
 }
 
 model AuditLog {
@@ -118,4 +127,43 @@ model DispatchChat {
   messages  String   @default("[]")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ── Journalism mode tables ────────────────────────────────────────────────────
+
+model ReportEntity {
+  id        String   @id @default(uuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  type      String   // person | organisation | location | date | financial
+  name      String
+  context   String?
+  createdAt DateTime @default(now())
+
+  @@index([reportId])
+  @@index([name])
+  @@index([type])
+}
+
+model TimelineEvent {
+  id          String   @id @default(uuid())
+  reportId    String
+  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  dateText    String
+  dateSortKey String?
+  event       String
+  createdAt   DateTime @default(now())
+
+  @@index([reportId])
+  @@index([dateSortKey])
+}
+
+model ReportJournalism {
+  id                    String   @id @default(uuid())
+  reportId              String   @unique
+  report                Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  redactions            String?
+  journalismComparison  String?
+  verificationChecklist String?
+  createdAt             DateTime @default(now())
 }

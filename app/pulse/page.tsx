@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Rss, Plus, Trash2, RefreshCw, BookOpen, X, ExternalLink, Loader2, ChevronDown, Pencil, Check, Globe, ChevronLeft, ChevronRight, Eraser } from 'lucide-react'
+import { Rss, Plus, Trash2, RefreshCw, BookOpen, X, ExternalLink, Loader2, ChevronDown, Pencil, Check, Globe, ChevronLeft, ChevronRight, Eraser, Tag } from 'lucide-react'
 import { formatRelativeDate } from '@/lib/utils'
 import { PULSE_DIRECTORY, DIRECTORY_CATEGORIES } from '@/lib/pulse-directory'
+import { useMode } from '@/components/ModeContext'
 
 interface PulseItem {
   id: string
@@ -62,6 +63,8 @@ const TYPE_PLACEHOLDER: Record<string, string> = {
 }
 
 export default function PulsePage() {
+  const modeConfig = useMode()
+  const isJournalism = modeConfig.id === 'journalism'
   const [feeds, setFeeds] = useState<PulseFeed[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
@@ -93,6 +96,15 @@ export default function PulsePage() {
   // Pagination
   const [page, setPage] = useState(1)
   const ITEMS_PER_PAGE = 20
+  // Journalism: keyword monitoring
+  const [keywords, setKeywords] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem('pulse_keywords') ?? '[]') } catch { return [] }
+  })
+  const [keywordInput, setKeywordInput] = useState('')
+  const [keywordFilterOn, setKeywordFilterOn] = useState(false)
+  // Journalism: folder picker for save
+  const [savingFolder, setSavingFolder] = useState<Record<string, string>>({})
 
   const load = useCallback(async () => {
     const res = await fetch('/api/pulse')
@@ -104,6 +116,22 @@ export default function PulsePage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  // Journalism: init defaults on first visit if no feeds
+  useEffect(() => {
+    if (!isJournalism) return
+    fetch('/api/pulse/init-journalism', { method: 'POST' })
+      .then(r => r.json())
+      .then((d: { created?: number }) => { if ((d.created ?? 0) > 0) load() })
+      .catch(() => {})
+  }, [isJournalism, load])
+
+  // Persist keywords to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pulse_keywords', JSON.stringify(keywords))
+    }
+  }, [keywords])
 
   // Auto-refresh interval
   useEffect(() => {
@@ -124,7 +152,22 @@ export default function PulsePage() {
     return () => clearInterval(id)
   }, [autoRefreshMinutes, load])
 
-  const allItems: (PulseItem & { feedName: string; feedType: string })[] = feeds
+  const matchesKeywords = (item: PulseItem) => {
+    if (keywords.length === 0) return false
+    const haystack = `${item.title} ${item.summary ?? ''}`.toLowerCase()
+    return keywords.some(kw => haystack.includes(kw.toLowerCase()))
+  }
+
+  const highlightKeywords = (text: string): React.ReactNode => {
+    if (keywords.length === 0) return text
+    const pattern = new RegExp(`(${keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
+    const parts = text.split(pattern)
+    return parts.map((part, i) =>
+      pattern.test(part) ? <mark key={i} className="bg-amber-100 text-amber-900 rounded px-0.5">{part}</mark> : part
+    )
+  }
+
+  const baseItems: (PulseItem & { feedName: string; feedType: string })[] = feeds
     .filter(f => f.enabled && (activeFeed === null || f.id === activeFeed))
     .flatMap(f => f.items.map(i => ({ ...i, feedName: f.name, feedType: f.type })))
     .sort((a, b) => {
@@ -132,6 +175,10 @@ export default function PulsePage() {
       const tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0
       return tb - ta
     })
+
+  const allItems = keywordFilterOn && keywords.length > 0
+    ? baseItems.filter(item => matchesKeywords(item))
+    : baseItems
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -219,10 +266,15 @@ export default function PulsePage() {
     await load()
   }
 
-  const handleSaveToJournal = async (itemId: string) => {
+  const handleSaveToJournal = async (itemId: string, folder?: string) => {
     setSavingItemId(itemId)
-    await fetch(`/api/pulse/items/${itemId}`, { method: 'POST' })
+    await fetch(`/api/pulse/items/${itemId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folder: folder ?? 'Pulse' }),
+    })
     setSavingItemId(null)
+    setSavingFolder(sf => { const n = { ...sf }; delete n[itemId]; return n })
     setFeeds(fs => fs.map(f => ({
       ...f,
       items: f.items.map(i => i.id === itemId ? { ...i, savedToJournal: true } : i),
@@ -290,6 +342,70 @@ export default function PulsePage() {
           </button>
         </div>
       </div>
+
+      {/* Journalism: keyword monitoring */}
+      {isJournalism && (
+        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Tag size={13} className="text-gray-400" />
+              <span className="text-sm font-medium text-gray-700">Keyword monitoring</span>
+              {keywords.length > 0 && (
+                <button
+                  onClick={() => setKeywordFilterOn(f => !f)}
+                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                    keywordFilterOn
+                      ? 'bg-amber-100 border-amber-300 text-amber-800'
+                      : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  {keywordFilterOn ? 'Showing matches only' : 'Show matches only'}
+                </button>
+              )}
+            </div>
+            <span className="text-xs text-gray-400">{keywords.length} keyword{keywords.length !== 1 ? 's' : ''}</span>
+          </div>
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              const kw = keywordInput.trim()
+              if (kw && !keywords.includes(kw)) setKeywords(ks => [...ks, kw])
+              setKeywordInput('')
+            }}
+            className="flex gap-2"
+          >
+            <input
+              type="text"
+              value={keywordInput}
+              onChange={e => setKeywordInput(e.target.value)}
+              placeholder="Add keyword (e.g. climate, corruption)…"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            />
+            <button
+              type="submit"
+              disabled={!keywordInput.trim()}
+              className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+            >
+              Add
+            </button>
+          </form>
+          {keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {keywords.map(kw => (
+                <span key={kw} className="flex items-center gap-1 text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                  {kw}
+                  <button
+                    onClick={() => setKeywords(ks => ks.filter(k => k !== kw))}
+                    className="text-gray-400 hover:text-gray-700"
+                  >
+                    <X size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add feed form */}
       {showAdd && (
@@ -531,9 +647,13 @@ export default function PulsePage() {
                             <span className="text-xs text-gray-400">{formatRelativeDate(item.publishedAt)}</span>
                           )}
                         </div>
-                        <p className="text-sm font-medium text-gray-900 leading-snug">{item.title}</p>
+                        <p className={`text-sm font-medium leading-snug ${matchesKeywords(item) ? 'text-gray-900' : 'text-gray-900'}`}>
+                          {isJournalism && keywords.length > 0 ? highlightKeywords(item.title) : item.title}
+                        </p>
                         {item.summary && item.summary !== item.title && (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.summary}</p>
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                            {isJournalism && keywords.length > 0 ? highlightKeywords(item.summary) : item.summary}
+                          </p>
                         )}
                       </div>
 
@@ -565,6 +685,25 @@ export default function PulsePage() {
                               title="Remove from Journal"
                             >
                               {savingItemId === item.id ? <Loader2 size={10} className="animate-spin" /> : <X size={10} />}
+                            </button>
+                          </div>
+                        ) : isJournalism ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={savingFolder[item.id] ?? 'Pulse'}
+                              onChange={e => setSavingFolder(sf => ({ ...sf, [item.id]: e.target.value }))}
+                              placeholder="Folder"
+                              className="w-20 text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                            />
+                            <button
+                              onClick={() => handleSaveToJournal(item.id, savingFolder[item.id])}
+                              disabled={savingItemId === item.id}
+                              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+                              title="Save to Journal"
+                            >
+                              {savingItemId === item.id ? <Loader2 size={11} className="animate-spin" /> : <BookOpen size={11} />}
+                              Save
                             </button>
                           </div>
                         ) : (

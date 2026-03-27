@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
-// POST /api/pulse/items/[id] — save item to journal
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// POST /api/pulse/items/[id] — save item to journal (optional { folder } body)
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const item = await prisma.pulseItem.findUnique({ where: { id } })
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  let folder = 'Pulse'
+  try {
+    const body = await req.json()
+    if (typeof body?.folder === 'string' && body.folder.trim()) {
+      folder = body.folder.trim()
+    }
+  } catch { /* no body is fine */ }
 
   const content = [
     item.summary ?? '',
@@ -15,7 +23,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   await prisma.journalEntry.create({
     data: {
       title: item.title,
-      folder: 'Pulse',
+      folder,
       content,
     },
   })

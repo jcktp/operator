@@ -87,7 +87,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     navPeople: 'Sources',
     navDocuments: 'Add Notes',
     navLibrary: 'Story Archive',
-    navJournal: 'Field Notes',
+    navJournal: 'Notebook',
     uploadTitle: 'Add Notes or Photo',
     uploadDescription: 'Add field notes, documents, photos, or source materials to your story archive.',
     uploadAreaLabel: 'Beat / Story',

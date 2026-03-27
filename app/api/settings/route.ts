@@ -22,44 +22,57 @@ const ALLOWED_KEYS = new Set([
   'app_mode',
   'ceo_name', 'company_name', 'user_role',
   'user_memory',
+  'bluesky_identifier', 'bluesky_app_password', 'mastodon_access_token',
+  'sound_enabled', 'custom_areas', 'auto_lock_minutes', 'air_gap_mode',
+  'backup_path', 'last_backup',
 ])
 
 export async function GET(req: NextRequest) {
-  const deny = await requireAuth(req)
-  if (deny) return deny
-  const settings = await prisma.setting.findMany()
-  const map: Record<string, string> = {}
-  for (const s of settings) {
-    if (SENSITIVE_KEYS.has(s.key)) {
-      // Decrypt to check if a value exists, but never return the plaintext
-      const plaintext = decrypt(s.value)
-      map[s.key] = plaintext ? '__saved__' : ''
-    } else {
-      map[s.key] = s.value
+  try {
+    const deny = await requireAuth(req)
+    if (deny) return deny
+    const settings = await prisma.setting.findMany()
+    const map: Record<string, string> = {}
+    for (const s of settings) {
+      if (SENSITIVE_KEYS.has(s.key)) {
+        // Decrypt to check if a value exists, but never return the plaintext
+        const plaintext = decrypt(s.value)
+        map[s.key] = plaintext ? '__saved__' : ''
+      } else {
+        map[s.key] = s.value
+      }
     }
+    return NextResponse.json({ settings: map })
+  } catch (e) {
+    console.error('settings GET error:', e)
+    return NextResponse.json({ error: 'Failed to load settings' }, { status: 500 })
   }
-  return NextResponse.json({ settings: map })
 }
 
 export async function POST(req: NextRequest) {
-  const deny = await requireAuth(req)
-  if (deny) return deny
-  const body = await req.json() as { key?: string; value?: string }
-  const { key, value } = body
+  try {
+    const deny = await requireAuth(req)
+    if (deny) return deny
+    const body = await req.json() as { key?: string; value?: string }
+    const { key, value } = body
 
-  if (!key) return NextResponse.json({ error: 'Key required' }, { status: 400 })
-  if (!ALLOWED_KEYS.has(key)) return NextResponse.json({ error: 'Unknown setting key' }, { status: 400 })
+    if (!key) return NextResponse.json({ error: 'Key required' }, { status: 400 })
+    if (!ALLOWED_KEYS.has(key)) return NextResponse.json({ error: 'Unknown setting key' }, { status: 400 })
 
-  // If a sensitive key comes back as the sentinel (unchanged), skip writing it
-  if (SENSITIVE_KEYS.has(key) && value === '__saved__') {
-    return NextResponse.json({ ok: true, skipped: true })
+    // If a sensitive key comes back as the sentinel (unchanged), skip writing it
+    if (SENSITIVE_KEYS.has(key) && value === '__saved__') {
+      return NextResponse.json({ ok: true, skipped: true })
+    }
+
+    const stored = SENSITIVE_KEYS.has(key) ? encrypt(value ?? '') : (value ?? '')
+    await prisma.setting.upsert({
+      where: { key },
+      update: { value: stored },
+      create: { id: crypto.randomUUID(), key, value: stored },
+    })
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    console.error('settings POST error:', e)
+    return NextResponse.json({ error: 'Failed to save setting' }, { status: 500 })
   }
-
-  const stored = SENSITIVE_KEYS.has(key) ? encrypt(value ?? '') : (value ?? '')
-  await prisma.setting.upsert({
-    where: { key },
-    update: { value: stored },
-    create: { id: crypto.randomUUID(), key, value: stored },
-  })
-  return NextResponse.json({ ok: true })
 }

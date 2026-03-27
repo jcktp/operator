@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import LibraryClearButton from './LibraryClearButton'
 import LibrarySearch from './LibrarySearch'
 import { getModeConfig } from '@/lib/mode'
+import SourceProtectionBanner from '@/components/SourceProtectionBanner'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,25 @@ export default async function LibraryPage({
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
   const modeConfig = getModeConfig(modeRow?.value)
+  const isJournalism = modeRow?.value === 'journalism'
+
+  // Journalism: fetch entity names and redaction flags per report
+  let entityNamesByReport: Record<string, string[]> = {}
+  let redactedReportIds = new Set<string>()
+  if (isJournalism) {
+    const [allEntities, redactedRows] = await Promise.all([
+      prisma.reportEntity.findMany({ select: { reportId: true, name: true } }),
+      prisma.reportJournalism.findMany({
+        where: { redactions: { not: null } },
+        select: { reportId: true },
+      }),
+    ])
+    for (const e of allEntities) {
+      if (!entityNamesByReport[e.reportId]) entityNamesByReport[e.reportId] = []
+      entityNamesByReport[e.reportId].push(e.name)
+    }
+    redactedReportIds = new Set(redactedRows.map(r => r.reportId))
+  }
 
   // Filter by area if selected
   const reports = selectedArea
@@ -48,6 +68,7 @@ export default async function LibraryPage({
 
   return (
     <div className="space-y-6">
+      <SourceProtectionBanner />
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -122,7 +143,16 @@ export default async function LibraryPage({
                 </span>
               </div>
             )}
-            <LibrarySearch reports={reports} />
+            <LibrarySearch
+              reports={reports.map(r => ({
+                ...r,
+                ...(isJournalism ? {
+                  entityNames: entityNamesByReport[r.id] ?? [],
+                  hasRedactions: redactedReportIds.has(r.id),
+                } : {}),
+              }))}
+              isJournalism={isJournalism}
+            />
           </div>
         </div>
       )}

@@ -10,6 +10,14 @@ import DispatchReportButton from './DispatchReportButton'
 import ReportContent from './ReportContent'
 import RawContent from './RawContent'
 import CopyNarrativeButton from './CopyNarrativeButton'
+import EntitiesSection from './EntitiesSection'
+import TimelineSection from './TimelineSection'
+import RedactionsSection from './RedactionsSection'
+import JournalismComparisonSection from './JournalismComparisonSection'
+import VerificationSection from './VerificationSection'
+import type { RedactionItem } from './RedactionsSection'
+import type { JournalismComparisonData } from './JournalismComparisonSection'
+import type { VerificationItem } from './VerificationSection'
 
 interface ComparisonChange {
   metric: string
@@ -45,6 +53,61 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     take: 6,
     select: { id: true, title: true, createdAt: true, summary: true, comparison: true },
   })
+
+  // Check journalism mode
+  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const isJournalism = modeRow?.value === 'journalism'
+
+  // Journalism data (only fetched in journalism mode)
+  const [entities, timelineEvents, journalismRow] = isJournalism
+    ? await Promise.all([
+        prisma.reportEntity.findMany({ where: { reportId: id }, orderBy: { type: 'asc' } }),
+        prisma.timelineEvent.findMany({
+          where: { reportId: id },
+          orderBy: [{ dateSortKey: 'asc' }, { createdAt: 'asc' }],
+        }),
+        prisma.reportJournalism.findUnique({ where: { reportId: id } }),
+      ])
+    : [[], [], null]
+
+  // Cross-document entity linking: find other reports mentioning the same entity names
+  type CrossDocResult = { name: string; type: string; reportIds: string[]; reportTitles: Record<string, string> }
+  const crossLinks: CrossDocResult[] = []
+  if (isJournalism && entities.length > 0) {
+    const linkableTypes = ['person', 'organisation', 'location']
+    const linkableEntities = entities.filter(e => linkableTypes.includes(e.type))
+    const uniqueNames = [...new Set(linkableEntities.map(e => e.name))]
+
+    await Promise.all(uniqueNames.map(async (name) => {
+      const others = await prisma.reportEntity.findMany({
+        where: { name, reportId: { not: id } },
+        select: { reportId: true },
+      })
+      if (others.length === 0) return
+      const distinctReportIds = [...new Set(others.map(o => o.reportId))]
+      const linkedReports = await prisma.report.findMany({
+        where: { id: { in: distinctReportIds } },
+        select: { id: true, title: true },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      })
+      const entity = linkableEntities.find(e => e.name === name)
+      crossLinks.push({
+        name,
+        type: entity?.type ?? 'person',
+        reportIds: linkedReports.map(r => r.id),
+        reportTitles: Object.fromEntries(linkedReports.map(r => [r.id, r.title])),
+      })
+    }))
+  }
+
+  // Parse journalism data
+  const redactions = journalismRow ? parseJsonSafe<RedactionItem[]>(journalismRow.redactions, []) : []
+  const journalismComparison = journalismRow ? parseJsonSafe<JournalismComparisonData | null>(journalismRow.journalismComparison, null) : null
+  const verificationChecklist = journalismRow ? parseJsonSafe<VerificationItem[]>(journalismRow.verificationChecklist, []) : []
+
+  // Title of the previous report (for journalism comparison label)
+  const prevReportTitle = history[0]?.title
 
   const metrics    = parseJsonSafe<Metric[]>(report.metrics, [])
   const insights   = parseJsonSafe<Insight[]>(report.insights, [])
@@ -176,7 +239,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <GitCompare size={11} />
-            What changed from last report
+            {isJournalism ? 'Document comparison' : 'What changed from last report'}
           </h2>
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             {comparison.headline && (
@@ -330,6 +393,49 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             ))}
           </div>
         </section>
+      )}
+
+      {/* Journalism: Entities */}
+      {isJournalism && entities.length > 0 && (
+        <EntitiesSection
+          entities={entities.map(e => ({
+            id: e.id,
+            type: e.type,
+            name: e.name,
+            context: e.context,
+          }))}
+          crossLinks={crossLinks}
+        />
+      )}
+
+      {/* Journalism: Timeline */}
+      {isJournalism && timelineEvents.length > 0 && (
+        <TimelineSection
+          events={timelineEvents.map(e => ({
+            id: e.id,
+            dateText: e.dateText,
+            dateSortKey: e.dateSortKey,
+            event: e.event,
+          }))}
+        />
+      )}
+
+      {/* Journalism: Redactions */}
+      {isJournalism && redactions.length > 0 && (
+        <RedactionsSection redactions={redactions} />
+      )}
+
+      {/* Journalism: Verification checklist */}
+      {isJournalism && verificationChecklist.length > 0 && (
+        <VerificationSection checklist={verificationChecklist} />
+      )}
+
+      {/* Journalism: Document comparison (replaces period comparison label in journalism mode) */}
+      {isJournalism && journalismComparison && (
+        <JournalismComparisonSection
+          comparison={journalismComparison}
+          prevTitle={prevReportTitle}
+        />
       )}
 
       {/* History for this area */}

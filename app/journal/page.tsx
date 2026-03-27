@@ -1,12 +1,15 @@
 import { prisma } from '@/lib/db'
+import { getModeConfig } from '@/lib/mode'
 import JournalShell from './JournalShell'
 
 export const dynamic = 'force-dynamic'
 
 export default async function JournalPage() {
-  const entries = await prisma.journalEntry.findMany({
-    orderBy: { updatedAt: 'desc' },
-  })
+  const [entries, modeRow] = await Promise.all([
+    prisma.journalEntry.findMany({ orderBy: { updatedAt: 'desc' } }),
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+  ])
+  const modeConfig = getModeConfig(modeRow?.value)
 
   const serialized = entries.map(e => ({
     id: e.id,
@@ -16,11 +19,15 @@ export default async function JournalPage() {
     updatedAt: e.updatedAt.toISOString(),
   }))
 
+  const description = modeConfig.id === 'journalism'
+    ? 'Investigation notes organised by folder — sources, timelines, claims'
+    : 'Notes organised by folder — auto-saved, AI-assisted'
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Journal</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Notes organised by folder — auto-saved, AI-assisted</p>
+        <h1 className="text-2xl font-semibold text-gray-900">{modeConfig.navJournal}</h1>
+        <p className="text-gray-500 text-sm mt-0.5">{description}</p>
       </div>
       <JournalShell entries={serialized} />
     </div>

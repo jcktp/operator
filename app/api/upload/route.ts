@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
 import { extractContent, getFileType, IMAGE_TYPES, getMimeType } from '@/lib/parsers'
-import { analyzeReport, compareReports, checkResolvedFlags, describeImage } from '@/lib/ai'
+import { analyzeReport, compareReports, checkResolvedFlags, describeImage, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist } from '@/lib/ai'
 import { saveReportFile } from '@/lib/reports-folder'
 import { logAction } from '@/lib/audit'
 import { join } from 'path'
@@ -160,6 +160,84 @@ export async function POST(req: NextRequest) {
       },
       include: { directReport: true },
     })
+
+    // Journalism mode: additional analysis steps
+    if (process.env.APP_MODE === 'journalism') {
+      // Entity extraction
+      try {
+        const entities = await extractEntities(rawContent, title, area)
+        if (entities.length > 0) {
+          await prisma.reportEntity.createMany({
+            data: entities.map(e => ({
+              reportId: report.id,
+              type: e.type,
+              name: e.name,
+              context: e.context ?? null,
+            })),
+          })
+        }
+      } catch (e) { console.error('Entity extraction failed:', e) }
+
+      // Timeline extraction
+      try {
+        const events = await extractTimeline(rawContent, title)
+        if (events.length > 0) {
+          await prisma.timelineEvent.createMany({
+            data: events.map(e => ({
+              reportId: report.id,
+              dateText: e.dateText,
+              dateSortKey: e.dateSortKey ?? null,
+              event: e.event,
+            })),
+          })
+        }
+      } catch (e) { console.error('Timeline extraction failed:', e) }
+
+      // Redaction detection + journalism comparison
+      let redactionsJson: string | null = null
+      let journalismComparisonJson: string | null = null
+
+      try {
+        const redactions = await detectRedactions(rawContent, title)
+        if (redactions.length > 0) redactionsJson = JSON.stringify(redactions)
+      } catch (e) { console.error('Redaction detection failed:', e) }
+
+      if (previousReport?.rawContent && previousReport.rawContent.trim().length > 10) {
+        try {
+          const jComp = await compareDocumentsJournalism(
+            previousReport.rawContent,
+            previousReport.title,
+            rawContent,
+            title
+          )
+          journalismComparisonJson = JSON.stringify(jComp)
+        } catch (e) { console.error('Journalism comparison failed:', e) }
+      }
+
+      // Verification checklist
+      let verificationChecklistJson: string | null = null
+      try {
+        const checklist = await generateVerificationChecklist(rawContent, title, area)
+        if (checklist.length > 0) verificationChecklistJson = JSON.stringify(checklist)
+      } catch (e) { console.error('Verification checklist failed:', e) }
+
+      if (redactionsJson || journalismComparisonJson || verificationChecklistJson) {
+        await prisma.reportJournalism.upsert({
+          where: { reportId: report.id },
+          create: {
+            reportId: report.id,
+            redactions: redactionsJson,
+            journalismComparison: journalismComparisonJson,
+            verificationChecklist: verificationChecklistJson,
+          },
+          update: {
+            redactions: redactionsJson,
+            journalismComparison: journalismComparisonJson,
+            verificationChecklist: verificationChecklistJson,
+          },
+        })
+      }
+    }
 
     void logAction('report:upload', `${title} (${area})`)
     return NextResponse.json({ report, hasPrevious: !!previousReport, seriesCandidate })

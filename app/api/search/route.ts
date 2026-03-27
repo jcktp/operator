@@ -13,6 +13,7 @@ function snippet(text: string, q: string, maxLen = 120): string {
 }
 
 export async function GET(req: NextRequest) {
+  try {
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
   if (q.length < 2) return NextResponse.json({ reports: [], journal: [] })
 
@@ -75,4 +76,8 @@ export async function GET(req: NextRequest) {
   }))
 
   return NextResponse.json({ reports, journal })
+  } catch (e) {
+    console.error('search error:', e)
+    return NextResponse.json({ error: 'Search failed' }, { status: 500 })
+  }
 }

@@ -20,6 +20,7 @@ function highlight(text: string, q: string, maxLen = 160): string {
 }
 
 export async function GET(req: NextRequest) {
+  try {
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
   if (q.length < 2) return NextResponse.json({ hits: [] })
 
@@ -80,4 +81,8 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ hits, total: hits.length })
+  } catch (e) {
+    console.error('topic-search error:', e)
+    return NextResponse.json({ error: 'Search failed' }, { status: 500 })
+  }
 }

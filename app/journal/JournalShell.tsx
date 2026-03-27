@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, FolderOpen, FileText, Trash2, ChevronRight, ChevronDown, Edit2, PenLine, Eye, X } from 'lucide-react'
+import { Plus, FolderOpen, FileText, Trash2, ChevronRight, ChevronDown, Edit2, PenLine, Eye, X, BookMarked } from 'lucide-react'
 import JournalEditor from './JournalEditor'
+import { useMode } from '@/components/ModeContext'
 
 interface JournalEntry {
   id: string
@@ -17,11 +18,16 @@ interface Props {
 }
 
 const DEFAULT_FOLDER = 'General'
+const INVESTIGATION_SUBFOLDERS = ['Sources', 'Timeline', 'Claims', 'Documents', 'Notes']
 
 export default function JournalShell({ entries: initial }: Props) {
+  const modeConfig = useMode()
+  const isJournalism = modeConfig.id === 'journalism'
   const [entries, setEntries] = useState(initial)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'view' | 'edit'>('view')
+  const [investigationPrompt, setInvestigationPrompt] = useState<string | null>(null)
+  const [creatingTemplate, setCreatingTemplate] = useState(false)
 
   // Always expand all known folders + General on load
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(() => {
@@ -96,6 +102,34 @@ export default function JournalShell({ entries: initial }: Props) {
     setSelectedId(entry.id)
     setViewMode('edit')
     setExpandedFolders(prev => new Set([...prev, folder]))
+    // Journalism: offer investigation template
+    if (isJournalism) setInvestigationPrompt(folder)
+  }
+
+  const createInvestigationTemplate = async (baseName: string) => {
+    setCreatingTemplate(true)
+    setInvestigationPrompt(null)
+    const newEntries: JournalEntry[] = []
+    for (const sub of INVESTIGATION_SUBFOLDERS) {
+      const folderName = `${baseName} · ${sub}`
+      const res = await fetch('/api/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Notes', folder: folderName, content: '' }),
+      })
+      if (!res.ok) continue
+      const data = await res.json()
+      newEntries.push({
+        id: data.entry.id,
+        title: data.entry.title,
+        folder: data.entry.folder,
+        content: '',
+        updatedAt: data.entry.updatedAt,
+      })
+    }
+    setEntries(prev => [...newEntries, ...prev])
+    setExpandedFolders(prev => new Set([...prev, ...newEntries.map(e => e.folder)]))
+    setCreatingTemplate(false)
   }
 
   const deleteNote = async (id: string, e: React.MouseEvent) => {
@@ -155,6 +189,34 @@ export default function JournalShell({ entries: initial }: Props) {
             </button>
           )}
         </div>
+
+        {/* Journalism: investigation template prompt */}
+        {investigationPrompt && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 mb-3 space-y-2">
+            <div className="flex items-center gap-1.5">
+              <BookMarked size={12} className="text-amber-600 shrink-0" />
+              <p className="text-xs font-medium text-amber-800">Set up investigation folders?</p>
+            </div>
+            <p className="text-[11px] text-amber-700 leading-snug">
+              Create sub-folders for <strong>{investigationPrompt}</strong>: Sources, Timeline, Claims, Documents, Notes
+            </p>
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => createInvestigationTemplate(investigationPrompt)}
+                disabled={creatingTemplate}
+                className="flex-1 text-[11px] font-medium px-2 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors disabled:opacity-50"
+              >
+                {creatingTemplate ? 'Creating…' : 'Yes, create'}
+              </button>
+              <button
+                onClick={() => setInvestigationPrompt(null)}
+                className="flex-1 text-[11px] text-amber-700 py-1 rounded border border-amber-200 hover:bg-amber-100 transition-colors"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Folder tree */}
         {folders.map(folder => {

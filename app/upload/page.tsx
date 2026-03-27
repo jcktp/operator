@@ -5,6 +5,7 @@ import { Upload, Link2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import UploadTab from './UploadTab'
 import RequestTab from './RequestTab'
+import SourceProtectionBanner from '@/components/SourceProtectionBanner'
 
 type Tab = 'upload' | 'request'
 
@@ -13,6 +14,7 @@ export default function UploadPage() {
 
   return (
     <div className="max-w-2xl">
+      <SourceProtectionBanner />
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Add reports</h1>
         <p className="text-gray-500 text-sm mt-0.5">Upload directly or send a link for someone to submit their own report.</p>
