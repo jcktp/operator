@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Loader2, CheckCircle, Link2, Copy, Check, AlertTriangle, Globe, ChevronDown } from 'lucide-react'
 import type { DirectReport } from './uploadTypes'
-
-const FALLBACK_AREAS = ['Finance', 'HR & People', 'Sales', 'Marketing', 'Operations', 'Product', 'Engineering', 'Legal', 'Customer Success', 'Recruitment', 'Strategy', 'Other']
+import { getModeConfig } from '@/lib/mode'
 
 function CustomDropdown({ value, placeholder, options, onChange }: { value: string; placeholder: string; options: { label: string; value: string }[]; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false)
@@ -45,7 +44,7 @@ export default function RequestTab() {
   const [message, setMessage] = useState('')
   const [directReportId, setDirectReportId] = useState('')
   const [directs, setDirects] = useState<DirectReport[]>([])
-  const [areas, setAreas] = useState<string[]>(FALLBACK_AREAS)
+  const [areas, setAreas] = useState<string[]>(getModeConfig(null).defaultAreas)
   const [generating, setGenerating] = useState(false)
   const [generatingStep, setGeneratingStep] = useState('')
   const [link, setLink] = useState('')
@@ -88,7 +87,7 @@ export default function RequestTab() {
             }
           } catch {}
         }
-        setAreas(FALLBACK_AREAS)
+        setAreas(getModeConfig(s.app_mode ?? null).defaultAreas)
       })
       .catch(() => {})
   }, [])

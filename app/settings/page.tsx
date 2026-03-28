@@ -69,6 +69,7 @@ export default function SettingsPage() {
   const [soundEnabled, setSoundEnabled] = useState(true)
   // Custom areas
   const [customAreas, setCustomAreas] = useState<string[]>([])
+  const [areasCustomized, setAreasCustomized] = useState(false)
   const [newArea, setNewArea] = useState('')
   // Security
   const [autoLockMinutes, setAutoLockMinutes] = useState(0)
@@ -119,6 +120,7 @@ export default function SettingsPage() {
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '', mistral: s.mistral_model ?? '' })
       const savedAreas = s.custom_areas ? JSON.parse(s.custom_areas) as string[] : null
       setCustomAreas(savedAreas ?? getModeConfig(s.app_mode ?? 'executive').defaultAreas)
+      setAreasCustomized(!!s.custom_areas)
       setAutoLockMinutes(parseInt(s.auto_lock_minutes ?? '0') || 0)
       setAirGapMode(s.air_gap_mode === 'true')
       setLoading(false)
@@ -226,7 +228,7 @@ export default function SettingsPage() {
       saveSetting('bluesky_app_password', bskyAppPassword),
       saveSetting('mastodon_access_token', mastodonToken),
       saveSetting('sound_enabled', soundEnabled ? 'true' : 'false'),
-      saveSetting('custom_areas', JSON.stringify(customAreas)),
+      saveSetting('custom_areas', areasCustomized ? JSON.stringify(customAreas) : ''),
       saveSetting('auto_lock_minutes', String(autoLockMinutes)),
       saveSetting('air_gap_mode', airGapMode ? 'true' : 'false'),
     ])
@@ -334,7 +336,10 @@ export default function SettingsPage() {
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {MODE_LIST.map(m => (
-                  <button key={m.id} type="button" onClick={() => setAppMode(m.id)}
+                  <button key={m.id} type="button" onClick={() => {
+                    setAppMode(m.id)
+                    if (!areasCustomized) setCustomAreas(getModeConfig(m.id).defaultAreas)
+                  }}
                     className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
                       appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
                     )}>
@@ -369,13 +374,22 @@ export default function SettingsPage() {
             </div>
 
             <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-gray-900">Business areas</h2>
-              <p className="text-xs text-gray-400">These areas appear when uploading reports and creating request links. Defaults are set by your app mode.</p>
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-900">Areas</h2>
+                {areasCustomized && (
+                  <button type="button"
+                    onClick={() => { setCustomAreas(getModeConfig(appMode).defaultAreas); setAreasCustomized(false) }}
+                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                    Reset to {getModeConfig(appMode).label} defaults
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-400">Areas appear when uploading {getModeConfig(appMode).documentLabelPlural.toLowerCase()} and creating request links. Switching modes resets to that mode&apos;s defaults unless you&apos;ve customised them.</p>
               <div className="flex flex-wrap gap-2">
                 {customAreas.map(area => (
                   <span key={area} className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-gray-100 text-xs text-gray-700 rounded-md">
                     {area}
-                    <button type="button" onClick={() => setCustomAreas(a => a.filter(x => x !== area))}
+                    <button type="button" onClick={() => { setCustomAreas(a => a.filter(x => x !== area)); setAreasCustomized(true) }}
                       className="text-gray-400 hover:text-gray-700 transition-colors">
                       <X size={11} />
                     </button>
@@ -391,7 +405,7 @@ export default function SettingsPage() {
                     if (e.key === 'Enter') {
                       e.preventDefault()
                       const v = newArea.trim()
-                      if (v && !customAreas.includes(v)) { setCustomAreas(a => [...a, v]); setNewArea('') }
+                      if (v && !customAreas.includes(v)) { setCustomAreas(a => [...a, v]); setNewArea(''); setAreasCustomized(true) }
                     }
                   }}
                   placeholder="Add area…"
@@ -401,7 +415,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => {
                     const v = newArea.trim()
-                    if (v && !customAreas.includes(v)) { setCustomAreas(a => [...a, v]); setNewArea('') }
+                    if (v && !customAreas.includes(v)) { setCustomAreas(a => [...a, v]); setNewArea(''); setAreasCustomized(true) }
                   }}
                   className="px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
                 >

@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from '@/components/icons'
-import { Network, type LucideIcon } from 'lucide-react'
+import { Network, Users as UsersIcon, type LucideIcon } from 'lucide-react'
 
 const EXTRA_NAV_ICONS: Record<string, LucideIcon> = {
   Network,
+  Users: UsersIcon,
 }
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef } from 'react'

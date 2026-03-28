@@ -109,7 +109,11 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first report',
     aiContext: 'You are advising a business executive. Focus on operational performance, financial health, team effectiveness, and strategic opportunities.',
     analysisFraming: 'Extract business metrics, operational insights, risks, and opportunities. Identify trends and anomalies relative to targets or prior periods.',
-    features: { ...DEFAULT_FEATURES },
+    features: {
+      ...DEFAULT_FEATURES,
+      documentComparison: true,
+      journalDescription: 'Leadership notes organised by theme — decisions, strategy, reflections',
+    },
   },
 
   journalism: {
@@ -179,7 +183,12 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first update',
     aiContext: 'You are assisting a team lead. Focus on delivery progress, blockers, team health, sprint velocity, and commitment tracking.',
     analysisFraming: 'Extract team progress, completed work, blockers, and upcoming commitments. Flag risks to delivery timelines and recurring issues across updates.',
-    features: { ...DEFAULT_FEATURES },
+    features: {
+      ...DEFAULT_FEATURES,
+      timeline: true,
+      documentComparison: true,
+      journalDescription: 'Team notes organised by sprint — retrospectives, blockers, decisions',
+    },
   },
 
   market_research: {
@@ -208,7 +217,14 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first interview',
     aiContext: 'You are assisting a market researcher. Focus on identifying recurring themes, patterns, outliers, and actionable insights across multiple data sources.',
     analysisFraming: 'Extract key themes, verbatim quotes from respondents, and emerging patterns. Identify areas of consensus and divergence. Flag notable outliers or contradictions worth exploring further.',
-    features: { ...DEFAULT_FEATURES },
+    features: {
+      ...DEFAULT_FEATURES,
+      entities: true,
+      verification: true,
+      documentComparison: true,
+      journalDescription: 'Research notes organised by project — hypotheses, insights, literature',
+      extraNavItems: [{ href: '/entities', label: 'Entities', icon: 'Network' }],
+    },
   },
 
   legal: {
@@ -237,7 +253,17 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first case file',
     aiContext: 'You are assisting a legal professional. Prioritise accuracy, chronological consistency, evidence chain integrity, and factual precision. Never speculate beyond what the documents contain.',
     analysisFraming: 'Extract key dates, parties, and legal claims. Flag any factual inconsistencies or contradictions. Surface evidence references and note any apparent gaps in the record or missing documentation.',
-    features: { ...DEFAULT_FEATURES },
+    features: {
+      ...DEFAULT_FEATURES,
+      entities: true,
+      timeline: true,
+      redactions: true,
+      verification: true,
+      documentComparison: true,
+      investigationTemplate: true,
+      journalDescription: 'Case notes organised by matter — hearings, evidence, client calls',
+      extraNavItems: [{ href: '/entities', label: 'Parties', icon: 'Users' }],
+    },
   },
 
   consulting: {
@@ -266,7 +292,14 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first deliverable',
     aiContext: 'You are assisting a consultant. Focus on client value delivery, project progress, risks, and actionable recommendations. Frame insights in terms of client impact.',
     analysisFraming: 'Extract project progress, deliverable status, risks, and key recommendations. Identify milestones achieved, outstanding commitments, and any scope or timeline concerns.',
-    features: { ...DEFAULT_FEATURES },
+    features: {
+      ...DEFAULT_FEATURES,
+      entities: true,
+      timeline: true,
+      documentComparison: true,
+      journalDescription: 'Engagement notes organised by client — meetings, decisions, research',
+      extraNavItems: [{ href: '/entities', label: 'Stakeholders', icon: 'Users' }],
+    },
   },
 }
 

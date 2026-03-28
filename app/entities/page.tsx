@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { formatRelativeDate } from '@/lib/utils'
+import { getModeConfig } from '@/lib/mode'
 import { Users } from 'lucide-react'
 import EntitiesOverviewSearch from './EntitiesOverviewSearch'
 
@@ -12,9 +13,13 @@ export default async function EntitiesPage({
 }: {
   searchParams: Promise<{ type?: string; sort?: string }>
 }) {
-  // Only available in journalism mode
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-  if (modeRow?.value !== 'journalism') notFound()
+  const modeConfig = getModeConfig(modeRow?.value)
+  if (!modeConfig.features.entities) notFound()
+
+  // Use the label from the matching extraNavItem so each mode shows its own term
+  const navItem = modeConfig.features.extraNavItems.find(i => i.href === '/entities')
+  const pageTitle = navItem?.label ?? 'Entities'
 
   const { type: selectedType, sort = 'frequency' } = await searchParams
 
@@ -109,10 +114,10 @@ export default async function EntitiesPage({
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
             <Users size={20} />
-            Entities
+            {pageTitle}
           </h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            All named entities extracted across your story archive.
+            All named entities extracted across your {modeConfig.navLibrary.toLowerCase()}.
           </p>
         </div>
       </div>
@@ -120,7 +125,7 @@ export default async function EntitiesPage({
       {entityList.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-sm text-gray-500">No entities extracted yet.</p>
-          <p className="text-xs text-gray-400 mt-1">Entities are extracted automatically when documents are analysed in Journalism mode.</p>
+          <p className="text-xs text-gray-400 mt-1">Entities are extracted automatically when {modeConfig.documentLabelPlural.toLowerCase()} are analysed.</p>
         </div>
       ) : (
         <div className="flex gap-6 items-start">
