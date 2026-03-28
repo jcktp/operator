@@ -85,9 +85,9 @@ export default async function LibraryPage({
           <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
             <FileText size={20} className="text-gray-400" />
           </div>
-          <p className="text-sm text-gray-500">No reports yet.</p>
+          <p className="text-sm text-gray-500">No {modeConfig.documentLabelPlural.toLowerCase()} yet.</p>
           <Link href="/upload" className="mt-4 inline-flex items-center gap-2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
-            Upload your first report
+            Upload your first {modeConfig.documentLabel.toLowerCase()}
           </Link>
         </div>
       ) : (
@@ -138,7 +138,7 @@ export default async function LibraryPage({
               <div className="flex items-center gap-3 mb-4">
                 <AreaBadge area={selectedArea} />
                 <span className="text-sm text-gray-500">
-                  {areaStats[selectedArea]?.count} report{areaStats[selectedArea]?.count !== 1 ? 's' : ''}
+                  {areaStats[selectedArea]?.count} {areaStats[selectedArea]?.count !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}
                   {' · '}last {formatRelativeDate(areaStats[selectedArea]?.latest)}
                 </span>
               </div>

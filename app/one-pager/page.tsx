@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { getModeConfig } from '@/lib/mode'
 import { AreaBadge } from '@/components/Badge'
 import { formatRelativeDate } from '@/lib/utils'
 import { FileText } from 'lucide-react'
@@ -16,16 +17,20 @@ function safe<T>(s: string | null | undefined, fb: T): T {
 }
 
 export default async function OnePagerPage() {
-  const reports = await prisma.report.findMany({
-    orderBy: [{ area: 'asc' }, { createdAt: 'desc' }],
-    include: { directReport: true },
-  })
+  const [reports, modeRow] = await Promise.all([
+    prisma.report.findMany({
+      orderBy: [{ area: 'asc' }, { createdAt: 'desc' }],
+      include: { directReport: true },
+    }),
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+  ])
+  const modeConfig = getModeConfig(modeRow?.value)
 
   if (reports.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <FileText size={32} className="text-gray-200 mb-4" />
-        <p className="text-gray-500 text-sm">No reports yet.</p>
+        <p className="text-gray-500 text-sm">No {modeConfig.documentLabelPlural.toLowerCase()} yet.</p>
       </div>
     )
   }
@@ -48,7 +53,7 @@ export default async function OnePagerPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">One Pager</h1>
-          <p className="text-gray-500 text-sm mt-0.5">All {reports.length} reports in one view</p>
+          <p className="text-gray-500 text-sm mt-0.5">All {reports.length} {modeConfig.documentLabelPlural.toLowerCase()} in one view</p>
         </div>
         <OnePagerClient reportCount={reports.length} reports={serialized} />
       </div>

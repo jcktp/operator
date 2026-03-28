@@ -1,12 +1,13 @@
 import { prisma } from '@/lib/db'
 import { parseJsonSafe } from '@/lib/utils'
 import type { Metric, Insight, Question } from '@/lib/utils'
+import { getModeConfig } from '@/lib/mode'
 import DispatchPageClient from './DispatchPageClient'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DispatchPage() {
-  const [chats, reports, providerRow] = await Promise.all([
+  const [chats, reports, providerRow, modeRow] = await Promise.all([
     prisma.dispatchChat.findMany({ orderBy: { updatedAt: 'desc' } }),
     prisma.report.findMany({
       orderBy: { createdAt: 'desc' },
@@ -18,7 +19,9 @@ export default async function DispatchPage() {
       },
     }),
     prisma.setting.findUnique({ where: { key: 'ai_provider' } }),
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
+  const modeConfig = getModeConfig(modeRow?.value)
 
   // Cloud models have large context windows; Ollama is much more constrained
   const isCloud = providerRow?.value && providerRow.value !== 'ollama'
@@ -79,7 +82,7 @@ export default async function DispatchPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Dispatch</h1>
-        <p className="text-gray-500 text-sm mt-0.5">AI conversations about your reports — auto-saved</p>
+        <p className="text-gray-500 text-sm mt-0.5">AI conversations about your {modeConfig.documentLabelPlural.toLowerCase()} — auto-saved</p>
       </div>
       <DispatchPageClient chats={serialized} context={contextLines.join('\n')} />
     </div>

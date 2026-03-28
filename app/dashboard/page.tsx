@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { getModeConfig } from '@/lib/mode'
 import { cn, formatRelativeDate, parseJsonSafe } from '@/lib/utils'
 import type { Metric, Insight, Question } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
@@ -48,7 +49,7 @@ export default async function DashboardPage({
   const fromDate = filterFrom ? new Date(filterFrom) : null
   const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
 
-  const [allReports, directs] = await Promise.all([
+  const [allReports, directs, modeRow] = await Promise.all([
     prisma.report.findMany({
       where: {
         ...(filterArea ? { area: filterArea } : {}),
@@ -64,7 +65,9 @@ export default async function DashboardPage({
       include: { directReport: true },
     }),
     prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
+  const modeConfig = getModeConfig(modeRow?.value)
 
   const allAreas = await prisma.report.findMany({
     select: { area: true }, distinct: ['area'], orderBy: { area: 'asc' },
@@ -193,7 +196,7 @@ export default async function DashboardPage({
         <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-0.5">No reports match the current filters.</p>
+            <p className="text-sm text-gray-500 mt-0.5">No {modeConfig.documentLabelPlural.toLowerCase()} match the current filters.</p>
           </div>
           <DashboardFilters
             areas={allAreas.map(a => a.area)}
@@ -206,7 +209,7 @@ export default async function DashboardPage({
         </div>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Activity size={32} className="text-gray-200 mb-4" />
-          <p className="text-gray-500 text-sm">No reports in this period.</p>
+          <p className="text-gray-500 text-sm">No {modeConfig.documentLabelPlural.toLowerCase()} in this period.</p>
         </div>
       </div>
     )
@@ -220,7 +223,7 @@ export default async function DashboardPage({
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {totalReports} report{totalReports !== 1 ? 's' : ''} · {areasCount} area{areasCount !== 1 ? 's' : ''}
+            {totalReports} {totalReports !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()} · {areasCount} area{areasCount !== 1 ? 's' : ''}
             {filterArea && ` · ${filterArea}`}
           </p>
         </div>
@@ -328,7 +331,7 @@ export default async function DashboardPage({
                 )}
 
                 <div className="border-t border-gray-100 px-5 py-3 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{count} report{count !== 1 ? 's' : ''}</span>
+                  <span className="text-xs text-gray-400">{count} {count !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}</span>
                   <Link href={`/library?area=${encodeURIComponent(area)}`}
                     className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 transition-colors font-medium">
                     View all <ArrowRight size={11} />
@@ -364,7 +367,7 @@ export default async function DashboardPage({
                     </div>
                     <p className="text-sm text-gray-700 leading-snug line-clamp-3">{f.text}</p>
                     <span className="text-xs text-gray-400 group-hover:text-gray-600 flex items-center gap-0.5 mt-auto">
-                      View report <ArrowRight size={10} />
+                      View {modeConfig.documentLabel.toLowerCase()} <ArrowRight size={10} />
                     </span>
                   </Link>
                 ))}
@@ -388,7 +391,7 @@ export default async function DashboardPage({
                     </div>
                     <p className="text-sm text-gray-800 font-medium leading-snug line-clamp-3">{q.text}</p>
                     <span className="text-xs text-gray-400 group-hover:text-gray-600 flex items-center gap-0.5 mt-auto">
-                      View report <ArrowRight size={10} />
+                      View {modeConfig.documentLabel.toLowerCase()} <ArrowRight size={10} />
                     </span>
                   </Link>
                 ))}

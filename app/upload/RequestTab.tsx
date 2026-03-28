@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Loader2, CheckCircle, Link2, Copy, Check, AlertTriangle, Globe, ChevronDown } from 'lucide-react'
 import type { DirectReport } from './uploadTypes'
 import { getModeConfig } from '@/lib/mode'
+import { useMode } from '@/components/ModeContext'
 
 function CustomDropdown({ value, placeholder, options, onChange }: { value: string; placeholder: string; options: { label: string; value: string }[]; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false)
@@ -39,6 +40,7 @@ function CustomDropdown({ value, placeholder, options, onChange }: { value: stri
 }
 
 export default function RequestTab() {
+  const modeConfig = useMode()
   const [title, setTitle] = useState('')
   const [area, setArea] = useState('')
   const [message, setMessage] = useState('')
@@ -157,7 +159,7 @@ export default function RequestTab() {
         <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
           <CheckCircle size={24} className="text-green-500 mx-auto mb-2" />
           <p className="text-sm font-semibold text-gray-900">Request link ready</p>
-          <p className="text-xs text-gray-500 mt-0.5">Send this to the person you want the report from</p>
+          <p className="text-xs text-gray-500 mt-0.5">Send this to the person you want the {modeConfig.documentLabel.toLowerCase()} from</p>
         </div>
         {tunnelUrl && (
           <div className="flex items-center gap-1.5 text-[10px] text-green-600 font-medium px-1">
@@ -221,7 +223,7 @@ export default function RequestTab() {
       )}
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">From direct report <span className="text-gray-400 font-normal">(optional)</span></label>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">From {modeConfig.personLabel.toLowerCase()} <span className="text-gray-400 font-normal">(optional)</span></label>
           <CustomDropdown
             value={directReportId}
             placeholder="Not specified"

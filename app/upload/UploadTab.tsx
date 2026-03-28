@@ -269,7 +269,7 @@ export default function UploadTab() {
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Applied to all files</p>
         <div onClick={loadDirects}>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">From direct report <span className="text-gray-400 font-normal">(optional)</span></label>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">From {modeConfig.personLabel.toLowerCase()} <span className="text-gray-400 font-normal">(optional)</span></label>
           <div className="relative">
             <select value={directReportId} onChange={e => setDirectReportId(e.target.value)}
               className="w-full border border-gray-200 rounded-lg pl-3 pr-8 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white appearance-none cursor-pointer">
@@ -315,9 +315,9 @@ export default function UploadTab() {
           <div className="flex items-start gap-2">
             <GitMerge size={16} className="text-indigo-600 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-indigo-900">Recurring report detected</p>
+              <p className="text-sm font-medium text-indigo-900">Recurring {modeConfig.documentLabel.toLowerCase()} detected</p>
               <p className="text-xs text-indigo-700 mt-0.5">
-                This looks like report #{seriesCandidate.count + 1} in a recurring series for <strong>{seriesCandidate.area}</strong>.
+                This looks like {modeConfig.documentLabel.toLowerCase()} #{seriesCandidate.count + 1} in a recurring series for <strong>{seriesCandidate.area}</strong>.
                 Link them as a series to enable period-over-period tracking?
               </p>
             </div>

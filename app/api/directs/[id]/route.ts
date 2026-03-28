@@ -13,7 +13,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { name, title, email, phone, area } = body
   const direct = await prisma.directReport.update({
     where: { id },
-    data: { name, title, email, phone, area },
+    data: { name, title, email, area },
   })
-  return NextResponse.json({ direct })
+  if (phone !== undefined) {
+    await prisma.$executeRawUnsafe('UPDATE "DirectReport" SET "phone" = ? WHERE "id" = ?', phone || null, id)
+  }
+  return NextResponse.json({ direct: { ...direct, phone: phone ?? null } })
 }

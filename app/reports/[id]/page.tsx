@@ -317,7 +317,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             {labels.metrics}
             {periodLabel && (
               <span className="ml-1 text-gray-300 font-normal normal-case tracking-normal">
-                · vs prior report ({periodLabel})
+                · vs prior {modeConfig.documentLabel.toLowerCase()} ({periodLabel})
               </span>
             )}
           </h2>

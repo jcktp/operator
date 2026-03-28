@@ -7,6 +7,7 @@ import { cn, formatRelativeDate, formatDate, AREA_COLORS, parseJsonSafe } from '
 import type { Metric } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import CombinedTimelineModal from './CombinedTimelineModal'
+import { useMode } from '@/components/ModeContext'
 
 interface Comparison { headline: string }
 
@@ -37,6 +38,7 @@ export default function LibrarySearch({
   showEntities?: boolean
   showRedactions?: boolean
 }) {
+  const modeConfig = useMode()
   const [query, setQuery] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [timelineOpen, setTimelineOpen] = useState(false)
@@ -106,8 +108,8 @@ export default function LibrarySearch({
       {(filtered !== null) && (
         <p className="text-xs text-gray-400 mb-3">
           {filtered.length === 0
-            ? 'No reports match'
-            : `${filtered.length} report${filtered.length !== 1 ? 's' : ''} match`}
+            ? `No ${modeConfig.documentLabelPlural.toLowerCase()} match`
+            : `${filtered.length} ${filtered.length !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()} match`}
           {query ? <> &ldquo;{query}&rdquo;</> : null}
           {redactionFilter ? <> with redactions</> : null}
         </p>
@@ -239,7 +241,7 @@ export default function LibrarySearch({
         })}
 
         {list.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-12">No reports match your search.</p>
+          <p className="text-sm text-gray-400 text-center py-12">No {modeConfig.documentLabelPlural.toLowerCase()} match your search.</p>
         )}
       </div>
 

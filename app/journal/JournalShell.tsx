@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, FolderOpen, FileText, Trash2, ChevronRight, ChevronDown, Edit2, PenLine, Eye, X, BookMarked } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, FolderOpen, FileText, Trash2, ChevronRight, ChevronDown, Edit2, PenLine, Eye, X, BookMarked, Search } from 'lucide-react'
 import JournalEditor from './JournalEditor'
 import { useMode } from '@/components/ModeContext'
 
@@ -24,6 +24,7 @@ export default function JournalShell({ entries: initial }: Props) {
   const modeConfig = useMode()
   const { investigationTemplate: isInvestigationMode } = modeConfig.features
   const [entries, setEntries] = useState(initial)
+  const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'view' | 'edit'>('view')
   const [investigationPrompt, setInvestigationPrompt] = useState<string | null>(null)
@@ -42,7 +43,19 @@ export default function JournalShell({ entries: initial }: Props) {
   const [editingTitle, setEditingTitle] = useState<string | null>(null)
   const [editTitleValue, setEditTitleValue] = useState('')
 
+  const filteredEntries = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return entries
+    return entries.filter(e =>
+      e.title.toLowerCase().includes(q) ||
+      e.content.toLowerCase().includes(q)
+    )
+  }, [entries, search])
+
   const folders = [...new Set([DEFAULT_FOLDER, ...entries.map(e => e.folder)])].sort()
+  const visibleFolders = search.trim()
+    ? [...new Set(filteredEntries.map(e => e.folder))].sort()
+    : folders
   const selected = entries.find(e => e.id === selectedId)
 
   const toggleFolder = (f: string) =>
@@ -160,6 +173,17 @@ export default function JournalShell({ entries: initial }: Props) {
       {/* ── Sidebar ──────────────────────────────────────────────────── */}
       <div className="w-60 shrink-0 border-r border-gray-200 h-full overflow-y-auto pb-4 pr-1">
 
+        {/* Search */}
+        <div className="relative mb-3">
+          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search notes…"
+            className="w-full text-xs pl-7 pr-2 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-900 placeholder-gray-400 bg-white"
+          />
+        </div>
+
         {/* New note button — always visible */}
         <button
           onClick={() => openNewNoteForm(
@@ -218,9 +242,9 @@ export default function JournalShell({ entries: initial }: Props) {
         )}
 
         {/* Folder tree */}
-        {folders.map(folder => {
-          const folderEntries = entries.filter(e => e.folder === folder)
-          const isExpanded = expandedFolders.has(folder)
+        {visibleFolders.map(folder => {
+          const folderEntries = (search.trim() ? filteredEntries : entries).filter(e => e.folder === folder)
+          const isExpanded = search.trim() ? true : expandedFolders.has(folder)
           return (
             <div key={folder} className="mb-1">
               {/* Folder row */}

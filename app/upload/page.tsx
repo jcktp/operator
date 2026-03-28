@@ -6,18 +6,20 @@ import { cn } from '@/lib/utils'
 import UploadTab from './UploadTab'
 import RequestTab from './RequestTab'
 import SourceProtectionBanner from '@/components/SourceProtectionBanner'
+import { useMode } from '@/components/ModeContext'
 
 type Tab = 'upload' | 'request'
 
 export default function UploadPage() {
+  const modeConfig = useMode()
   const [tab, setTab] = useState<Tab>('upload')
 
   return (
     <div className="max-w-2xl">
       <SourceProtectionBanner />
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Add reports</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Upload directly or send a link for someone to submit their own report.</p>
+        <h1 className="text-2xl font-semibold text-gray-900">{modeConfig.uploadTitle}</h1>
+        <p className="text-gray-500 text-sm mt-0.5">{modeConfig.uploadDescription}</p>
       </div>
       <div className="flex bg-gray-100 rounded-lg p-1 gap-1 mb-6">
         <button onClick={() => setTab('upload')}

@@ -30,9 +30,13 @@ export async function POST(req: NextRequest) {
     }
 
     const direct = await prisma.directReport.create({
-      data: { name, title, email: email || null, phone: phone || null, area },
+      data: { name, title, email: email || null, area },
     })
-    return NextResponse.json({ direct })
+    // Set phone via raw SQL — Prisma client may not include this field until server restart
+    if (phone) {
+      await prisma.$executeRawUnsafe('UPDATE "DirectReport" SET "phone" = ? WHERE "id" = ?', phone, direct.id)
+    }
+    return NextResponse.json({ direct: { ...direct, phone: phone || null } })
   } catch (e) {
     console.error('directs POST error:', e)
     return NextResponse.json({ error: 'Failed to create team member' }, { status: 500 })
