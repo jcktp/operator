@@ -40,20 +40,35 @@ Switch modes in **Settings** to adapt the interface, AI framing, and terminology
 
 Each mode renames navigation labels, document types, and areas to match the domain, and gives the AI personas purpose-built instructions and system prompts.
 
-### Journalism mode extras
+### Mode-specific features
 
-Journalism mode adds a layer of investigative tooling on top of the standard document pipeline:
+Features are enabled per mode based on what makes sense for that domain. The full set of optional features:
 
 | Feature | Description |
 |---|---|
 | **Entity extraction** | Named persons, organisations, locations, dates, and financial figures extracted from every document |
-| **Entity graph** | Force-directed visualisation of entity co-occurrence across your story archive |
+| **Entity graph** | Force-directed visualisation of entity co-occurrence |
 | **Timeline** | Automatic chronological timeline extracted from document content |
 | **Combined timeline** | Select multiple documents in the library to merge their timelines |
 | **Redaction detection** | Flags documents with suspected redacted content; filter the library by redacted docs |
 | **Document comparison** | AI summary of what changed or was added between two versions of a document |
 | **Verification checklist** | Per-document checklist of claims that require independent verification |
-| **Source protection** | Prominent reminder that source identities should not be entered into any AI system |
+| **Keyword monitoring** | Track specific terms across live feeds in Pulse |
+| **Investigation template** | Structured folder template when creating a new notebook |
+
+Which features are active per mode:
+
+| Feature | Executive | Journalism | Team Lead | Market Research | Legal | Consulting |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| Document comparison | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Entity extraction | | ✓ | | ✓ | ✓ | ✓ |
+| Timeline | | ✓ | ✓ | | ✓ | ✓ |
+| Redaction detection | | ✓ | | | ✓ | |
+| Verification checklist | | ✓ | | ✓ | ✓ | |
+| Keyword monitoring | | ✓ | | | | |
+| Investigation template | | ✓ | | | ✓ | |
+
+Legal mode also includes image file upload (for scanning physical documents and evidence) and a dedicated Parties nav page. Journalism mode adds Source protection reminders throughout the interface.
 
 ---
 
@@ -247,7 +262,7 @@ operator/
 ├── app/                   # Next.js App Router pages and API routes
 │   ├── api/               # Backend API routes (AI, documents, settings, etc.)
 │   ├── dispatch/          # AI chat panel
-│   ├── entities/          # Entity overview and relationship graph (journalism)
+│   ├── entities/          # Entity overview and relationship graph (journalism, legal, market research, consulting)
 │   ├── journal/           # Private notes
 │   ├── library/           # Document browser
 │   ├── reports/           # Individual document view
