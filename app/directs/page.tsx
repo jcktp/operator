@@ -32,6 +32,7 @@ export default function DirectsPage() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ name: '', title: '', email: '', phone: '', area: '' })
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [clearingAll, setClearingAll] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedArea, setSelectedArea] = useState<string | null>(null)
   const [page, setPage] = useState(1)
@@ -89,6 +90,18 @@ export default function DirectsPage() {
     if (editingContact?.id === id) setEditingContact(null)
     load()
     setDeletingId(null)
+  }
+
+  const handleClearAll = async () => {
+    if (clearingAll) {
+      await fetch('/api/directs', { method: 'DELETE' })
+      setDirects([])
+      setEditingContact(null)
+      setClearingAll(false)
+    } else {
+      setClearingAll(true)
+      setTimeout(() => setClearingAll(false), 3000)
+    }
   }
 
   const handleSaveEdit = async (updated: DirectReport) => {
@@ -167,6 +180,20 @@ export default function DirectsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {directs.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              className={cn(
+                'inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors',
+                clearingAll
+                  ? 'border-red-300 text-red-600 bg-red-50 hover:bg-red-100'
+                  : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+              )}
+            >
+              <Trash2 size={14} />
+              {clearingAll ? 'Confirm clear all' : 'Clear all'}
+            </button>
+          )}
           <button
             onClick={() => setShowImporter(true)}
             className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
@@ -357,47 +384,23 @@ export default function DirectsPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between pt-1">
-                    <p className="text-xs text-gray-400">
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-xs text-gray-400">
                       {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
-                    </p>
+                    </span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setPage(p => Math.max(1, p - 1))}
                         disabled={safePage === 1}
-                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
                       >
                         <ChevronLeft size={13} />
                       </button>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
-                        .reduce<(number | '…')[]>((acc, n, i, arr) => {
-                          if (i > 0 && (n as number) - (arr[i - 1] as number) > 1) acc.push('…')
-                          acc.push(n)
-                          return acc
-                        }, [])
-                        .map((n, i) =>
-                          n === '…' ? (
-                            <span key={`ellipsis-${i}`} className="px-1 text-xs text-gray-400">…</span>
-                          ) : (
-                            <button
-                              key={n}
-                              onClick={() => setPage(n as number)}
-                              className={cn(
-                                'w-7 h-7 rounded-lg text-xs font-medium transition-colors',
-                                safePage === n
-                                  ? 'bg-gray-900 text-white'
-                                  : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-                              )}
-                            >
-                              {n}
-                            </button>
-                          )
-                        )}
+                      <span className="text-xs text-gray-600 px-2">Page {safePage} of {totalPages}</span>
                       <button
                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                         disabled={safePage === totalPages}
-                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
                       >
                         <ChevronRightIcon size={13} />
                       </button>

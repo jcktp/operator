@@ -256,44 +256,22 @@ export default function LibrarySearch({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-gray-400">
+          <span className="text-xs text-gray-400">
             {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, list.length)} of {list.length}
-          </p>
+          </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={safePage === 1}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
             >
               <ChevronLeft size={13} />
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
-              .reduce<(number | '…')[]>((acc, n, i, arr) => {
-                if (i > 0 && (n as number) - (arr[i - 1] as number) > 1) acc.push('…')
-                acc.push(n)
-                return acc
-              }, [])
-              .map((n, i) =>
-                n === '…' ? (
-                  <span key={`e-${i}`} className="px-1 text-xs text-gray-400">…</span>
-                ) : (
-                  <button
-                    key={n}
-                    onClick={() => setPage(n as number)}
-                    className={cn(
-                      'w-7 h-7 rounded-lg text-xs font-medium transition-colors',
-                      safePage === n ? 'bg-gray-900 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-                    )}
-                  >
-                    {n}
-                  </button>
-                )
-              )}
+            <span className="text-xs text-gray-600 px-2">Page {safePage} of {totalPages}</span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
             >
               <ChevronRight size={13} />
             </button>

@@ -1,38 +1,64 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Loader2, CheckCircle, Link2, Copy, Check, AlertTriangle, Globe, ChevronDown } from 'lucide-react'
+import { Loader2, CheckCircle, Link2, Copy, Check, AlertTriangle, Globe, ChevronDown, Search } from 'lucide-react'
 import type { DirectReport } from './uploadTypes'
 import { getModeConfig } from '@/lib/mode'
 import { useMode } from '@/components/ModeContext'
 
-function CustomDropdown({ value, placeholder, options, onChange }: { value: string; placeholder: string; options: { label: string; value: string }[]; onChange: (v: string) => void }) {
+function SearchableDropdown({ value, placeholder, options, onChange }: { value: string; placeholder: string; options: { label: string; value: string }[]; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setQuery('') } }
     document.addEventListener('mousedown', h)
     return () => document.removeEventListener('mousedown', h)
   }, [])
+
+  const filtered = query.trim()
+    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options
+
+  const selectedLabel = options.find(o => o.value === value)?.label
+
   return (
     <div className="relative" ref={ref}>
-      <button type="button" onClick={() => setOpen(o => !o)}
+      <button type="button" onClick={() => { setOpen(o => !o); setTimeout(() => inputRef.current?.focus(), 50) }}
         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white h-[38px]">
-        <span className={value ? 'text-gray-900' : 'text-gray-400'}>{options.find(o => o.value === value)?.label || placeholder}</span>
+        <span className={value ? 'text-gray-900' : 'text-gray-400'}>{selectedLabel || placeholder}</span>
         <ChevronDown size={14} className="text-gray-400 shrink-0" />
       </button>
       {open && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-md py-1 max-h-48 overflow-y-auto">
-          <button type="button" onClick={() => { onChange(''); setOpen(false) }}
-            className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50">
-            {placeholder}
-          </button>
-          {options.map(o => (
-            <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false) }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 text-gray-900">
-              {o.label}
+        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
+            <Search size={12} className="text-gray-400 shrink-0" />
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Type to search…"
+              className="flex-1 text-sm outline-none bg-transparent placeholder-gray-400"
+              onClick={e => e.stopPropagation()}
+            />
+          </div>
+          <div className="py-1 max-h-48 overflow-y-auto">
+            <button type="button" onClick={() => { onChange(''); setOpen(false); setQuery('') }}
+              className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50">
+              {placeholder}
             </button>
-          ))}
+            {filtered.map(o => (
+              <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); setQuery('') }}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 text-gray-900">
+                {o.label}
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-3 py-2 text-xs text-gray-400">No matches</p>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -224,7 +250,7 @@ export default function RequestTab() {
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1.5">From {modeConfig.personLabel.toLowerCase()} <span className="text-gray-400 font-normal">(optional)</span></label>
-          <CustomDropdown
+          <SearchableDropdown
             value={directReportId}
             placeholder="Not specified"
             options={directs.map(d => ({ label: `${d.name} — ${d.title}`, value: d.id }))}
@@ -238,8 +264,8 @@ export default function RequestTab() {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">Business area <span className="text-red-400">*</span></label>
-          <CustomDropdown
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">Area <span className="text-red-400">*</span></label>
+          <SearchableDropdown
             value={area}
             placeholder="Select area…"
             options={areas.map(a => ({ label: a, value: a }))}

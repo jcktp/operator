@@ -20,6 +20,16 @@ export async function GET() {
   }
 }
 
+export async function DELETE() {
+  try {
+    await prisma.directReport.deleteMany()
+    return NextResponse.json({ success: true })
+  } catch (e) {
+    console.error('directs DELETE ALL error:', e)
+    return NextResponse.json({ error: 'Failed to delete all' }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
