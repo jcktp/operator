@@ -345,7 +345,7 @@ export default function DirectsPage() {
                           <span className="text-sm font-medium text-gray-900">{d.name}</span>
                           <span className="text-xs text-gray-500">{d.title}</span>
                           <AreaBadge area={d.area} />
-                          {d.notes && <StickyNote size={11} className="text-amber-400 shrink-0" title="Has notes" />}
+                          {d.notes && <span title="Has notes"><StickyNote size={11} className="text-amber-400 shrink-0" /></span>}
                         </div>
                         <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
                           {d.email && (
