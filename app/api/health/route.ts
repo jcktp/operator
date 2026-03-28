@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { cpus, loadavg, homedir, totalmem } from 'os'
+import { cpus, loadavg, homedir, totalmem, arch } from 'os'
 import * as fs from 'fs'
 import * as path from 'path'
 import { prisma } from '@/lib/db'
@@ -36,22 +36,44 @@ function worst(...levels: Level[]): Level {
 }
 
 export async function GET() {
-  // ── App memory ────────────────────────────────────────────────────────────
-  // Thresholds are relative to total system RAM so they stay quiet on well-spec'd
-  // machines and only fire when memory usage is genuinely dangerous.
-  // warn at 35% of system RAM, error at 55% — on a 16 GB machine that's ~5.6 GB / ~8.8 GB.
-  const mem = process.memoryUsage()
-  const rss = Math.round(mem.rss / 1024 / 1024)       // MB — shown for info only
-  const heap = Math.round(mem.heapUsed / 1024 / 1024) // MB — displayed value
+  // ── Machine suitability ───────────────────────────────────────────────────
+  // Static hardware check — is this machine capable of running the app well?
+  const cpuList = cpus()
+  const coreCount = cpuList.length
+  const cpuModel = cpuList[0]?.model ?? 'Unknown CPU'
+  const architecture = arch()                          // arm64, x64, etc.
   const systemRamMb = Math.round(totalmem() / 1024 / 1024)
-  const warnMb = Math.round(systemRamMb * 0.35)
+  const systemRamGb = Math.round(systemRamMb / 1024 * 10) / 10
+
+  // RAM tiers: <4 GB = can't really run this; <8 GB = tight for local AI; 8+ = fine
+  const ramStatus: Level = systemRamGb < 4 ? 'error' : systemRamGb < 8 ? 'warn' : 'ok'
+  // Core tiers: 1 core = error; 2-3 = warn; 4+ = ok
+  const coresStatus: Level = coreCount < 2 ? 'error' : coreCount < 4 ? 'warn' : 'ok'
+  const machineStatus: Level = worst(ramStatus, coresStatus)
+
+  // Human-readable tier label
+  const ramTier = systemRamGb >= 16 ? 'Good' : systemRamGb >= 8 ? 'Adequate' : systemRamGb >= 4 ? 'Limited' : 'Insufficient'
+  const ramNote = systemRamGb < 8
+    ? systemRamGb < 4
+      ? 'Below minimum — app will struggle'
+      : 'Tight for local AI models (Ollama needs 8 GB+)'
+    : systemRamGb < 16
+      ? 'Fine for cloud AI; tight for large local models'
+      : 'Good — sufficient for local AI'
+
+  // ── App memory (runtime) ──────────────────────────────────────────────────
+  // Thresholds relative to system RAM — only warn when genuinely problematic.
+  // warn at 35% of system RAM, error at 55%.
+  const mem = process.memoryUsage()
+  const rss  = Math.round(mem.rss / 1024 / 1024)
+  const heap = Math.round(mem.heapUsed / 1024 / 1024)
+  const warnMb  = Math.round(systemRamMb * 0.35)
   const errorMb = Math.round(systemRamMb * 0.55)
   const memStatus: Level = rss > errorMb ? 'error' : rss > warnMb ? 'warn' : 'ok'
 
   // ── CPU load ──────────────────────────────────────────────────────────────
-  const load1 = loadavg()[0]
-  const cores = cpus().length
-  const loadPct = Math.round((load1 / cores) * 100)
+  const load1   = loadavg()[0]
+  const loadPct = Math.round((load1 / coreCount) * 100)
   const cpuStatus: Level = loadPct > 95 ? 'error' : loadPct > 85 ? 'warn' : 'ok'
 
   // ── Settings ──────────────────────────────────────────────────────────────
@@ -59,18 +81,18 @@ export async function GET() {
   try {
     const rows = await prisma.setting.findMany()
     s = Object.fromEntries(rows.map((r: { key: string; value: string }) => [r.key, r.value]))
-  } catch { /* leave s empty; each section uses its own fallback */ }
+  } catch { /* leave s empty */ }
 
   // ── Storage usage ─────────────────────────────────────────────────────────
-  const dbPath = path.join(process.cwd(), 'prisma', 'dev.db')
+  const dbPath      = path.join(process.cwd(), 'prisma', 'dev.db')
   const reportsPath = path.join(homedir(), 'Documents', 'Operator Reports')
-  const dbBytes = (() => { try { return fs.statSync(dbPath).size } catch { return 0 } })()
+  const dbBytes     = (() => { try { return fs.statSync(dbPath).size } catch { return 0 } })()
   const reportsBytes = folderSizeBytes(reportsPath)
-  const totalBytes = dbBytes + reportsBytes
-  const totalGb = totalBytes / (1024 ** 3)
-  const totalMb = Math.round(totalBytes / (1024 ** 2))
+  const totalBytes  = dbBytes + reportsBytes
+  const totalGb     = totalBytes / (1024 ** 3)
+  const totalMb     = Math.round(totalBytes / (1024 ** 2))
 
-  const thresholdGb = parseFloat(s['storage_threshold_gb'] ?? '5')
+  const thresholdGb   = parseFloat(s['storage_threshold_gb'] ?? '5')
   const storageStatus: Level = totalGb > thresholdGb ? 'error' : totalGb > thresholdGb * 0.8 ? 'warn' : 'ok'
 
   // ── AI reachability ───────────────────────────────────────────────────────
@@ -80,7 +102,6 @@ export async function GET() {
 
   try {
     const provider = s.ai_provider ?? 'ollama'
-
     aiLabel = PROVIDER_LABELS[provider] ?? provider
 
     if (provider === 'ollama') {
@@ -101,9 +122,7 @@ export async function GET() {
         aiDetail = 'Not running'
       }
     } else {
-      // Cloud provider — check if a key is saved
-      const keyField = `${provider}_key`
-      const hasSavedKey = !!s[keyField]
+      const hasSavedKey = !!s[`${provider}_key`]
       aiStatus = hasSavedKey ? 'ok' : 'warn'
       aiDetail = hasSavedKey ? 'API key configured' : 'No API key saved'
     }
@@ -114,10 +133,21 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    status: worst(aiStatus, memStatus, cpuStatus, storageStatus),
-    ai: { status: aiStatus, label: aiLabel, detail: aiDetail },
-    memory: { rss, heap, status: memStatus, systemRamMb, warnMb, errorMb },
-    cpu: { load: Math.round(load1 * 10) / 10, loadPct, status: cpuStatus },
+    status: worst(aiStatus, memStatus, cpuStatus, storageStatus, machineStatus),
+    ai:      { status: aiStatus, label: aiLabel, detail: aiDetail },
+    memory:  { rss, heap, status: memStatus, systemRamMb, warnMb, errorMb },
+    cpu:     { load: Math.round(load1 * 10) / 10, loadPct, status: cpuStatus, cores: coreCount },
     storage: { totalMb, totalGb: Math.round(totalGb * 10) / 10, status: storageStatus, thresholdGb },
+    machine: {
+      status:       machineStatus,
+      ramGb:        systemRamGb,
+      ramStatus,
+      ramTier,
+      ramNote,
+      cores:        coreCount,
+      coresStatus,
+      cpuModel,
+      arch:         architecture,
+    },
   })
 }
