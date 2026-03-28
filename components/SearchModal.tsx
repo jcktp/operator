@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search, FileText, BookOpen, Loader2, Layers } from 'lucide-react'
 import { AREA_COLORS } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { useMode } from '@/components/ModeContext'
 
 interface ReportHit {
   id: string
@@ -53,6 +54,10 @@ const FIELD_LABEL: Record<TopicMatch['field'], string> = {
 
 export default function SearchModal({ onClose }: { onClose: () => void }) {
   const router = useRouter()
+  const modeConfig = useMode()
+  const docLabel = modeConfig.documentLabel        // e.g. "Report", "Notes", "Case File"
+  const docLabelPlural = modeConfig.documentLabelPlural  // e.g. "Reports", "Notes", "Case Files"
+  const journalLabel = modeConfig.navJournal       // e.g. "Journal", "Notebook", "Research Notes"
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<'search' | 'topic'>('search')
@@ -176,7 +181,7 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
               ref={inputRef}
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder={mode === 'search' ? 'Search reports, insights, journal…' : 'Research a topic across all reports…'}
+              placeholder={mode === 'search' ? `Search ${docLabelPlural.toLowerCase()}, insights, ${journalLabel.toLowerCase()}…` : `Research a topic across all ${docLabelPlural.toLowerCase()}…`}
               className="flex-1 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent"
             />
             <kbd className="hidden sm:inline text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">Esc</kbd>
@@ -189,7 +194,7 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
             {showEmpty && (
               <p className="text-sm text-gray-400 text-center py-8">
                 {mode === 'topic'
-                  ? `No reports mention "${query}"`
+                  ? `No ${docLabelPlural.toLowerCase()} mention "${query}"`
                   : `No results for "${query}"`}
               </p>
             )}
@@ -199,7 +204,7 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
               <>
                 {results!.reports.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-1.5">Reports</p>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-1.5">{docLabelPlural}</p>
                     {results!.reports.map((r, i) => {
                       const color = AREA_COLORS[r.area]
                       const isActive = activeIdx === i
@@ -236,7 +241,7 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
 
                 {results!.journal.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-1.5 mt-1">Journal</p>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-1.5 mt-1">{journalLabel}</p>
                     {results!.journal.map((j, i) => {
                       const idx = (results?.reports.length ?? 0) + i
                       const isActive = activeIdx === idx
@@ -276,7 +281,7 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
             {mode === 'topic' && hasResults && topicHits && (
               <div>
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-1.5">
-                  {topicHits.length} {topicHits.length === 1 ? 'report' : 'reports'} mention &ldquo;{query}&rdquo;
+                  {topicHits.length} {topicHits.length === 1 ? docLabel.toLowerCase() : docLabelPlural.toLowerCase()} mention &ldquo;{query}&rdquo;
                 </p>
                 {topicHits.map(hit => {
                   const color = AREA_COLORS[hit.area]
@@ -315,8 +320,8 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
           <div className="px-4 py-6 text-center">
             <p className="text-xs text-gray-400">
               {mode === 'search'
-                ? 'Search across reports, insights, metrics, and journal entries'
-                : 'Find every mention of a topic across all reports — metrics, flags, and summaries'}
+                ? `Search across ${docLabelPlural.toLowerCase()}, insights, metrics, and ${journalLabel.toLowerCase()} entries`
+                : `Find every mention of a topic across all ${docLabelPlural.toLowerCase()} — metrics, flags, and summaries`}
             </p>
           </div>
         )}

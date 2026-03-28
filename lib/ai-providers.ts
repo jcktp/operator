@@ -1,4 +1,5 @@
 import { Ollama } from 'ollama'
+import { availableTools, executeTool, getNoteSaved, resetNoteSaved } from './ai-tools'
 
 // ── Provider types ──────────────────────────────────────────────────────────
 
@@ -17,169 +18,34 @@ export function maxContentLength(): number {
 
 export interface Message { role: 'user' | 'assistant'; content: string }
 
-// ── Tool definitions ────────────────────────────────────────────────────────
-
-const TOOL_WEATHER = {
-  name: 'get_weather',
-  description: 'Get the current weather for any location. Always use this when asked about weather.',
-  parameters: {
-    type: 'object' as const,
-    properties: {
-      location: { type: 'string', description: 'City or location name, e.g. "London" or "Tokyo, Japan"' },
-    },
-    required: ['location'],
-  },
-}
-
-const TOOL_SEARCH = {
-  name: 'search_web',
-  description: 'Search the web for current information, news, prices, or any real-time data. Use for questions that require up-to-date knowledge.',
-  parameters: {
-    type: 'object' as const,
-    properties: {
-      query: { type: 'string', description: 'The search query' },
-    },
-    required: ['query'],
-  },
-}
-
-const TOOL_FETCH = {
-  name: 'fetch_url',
-  description: 'Fetch and read the content of a web page or URL.',
-  parameters: {
-    type: 'object' as const,
-    properties: {
-      url: { type: 'string', description: 'The URL to fetch' },
-    },
-    required: ['url'],
-  },
-}
-
-type ToolDef = { name: string; description: string; parameters: { type: 'object'; properties: Record<string, { type: string; description: string }>; required: string[] } }
-
-function availableTools(): ToolDef[] {
-  if (process.env.OLLAMA_WEB_ACCESS !== 'true') return []
-  const tools: ToolDef[] = [TOOL_WEATHER, TOOL_FETCH]
-  if (process.env.BRAVE_SEARCH_KEY) tools.push(TOOL_SEARCH)
-  return tools
-}
-
-// ── Tool execution ──────────────────────────────────────────────────────────
-
-async function executeTool(name: string, args: Record<string, string>): Promise<string> {
-  try {
-    if (name === 'get_weather') return await toolWeather(args.location)
-    if (name === 'search_web')  return await toolSearch(args.query)
-    if (name === 'fetch_url')   return await toolFetchUrl(args.url)
-    return `Unknown tool: ${name}`
-  } catch (e) {
-    return `Tool error: ${String(e)}`
-  }
-}
-
-async function toolWeather(location: string): Promise<string> {
-  const geoRes = await fetch(
-    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json`,
-    { signal: AbortSignal.timeout(8000) }
-  )
-  const geoData = await geoRes.json() as { results?: Array<{ latitude: number; longitude: number; name: string; country: string; admin1?: string }> }
-  if (!geoData.results?.length) return `Could not find location: "${location}"`
-  const { latitude, longitude, name, country, admin1 } = geoData.results[0]
-
-  const weatherRes = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
-    `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,precipitation,is_day` +
-    `&timezone=auto&forecast_days=1`,
-    { signal: AbortSignal.timeout(8000) }
-  )
-  const wd = await weatherRes.json() as { current: Record<string, number>; current_units: Record<string, string> }
-  const c = wd.current
-  const u = wd.current_units
-
-  const codes: Record<number, string> = {
-    0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
-    45: 'Foggy', 48: 'Freezing fog',
-    51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle',
-    61: 'Light rain', 63: 'Rain', 65: 'Heavy rain',
-    71: 'Light snow', 73: 'Snow', 75: 'Heavy snow', 77: 'Snow grains',
-    80: 'Rain showers', 81: 'Showers', 82: 'Violent showers',
-    85: 'Snow showers', 86: 'Heavy snow showers',
-    95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Thunderstorm with heavy hail',
-  }
-  const desc = codes[c.weather_code] ?? `Condition code ${c.weather_code}`
-  const place = [name, admin1, country].filter(Boolean).join(', ')
-
-  return [
-    `**Current weather in ${place}:**`,
-    `- Conditions: ${desc}`,
-    `- Temperature: ${c.temperature_2m}${u.temperature_2m} (feels like ${c.apparent_temperature}${u.apparent_temperature})`,
-    `- Wind: ${c.wind_speed_10m} ${u.wind_speed_10m}`,
-    `- Humidity: ${c.relative_humidity_2m}${u.relative_humidity_2m}`,
-    c.precipitation > 0 ? `- Precipitation: ${c.precipitation}${u.precipitation}` : null,
-  ].filter(Boolean).join('\n')
-}
-
-async function toolSearch(query: string): Promise<string> {
-  const key = process.env.BRAVE_SEARCH_KEY
-  if (!key) return 'Web search is not configured. Add a Brave Search API key in Settings.'
-
-  const res = await fetch(
-    `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5&safesearch=off`,
-    {
-      headers: { 'Accept': 'application/json', 'X-Subscription-Token': key },
-      signal: AbortSignal.timeout(8000),
-    }
-  )
-  const data = await res.json() as { web?: { results?: Array<{ title: string; url: string; description: string }> } }
-  const results = data.web?.results ?? []
-  if (!results.length) return `No search results found for: "${query}"`
-
-  return results.map((r, i) =>
-    `${i + 1}. **${r.title}**\n   ${r.description}\n   ${r.url}`
-  ).join('\n\n')
-}
-
-async function toolFetchUrl(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Operator/1.0)' },
-    signal: AbortSignal.timeout(10_000),
-  })
-  if (!res.ok) return `HTTP ${res.status} — could not fetch ${url}`
-  const text = await res.text()
-  const clean = text
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 8000)
-  return `Content from ${url}:\n\n${clean}`
-}
+export interface ChatResult { content: string; noteSaved?: { title: string; folder: string } }
 
 // ── Provider chat with tool calling ────────────────────────────────────────
 
-export async function chatWithTools(messages: Message[], systemPrompt: string, temperature = 0.3): Promise<string> {
+export async function chatWithTools(messages: Message[], systemPrompt: string, temperature = 0.3, enableNoteTool = false): Promise<ChatResult> {
+  resetNoteSaved()
   const provider = getProvider()
+  let content: string
   switch (provider) {
-    case 'anthropic':  return chatAnthropicTools(messages, systemPrompt, temperature)
-    case 'openai':     return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.openai.com/v1/chat/completions', process.env.OPENAI_API_KEY!, process.env.OPENAI_MODEL ?? 'gpt-4o-mini')
-    case 'groq':       return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY!, process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant')
-    case 'google':     return chatGoogleTools(messages, systemPrompt, temperature)
-    case 'xai':        return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.x.ai/v1/chat/completions', process.env.XAI_API_KEY!, process.env.XAI_MODEL ?? 'grok-3-mini')
-    // Perplexity sonar models search the web natively — don't pass tool_choice
-    case 'perplexity': return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.perplexity.ai/chat/completions', process.env.PERPLEXITY_API_KEY!, process.env.PERPLEXITY_MODEL ?? 'llama-3.1-sonar-small-128k-online', true)
-    case 'mistral':    return chatOpenAITools(messages, systemPrompt, temperature, 'https://api.mistral.ai/v1/chat/completions', process.env.MISTRAL_API_KEY!, process.env.MISTRAL_MODEL ?? 'mistral-small-latest')
-    default:           return chatOllamaTools(messages, systemPrompt, temperature)
+    case 'anthropic':  content = await chatAnthropicTools(messages, systemPrompt, temperature, enableNoteTool); break
+    case 'openai':     content = await chatOpenAITools(messages, systemPrompt, temperature, 'https://api.openai.com/v1/chat/completions', process.env.OPENAI_API_KEY!, process.env.OPENAI_MODEL ?? 'gpt-4o-mini', false, enableNoteTool); break
+    case 'groq':       content = await chatOpenAITools(messages, systemPrompt, temperature, 'https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY!, process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant', false, enableNoteTool); break
+    case 'google':     content = await chatGoogleTools(messages, systemPrompt, temperature, enableNoteTool); break
+    case 'xai':        content = await chatOpenAITools(messages, systemPrompt, temperature, 'https://api.x.ai/v1/chat/completions', process.env.XAI_API_KEY!, process.env.XAI_MODEL ?? 'grok-3-mini', false, enableNoteTool); break
+    case 'perplexity': content = await chatOpenAITools(messages, systemPrompt, temperature, 'https://api.perplexity.ai/chat/completions', process.env.PERPLEXITY_API_KEY!, process.env.PERPLEXITY_MODEL ?? 'llama-3.1-sonar-small-128k-online', true, enableNoteTool); break
+    case 'mistral':    content = await chatOpenAITools(messages, systemPrompt, temperature, 'https://api.mistral.ai/v1/chat/completions', process.env.MISTRAL_API_KEY!, process.env.MISTRAL_MODEL ?? 'mistral-small-latest', false, enableNoteTool); break
+    default:           content = await chatOllamaTools(messages, systemPrompt, temperature, enableNoteTool); break
   }
+  return { content, noteSaved: getNoteSaved() ?? undefined }
 }
 
 // ── Anthropic tool calling ──────────────────────────────────────────────────
 
-async function chatAnthropicTools(messages: Message[], systemPrompt: string, temperature: number): Promise<string> {
+async function chatAnthropicTools(messages: Message[], systemPrompt: string, temperature: number, enableNoteTool = false): Promise<string> {
   const key = process.env.ANTHROPIC_API_KEY
   if (!key) throw new Error('ANTHROPIC_API_KEY not set')
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001'
-  const tools = availableTools()
+  const tools = availableTools(enableNoteTool)
 
   const anthropicTools = tools.map(t => ({
     name: t.name,
@@ -235,10 +101,11 @@ async function chatOpenAITools(
   endpoint: string,
   apiKey: string,
   model: string,
-  skipTools = false
+  skipTools = false,
+  enableNoteTool = false
 ): Promise<string> {
   if (!apiKey) throw new Error(`API key not set for ${endpoint}`)
-  const tools = skipTools ? [] : availableTools().map(t => ({
+  const tools = skipTools ? [] : availableTools(enableNoteTool).map(t => ({
     type: 'function' as const,
     function: { name: t.name, description: t.description, parameters: t.parameters },
   }))
@@ -287,11 +154,11 @@ async function chatOpenAITools(
 
 // ── Google (Gemini) tool calling ────────────────────────────────────────────
 
-async function chatGoogleTools(messages: Message[], systemPrompt: string, temperature: number): Promise<string> {
+async function chatGoogleTools(messages: Message[], systemPrompt: string, temperature: number, enableNoteTool = false): Promise<string> {
   const key = process.env.GOOGLE_API_KEY
   if (!key) throw new Error('GOOGLE_API_KEY not set')
   const model = process.env.GOOGLE_MODEL ?? 'gemini-2.5-flash'
-  const tools = availableTools()
+  const tools = availableTools(enableNoteTool)
 
   const functionDeclarations = tools.map(t => ({
     name: t.name,
@@ -348,11 +215,11 @@ async function chatGoogleTools(messages: Message[], systemPrompt: string, temper
 
 // ── Ollama tool calling ─────────────────────────────────────────────────────
 
-async function chatOllamaTools(messages: Message[], systemPrompt: string, temperature: number): Promise<string> {
+async function chatOllamaTools(messages: Message[], systemPrompt: string, temperature: number, enableNoteTool = false): Promise<string> {
   const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
   const model = process.env.OLLAMA_MODEL ?? 'llama3.2:3b'
   const ollama = new Ollama({ host })
-  const tools = availableTools()
+  const tools = availableTools(enableNoteTool)
 
   const ollamaTools = tools.map(t => ({
     type: 'function' as const,

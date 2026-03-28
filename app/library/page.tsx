@@ -27,12 +27,12 @@ export default async function LibraryPage({
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
   const modeConfig = getModeConfig(modeRow?.value)
-  const isJournalism = modeRow?.value === 'journalism'
+  const { entities: showEntities, redactions: showRedactions } = modeConfig.features
 
-  // Journalism: fetch entity names and redaction flags per report
+  // Optional: fetch entity names and redaction flags per report
   let entityNamesByReport: Record<string, string[]> = {}
   let redactedReportIds = new Set<string>()
-  if (isJournalism) {
+  if (showEntities || showRedactions) {
     const [allEntities, redactedRows] = await Promise.all([
       prisma.reportEntity.findMany({ select: { reportId: true, name: true } }),
       prisma.reportJournalism.findMany({
@@ -146,12 +146,11 @@ export default async function LibraryPage({
             <LibrarySearch
               reports={reports.map(r => ({
                 ...r,
-                ...(isJournalism ? {
-                  entityNames: entityNamesByReport[r.id] ?? [],
-                  hasRedactions: redactedReportIds.has(r.id),
-                } : {}),
+                ...(showEntities ? { entityNames: entityNamesByReport[r.id] ?? [] } : {}),
+                ...(showRedactions ? { hasRedactions: redactedReportIds.has(r.id) } : {}),
               }))}
-              isJournalism={isJournalism}
+              showEntities={showEntities}
+              showRedactions={showRedactions}
             />
           </div>
         </div>

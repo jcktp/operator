@@ -19,9 +19,7 @@ export default async function JournalPage() {
     updatedAt: e.updatedAt.toISOString(),
   }))
 
-  const description = modeConfig.id === 'journalism'
-    ? 'Investigation notes organised by folder — sources, timelines, claims'
-    : 'Notes organised by folder — auto-saved, AI-assisted'
+  const description = modeConfig.features.journalDescription ?? 'Notes organised by folder — auto-saved, AI-assisted'
 
   return (
     <div className="space-y-6">

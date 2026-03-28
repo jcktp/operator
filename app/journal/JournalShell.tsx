@@ -22,7 +22,7 @@ const INVESTIGATION_SUBFOLDERS = ['Sources', 'Timeline', 'Claims', 'Documents', 
 
 export default function JournalShell({ entries: initial }: Props) {
   const modeConfig = useMode()
-  const isJournalism = modeConfig.id === 'journalism'
+  const { investigationTemplate: isInvestigationMode } = modeConfig.features
   const [entries, setEntries] = useState(initial)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'view' | 'edit'>('view')
@@ -102,8 +102,7 @@ export default function JournalShell({ entries: initial }: Props) {
     setSelectedId(entry.id)
     setViewMode('edit')
     setExpandedFolders(prev => new Set([...prev, folder]))
-    // Journalism: offer investigation template
-    if (isJournalism) setInvestigationPrompt(folder)
+    if (isInvestigationMode) setInvestigationPrompt(folder)
   }
 
   const createInvestigationTemplate = async (baseName: string) => {

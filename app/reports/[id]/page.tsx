@@ -59,11 +59,11 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   // Mode config
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
   const modeConfig = getModeConfig(modeRow?.value)
-  const isJournalism = modeConfig.id === 'journalism'
+  const { entities: showEntities, timeline: showTimeline, redactions: showRedactions, verification: showVerification, documentComparison: showDocComparison } = modeConfig.features
   const labels = getReportLabels(modeConfig.id)
 
-  // Journalism data (only fetched in journalism mode)
-  const [entities, timelineEvents, journalismRow] = isJournalism
+  // Optional features data
+  const [entities, timelineEvents, journalismRow] = (showEntities || showTimeline || showRedactions || showVerification || showDocComparison)
     ? await Promise.all([
         prisma.reportEntity.findMany({ where: { reportId: id }, orderBy: { type: 'asc' } }),
         prisma.timelineEvent.findMany({
@@ -77,7 +77,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   // Cross-document entity linking: find other reports mentioning the same entity names
   type CrossDocResult = { name: string; type: string; reportIds: string[]; reportTitles: Record<string, string> }
   const crossLinks: CrossDocResult[] = []
-  if (isJournalism && entities.length > 0) {
+  if (showEntities && entities.length > 0) {
     const linkableTypes = ['person', 'organisation', 'location']
     const linkableEntities = entities.filter(e => linkableTypes.includes(e.type))
     const uniqueNames = [...new Set(linkableEntities.map(e => e.name))]
@@ -399,8 +399,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </section>
       )}
 
-      {/* Journalism: Entities */}
-      {isJournalism && entities.length > 0 && (
+      {showEntities && entities.length > 0 && (
         <EntitiesSection
           entities={entities.map(e => ({
             id: e.id,
@@ -412,8 +411,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         />
       )}
 
-      {/* Journalism: Timeline */}
-      {isJournalism && timelineEvents.length > 0 && (
+      {showTimeline && timelineEvents.length > 0 && (
         <TimelineSection
           events={timelineEvents.map(e => ({
             id: e.id,
@@ -424,18 +422,15 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         />
       )}
 
-      {/* Journalism: Redactions */}
-      {isJournalism && redactions.length > 0 && (
+      {showRedactions && redactions.length > 0 && (
         <RedactionsSection redactions={redactions} />
       )}
 
-      {/* Journalism: Verification checklist */}
-      {isJournalism && verificationChecklist.length > 0 && (
+      {showVerification && verificationChecklist.length > 0 && (
         <VerificationSection checklist={verificationChecklist} />
       )}
 
-      {/* Journalism: Document comparison (replaces period comparison label in journalism mode) */}
-      {isJournalism && journalismComparison && (
+      {showDocComparison && journalismComparison && (
         <JournalismComparisonSection
           comparison={journalismComparison}
           prevTitle={prevReportTitle}

@@ -30,10 +30,12 @@ interface Report {
 
 export default function LibrarySearch({
   reports,
-  isJournalism = false,
+  showEntities = false,
+  showRedactions = false,
 }: {
   reports: Report[]
-  isJournalism?: boolean
+  showEntities?: boolean
+  showRedactions?: boolean
 }) {
   const [query, setQuery] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -47,10 +49,10 @@ export default function LibrarySearch({
       (r.summary ?? '').toLowerCase().includes(q) ||
       (r.directReport?.name ?? '').toLowerCase().includes(q) ||
       (r.area ?? '').toLowerCase().includes(q) ||
-      (isJournalism && (r.entityNames ?? []).some(n => n.toLowerCase().includes(q)))
+      (showEntities && (r.entityNames ?? []).some(n => n.toLowerCase().includes(q)))
     )
   })
-  const filtered = isJournalism && redactionFilter
+  const filtered = showRedactions && redactionFilter
     ? (textFiltered ?? reports).filter(r => r.hasRedactions)
     : textFiltered
 
@@ -75,7 +77,7 @@ export default function LibrarySearch({
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder={isJournalism ? 'Filter by title, summary, source, beat, or entity name…' : 'Filter by title, summary, person, or area…'}
+            placeholder={showEntities ? 'Filter by title, summary, source, beat, or entity name…' : 'Filter by title, summary, person, or area…'}
             className="w-full border border-gray-200 rounded-lg pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
           />
           {query && (
@@ -84,8 +86,7 @@ export default function LibrarySearch({
             </button>
           )}
         </div>
-        {/* Journalism: redaction filter toggle */}
-        {isJournalism && (
+        {showRedactions && (
           <button
             onClick={() => setRedactionFilter(v => !v)}
             title="Show only documents with detected redactions"
@@ -112,8 +113,7 @@ export default function LibrarySearch({
         </p>
       )}
 
-      {/* Journalism: multi-select timeline toolbar */}
-      {isJournalism && selectedIds.size > 0 && (
+      {showEntities && selectedIds.size > 0 && (
         <div className="flex items-center gap-3 mb-3 px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">
           <span className="flex-1 text-xs">{selectedIds.size} document{selectedIds.size !== 1 ? 's' : ''} selected</span>
           <button
@@ -140,17 +140,13 @@ export default function LibrarySearch({
           return (
             <div
               key={report.id}
-              className={cn(
-                'bg-white border rounded-xl transition-all',
-                isJournalism ? 'border-gray-200 hover:border-gray-300 hover:shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-              )}
+              className="bg-white border border-gray-200 rounded-xl transition-all hover:border-gray-300 hover:shadow-sm"
             >
               <div className="px-4 py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      {/* Journalism: checkbox for multi-select */}
-                      {isJournalism && (
+                      {showEntities && (
                         <button
                           onClick={() => toggleSelect(report.id)}
                           className="shrink-0 text-gray-400 hover:text-gray-700 transition-colors"
@@ -169,8 +165,7 @@ export default function LibrarySearch({
                       >
                         {report.title}
                       </Link>
-                      {/* Journalism: redaction indicator */}
-                      {isJournalism && report.hasRedactions && (
+                      {showRedactions && report.hasRedactions && (
                         <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-200 font-medium">
                           <EyeOff size={10} />
                           Redacted

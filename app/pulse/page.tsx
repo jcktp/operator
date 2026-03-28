@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Rss, Plus, Trash2, RefreshCw, BookOpen, X, ExternalLink, Loader2, ChevronDown, Pencil, Check, Globe, ChevronLeft, ChevronRight, Eraser, Tag } from 'lucide-react'
-import { formatRelativeDate } from '@/lib/utils'
+import { formatRelativeDate, cn } from '@/lib/utils'
 import { PULSE_DIRECTORY, DIRECTORY_CATEGORIES } from '@/lib/pulse-directory'
 import { useMode } from '@/components/ModeContext'
 
@@ -64,7 +64,7 @@ const TYPE_PLACEHOLDER: Record<string, string> = {
 
 export default function PulsePage() {
   const modeConfig = useMode()
-  const isJournalism = modeConfig.id === 'journalism'
+  const { keywordMonitoring: isKeywordMode, defaultFeeds: hasDefaultFeeds } = modeConfig.features
   const [feeds, setFeeds] = useState<PulseFeed[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
@@ -74,6 +74,7 @@ export default function PulsePage() {
   const [savingItemId, setSavingItemId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', url: '', type: 'rss' })
+  const [bskyConfigured, setBskyConfigured] = useState(false)
   const [adding, setAdding] = useState(false)
   // Clear feed state
   const [clearingId, setClearingId] = useState<string | null>(null)
@@ -102,7 +103,7 @@ export default function PulsePage() {
     try { return JSON.parse(localStorage.getItem('pulse_keywords') ?? '[]') } catch { return [] }
   })
   const [keywordInput, setKeywordInput] = useState('')
-  const [keywordFilterOn, setKeywordFilterOn] = useState(false)
+  const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set())
   // Journalism: folder picker for save
   const [savingFolder, setSavingFolder] = useState<Record<string, string>>({})
 
@@ -117,14 +118,21 @@ export default function PulsePage() {
 
   useEffect(() => { load() }, [load])
 
-  // Journalism: init defaults on first visit if no feeds
   useEffect(() => {
-    if (!isJournalism) return
+    fetch('/api/settings').then(r => r.json()).then((d: { settings?: Record<string, string> }) => {
+      const s = d.settings ?? {}
+      setBskyConfigured(!!(s.bluesky_identifier && s.bluesky_app_password))
+    }).catch(() => {})
+  }, [])
+
+  // Init mode-specific default feeds on first visit
+  useEffect(() => {
+    if (!hasDefaultFeeds) return
     fetch('/api/pulse/init-journalism', { method: 'POST' })
       .then(r => r.json())
       .then((d: { created?: number }) => { if ((d.created ?? 0) > 0) load() })
       .catch(() => {})
-  }, [isJournalism, load])
+  }, [hasDefaultFeeds, load])
 
   // Persist keywords to localStorage
   useEffect(() => {
@@ -133,34 +141,36 @@ export default function PulsePage() {
     }
   }, [keywords])
 
+  const refreshAll = useCallback(async () => {
+    const enabled = feedsRef.current.filter(f => f.enabled)
+    if (!enabled.length) return
+    setAutoRefreshing(true)
+    for (const f of enabled) {
+      await fetch(`/api/pulse/${f.id}`, { method: 'POST' }).catch(() => {})
+    }
+    setAutoRefreshing(false)
+    setLastAutoRefresh(new Date())
+    await load()
+  }, [load])
+
   // Auto-refresh interval
   useEffect(() => {
     localStorage.setItem('pulse_autorefresh', String(autoRefreshMinutes))
     if (!autoRefreshMinutes) return
     const ms = autoRefreshMinutes * 60 * 1000
-    const id = setInterval(async () => {
-      const enabled = feedsRef.current.filter(f => f.enabled)
-      if (!enabled.length) return
-      setAutoRefreshing(true)
-      for (const f of enabled) {
-        await fetch(`/api/pulse/${f.id}`, { method: 'POST' }).catch(() => {})
-      }
-      setAutoRefreshing(false)
-      setLastAutoRefresh(new Date())
-      await load()
-    }, ms)
+    const id = setInterval(refreshAll, ms)
     return () => clearInterval(id)
-  }, [autoRefreshMinutes, load])
+  }, [autoRefreshMinutes, refreshAll])
 
   const matchesKeywords = (item: PulseItem) => {
-    if (keywords.length === 0) return false
+    if (activeKeywords.size === 0) return false
     const haystack = `${item.title} ${item.summary ?? ''}`.toLowerCase()
-    return keywords.some(kw => haystack.includes(kw.toLowerCase()))
+    return [...activeKeywords].some(kw => haystack.includes(kw.toLowerCase()))
   }
 
   const highlightKeywords = (text: string): React.ReactNode => {
-    if (keywords.length === 0) return text
-    const pattern = new RegExp(`(${keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
+    if (activeKeywords.size === 0) return text
+    const pattern = new RegExp(`(${[...activeKeywords].map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
     const parts = text.split(pattern)
     return parts.map((part, i) =>
       pattern.test(part) ? <mark key={i} className="bg-amber-100 text-amber-900 rounded px-0.5">{part}</mark> : part
@@ -176,7 +186,7 @@ export default function PulsePage() {
       return tb - ta
     })
 
-  const allItems = keywordFilterOn && keywords.length > 0
+  const allItems = activeKeywords.size > 0
     ? baseItems.filter(item => matchesKeywords(item))
     : baseItems
 
@@ -317,9 +327,16 @@ export default function PulsePage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Auto-refresh picker */}
+          {/* Refresh all + auto-refresh picker */}
           <div className="flex items-center gap-1.5">
-            {autoRefreshing && <RefreshCw size={12} className="animate-spin text-gray-400" />}
+            <button
+              onClick={refreshAll}
+              disabled={autoRefreshing}
+              title="Refresh all feeds"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-40"
+            >
+              <RefreshCw size={14} className={autoRefreshing ? 'animate-spin' : ''} />
+            </button>
             <RefreshDropdown value={autoRefreshMinutes} onChange={setAutoRefreshMinutes} />
           </div>
           <button
@@ -344,22 +361,18 @@ export default function PulsePage() {
       </div>
 
       {/* Journalism: keyword monitoring */}
-      {isJournalism && (
+      {isKeywordMode && (
         <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Tag size={13} className="text-gray-400" />
               <span className="text-sm font-medium text-gray-700">Keyword monitoring</span>
-              {keywords.length > 0 && (
+              {activeKeywords.size > 0 && (
                 <button
-                  onClick={() => setKeywordFilterOn(f => !f)}
-                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                    keywordFilterOn
-                      ? 'bg-amber-100 border-amber-300 text-amber-800'
-                      : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                  }`}
+                  onClick={() => setActiveKeywords(new Set())}
+                  className="text-xs px-2 py-0.5 rounded-full border border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors"
                 >
-                  {keywordFilterOn ? 'Showing matches only' : 'Show matches only'}
+                  Clear filter
                 </button>
               )}
             </div>
@@ -391,17 +404,37 @@ export default function PulsePage() {
           </form>
           {keywords.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {keywords.map(kw => (
-                <span key={kw} className="flex items-center gap-1 text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
-                  {kw}
-                  <button
-                    onClick={() => setKeywords(ks => ks.filter(k => k !== kw))}
-                    className="text-gray-400 hover:text-gray-700"
+              {keywords.map(kw => {
+                const active = activeKeywords.has(kw)
+                return (
+                  <span
+                    key={kw}
+                    className={cn(
+                      'flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border cursor-pointer select-none transition-colors',
+                      active
+                        ? 'bg-amber-100 border-amber-300 text-amber-900'
+                        : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
+                    )}
+                    onClick={() => setActiveKeywords(s => {
+                      const n = new Set(s)
+                      n.has(kw) ? n.delete(kw) : n.add(kw)
+                      return n
+                    })}
                   >
-                    <X size={10} />
-                  </button>
-                </span>
-              ))}
+                    {kw}
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        setKeywords(ks => ks.filter(k => k !== kw))
+                        setActiveKeywords(s => { const n = new Set(s); n.delete(kw); return n })
+                      }}
+                      className="text-gray-400 hover:text-gray-700"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                )
+              })}
             </div>
           )}
         </div>
@@ -425,7 +458,11 @@ export default function PulsePage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Type *</label>
-              <TypeDropdown value={form.type} onChange={v => setForm(f => ({ ...f, type: v }))} />
+              <TypeDropdown value={form.type} onChange={v => setForm(f => ({
+              ...f,
+              type: v,
+              url: v === 'bluesky' && bskyConfigured ? 'timeline' : f.url,
+            }))} />
             </div>
           </div>
           <div>
@@ -440,7 +477,18 @@ export default function PulsePage() {
               placeholder={TYPE_PLACEHOLDER[form.type] ?? 'https://…'}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
             />
-            <p className="text-xs text-gray-400 mt-1">{TYPE_HINT[form.type]}</p>
+            {form.type === 'bluesky' ? (
+              bskyConfigured ? (
+                <p className="text-xs text-green-600 mt-1">Bluesky credentials configured. <span className="text-gray-400">Use <code className="font-mono">timeline</code> for your home feed, or enter any handle for a public profile.</span></p>
+              ) : (
+                <p className="text-xs mt-1">
+                  <span className="text-amber-600 font-medium">No Bluesky credentials set.</span>
+                  <span className="text-gray-400"> For your home timeline, <a href="/settings" className="underline text-gray-600 hover:text-gray-900">add your handle and app password in Settings → Pulse</a>. Public profile feeds work without credentials.</span>
+                </p>
+              )
+            ) : (
+              <p className="text-xs text-gray-400 mt-1">{TYPE_HINT[form.type]}</p>
+            )}
           </div>
           <button
             type="submit"
@@ -648,11 +696,11 @@ export default function PulsePage() {
                           )}
                         </div>
                         <p className={`text-sm font-medium leading-snug ${matchesKeywords(item) ? 'text-gray-900' : 'text-gray-900'}`}>
-                          {isJournalism && keywords.length > 0 ? highlightKeywords(item.title) : item.title}
+                          {isKeywordMode && activeKeywords.size > 0 ? highlightKeywords(item.title) : item.title}
                         </p>
                         {item.summary && item.summary !== item.title && (
                           <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {isJournalism && keywords.length > 0 ? highlightKeywords(item.summary) : item.summary}
+                            {isKeywordMode && activeKeywords.size > 0 ? highlightKeywords(item.summary) : item.summary}
                           </p>
                         )}
                       </div>
@@ -687,7 +735,7 @@ export default function PulsePage() {
                               {savingItemId === item.id ? <Loader2 size={10} className="animate-spin" /> : <X size={10} />}
                             </button>
                           </div>
-                        ) : isJournalism ? (
+                        ) : isKeywordMode ? (
                           <div className="flex items-center gap-1">
                             <input
                               type="text"

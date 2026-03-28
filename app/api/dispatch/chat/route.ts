@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     }
     await loadAiSettings()
 
-    const content = await dispatchChat(messages, context ?? '', persona ?? 'dispatch', userMemory ?? '')
+    const { content, noteSaved } = await dispatchChat(messages, context ?? '', persona ?? 'dispatch', userMemory ?? '')
 
     // Background: extract new memory facts from this conversation (non-blocking)
     extractMemoryFacts([...messages, { role: 'assistant', content }], userMemory ?? '')
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       })
       .catch(() => {}) // never let memory extraction break the response
 
-    return NextResponse.json({ content })
+    return NextResponse.json({ content, noteSaved: noteSaved ?? null })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 })
   }

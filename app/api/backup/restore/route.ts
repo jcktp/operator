@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   try {
     const dbUrl = process.env.DATABASE_URL ?? ''
     const dbPath = dbUrl.replace(/^file:/, '')
-    const resolvedDbPath = resolve(process.cwd(), dbPath)
+    const resolvedDbPath = resolve(/*turbopackIgnore: true*/ process.cwd(), dbPath)
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null

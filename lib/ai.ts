@@ -2,32 +2,35 @@ import { parseJsonSafe } from './utils'
 import type { Metric, Insight, Question } from './utils'
 import { getPersonasForMode, type PersonaId } from './personas'
 import { getModeConfig } from './mode'
-import { chat, chatWithTools, getProvider, maxContentLength, type AIProvider, type Message } from './ai-providers'
+import { chat, chatWithTools, getProvider, maxContentLength, type AIProvider, type ChatResult } from './ai-providers'
 
 export type { AIProvider }
 
+// Re-export journalism and vision functions so existing callers don't break
+export { describeImage } from './ai-vision'
+export {
+  extractEntities, extractTimeline, detectRedactions,
+  compareDocumentsJournalism, generateVerificationChecklist,
+  type NamedEntity, type JournalismTimelineEvent, type RedactionEntry,
+  type JournalismPassage, type JournalismFigureChange, type JournalismComparison,
+  type VerificationItem,
+} from './ai-journalism'
 
 // ── JSON extraction ─────────────────────────────────────────────────────────
 
 function extractJson(text: string): string {
-  // Strip leading/trailing whitespace
   const t = text.trim()
-
-  // Try fenced code blocks first (```json ... ``` or ``` ... ```)
   const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/)
   if (fenced) {
     const candidate = fenced[1].trim()
     try { JSON.parse(candidate); return candidate } catch {}
   }
-
-  // Find outermost { }
   const start = t.indexOf('{')
   const end = t.lastIndexOf('}')
   if (start !== -1 && end > start) {
     const candidate = t.slice(start, end + 1)
     try { JSON.parse(candidate); return candidate } catch {}
   }
-
   throw new Error(`No valid JSON in response (len=${t.length}, preview=${t.slice(0, 100)})`)
 }
 
@@ -58,85 +61,13 @@ export interface ReportComparison {
   removedTopics: string[]
 }
 
-// ── Analysis functions ──────────────────────────────────────────────────────
-
-// ── Image description (vision) ──────────────────────────────────────────────
-
-export async function describeImage(buffer: Buffer, mimeType: string): Promise<string> {
-  const provider = getProvider()
-  const b64 = buffer.toString('base64')
-
-  try {
-    if (provider === 'anthropic') {
-      const key = process.env.ANTHROPIC_API_KEY
-      if (!key) throw new Error('No key')
-      const model = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001'
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({
-          model, max_tokens: 1024,
-          messages: [{ role: 'user', content: [
-            { type: 'image', source: { type: 'base64', media_type: mimeType, data: b64 } },
-            { type: 'text', text: 'Describe this image in detail. Include any visible text, numbers, people (without identifying them), objects, and context that would be useful for research or reporting purposes.' },
-          ] }],
-        }),
-      })
-      const data = await res.json() as { content?: Array<{ text: string }>; error?: { message: string } }
-      if (!res.ok) throw new Error(data.error?.message)
-      return data.content?.[0]?.text ?? '[Image stored]'
-    }
-
-    if (provider === 'openai') {
-      const key = process.env.OPENAI_API_KEY
-      if (!key) throw new Error('No key')
-      const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: 'user', content: [
-            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${b64}` } },
-            { type: 'text', text: 'Describe this image in detail. Include any visible text, numbers, people (without identifying them), objects, and context that would be useful for research or reporting purposes.' },
-          ] }],
-        }),
-      })
-      const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
-      if (!res.ok) throw new Error(data.error?.message)
-      return data.choices?.[0]?.message.content ?? '[Image stored]'
-    }
-
-    if (provider === 'google') {
-      const key = process.env.GOOGLE_API_KEY
-      if (!key) throw new Error('No key')
-      const model = process.env.GOOGLE_MODEL ?? 'gemini-2.5-flash'
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [
-            { inline_data: { mime_type: mimeType, data: b64 } },
-            { text: 'Describe this image in detail. Include any visible text, numbers, people (without identifying them), objects, and context that would be useful for research or reporting purposes.' },
-          ] }] }),
-        }
-      )
-      const data = await res.json() as { candidates?: Array<{ content: { parts: Array<{ text: string }> } }>; error?: { message: string } }
-      if (!res.ok) throw new Error(data.error?.message)
-      return data.candidates?.[0]?.content.parts[0]?.text ?? '[Image stored]'
-    }
-  } catch (e) {
-    console.warn('Image description failed:', e)
-  }
-
-  // Ollama and unsupported providers — store without description
-  return '[Image stored — switch to a cloud AI provider (Anthropic, OpenAI, or Google) to enable automatic image descriptions]'
-}
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 function isCloudProvider(): boolean {
   return getProvider() !== 'ollama'
 }
+
+// ── Analysis functions ──────────────────────────────────────────────────────
 
 export async function analyzeReport(
   content: string,
@@ -289,31 +220,49 @@ Reply with ONLY valid JSON: {"resolved": [1, 3]} — empty array if none.`
   }
 }
 
+// ── Intent detection ────────────────────────────────────────────────────────
+
+const NOTE_SAVE_PATTERNS = [
+  /add\s+a?\s*note\s+to\s+(my\s+)?(journal|notebook|research notes|case notes)/i,
+  /save\s+(a?\s*note|this)\s+to\s+(my\s+)?(journal|notebook|research notes|case notes)/i,
+  /add\s+this\s+to\s+(my\s+)?(journal|notebook|research notes|case notes)/i,
+  /create\s+a?\s*note\s+(in|for)\s+(my\s+)?(journal|notebook|research notes|case notes)/i,
+  /make\s+a?\s*note\s+(about|in|for)/i,
+  /save\s+(this|that|it)\s+as\s+a\s+note/i,
+  /log\s+(this|that|it)\s+in\s+(my\s+)?(journal|notebook)/i,
+]
+
+function hasNoteSaveIntent(messages: Array<{ role: string; content: string }>): boolean {
+  const lastUser = [...messages].reverse().find(m => m.role === 'user')
+  if (!lastUser) return false
+  return NOTE_SAVE_PATTERNS.some(p => p.test(lastUser.content))
+}
+
+export type { ChatResult }
+
 export async function dispatchChat(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   context: string,
   personaId: PersonaId = 'dispatch',
   userMemory = ''
-): Promise<string> {
+): Promise<ChatResult> {
   const personas = getPersonasForMode(process.env.APP_MODE)
   const persona = personas[personaId]
   const hasSearch = !!process.env.BRAVE_SEARCH_KEY
   const systemPrompt = persona.buildSystemPrompt(context, userMemory, hasSearch)
-  return chatWithTools(messages, systemPrompt, persona.temperature)
+  const enableNoteTool = hasNoteSaveIntent(messages)
+  return chatWithTools(messages, systemPrompt, persona.temperature, enableNoteTool)
 }
 
-/**
- * Extracts 1–3 short factual statements worth remembering from a conversation.
- * Returns an empty array if nothing noteworthy was found.
- * Runs as a lightweight background call — failures are safe to ignore.
- */
+// ── Memory extraction ────────────────────────────────────────────────────────
+
 export async function extractMemoryFacts(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   existingMemory: string
 ): Promise<string[]> {
   if (messages.length < 2) return []
 
-  const recent = messages.slice(-6) // last 3 turns
+  const recent = messages.slice(-6)
   const prompt = `You are reading a short business conversation between a CEO and an AI assistant. Extract any NEW facts about this person's business, goals, or preferences that would be useful to remember in future conversations.
 
 Rules:
@@ -343,6 +292,8 @@ Reply with ONLY valid JSON: {"facts": ["fact 1", "fact 2"]} — or {"facts": []}
     return []
   }
 }
+
+// ── Dashboard insights ───────────────────────────────────────────────────────
 
 export async function generateDashboardInsights(
   reports: Array<{ area: string; summary: string; metrics: string; insights: string }>
@@ -386,6 +337,8 @@ Limits: max 4 crossInsights, 4 topQuestions. Only use what the reports contain.`
   }
 }
 
+// ── Catch-me-up digest ───────────────────────────────────────────────────────
+
 export async function generateCatchMeUp(
   reports: Array<{ area: string; directName?: string; date: string; summary: string; metrics: string; insights: string }>
 ): Promise<string> {
@@ -412,306 +365,3 @@ ${reportsText}`
   return chat([{ role: 'user', content: prompt }], 0.4)
 }
 
-// ── Journalism: Named Entity Extraction ──────────────────────────────────────
-
-export interface NamedEntity {
-  type: 'person' | 'organisation' | 'location' | 'date' | 'financial'
-  name: string
-  context?: string
-}
-
-export async function extractEntities(
-  content: string,
-  title: string,
-  area: string
-): Promise<NamedEntity[]> {
-  const truncated = content.slice(0, maxContentLength())
-  const prompt = `Extract all named entities from this document. Record each entity's type and exact name as it appears.
-
-Document: ${title} (${area})
-
-Content:
-${truncated}
-
-Return ONLY valid JSON:
-{
-  "entities": [
-    {"type": "person|organisation|location|date|financial", "name": "exact name from document", "context": "optional: title, role, or brief context if stated"}
-  ]
-}
-
-Types:
-- person: full names of individuals, including titles or roles if mentioned alongside the name
-- organisation: companies, government bodies, NGOs, agencies, institutions
-- location: countries, cities, addresses, named places
-- date: specific dates, time periods, or date references (e.g. "Q3 2023", "15 March 2024")
-- financial: monetary amounts, financial figures (e.g. "$4.2 million", "€500k")
-
-Limits: max 30 entities. Only include entities explicitly named in the document. Do not infer.`
-
-  try {
-    const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
-    const parsed = JSON.parse(json) as { entities?: unknown[] }
-    if (!Array.isArray(parsed.entities)) return []
-    const VALID_ENTITY_TYPES = new Set<string>(['person', 'organisation', 'location', 'date', 'financial'])
-    return (parsed.entities as NamedEntity[]).filter(
-      e => e && VALID_ENTITY_TYPES.has(e.type) && typeof e.name === 'string' && e.name.trim().length > 0
-    )
-  } catch (e) {
-    console.error('extractEntities failed:', e)
-    return []
-  }
-}
-
-// ── Journalism: Timeline Extraction ──────────────────────────────────────────
-
-export interface JournalismTimelineEvent {
-  dateText: string
-  dateSortKey?: string | null
-  event: string
-}
-
-export async function extractTimeline(
-  content: string,
-  title: string
-): Promise<JournalismTimelineEvent[]> {
-  const truncated = content.slice(0, maxContentLength())
-  const prompt = `Extract all dated events and chronological references from this document.
-
-Document: ${title}
-
-Content:
-${truncated}
-
-Return ONLY valid JSON:
-{
-  "events": [
-    {
-      "dateText": "date as it appears in the document, e.g. '15 March 2024' or 'Q3 2023'",
-      "dateSortKey": "YYYY-MM-DD ISO date if determinable, or null if only approximate",
-      "event": "brief factual description of what happened on this date, as stated in the document"
-    }
-  ]
-}
-
-Limits: max 20 events. Only include events with a clear date reference. Exclude vague references without any time anchor. Do not invent dates or events.`
-
-  try {
-    const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
-    const parsed = JSON.parse(json) as { events?: unknown[] }
-    if (!Array.isArray(parsed.events)) return []
-    return (parsed.events as JournalismTimelineEvent[]).filter(
-      e => e && typeof e.dateText === 'string' && typeof e.event === 'string' && e.event.trim().length > 0
-    )
-  } catch (e) {
-    console.error('extractTimeline failed:', e)
-    return []
-  }
-}
-
-// ── Journalism: Redaction Detection ──────────────────────────────────────────
-
-export interface RedactionEntry {
-  type: 'blackout' | 'placeholder' | 'gap' | 'missing_reference'
-  location: string
-  context: string
-}
-
-export async function detectRedactions(
-  content: string,
-  title: string
-): Promise<RedactionEntry[]> {
-  const truncated = content.slice(0, maxContentLength())
-  const prompt = `Examine this document for signs of redaction or deliberately withheld information.
-
-Document: ${title}
-
-Content:
-${truncated}
-
-Look for:
-1. Explicit redaction markers: [REDACTED], [WITHHELD], [EXEMPTED], ████, ***, (b)(6), s.40, or similar
-2. Unusual numbering discontinuities, missing page numbers, or skipped sections
-3. Text that appears cut off mid-sentence or paragraph
-4. References to content (exhibits, attachments, sections) that are not present in this document
-5. Repetitive replacement characters or unusual spacing suggesting removed text
-
-Return ONLY valid JSON:
-{
-  "redactions": [
-    {
-      "type": "blackout|placeholder|gap|missing_reference",
-      "location": "where in the document (e.g. 'Page 3, paragraph 2' or 'Section 4.1' or 'near reference to X')",
-      "context": "the surrounding text that survived, giving context for what was redacted (up to 100 words)"
-    }
-  ]
-}
-
-Types:
-- blackout: text replaced with black bars, asterisks, or repeated characters
-- placeholder: explicit [REDACTED]-style markers
-- gap: unusual discontinuity in numbering, pagination, or flow
-- missing_reference: document references content that is not present
-
-Return an empty array if no genuine signs of redaction are found. Do not flag normal editorial choices or formatting.`
-
-  try {
-    const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
-    const parsed = JSON.parse(json) as { redactions?: unknown[] }
-    if (!Array.isArray(parsed.redactions)) return []
-    return (parsed.redactions as RedactionEntry[]).filter(
-      r => r && typeof r.type === 'string' && typeof r.location === 'string' && typeof r.context === 'string'
-    )
-  } catch (e) {
-    console.error('detectRedactions failed:', e)
-    return []
-  }
-}
-
-// ── Journalism: Document Comparison ──────────────────────────────────────────
-
-export interface JournalismPassage {
-  text: string
-  appearsIn: 'previous' | 'current'
-}
-
-export interface JournalismFigureChange {
-  label: string
-  previous: string
-  current: string
-}
-
-export interface JournalismComparison {
-  headline: string
-  passages: JournalismPassage[]
-  figures: JournalismFigureChange[]
-  entitiesAdded: string[]
-  entitiesRemoved: string[]
-  possibleRedactions: string[]
-}
-
-export async function compareDocumentsJournalism(
-  prevContent: string,
-  prevTitle: string,
-  currContent: string,
-  currTitle: string
-): Promise<JournalismComparison> {
-  const maxLen = Math.floor(maxContentLength() / 2)
-  const prevTrunc = prevContent.slice(0, maxLen)
-  const currTrunc = currContent.slice(0, maxLen)
-
-  const prompt = `You are a journalist comparing two versions of a document. Identify what changed between them.
-
-PREVIOUS DOCUMENT: ${prevTitle}
-${prevTrunc}
-
----
-
-CURRENT DOCUMENT: ${currTitle}
-${currTrunc}
-
-Identify:
-1. Specific claims or passages that appear in one document but not the other
-2. Figures or numbers that changed between versions
-3. Named people, organisations, or locations that were added or removed
-4. Sections or content that appear to have been removed or redacted
-
-Return ONLY valid JSON:
-{
-  "headline": "1 sentence summarising the most significant difference between the two documents",
-  "passages": [
-    {"text": "brief description of the passage or claim", "appearsIn": "previous|current"}
-  ],
-  "figures": [
-    {"label": "what the figure refers to", "previous": "value in previous doc", "current": "value in current doc"}
-  ],
-  "entitiesAdded": ["names that appear in current but not previous"],
-  "entitiesRemoved": ["names present in previous but absent from current"],
-  "possibleRedactions": ["description of anything that appears to have been removed or redacted between versions"]
-}
-
-Limits: max 5 passages, 5 figures, 5 entitiesAdded, 5 entitiesRemoved, 3 possibleRedactions. Only flag genuine differences.`
-
-  try {
-    const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
-    const parsed = JSON.parse(json) as Partial<JournalismComparison>
-    return {
-      headline: typeof parsed.headline === 'string' ? parsed.headline : '',
-      passages: Array.isArray(parsed.passages) ? parsed.passages : [],
-      figures: Array.isArray(parsed.figures) ? parsed.figures : [],
-      entitiesAdded: Array.isArray(parsed.entitiesAdded) ? parsed.entitiesAdded : [],
-      entitiesRemoved: Array.isArray(parsed.entitiesRemoved) ? parsed.entitiesRemoved : [],
-      possibleRedactions: Array.isArray(parsed.possibleRedactions) ? parsed.possibleRedactions : [],
-    }
-  } catch (e) {
-    console.error('compareDocumentsJournalism failed:', e)
-    return { headline: '', passages: [], figures: [], entitiesAdded: [], entitiesRemoved: [], possibleRedactions: [] }
-  }
-}
-
-// ── Claim verification scaffolding ───────────────────────────────────────────
-
-export interface VerificationItem {
-  claim: string
-  claimType: 'statistical' | 'attribution' | 'event' | 'legal'
-  evidenceNeeded: string
-  suggestedSources: string[]
-}
-
-export async function generateVerificationChecklist(
-  content: string,
-  title: string,
-  area: string
-): Promise<VerificationItem[]> {
-  const truncated = content.slice(0, maxContentLength())
-
-  const prompt = `You are a verification editor reviewing a document before publication. Your task is to identify key claims that require verification.
-
-DOCUMENT TITLE: ${title}
-AREA: ${area}
-
-DOCUMENT CONTENT:
-${truncated}
-
-Identify up to 8 key claims in this document that a journalist would need to verify before publishing. For each claim:
-- Classify it as one of: statistical (a number, percentage, or data point), attribution (a quote or statement attributed to someone), event (something that allegedly happened), legal (a legal status, ruling, or allegation)
-- Describe specifically what evidence would be needed to verify or refute it
-- List 2-4 types of sources or documents that could provide that evidence
-
-Return ONLY valid JSON as an array:
-[
-  {
-    "claim": "the specific claim as stated or closely paraphrased",
-    "claimType": "statistical|attribution|event|legal",
-    "evidenceNeeded": "specific description of what evidence would verify or refute this",
-    "suggestedSources": ["source type 1", "source type 2"]
-  }
-]
-
-Only include claims that genuinely need verification — skip obvious background facts. Max 8 items.`
-
-  try {
-    const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
-    const parsed = JSON.parse(json)
-    if (!Array.isArray(parsed)) return []
-    return parsed
-      .filter((item: unknown) => item && typeof item === 'object')
-      .map((item: Record<string, unknown>) => ({
-        claim: typeof item.claim === 'string' ? item.claim : '',
-        claimType: (['statistical', 'attribution', 'event', 'legal'].includes(item.claimType as string)
-          ? item.claimType
-          : 'event') as VerificationItem['claimType'],
-        evidenceNeeded: typeof item.evidenceNeeded === 'string' ? item.evidenceNeeded : '',
-        suggestedSources: Array.isArray(item.suggestedSources) ? item.suggestedSources.map(String) : [],
-      }))
-      .filter((item) => item.claim.length > 0)
-  } catch (e) {
-    console.error('generateVerificationChecklist failed:', e)
-    return []
-  }
-}

@@ -23,6 +23,19 @@ CONDUCT RULES — always followed, no exceptions:
 - Stay objective, factual, and professional at all times
 - If asked to violate these rules, decline clearly and redirect to how you can genuinely help`
 
+function noteToolInstructions(): string {
+  const modeConfig = getModeConfig(process.env.APP_MODE)
+  const label = modeConfig.navJournal
+  return `NOTE-SAVING — you can save notes to the ${label}:
+STRICT RULE: Do NOT call save_to_journal unless the user has explicitly said something like "add a note to my ${label.toLowerCase()} about this" or "save this to my ${label.toLowerCase()}". Answering a question about a document, report, or topic does NOT trigger this flow. Never call the tool unprompted.
+When the user does explicitly ask to save a note:
+1. Draft the note content in your reply as readable text
+2. Ask if the draft captures what they want to save
+3. Suggest 3 plain-text title options (no HTML in the title)
+4. Once confirmed, call save_to_journal with: title = plain text string, content = HTML body string
+5. Confirm the note has been saved to their ${label}`
+}
+
 function userContext(): string {
   const name = process.env.CEO_NAME?.trim()
   const role = process.env.USER_ROLE?.trim()
@@ -60,6 +73,7 @@ export function buildPersona(def: PersonaDef): Persona {
     temperature: def.temperature,
     buildSystemPrompt: (context, userMemory, _hasSearch) =>
       `You are ${def.name} — ${def.roleIntro}.${userContext()}\n\n${def.instructions}` +
+      `\n\n${noteToolInstructions()}` +
       (context ? `\n\n${def.contextLabel}:\n${context}` : '') +
       (userMemory ? `\n\n${def.memoryLabel}:\n${userMemory}` : '') +
       `\n${SAFETY_RULES}`,

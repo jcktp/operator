@@ -6,6 +6,7 @@ import { analyzeReport, compareReports, checkResolvedFlags, describeImage, extra
 import { saveReportFile } from '@/lib/reports-folder'
 import { logAction } from '@/lib/audit'
 import { join } from 'path'
+import { getModeConfig } from '@/lib/mode'
 
 export async function POST(req: NextRequest) {
   try {
@@ -164,8 +165,9 @@ export async function POST(req: NextRequest) {
       include: { directReport: true },
     })
 
-    // Journalism mode: additional analysis steps — all run in parallel
-    if (process.env.APP_MODE === 'journalism') {
+    // Optional mode features: additional analysis steps — all run in parallel
+    const modeFeatures = getModeConfig(process.env.APP_MODE).features
+    if (modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification || modeFeatures.documentComparison) {
       let entitiesResult: Awaited<ReturnType<typeof extractEntities>> = []
       let eventsResult: Awaited<ReturnType<typeof extractTimeline>> = []
       let redactionsJson: string | null = null

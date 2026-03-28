@@ -94,8 +94,8 @@ async function fetchBlueskyItems(url: string): Promise<FeedItem[]> {
 
   if (isTimeline) {
     // Authenticated home timeline
-    const identifier = process.env.BLUESKY_IDENTIFIER ?? ''
-    const appPassword = process.env.BLUESKY_APP_PASSWORD ?? ''
+    const identifier = (process.env.BLUESKY_IDENTIFIER ?? '').replace(/^@/, '').replace(/\.bsky\.app$/, '.bsky.social').trim()
+    const appPassword = (process.env.BLUESKY_APP_PASSWORD ?? '').trim()
     if (!identifier || !appPassword) {
       throw new Error('Bluesky credentials not configured — add handle and app password in Settings → AI → Social')
     }
@@ -107,7 +107,10 @@ async function fetchBlueskyItems(url: string): Promise<FeedItem[]> {
       body: JSON.stringify({ identifier, password: appPassword }),
       signal: AbortSignal.timeout(10_000),
     })
-    if (!sessionRes.ok) throw new Error('Bluesky login failed — check your handle and app password')
+    if (!sessionRes.ok) {
+      const errBody = await sessionRes.json().catch(() => ({})) as { error?: string; message?: string }
+      throw new Error(`Bluesky login failed (${sessionRes.status}): ${errBody.error ?? errBody.message ?? 'unknown error'} [handle: "${identifier}"]`)
+    }
     const session = await sessionRes.json() as { accessJwt: string; handle: string }
 
     // Fetch home timeline

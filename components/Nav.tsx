@@ -4,7 +4,11 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from '@/components/icons'
-import { Network } from 'lucide-react'
+import { Network, type LucideIcon } from 'lucide-react'
+
+const EXTRA_NAV_ICONS: Record<string, LucideIcon> = {
+  Network,
+}
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
@@ -47,7 +51,7 @@ export default function Nav() {
     { href: '/dashboard', label: 'Dashboard', icon: BarChart2 },
     { href: '/upload', label: config.navDocuments, icon: Upload },
     { href: '/library', label: config.navLibrary, icon: Library },
-    ...(config.id === 'journalism' ? [{ href: '/entities', label: 'Entities', icon: Network }] : []),
+    ...config.features.extraNavItems.map(item => ({ href: item.href, label: item.label, icon: EXTRA_NAV_ICONS[item.icon] ?? Network })),
     { href: '/directs', label: config.navPeople, icon: Users },
     { href: '/journal', label: config.navJournal, icon: BookOpen },
     { href: '/pulse', label: 'Pulse', icon: Radio },

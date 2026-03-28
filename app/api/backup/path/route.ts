@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     const dbUrl = process.env.DATABASE_URL ?? ''
     const dbPath = dbUrl.replace(/^file:/, '')
-    const resolvedDbPath = resolve(process.cwd(), dbPath)
+    const resolvedDbPath = resolve(/*turbopackIgnore: true*/ process.cwd(), dbPath)
 
     if (!existsSync(resolvedDbPath)) {
       return NextResponse.json({ error: 'Database file not found' }, { status: 500 })

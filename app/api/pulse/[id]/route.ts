@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { fetchFeedItems } from '@/lib/pulse'
+import { loadAiSettings } from '@/lib/settings'
 
 // PUT /api/pulse/[id] — edit feed name / url / type
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await prisma.pulseItem.deleteMany({ where: { feedId: id } })
     return NextResponse.json({ ok: true })
   }
+
+  await loadAiSettings()
 
   const feed = await prisma.pulseFeed.findUnique({ where: { id } })
   if (!feed) return NextResponse.json({ error: 'Not found' }, { status: 404 })

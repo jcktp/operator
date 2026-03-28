@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSetMode } from '@/components/ModeContext'
 import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle, Globe, Copy, Check, Database, FolderOpen, Upload as UploadIcon, RotateCcw, X, Plus } from 'lucide-react'
+import AuditLogPanel from './AuditLogPanel'
 import { cn } from '@/lib/utils'
 import { CLOUD_PROVIDERS, type AIProvider, type CloudProviderId, type PullState, type TestState } from './settingsTypes'
 import ModelPullOverlay from './ModelPullOverlay'
@@ -72,8 +73,6 @@ export default function SettingsPage() {
   // Security
   const [autoLockMinutes, setAutoLockMinutes] = useState(0)
   const [airGapMode, setAirGapMode] = useState(false)
-  const [auditLogs, setAuditLogs] = useState<{ id: string; action: string; detail: string | null; createdAt: string }[]>([])
-  const [loadingAudit, setLoadingAudit] = useState(false)
   // Tabs
   type Tab = 'profile' | 'ai' | 'pulse' | 'remote' | 'backup' | 'danger'
   const [tab, setTab] = useState<Tab>('profile')
@@ -184,8 +183,7 @@ export default function SettingsPage() {
   const switchingToOllama = aiProvider === 'ollama' && savedProvider !== 'ollama'
   const needsPull = modelChanged || switchingToOllama
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSave = async () => {
     setSaving(true)
 
     if (needsPull) {
@@ -238,6 +236,23 @@ export default function SettingsPage() {
     setSavedProvider(aiProvider)
     setSavedMode(appMode)
     setMode(appMode)
+
+    // Auto-create Bluesky timeline feed if credentials are present and feed doesn't exist yet
+    if (bskyIdentifier.trim() && bskyAppPassword.trim()) {
+      try {
+        const feedsRes = await fetch('/api/pulse')
+        const feedsData = await feedsRes.json() as { feeds?: Array<{ type: string; url: string }> }
+        const hasTimeline = feedsData.feeds?.some(f => f.type === 'bluesky' && f.url === 'timeline')
+        if (!hasTimeline) {
+          await fetch('/api/pulse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'Bluesky Timeline', url: 'timeline', type: 'bluesky' }),
+          })
+        }
+      } catch { /* non-blocking */ }
+    }
+
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -287,7 +302,7 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      <form onSubmit={handleSave} className="space-y-5">
+      <div className="space-y-5">
         {/* Profile tab */}
         {tab === 'profile' && (
           <>
@@ -519,7 +534,7 @@ export default function SettingsPage() {
                     type="text"
                     value={bskyIdentifier}
                     onChange={e => setBskyIdentifier(e.target.value)}
-                    placeholder="you.bsky.social"
+                    placeholder="you.bsky.social  (not .bsky.app)"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
@@ -527,14 +542,14 @@ export default function SettingsPage() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">App password</label>
                   <input
                     type="password"
-                    value={bskyAppPassword}
+                    value={bskyAppPassword === '__saved__' ? '' : bskyAppPassword}
                     onChange={e => setBskyAppPassword(e.target.value)}
-                    placeholder="xxxx-xxxx-xxxx-xxxx"
+                    placeholder={bskyAppPassword === '__saved__' ? 'App password saved — enter new to replace' : 'xxxx-xxxx-xxxx-xxxx'}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
                   />
                 </div>
               </div>
-              <p className="text-[11px] text-gray-400">Generate an app password at bsky.app → Settings → App Passwords. Then add a Bluesky feed in Pulse with URL set to <code className="font-mono">timeline</code>.</p>
+              <p className="text-[11px] text-gray-400">Generate an app password at bsky.app → Settings → App Passwords. Your home timeline will appear in Pulse automatically when you save.</p>
             </div>
 
             {/* Mastodon */}
@@ -553,7 +568,7 @@ export default function SettingsPage() {
               <p className="text-[11px] text-gray-400">Generate at your instance → Preferences → Development → New application (read:statuses scope). Then add a Mastodon feed in Pulse with URL set to your instance domain, e.g. <code className="font-mono">mastodon.social</code>.</p>
             </div>
 
-            <button type="submit" disabled={saving}
+            <button type="button" onClick={handleSave} disabled={saving}
               className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
               {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : 'Save'}
             </button>
@@ -561,7 +576,7 @@ export default function SettingsPage() {
         )}
 
         {(tab === 'profile' || tab === 'ai') && (
-          <button type="submit" disabled={saving}
+          <button type="button" onClick={handleSave} disabled={saving}
             className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {saving
               ? <><Loader2 size={14} className="animate-spin" /> {needsPull ? 'Pulling model…' : 'Saving…'}</>
@@ -571,7 +586,7 @@ export default function SettingsPage() {
               : 'Save settings'}
           </button>
         )}
-      </form>
+      </div>
 
       {/* Remote tab */}
       {tab === 'remote' && <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
@@ -803,40 +818,7 @@ export default function SettingsPage() {
 
       {/* Danger tab */}
       {tab === 'danger' && <div className="space-y-5">
-        {/* Audit log */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">Audit log</h2>
-            <button
-              type="button"
-              disabled={loadingAudit}
-              onClick={async () => {
-                setLoadingAudit(true)
-                const res = await fetch('/api/audit')
-                const data = await res.json() as { logs: { id: string; action: string; detail: string | null; createdAt: string }[] }
-                setAuditLogs(data.logs ?? [])
-                setLoadingAudit(false)
-              }}
-              className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
-            >
-              {loadingAudit ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
-              Load
-            </button>
-          </div>
-          {auditLogs.length === 0 ? (
-            <p className="text-xs text-gray-400">Click Load to view recent actions.</p>
-          ) : (
-            <div className="space-y-1 max-h-60 overflow-y-auto">
-              {auditLogs.map(log => (
-                <div key={log.id} className="flex items-start gap-2 text-xs py-1 border-b border-gray-50 last:border-0">
-                  <span className="text-gray-400 shrink-0 tabular-nums">{new Date(log.createdAt).toLocaleString()}</span>
-                  <span className="font-mono text-gray-700 shrink-0">{log.action}</span>
-                  {log.detail && <span className="text-gray-400 truncate">{log.detail}</span>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <AuditLogPanel />
 
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-gray-900 mb-1">About Operator</h2>
@@ -850,16 +832,24 @@ export default function SettingsPage() {
 
         <div ref={dangerRef} id="danger" className="bg-white border border-red-100 rounded-xl p-5">
         <h2 className="text-sm font-semibold text-red-600 mb-1">Danger zone</h2>
-        <p className="text-xs text-gray-400 mb-4">Irreversible actions. Proceed with caution.</p>
+        <p className="text-xs text-gray-400 mb-4">These actions are permanent and cannot be undone.</p>
 
         {uninstallPhase === 'idle' && (
-          <button
-            type="button"
-            onClick={() => setUninstallPhase('confirming')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
-          >
-            <Trash2 size={14} /> Uninstall Operator
-          </button>
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-800">Uninstall Operator</p>
+              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                Permanently deletes all your reports, journal entries, contacts, Pulse feeds, settings, and AI analysis data. Also removes the local AI model downloaded by this app and the entire application folder. <strong>Nothing is recoverable after this.</strong>
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setUninstallPhase('confirming')}
+              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={14} /> Uninstall
+            </button>
+          </div>
         )}
 
         {uninstallPhase === 'confirming' && (

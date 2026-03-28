@@ -6,6 +6,29 @@ export type AppMode =
   | 'legal'
   | 'consulting'
 
+export interface ModeFeatures {
+  /** Named entity extraction, cross-linking, and entity search */
+  entities: boolean
+  /** Timeline event extraction and display */
+  timeline: boolean
+  /** Redaction detection, display, and library filter */
+  redactions: boolean
+  /** Verification checklist on documents */
+  verification: boolean
+  /** Cross-document comparison section */
+  documentComparison: boolean
+  /** Keyword monitoring panel and highlighting in Pulse */
+  keywordMonitoring: boolean
+  /** Investigation folder template prompt in notebook */
+  investigationTemplate: boolean
+  /** Auto-initialise Pulse with mode-specific default feeds */
+  defaultFeeds: boolean
+  /** Journal page description override */
+  journalDescription: string | null
+  /** Extra nav items inserted after the library link (icon: lucide icon name) */
+  extraNavItems: Array<{ href: string; label: string; icon: string }>
+}
+
 export interface ModeConfig {
   id: AppMode
   label: string
@@ -39,6 +62,21 @@ export interface ModeConfig {
   aiContext: string
   // Mode-specific framing for analyzeReport()
   analysisFraming: string
+  // Optional feature flags
+  features: ModeFeatures
+}
+
+const DEFAULT_FEATURES: ModeFeatures = {
+  entities: false,
+  timeline: false,
+  redactions: false,
+  verification: false,
+  documentComparison: false,
+  keywordMonitoring: false,
+  investigationTemplate: false,
+  defaultFeeds: false,
+  journalDescription: null,
+  extraNavItems: [] as Array<{ href: string; label: string; icon: string }>,
 }
 
 const BASE_FILE_TYPES = '.pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.md'
@@ -71,6 +109,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first report',
     aiContext: 'You are advising a business executive. Focus on operational performance, financial health, team effectiveness, and strategic opportunities.',
     analysisFraming: 'Extract business metrics, operational insights, risks, and opportunities. Identify trends and anomalies relative to targets or prior periods.',
+    features: { ...DEFAULT_FEATURES },
   },
 
   journalism: {
@@ -99,6 +138,19 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first notes',
     aiContext: 'You are assisting an investigative journalist. Prioritise verifiable claims, source attribution, factual consistency, and contradictions across notes. Never fabricate quotes or sources.',
     analysisFraming: 'Extract factual claims with source attribution where present. Flag any inconsistencies or contradictions between sources. Surface direct quotes separately from paraphrase. Note any claims that require verification or lack a named source.',
+    features: {
+      ...DEFAULT_FEATURES,
+      entities: true,
+      timeline: true,
+      redactions: true,
+      verification: true,
+      documentComparison: true,
+      keywordMonitoring: true,
+      investigationTemplate: true,
+      defaultFeeds: true,
+      journalDescription: 'Investigation notes organised by folder — sources, timelines, claims',
+      extraNavItems: [{ href: '/entities', label: 'Entities', icon: 'Network' }],
+    },
   },
 
   team_lead: {
@@ -127,6 +179,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first update',
     aiContext: 'You are assisting a team lead. Focus on delivery progress, blockers, team health, sprint velocity, and commitment tracking.',
     analysisFraming: 'Extract team progress, completed work, blockers, and upcoming commitments. Flag risks to delivery timelines and recurring issues across updates.',
+    features: { ...DEFAULT_FEATURES },
   },
 
   market_research: {
@@ -155,6 +208,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first interview',
     aiContext: 'You are assisting a market researcher. Focus on identifying recurring themes, patterns, outliers, and actionable insights across multiple data sources.',
     analysisFraming: 'Extract key themes, verbatim quotes from respondents, and emerging patterns. Identify areas of consensus and divergence. Flag notable outliers or contradictions worth exploring further.',
+    features: { ...DEFAULT_FEATURES },
   },
 
   legal: {
@@ -183,6 +237,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first case file',
     aiContext: 'You are assisting a legal professional. Prioritise accuracy, chronological consistency, evidence chain integrity, and factual precision. Never speculate beyond what the documents contain.',
     analysisFraming: 'Extract key dates, parties, and legal claims. Flag any factual inconsistencies or contradictions. Surface evidence references and note any apparent gaps in the record or missing documentation.',
+    features: { ...DEFAULT_FEATURES },
   },
 
   consulting: {
@@ -211,6 +266,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateCta: 'Add first deliverable',
     aiContext: 'You are assisting a consultant. Focus on client value delivery, project progress, risks, and actionable recommendations. Frame insights in terms of client impact.',
     analysisFraming: 'Extract project progress, deliverable status, risks, and key recommendations. Identify milestones achieved, outstanding commitments, and any scope or timeline concerns.',
+    features: { ...DEFAULT_FEATURES },
   },
 }
 
