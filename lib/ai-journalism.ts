@@ -1,29 +1,7 @@
 // ── Journalism-specific AI analysis functions ─────────────────────────────────
 import { chat } from './ai-providers'
 import { maxContentLength } from './ai-providers'
-
-function extractJson(text: string): string {
-  const t = text.trim()
-  const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (fenced) {
-    const candidate = fenced[1].trim()
-    try { JSON.parse(candidate); return candidate } catch {}
-  }
-  const start = t.indexOf('{')
-  const end = t.lastIndexOf('}')
-  if (start !== -1 && end > start) {
-    const candidate = t.slice(start, end + 1)
-    try { JSON.parse(candidate); return candidate } catch {}
-  }
-  // Also try array extraction
-  const aStart = t.indexOf('[')
-  const aEnd = t.lastIndexOf(']')
-  if (aStart !== -1 && aEnd > aStart) {
-    const candidate = t.slice(aStart, aEnd + 1)
-    try { JSON.parse(candidate); return candidate } catch {}
-  }
-  throw new Error(`No valid JSON in response (len=${t.length}, preview=${t.slice(0, 100)})`)
-}
+import { extractJsonFromText } from './utils'
 
 // ── Named Entity Extraction ───────────────────────────────────────────────────
 
@@ -64,7 +42,7 @@ Limits: max 30 entities. Only include entities explicitly named in the document.
 
   try {
     const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
+    const json = extractJsonFromText(text)
     const parsed = JSON.parse(json) as { entities?: unknown[] }
     if (!Array.isArray(parsed.entities)) return []
     const VALID_ENTITY_TYPES = new Set<string>(['person', 'organisation', 'location', 'date', 'financial'])
@@ -112,7 +90,7 @@ Limits: max 20 events. Only include events with a clear date reference. Exclude 
 
   try {
     const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
+    const json = extractJsonFromText(text)
     const parsed = JSON.parse(json) as { events?: unknown[] }
     if (!Array.isArray(parsed.events)) return []
     return (parsed.events as JournalismTimelineEvent[]).filter(
@@ -172,7 +150,7 @@ Return an empty array if no genuine signs of redaction are found. Do not flag no
 
   try {
     const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
+    const json = extractJsonFromText(text)
     const parsed = JSON.parse(json) as { redactions?: unknown[] }
     if (!Array.isArray(parsed.redactions)) return []
     return (parsed.redactions as RedactionEntry[]).filter(
@@ -250,7 +228,7 @@ Limits: max 5 passages, 5 figures, 5 entitiesAdded, 5 entitiesRemoved, 3 possibl
 
   try {
     const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
+    const json = extractJsonFromText(text)
     const parsed = JSON.parse(json) as Partial<JournalismComparison>
     return {
       headline: typeof parsed.headline === 'string' ? parsed.headline : '',
@@ -309,7 +287,7 @@ Only include claims that genuinely need verification — skip obvious background
 
   try {
     const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-    const json = extractJson(text)
+    const json = extractJsonFromText(text)
     const parsed = JSON.parse(json)
     if (!Array.isArray(parsed)) return []
     return parsed

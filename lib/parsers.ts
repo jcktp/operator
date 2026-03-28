@@ -22,14 +22,17 @@ export function getMimeType(fileType: string): string {
 export async function extractContent(buffer: Buffer, fileType: string): Promise<ParseResult> {
   const ft = fileType.toLowerCase()
   switch (ft) {
-    case 'pdf':  return { text: await extractPdf(buffer) }
+    case 'pdf':  return { text: normalizeContent(await extractPdf(buffer)) }
     case 'docx':
-    case 'doc':  return extractWord(buffer)
+    case 'doc': {
+      const r = await extractWord(buffer)
+      return { ...r, text: normalizeContent(r.text) }
+    }
     case 'xlsx':
     case 'xls':  return extractExcel(buffer)
     case 'csv':  return extractCsv(buffer)
-    case 'txt':
-    case 'md':   return { text: buffer.toString('utf-8') }
+    case 'txt':  return { text: normalizeContent(buffer.toString('utf-8')) }
+    case 'md':   return { text: buffer.toString('utf-8') }   // keep markdown structure intact
     default:
       // Image types — caller handles description via AI vision
       if (IMAGE_TYPES.has(ft)) return { text: '', displayContent: `image:pending` }
@@ -104,6 +107,41 @@ function extractCsv(buffer: Buffer): ParseResult {
     text: textOutput,
     displayContent: JSON.stringify({ type: 'csv', rows }),
   }
+}
+
+export function normalizeContent(raw: string): string {
+  // Detect repeated lines (page headers/footers that appear ≥4 times)
+  const lineCounts = new Map<string, number>()
+  for (const line of raw.split('\n')) {
+    const t = line.trim()
+    if (t.length >= 15 && t.length <= 120) {
+      lineCounts.set(t, (lineCounts.get(t) ?? 0) + 1)
+    }
+  }
+  const boilerplate = new Set(
+    [...lineCounts.entries()].filter(([, n]) => n >= 4).map(([l]) => l)
+  )
+
+  const out: string[] = []
+  for (const rawLine of raw.split('\n')) {
+    const line = rawLine.trim()
+    if (!line) { out.push(''); continue }
+    if (boilerplate.has(line)) continue
+    // Decorative separators: ---, ===, ***, ~~~, •••, etc.
+    if (/^[\-=_*~•]{3,}$/.test(line)) continue
+    // Bare page numbers
+    if (/^\d{1,4}$/.test(line)) continue
+    // "Page N" / "Page N of M"
+    if (/^page\s+\d+(\s+of\s+\d+)?$/i.test(line)) continue
+    // Lines made of a single repeated character (e.g. "........", "________")
+    if (line.length > 3 && new Set(line.replace(/\s/g, '')).size === 1) continue
+    out.push(line)
+  }
+
+  return out.join('\n')
+    .replace(/[ \t]{2,}/g, ' ')    // collapse horizontal whitespace
+    .replace(/\n{3,}/g, '\n\n')    // max one blank line between paragraphs
+    .trim()
 }
 
 export function getFileType(filename: string): string {

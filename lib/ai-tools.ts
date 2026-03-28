@@ -63,11 +63,35 @@ const TOOL_FETCH: ToolDef = {
   },
 }
 
-export function availableTools(enableNoteTool = false): ToolDef[] {
-  const tools: ToolDef[] = enableNoteTool ? [TOOL_SAVE_JOURNAL] : []
-  if (process.env.OLLAMA_WEB_ACCESS !== 'true') return tools
-  tools.push(TOOL_WEATHER, TOOL_FETCH)
-  if (process.env.BRAVE_SEARCH_KEY) tools.push(TOOL_SEARCH)
+const NOTE_SAVE_PATTERNS = [
+  /\b(save|add|create|write|log|store|put)\b.{0,30}\b(note|journal|entry|log)\b/i,
+  /\b(note|journal|entry)\b.{0,30}\b(save|add|create|write|log|store)\b/i,
+  /\bsave (this|that|it)\b/i,
+  /\badd (this|that|it) to (my )?(journal|notebook|notes)\b/i,
+  /\bkeep (a |this )?(note|record)\b/i,
+]
+
+export function hasNoteSaveIntent(messages: Array<{ role: string; content: string }>): boolean {
+  const lastUser = [...messages].reverse().find(m => m.role === 'user')
+  if (!lastUser) return false
+  return NOTE_SAVE_PATTERNS.some(p => p.test(lastUser.content))
+}
+
+export function availableTools(includeJournal = true): ToolDef[] {
+  const provider = (process.env.AI_PROVIDER ?? 'ollama') as string
+  const tools: ToolDef[] = []
+
+  // Journal tool: always for cloud providers; for Ollama only when the user
+  // explicitly asked to save — small models invoke it unprompted otherwise,
+  // which produces empty responses instead of answering the question.
+  if (provider !== 'ollama' || includeJournal) tools.push(TOOL_SAVE_JOURNAL)
+
+  // Web access tools: available for all providers when the user has enabled web access
+  if (process.env.OLLAMA_WEB_ACCESS === 'true') {
+    tools.push(TOOL_WEATHER, TOOL_FETCH)
+    if (process.env.BRAVE_SEARCH_KEY) tools.push(TOOL_SEARCH)
+  }
+
   return tools
 }
 

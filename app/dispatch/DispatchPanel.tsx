@@ -192,20 +192,70 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: next, context: extraContext, persona, userMemory }),
       })
-      const data = await res.json() as { content?: string; error?: string; noteSaved?: { title: string; folder: string } | null }
-      const reply: Message = {
-        role: 'assistant',
-        content: data.content ?? `Error: ${data.error ?? 'Unknown error'}`,
+
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        const reply: Message = { role: 'assistant', content: `Error: ${data.error ?? 'Unknown error'}` }
+        const withReply = [...next, reply]
+        setMessages(withReply)
+        await autoSave(withReply, chatId)
+        return
       }
-      const withReply = [...next, reply]
-      setMessages(withReply)
-      await autoSave(withReply, chatId)
-      if (data.noteSaved) {
-        setSavedNoteTitle(data.noteSaved.title)
+
+      // Stream NDJSON lines from the server (fix #5)
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      let fullContent = ''
+      let savedNote: { title: string; folder: string } | null = null
+      let firstChunk = true
+
+      const addOrUpdate = (content: string) => {
+        if (firstChunk) {
+          firstChunk = false
+          setLoading(false) // hide bouncing dots once text arrives
+          setMessages(m => [...m, { role: 'assistant' as const, content }])
+        } else {
+          setMessages(m => {
+            const arr = [...m]
+            arr[arr.length - 1] = { role: 'assistant', content }
+            return arr
+          })
+        }
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const ev = JSON.parse(line) as { t: string; v?: string; noteSaved?: { title: string; folder: string } | null; error?: string }
+            if (ev.t === 'chunk' && ev.v) {
+              fullContent += ev.v
+              addOrUpdate(fullContent)
+            } else if (ev.t === 'done') {
+              savedNote = ev.noteSaved ?? null
+            } else if (ev.t === 'error') {
+              fullContent = `Error: ${ev.error ?? 'Unknown error'}`
+              addOrUpdate(fullContent)
+            }
+          } catch {}
+        }
+      }
+
+      await autoSave([...next, { role: 'assistant' as const, content: fullContent || 'No response.' }], chatId)
+
+      if (savedNote) {
+        setSavedNoteTitle(savedNote.title)
         if (savedNoteTimerRef.current) clearTimeout(savedNoteTimerRef.current)
         savedNoteTimerRef.current = setTimeout(() => setSavedNoteTitle(null), 4000)
       }
-      // Refresh memory in case extractMemoryFacts added new facts in the background
+
+      // Refresh memory in case background extraction added new facts
       fetch('/api/dispatch/memory').then(r => r.json()).then((d: { memory?: string }) => {
         setUserMemory(d.memory ?? '')
       }).catch(() => {})
@@ -450,7 +500,7 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
           </div>
         ))}
 
-        {loading && (
+        {loading && messages.at(-1)?.role !== 'assistant' && (
           <div className="flex justify-start">
             <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3">
               <div className="flex gap-1">

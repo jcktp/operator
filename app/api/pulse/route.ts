@@ -35,10 +35,14 @@ export async function POST(req: NextRequest) {
   try {
     const items = await fetchFeedItems(url, type)
     if (items.length > 0) {
+      const seenUrls = new Set<string>()
+      const seenTitles = new Set<string>()
       for (const item of items) {
-        try {
-          await prisma.pulseItem.create({ data: { ...item, feedId: feed.id } })
-        } catch { /* skip */ }
+        const isDupe = item.url ? seenUrls.has(item.url) : seenTitles.has(item.title)
+        if (isDupe) continue
+        await prisma.pulseItem.create({ data: { ...item, feedId: feed.id } })
+        if (item.url) seenUrls.add(item.url)
+        else seenTitles.add(item.title)
       }
       await prisma.pulseFeed.update({ where: { id: feed.id }, data: { lastFetched: new Date() } })
     }

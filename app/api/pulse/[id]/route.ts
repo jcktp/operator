@@ -49,14 +49,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: String(e) }, { status: 502 })
   }
 
+  // Load existing item keys for this feed so we can skip duplicates
+  const existing = await prisma.pulseItem.findMany({
+    where: { feedId: id },
+    select: { url: true, title: true },
+  })
+  const existingUrls = new Set(existing.map(e => e.url).filter(Boolean) as string[])
+  const existingTitles = new Set(existing.filter(e => !e.url).map(e => e.title))
+
   let added = 0
   for (const item of items) {
-    try {
-      await prisma.pulseItem.create({ data: { ...item, feedId: id } })
-      added++
-    } catch {
-      // skip exact duplicates
-    }
+    const isDupe = item.url
+      ? existingUrls.has(item.url)
+      : existingTitles.has(item.title)
+    if (isDupe) continue
+    await prisma.pulseItem.create({ data: { ...item, feedId: id } })
+    // Track so we don't re-insert within the same batch
+    if (item.url) existingUrls.add(item.url)
+    else existingTitles.add(item.title)
+    added++
   }
   await prisma.pulseFeed.update({ where: { id }, data: { lastFetched: new Date() } })
 

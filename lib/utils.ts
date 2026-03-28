@@ -74,6 +74,30 @@ export interface Question {
   priority: 'high' | 'medium' | 'low'
 }
 
+// ── JSON extraction helper (shared by ai.ts and ai-journalism.ts) ────────────
+// Handles fenced code blocks, bare objects, and bare arrays.
+export function extractJsonFromText(text: string): string {
+  const t = text.trim()
+  const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fenced) {
+    const candidate = fenced[1].trim()
+    try { JSON.parse(candidate); return candidate } catch {}
+  }
+  const start = t.indexOf('{')
+  const end = t.lastIndexOf('}')
+  if (start !== -1 && end > start) {
+    const candidate = t.slice(start, end + 1)
+    try { JSON.parse(candidate); return candidate } catch {}
+  }
+  const aStart = t.indexOf('[')
+  const aEnd = t.lastIndexOf(']')
+  if (aStart !== -1 && aEnd > aStart) {
+    const candidate = t.slice(aStart, aEnd + 1)
+    try { JSON.parse(candidate); return candidate } catch {}
+  }
+  throw new Error(`No valid JSON in response (len=${t.length}, preview=${t.slice(0, 100)})`)
+}
+
 export const AREA_COLORS: Record<string, string> = {
   Finance: 'bg-sky-50 text-sky-700 border-sky-200',
   'HR & People': 'bg-violet-50 text-violet-700 border-violet-200',

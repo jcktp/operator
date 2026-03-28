@@ -27,7 +27,12 @@ export async function POST(req: NextRequest) {
 
     // Save original file to ~/Documents/Operator Reports/{area}/
     let savedFileName = file.name
-    try { savedFileName = saveReportFile(buffer, file.name, area).split('/').pop() ?? file.name } catch (e) {
+    let savedFilePath: string | null = null
+    try {
+      const fullPath = saveReportFile(buffer, file.name, area)
+      savedFileName = fullPath.split('/').pop() ?? file.name
+      savedFilePath = join(area, savedFileName)
+    } catch (e) {
       console.warn('Could not save to reports folder:', e)
     }
 
@@ -48,6 +53,7 @@ export async function POST(req: NextRequest) {
           rawContent: description,
           displayContent: `image:${relativePath}`,
           imagePath: relativePath,
+          filePath: savedFilePath,
           area,
           directReportId: directReportId || null,
           reportDate: reportDate ? new Date(reportDate) : null,
@@ -161,6 +167,7 @@ export async function POST(req: NextRequest) {
         comparison: comparison ? JSON.stringify(comparison) : null,
         resolvedFlags: resolvedFlagsJson,
         displayContent,
+        filePath: savedFilePath,
       },
       include: { directReport: true },
     })

@@ -708,11 +708,9 @@ export default function PulsePage() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         {item.url && (
                           <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            href={`/browser?url=${encodeURIComponent(item.url)}`}
                             className="p-1.5 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100"
-                            title="Open source"
+                            title="Open in Operator Browser"
                           >
                             <ExternalLink size={13} />
                           </a>

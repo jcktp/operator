@@ -473,7 +473,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
       {/* Raw content */}
       <section>
-        <details className="group">
+        <details className="group" open={['xlsx', 'xls', 'csv', 'docx', 'doc', 'pdf'].includes(report.fileType) || undefined}>
           <summary className="cursor-pointer text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 list-none hover:text-gray-600 transition-colors">
             <FileText size={11} />
             {labels.content}
@@ -481,7 +481,13 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             <span className="ml-1 text-gray-300 hidden group-open:inline">▾</span>
           </summary>
           <div className="mt-3 bg-white border border-gray-200 rounded-xl p-4">
-            <RawContent content={report.rawContent} displayContent={report.displayContent ?? undefined} fileType={report.fileType} reportId={report.id} />
+            <RawContent
+              content={report.rawContent}
+              displayContent={report.displayContent ?? undefined}
+              fileType={report.fileType}
+              reportId={report.id}
+              hasFile={!!report.filePath}
+            />
           </div>
         </details>
       </section>

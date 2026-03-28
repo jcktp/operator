@@ -43,6 +43,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return <>{children}</>
   }
 
+  // Browser page: full-height, full-width, no max-width, no padding constraints
+  if (pathname === '/browser') {
+    return (
+      <div className="flex pt-14 h-screen overflow-hidden">
+        <IdleGuard autoLockMinutes={autoLockMinutes} />
+        <main className="flex-1 min-w-0 overflow-hidden">
+          {children}
+        </main>
+      </div>
+    )
+  }
+
   // Idle auto-lock (runs on all authenticated pages)
 
   if (open) {

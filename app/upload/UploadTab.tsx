@@ -60,8 +60,16 @@ export default function UploadTab() {
     const linkType = detectLinkType(url)
     if (!linkType) { setLinkError('Paste a Google Docs, Sheets, or Slides link'); return }
     setLinkError('')
-    setQueue(prev => [...prev, { id: fileId(), type: 'link', url, linkType, title: '', area: defaultArea, status: 'pending' }])
+    const id = fileId()
+    setQueue(prev => [...prev, { id, type: 'link', url, linkType, title: '', area: defaultArea, status: 'pending' }])
     setLinkInput('')
+    // Auto-fetch document title in the background
+    fetch(`/api/upload-link?url=${encodeURIComponent(url)}`)
+      .then(r => r.json())
+      .then((d: { title?: string }) => {
+        if (d.title) setQueue(prev => prev.map(q => q.id === id ? { ...q, title: d.title! } : q))
+      })
+      .catch(() => {})
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {

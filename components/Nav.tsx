@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from '@/components/icons'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio, Globe } from '@/components/icons'
 import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, type LucideIcon } from 'lucide-react'
 
 const EXTRA_NAV_ICONS: Record<string, LucideIcon> = {
@@ -58,6 +58,7 @@ export default function Nav() {
     { href: '/directs', label: config.navPeople, icon: Users },
     { href: '/journal', label: config.navJournal, icon: BookOpen },
     { href: '/pulse', label: 'Pulse', icon: Radio },
+    { href: '/browser', label: 'Browser', icon: Globe },
     { href: '/dispatch', label: 'Dispatch', icon: MessageSquare },
     { href: '/settings', label: 'Settings', icon: Settings },
   ]

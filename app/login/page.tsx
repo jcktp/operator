@@ -59,6 +59,13 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    // fix #9: require explicit confirmation before the final attempt
+    if (attemptsLeft === 1) {
+      const confirmed = window.confirm(
+        'Warning: This is your final login attempt.\n\nAn incorrect password will permanently delete Operator and all your data with no recovery option.\n\nContinue?'
+      )
+      if (!confirmed) return
+    }
     setSubmitting(true)
     setError('')
     try {

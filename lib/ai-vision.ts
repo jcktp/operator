@@ -1,5 +1,6 @@
 // ── Image description (vision) ───────────────────────────────────────────────
 import { getProvider } from './ai-providers'
+import { getSecret } from './settings'
 
 const VISION_PROMPT = 'Describe this image in detail. Include any visible text, numbers, people (without identifying them), objects, and context that would be useful for research or reporting purposes.'
 
@@ -9,7 +10,7 @@ export async function describeImage(buffer: Buffer, mimeType: string): Promise<s
 
   try {
     if (provider === 'anthropic') {
-      const key = process.env.ANTHROPIC_API_KEY
+      const key = getSecret('ANTHROPIC_API_KEY')
       if (!key) throw new Error('No key')
       const model = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001'
       const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -29,7 +30,7 @@ export async function describeImage(buffer: Buffer, mimeType: string): Promise<s
     }
 
     if (provider === 'openai') {
-      const key = process.env.OPENAI_API_KEY
+      const key = getSecret('OPENAI_API_KEY')
       if (!key) throw new Error('No key')
       const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -49,7 +50,7 @@ export async function describeImage(buffer: Buffer, mimeType: string): Promise<s
     }
 
     if (provider === 'google') {
-      const key = process.env.GOOGLE_API_KEY
+      const key = getSecret('GOOGLE_API_KEY')
       if (!key) throw new Error('No key')
       const model = process.env.GOOGLE_MODEL ?? 'gemini-2.5-flash'
       const res = await fetch(

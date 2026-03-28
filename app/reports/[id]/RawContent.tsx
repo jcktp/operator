@@ -169,6 +169,19 @@ function TextDisplay({ content }: { content: string }) {
   return <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">{nodes}</div>
 }
 
+// ── PDF preview ─────────────────────────────────────────────────────────────
+
+function PdfDisplay({ reportId }: { reportId: string }) {
+  return (
+    <iframe
+      src={`/api/reports/${reportId}/file`}
+      className="w-full rounded border border-gray-200"
+      style={{ height: '720px' }}
+      title="PDF preview"
+    />
+  )
+}
+
 // ── Main component ──────────────────────────────────────────────────────────
 
 type DisplayMode = 'formatted' | 'raw'
@@ -178,11 +191,13 @@ export default function RawContent({
   displayContent,
   fileType,
   reportId,
+  hasFile = false,
 }: {
   content: string
   displayContent?: string
   fileType: string
   reportId?: string
+  hasFile?: boolean
 }) {
   const [mode, setMode] = useState<DisplayMode>('formatted')
   const [copied, setCopied] = useState(false)
@@ -224,7 +239,8 @@ export default function RawContent({
     if (isCsv && displayContent) return <CsvDisplay json={displayContent} />
     // Word: HTML from mammoth
     if (isWord && displayContent) return <WordDisplay html={displayContent} />
-    // PDF / txt / md / fallback
+    // PDF: embed original file if available, otherwise formatted text
+    if (isPdf && hasFile && reportId) return <PdfDisplay reportId={reportId} />
     return <TextDisplay content={content} />
   }
 

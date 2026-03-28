@@ -58,6 +58,7 @@ model Report {
   reportDate     DateTime?
   resolvedFlags  String?
   imagePath      String?
+  filePath       String?  // relative path within getReportsRoot(), set for uploaded (non-image) files
   isLongitudinal Boolean       @default(false)
   seriesId       String?
   series         ReportSeries? @relation(fields: [seriesId], references: [id])
@@ -158,6 +159,16 @@ model TimelineEvent {
 
   @@index([reportId])
   @@index([dateSortKey])
+}
+
+model BrowserBookmark {
+  id        String   @id @default(uuid())
+  url       String
+  title     String
+  favicon   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model ReportJournalism {
