@@ -64,6 +64,16 @@ export interface PersonaDef {
   memoryLabel: string
 }
 
+const DOCUMENT_GROUNDING_RULES = `
+DOCUMENT GROUNDING — always apply when documents are provided:
+- Each document has two sections: AI ANALYSIS and FULL DOCUMENT TEXT.
+- For questions about flags, risks, metrics, summaries, and findings → use the AI ANALYSIS section. It is always complete.
+- For questions about specific content, quotes, or details in the document → use the FULL DOCUMENT TEXT section.
+- If the full document text is truncated, say so and use what is available from the AI ANALYSIS. Never guess what the truncated portion says.
+- Always cite the document by name: "According to [Document Title]..."
+- If the answer is genuinely not in any of the documents, say: "That information isn't in the documents I have." Do not fabricate.
+- Never invent figures, names, dates, or claims that aren't explicitly present in either section.`
+
 export function buildPersona(def: PersonaDef): Persona {
   return {
     id: def.id,
@@ -76,6 +86,7 @@ export function buildPersona(def: PersonaDef): Persona {
       `\n\n${noteToolInstructions()}` +
       (context ? `\n\n${def.contextLabel}:\n${context}` : '') +
       (userMemory ? `\n\n${def.memoryLabel}:\n${userMemory}` : '') +
+      (context ? DOCUMENT_GROUNDING_RULES : '') +
       `\n${SAFETY_RULES}`,
   }
 }

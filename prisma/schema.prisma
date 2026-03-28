@@ -11,6 +11,7 @@ model DirectReport {
   name           String
   title          String
   email          String?
+  phone          String?
   area           String
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt

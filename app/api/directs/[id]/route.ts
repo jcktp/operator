@@ -10,10 +10,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const body = await req.json()
-  const { name, title, email, area } = body
+  const { name, title, email, phone, area } = body
   const direct = await prisma.directReport.update({
     where: { id },
-    data: { name, title, email, area },
+    data: { name, title, email, phone, area },
   })
   return NextResponse.json({ direct })
 }

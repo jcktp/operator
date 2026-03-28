@@ -23,14 +23,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, title, email, area } = body
+    const { name, title, email, phone, area } = body
 
     if (!name || !title || !area) {
       return NextResponse.json({ error: 'Name, title, and area are required' }, { status: 400 })
     }
 
     const direct = await prisma.directReport.create({
-      data: { name, title, email: email || null, area },
+      data: { name, title, email: email || null, phone: phone || null, area },
     })
     return NextResponse.json({ direct })
   } catch (e) {
