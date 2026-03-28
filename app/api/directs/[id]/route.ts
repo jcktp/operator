@@ -10,13 +10,20 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const body = await req.json()
-  const { name, title, email, phone, area } = body
+  const { name, title, email, phone, area, notes } = body
   const direct = await prisma.directReport.update({
     where: { id },
     data: { name, title, email, area },
   })
-  if (phone !== undefined) {
-    await prisma.$executeRawUnsafe('UPDATE "DirectReport" SET "phone" = ? WHERE "id" = ?', phone || null, id)
+  const extraUpdates: string[] = []
+  const extraParams: (string | null)[] = []
+  if (phone !== undefined) { extraUpdates.push('"phone" = ?'); extraParams.push(phone || null) }
+  if (notes !== undefined) { extraUpdates.push('"notes" = ?'); extraParams.push(notes || null) }
+  if (extraUpdates.length > 0) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "DirectReport" SET ${extraUpdates.join(', ')} WHERE "id" = ?`,
+      ...extraParams, id
+    )
   }
-  return NextResponse.json({ direct: { ...direct, phone: phone ?? null } })
+  return NextResponse.json({ direct: { ...direct, phone: phone ?? null, notes: notes ?? null } })
 }
