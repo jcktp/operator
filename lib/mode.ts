@@ -25,6 +25,8 @@ export interface ModeFeatures {
   defaultFeeds: boolean
   /** Journal page description override */
   journalDescription: string | null
+  /** Metrics board page — aggregated KPIs across all documents */
+  metricsBoard: boolean
   /** Extra nav items inserted after the library link (icon: lucide icon name) */
   extraNavItems: Array<{ href: string; label: string; icon: string }>
 }
@@ -75,6 +77,7 @@ const DEFAULT_FEATURES: ModeFeatures = {
   keywordMonitoring: false,
   investigationTemplate: false,
   defaultFeeds: false,
+  metricsBoard: false,
   journalDescription: null,
   extraNavItems: [] as Array<{ href: string; label: string; icon: string }>,
 }
@@ -112,7 +115,9 @@ export const MODES: Record<AppMode, ModeConfig> = {
     features: {
       ...DEFAULT_FEATURES,
       documentComparison: true,
+      metricsBoard: true,
       journalDescription: 'Leadership notes organised by theme — decisions, strategy, reflections',
+      extraNavItems: [{ href: '/metrics', label: 'Metrics', icon: 'BarChart2' }],
     },
   },
 
@@ -188,6 +193,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
       timeline: true,
       documentComparison: true,
       journalDescription: 'Team notes organised by sprint — retrospectives, blockers, decisions',
+      extraNavItems: [{ href: '/timeline', label: 'Timeline', icon: 'Clock' }],
     },
   },
 
