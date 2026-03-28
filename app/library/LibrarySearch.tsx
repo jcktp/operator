@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Search, X, ArrowRight, GitCompare, Clock, EyeOff, CheckSquare, Square, Layers, Filter } from 'lucide-react'
+import { Search, X, ArrowRight, GitCompare, Clock, EyeOff, CheckSquare, Square, Layers, ChevronLeft, ChevronRight } from 'lucide-react'
+
+const PAGE_SIZE = 25
 import { cn, formatRelativeDate, formatDate, AREA_COLORS, parseJsonSafe } from '@/lib/utils'
 import type { Metric } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
@@ -43,6 +45,9 @@ export default function LibrarySearch({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [timelineOpen, setTimelineOpen] = useState(false)
   const [redactionFilter, setRedactionFilter] = useState(false)
+  const [page, setPage] = useState(1)
+
+  useEffect(() => { setPage(1) }, [query, redactionFilter])
 
   const q = query.trim().toLowerCase()
   const textFiltered = q.length < 1 ? null : reports.filter(r => {
@@ -68,6 +73,9 @@ export default function LibrarySearch({
   }
 
   const list = filtered ?? reports
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = list.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   return (
     <>
@@ -132,7 +140,7 @@ export default function LibrarySearch({
       )}
 
       <div className="space-y-3">
-        {list.map((report) => {
+        {pageItems.map((report) => {
           const metrics    = parseJsonSafe<Metric[]>(report.metrics, [])
           const comparison = parseJsonSafe<Comparison | null>(report.comparison, null)
           const questions  = parseJsonSafe<{ text: string; priority: string }[]>(report.questions, [])
@@ -244,6 +252,54 @@ export default function LibrarySearch({
           <p className="text-sm text-gray-400 text-center py-12">No {modeConfig.documentLabelPlural.toLowerCase()} match your search.</p>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-gray-400">
+            {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, list.length)} of {list.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft size={13} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
+              .reduce<(number | '…')[]>((acc, n, i, arr) => {
+                if (i > 0 && (n as number) - (arr[i - 1] as number) > 1) acc.push('…')
+                acc.push(n)
+                return acc
+              }, [])
+              .map((n, i) =>
+                n === '…' ? (
+                  <span key={`e-${i}`} className="px-1 text-xs text-gray-400">…</span>
+                ) : (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n as number)}
+                    className={cn(
+                      'w-7 h-7 rounded-lg text-xs font-medium transition-colors',
+                      safePage === n ? 'bg-gray-900 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    )}
+                  >
+                    {n}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight size={13} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Combined timeline modal */}
       {timelineOpen && selectedIds.size > 0 && (

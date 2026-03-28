@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search, X, ChevronDown, ChevronRight, GitFork } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+const PAGE_SIZE = 25
 import { formatRelativeDate } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 
@@ -25,11 +28,19 @@ export default function EntitiesOverviewSearch({
 }) {
   const [query, setQuery] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [page, setPage] = useState(1)
 
   const q = query.trim().toLowerCase()
   const filtered = q
     ? entities.filter(e => e.name.toLowerCase().includes(q) || e.contexts.some(c => c.toLowerCase().includes(q)))
     : entities
+
+  // Reset to page 1 when search changes
+  useEffect(() => { setPage(1) }, [query])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   const toggleExpand = (key: string) => {
     setExpanded(prev => {
@@ -64,8 +75,12 @@ export default function EntitiesOverviewSearch({
         </p>
       )}
 
+      {q && filtered.length > 0 && totalPages > 1 && (
+        <p className="text-xs text-gray-400 mb-3">Showing page {safePage} of {totalPages}</p>
+      )}
+
       <div className="space-y-2">
-        {filtered.map(entity => {
+        {pageItems.map(entity => {
           const key = `${entity.type}::${entity.name}`
           const isExpanded = expanded.has(key)
           return (
@@ -122,6 +137,54 @@ export default function EntitiesOverviewSearch({
           <p className="text-sm text-gray-400 text-center py-12">No entities match your search.</p>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-xs text-gray-400">
+            {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              ←
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
+              .reduce<(number | '…')[]>((acc, n, i, arr) => {
+                if (i > 0 && (n as number) - (arr[i - 1] as number) > 1) acc.push('…')
+                acc.push(n)
+                return acc
+              }, [])
+              .map((n, i) =>
+                n === '…' ? (
+                  <span key={`e-${i}`} className="px-1 text-xs text-gray-400">…</span>
+                ) : (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n as number)}
+                    className={cn(
+                      'w-7 h-7 rounded-lg text-xs font-medium transition-colors',
+                      safePage === n ? 'bg-gray-900 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    )}
+                  >
+                    {n}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              →
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
