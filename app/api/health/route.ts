@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { cpus, loadavg, homedir } from 'os'
+import { cpus, loadavg, homedir, totalmem } from 'os'
 import * as fs from 'fs'
 import * as path from 'path'
 import { prisma } from '@/lib/db'
@@ -37,18 +37,22 @@ function worst(...levels: Level[]): Level {
 
 export async function GET() {
   // ── App memory ────────────────────────────────────────────────────────────
-  // Use heapUsed, not RSS — RSS includes the entire Next.js/Turbopack process
-  // which is 500-800 MB even at idle in dev mode and is not a useful signal.
+  // Thresholds are relative to total system RAM so they stay quiet on well-spec'd
+  // machines and only fire when memory usage is genuinely dangerous.
+  // warn at 35% of system RAM, error at 55% — on a 16 GB machine that's ~5.6 GB / ~8.8 GB.
   const mem = process.memoryUsage()
   const rss = Math.round(mem.rss / 1024 / 1024)       // MB — shown for info only
-  const heap = Math.round(mem.heapUsed / 1024 / 1024) // MB — used for thresholds
-  const memStatus: Level = heap > 900 ? 'error' : heap > 500 ? 'warn' : 'ok'
+  const heap = Math.round(mem.heapUsed / 1024 / 1024) // MB — displayed value
+  const systemRamMb = Math.round(totalmem() / 1024 / 1024)
+  const warnMb = Math.round(systemRamMb * 0.35)
+  const errorMb = Math.round(systemRamMb * 0.55)
+  const memStatus: Level = rss > errorMb ? 'error' : rss > warnMb ? 'warn' : 'ok'
 
   // ── CPU load ──────────────────────────────────────────────────────────────
   const load1 = loadavg()[0]
   const cores = cpus().length
   const loadPct = Math.round((load1 / cores) * 100)
-  const cpuStatus: Level = loadPct > 90 ? 'error' : loadPct > 70 ? 'warn' : 'ok'
+  const cpuStatus: Level = loadPct > 95 ? 'error' : loadPct > 85 ? 'warn' : 'ok'
 
   // ── Settings ──────────────────────────────────────────────────────────────
   let s: Record<string, string> = {}
@@ -112,7 +116,7 @@ export async function GET() {
   return NextResponse.json({
     status: worst(aiStatus, memStatus, cpuStatus, storageStatus),
     ai: { status: aiStatus, label: aiLabel, detail: aiDetail },
-    memory: { rss, heap, status: memStatus },
+    memory: { rss, heap, status: memStatus, systemRamMb, warnMb, errorMb },
     cpu: { load: Math.round(load1 * 10) / 10, loadPct, status: cpuStatus },
     storage: { totalMb, totalGb: Math.round(totalGb * 10) / 10, status: storageStatus, thresholdGb },
   })

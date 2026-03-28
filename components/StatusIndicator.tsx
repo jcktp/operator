@@ -9,7 +9,7 @@ type Level = 'ok' | 'warn' | 'error' | 'loading'
 interface HealthData {
   status: Level
   ai: { status: Level; label: string; detail: string }
-  memory: { rss: number; heap: number; status: Level }
+  memory: { rss: number; heap: number; status: Level; systemRamMb: number; warnMb: number; errorMb: number }
   cpu: { load: number; loadPct: number; status: Level }
   storage: { totalMb: number; totalGb: number; status: Level; thresholdGb: number }
 }
@@ -153,7 +153,7 @@ export default function StatusIndicator() {
                   </span>
                 </div>
                 <p className="text-[11px] text-gray-500 mt-0.5">
-                  {data.memory.rss} MB total process · heap used shown
+                  {data.memory.rss} MB process RSS · {Math.round(data.memory.systemRamMb / 1024)} GB system RAM · warn at {data.memory.warnMb} MB
                 </p>
               </div>
             </div>
