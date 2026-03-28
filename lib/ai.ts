@@ -3,6 +3,7 @@ import type { Metric, Insight, Question } from './utils'
 import { getPersonasForMode, type PersonaId } from './personas'
 import { getModeConfig } from './mode'
 import { chat, chatWithTools, getProvider, maxContentLength, type AIProvider, type ChatResult } from './ai-providers'
+import { buildPatternSummary, formatPatternSummary } from './patterns'
 
 export type { AIProvider }
 
@@ -340,11 +341,36 @@ Limits: max 4 crossInsights, 4 topQuestions. Only use what the reports contain.`
 // ── Catch-me-up digest ───────────────────────────────────────────────────────
 
 export async function generateCatchMeUp(
-  reports: Array<{ area: string; directName?: string; date: string; summary: string; metrics: string; insights: string }>
+  reports: Array<{
+    area: string
+    title?: string
+    directName?: string
+    date: string
+    summary: string
+    metrics: string
+    insights: string
+    questions?: string
+    reportDate?: string | null
+    createdAt?: string
+  }>
 ): Promise<string> {
   if (reports.length === 0) return 'No reports to catch up on yet.'
 
   const modeConfig = getModeConfig(process.env.APP_MODE)
+
+  // Build cross-report pattern summary
+  const patternReports = reports.map(r => ({
+    area: r.area,
+    title: r.title ?? r.area,
+    reportDate: r.reportDate ?? null,
+    createdAt: r.createdAt ?? r.date,
+    summary: r.summary ?? null,
+    metrics: r.metrics ?? null,
+    insights: r.insights ?? null,
+    questions: r.questions ?? null,
+  }))
+  const patterns = buildPatternSummary(patternReports)
+  const patternBlock = formatPatternSummary(patterns, modeConfig.documentLabel.toLowerCase())
 
   const reportsText = reports.slice(0, 15).map(r => {
     let metricsData: Metric[] = []
@@ -357,7 +383,11 @@ export async function generateCatchMeUp(
     return `[${r.area}${from}, ${r.date}] ${r.summary}${metricStr ? ` | Metrics: ${metricStr}` : ''}${riskStr ? ` | Flags: ${riskStr}` : ''}`
   }).join('\n')
 
-  const prompt = `You are briefing a ${modeConfig.label.toLowerCase()} who hasn't checked their reports in a while. Write a "catch me up" digest — a flowing narrative of 4-6 paragraphs covering what's been happening across the business. Lead with the most important developments, then cover each key area, and close with the top things they should act on or ask about. Write conversationally, as if speaking to them directly. No bullet points.
+  const patternSection = patternBlock
+    ? `\nThe following patterns have been automatically detected across multiple ${modeConfig.documentLabelPlural.toLowerCase()} — reference them specifically in your narrative when relevant:\n\n${patternBlock}\n`
+    : ''
+
+  const prompt = `You are briefing a ${modeConfig.label.toLowerCase()} who hasn't checked their reports in a while. Write a "catch me up" digest — a flowing narrative of 4-6 paragraphs covering what's been happening across the business. Lead with the most important developments, then cover each key area, and close with the top things they should act on or ask about. Write conversationally, as if speaking to them directly. No bullet points.${patternSection}
 
 Recent ${modeConfig.documentLabelPlural.toLowerCase()}:
 ${reportsText}`

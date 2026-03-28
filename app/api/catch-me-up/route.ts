@@ -12,9 +12,12 @@ export async function GET() {
       take: 20,
       select: {
         area: true,
+        title: true,
         summary: true,
         metrics: true,
         insights: true,
+        questions: true,
+        reportDate: true,
         createdAt: true,
         directReport: { select: { name: true } },
       },
@@ -23,11 +26,15 @@ export async function GET() {
     const digest = await generateCatchMeUp(
       reports.map(r => ({
         area: r.area,
+        title: r.title,
         directName: r.directReport?.name,
         date: r.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         summary: r.summary ?? '',
         metrics: r.metrics ?? '[]',
         insights: r.insights ?? '[]',
+        questions: r.questions ?? '[]',
+        reportDate: r.reportDate?.toISOString() ?? null,
+        createdAt: r.createdAt.toISOString(),
       }))
     )
 

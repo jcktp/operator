@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { parseJsonSafe } from '@/lib/utils'
 import type { Metric, Insight, Question } from '@/lib/utils'
 import { getModeConfig } from '@/lib/mode'
+import { buildPatternSummary, formatPatternSummary } from '@/lib/patterns'
 import DispatchPageClient from './DispatchPageClient'
 
 export const dynamic = 'force-dynamic'
@@ -13,7 +14,7 @@ export default async function DispatchPage() {
       orderBy: { createdAt: 'desc' },
       take: 20,
       select: {
-        id: true, title: true, area: true, reportDate: true, rawContent: true,
+        id: true, title: true, area: true, reportDate: true, createdAt: true, rawContent: true,
         summary: true, metrics: true, insights: true, questions: true,
         directReport: { select: { name: true } },
       },
@@ -60,9 +61,29 @@ export default async function DispatchPage() {
     ].join('\n')
   })
 
+  // Build cross-report pattern summary and prepend to context
+  const patternReports = reports.map(r => ({
+    area: r.area,
+    title: r.title,
+    reportDate: r.reportDate?.toISOString() ?? null,
+    createdAt: r.createdAt.toISOString(),
+    summary: r.summary,
+    metrics: r.metrics,
+    insights: r.insights,
+    questions: r.questions,
+  }))
+  const patterns = buildPatternSummary(patternReports)
+  const patternBlock = formatPatternSummary(patterns, modeConfig.documentLabel.toLowerCase())
+
   const contextLines = [
     `${reports.length} document${reports.length !== 1 ? 's' : ''} available. Each document below has two sections: AI ANALYSIS (complete, always reliable) and FULL DOCUMENT TEXT (may be truncated for very large documents).`,
     '',
+    ...(patternBlock ? [
+      '=== CROSS-DOCUMENT PATTERNS (automatically detected across all documents) ===',
+      patternBlock,
+      '=== END PATTERNS ===',
+      '',
+    ] : []),
     ...contextDocs,
   ]
 
