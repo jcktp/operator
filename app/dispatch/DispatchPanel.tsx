@@ -8,6 +8,7 @@ import { extractFileText } from './extractFileText'
 import { getPersonasForMode, type PersonaId } from '@/lib/personas'
 import { useMode } from '@/components/ModeContext'
 import { getSuggestions } from './dispatchSuggestions'
+import { useSettings } from '@/lib/use-settings'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -33,6 +34,7 @@ interface Props {
 
 export default function DispatchPanel({ context, onClose, initialChat, initialMessage }: Props) {
   const modeConfig = useMode()
+  const { settings, saveSetting } = useSettings()
   const personaMap = getPersonasForMode(modeConfig.id)
   const personaList = Object.values(personaMap)
   const [messages, setMessages] = useState<Message[]>(initialChat?.messages ?? [])
@@ -65,11 +67,12 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
   useEffect(() => { inputRef.current?.focus() }, [])
 
   useEffect(() => {
-    fetch('/api/settings').then(r => r.json()).then((d: { settings?: Record<string, string> }) => {
-      setWebAccess(d.settings?.ollama_web_access !== 'false')
-      setUserName(d.settings?.ceo_name ?? '')
-      setUserRole(d.settings?.user_role ?? '')
-    }).catch(() => {})
+    setWebAccess(settings.ollama_web_access !== 'false')
+    setUserName(settings.ceo_name ?? '')
+    setUserRole(settings.user_role ?? '')
+  }, [settings])
+
+  useEffect(() => {
     fetch('/api/dispatch/memory').then(r => r.json()).then((d: { memory?: string }) => {
       setUserMemory(d.memory ?? '')
     }).catch(() => {})
@@ -78,11 +81,7 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
   const toggleWebAccess = async () => {
     const next = !webAccess
     setWebAccess(next)
-    await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'ollama_web_access', value: next ? 'true' : 'false' }),
-    }).catch(() => {})
+    await saveSetting('ollama_web_access', next ? 'true' : 'false')
   }
 
   const autoSave = useCallback(async (msgs: Message[], currentId: string | null) => {

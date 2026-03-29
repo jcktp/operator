@@ -5,6 +5,7 @@ import { Rss, Plus, Trash2, RefreshCw, BookOpen, X, ExternalLink, Loader2, Chevr
 import { formatRelativeDate, cn } from '@/lib/utils'
 import { PULSE_DIRECTORY, DIRECTORY_CATEGORIES } from '@/lib/pulse-directory'
 import { useMode } from '@/components/ModeContext'
+import { useSettings } from '@/lib/use-settings'
 
 interface PulseItem {
   id: string
@@ -74,7 +75,8 @@ export default function PulsePage() {
   const [savingItemId, setSavingItemId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', url: '', type: 'rss' })
-  const [bskyConfigured, setBskyConfigured] = useState(false)
+  const { settings } = useSettings()
+  const bskyConfigured = !!(settings.bluesky_identifier && settings.bluesky_app_password)
   const [adding, setAdding] = useState(false)
   // Clear feed state
   const [clearingId, setClearingId] = useState<string | null>(null)
@@ -117,13 +119,6 @@ export default function PulsePage() {
   }, [])
 
   useEffect(() => { load() }, [load])
-
-  useEffect(() => {
-    fetch('/api/settings').then(r => r.json()).then((d: { settings?: Record<string, string> }) => {
-      const s = d.settings ?? {}
-      setBskyConfigured(!!(s.bluesky_identifier && s.bluesky_app_password))
-    }).catch(() => {})
-  }, [])
 
   // Init mode-specific default feeds on first visit
   useEffect(() => {

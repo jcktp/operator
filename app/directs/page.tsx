@@ -7,6 +7,7 @@ import { Users, Plus, Trash2, Loader2, X, ChevronDown, Search, Upload, ChevronLe
 import { useMode } from '@/components/ModeContext'
 import { cn } from '@/lib/utils'
 import ContactImporter from './ContactImporter'
+import { useSettings } from '@/lib/use-settings'
 
 interface DirectReport {
   id: string
@@ -24,6 +25,7 @@ const PAGE_SIZE = 25
 
 export default function DirectsPage() {
   const modeConfig = useMode()
+  const { settings } = useSettings()
   const [directs, setDirects] = useState<DirectReport[]>([])
   const [areas, setAreas] = useState<string[]>(modeConfig.defaultAreas)
   const [loading, setLoading] = useState(true)
@@ -47,21 +49,19 @@ export default function DirectsPage() {
 
   useEffect(() => {
     load()
-    fetch('/api/settings')
-      .then(r => r.json())
-      .then((data: { settings?: Record<string, string> }) => {
-        const s = data.settings ?? {}
-        if (s.custom_areas) {
-          try {
-            const parsed = JSON.parse(s.custom_areas) as string[]
-            if (Array.isArray(parsed) && parsed.length > 0) { setAreas(parsed); return }
-          } catch {}
-        }
-        setAreas(modeConfig.defaultAreas)
-      })
-      .catch(() => {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (settings.custom_areas) {
+      try {
+        const parsed = JSON.parse(settings.custom_areas) as string[]
+        if (Array.isArray(parsed) && parsed.length > 0) { setAreas(parsed); return }
+      } catch {}
+    }
+    setAreas(modeConfig.defaultAreas)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings])
 
   useEffect(() => { setPage(1) }, [search, selectedArea])
 

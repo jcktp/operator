@@ -5,6 +5,7 @@ import { Loader2, CheckCircle, Link2, Copy, Check, AlertTriangle, Globe, Chevron
 import type { DirectReport } from './uploadTypes'
 import { getModeConfig } from '@/lib/mode'
 import { useMode } from '@/components/ModeContext'
+import { useSettings } from '@/lib/use-settings'
 
 function SearchableDropdown({ value, placeholder, options, onChange }: { value: string; placeholder: string; options: { label: string; value: string }[]; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false)
@@ -67,6 +68,7 @@ function SearchableDropdown({ value, placeholder, options, onChange }: { value: 
 
 export default function RequestTab() {
   const modeConfig = useMode()
+  const { settings } = useSettings()
   const [title, setTitle] = useState('')
   const [area, setArea] = useState('')
   const [message, setMessage] = useState('')
@@ -102,23 +104,17 @@ export default function RequestTab() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/settings')
-      .then(r => r.json())
-      .then((data: { settings?: Record<string, string> }) => {
-        const s = data.settings ?? {}
-        if (s.custom_areas) {
-          try {
-            const parsed = JSON.parse(s.custom_areas) as string[]
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setAreas(parsed)
-              return
-            }
-          } catch {}
+    if (settings.custom_areas) {
+      try {
+        const parsed = JSON.parse(settings.custom_areas) as string[]
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAreas(parsed)
+          return
         }
-        setAreas(getModeConfig(s.app_mode ?? null).defaultAreas)
-      })
-      .catch(() => {})
-  }, [])
+      } catch {}
+    }
+    setAreas(getModeConfig(settings.app_mode ?? null).defaultAreas)
+  }, [settings])
 
   useEffect(() => {
     if (!directReportId) return
