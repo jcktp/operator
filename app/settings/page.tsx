@@ -15,6 +15,7 @@ import { MODE_LIST, getModeConfig, type AppMode } from '@/lib/mode'
 import SettingsRemoteTab from './SettingsRemoteTab'
 import SettingsBackupTab from './SettingsBackupTab'
 import SettingsPulseTab from './SettingsPulseTab'
+import SettingsKnowledgeTab from './SettingsKnowledgeTab'
 
 async function saveSetting(key: string, value: string) {
   await fetch('/api/settings', {
@@ -68,7 +69,7 @@ export default function SettingsPage() {
   const [autoLockMinutes, setAutoLockMinutes] = useState(0)
   const [airGapMode, setAirGapMode] = useState(false)
   // Tabs
-  type Tab = 'profile' | 'ai' | 'pulse' | 'remote' | 'backup' | 'danger'
+  type Tab = 'profile' | 'ai' | 'pulse' | 'remote' | 'backup' | 'knowledge' | 'danger'
   const [tab, setTab] = useState<Tab>('profile')
 
   useEffect(() => {
@@ -247,12 +248,13 @@ export default function SettingsPage() {
   if (loading) return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={20} className="animate-spin text-gray-400" /></div>
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'profile', label: 'Profile' },
-    { id: 'ai', label: 'AI' },
-    { id: 'pulse', label: 'Pulse' },
-    { id: 'remote', label: 'Remote' },
-    { id: 'backup', label: 'Backup' },
-    { id: 'danger', label: 'Danger' },
+    { id: 'profile',   label: 'Profile' },
+    { id: 'ai',        label: 'AI' },
+    { id: 'pulse',     label: 'Pulse' },
+    { id: 'remote',    label: 'Remote' },
+    { id: 'backup',    label: 'Backup' },
+    { id: 'knowledge', label: 'AI Context' },
+    { id: 'danger',    label: 'Danger' },
   ]
 
   return (
@@ -547,6 +549,9 @@ export default function SettingsPage() {
           initialBackupPath={backupPath}
         />
       )}
+
+      {/* AI Context (knowledge base) tab */}
+      {tab === 'knowledge' && <SettingsKnowledgeTab />}
 
       {/* Danger tab */}
       {tab === 'danger' && <div className="space-y-5">

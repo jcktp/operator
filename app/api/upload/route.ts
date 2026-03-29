@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
 import { extractContent, getFileType, IMAGE_TYPES, getMimeType } from '@/lib/parsers'
-import { analyzeReport, compareReports, checkResolvedFlags, describeImage, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist } from '@/lib/ai'
+import { analyzeReport, compareReports, checkResolvedFlags, describeImage, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist, generateAreaBriefing } from '@/lib/ai'
 import { saveReportFile } from '@/lib/reports-folder'
 import { logAction } from '@/lib/audit'
 import { join } from 'path'
@@ -240,6 +240,18 @@ export async function POST(req: NextRequest) {
     }
 
     void logAction('report:upload', `${title} (${area})`)
+
+    // Fire-and-forget: refresh area briefing after successful upload (non-blocking)
+    if (analysis?.summary) {
+      const mode = process.env.APP_MODE ?? 'executive'
+      prisma.report.findMany({
+        where: { area },
+        select: { summary: true, metrics: true, insights: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }).then(reports => generateAreaBriefing(area, mode, reports)).catch(() => {})
+    }
+
     return NextResponse.json({ report, hasPrevious: !!previousReport, seriesCandidate })
   } catch (e) {
     console.error('Upload error:', e)

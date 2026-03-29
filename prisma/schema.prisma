@@ -180,3 +180,28 @@ model ReportJournalism {
   verificationChecklist String?
   createdAt             DateTime @default(now())
 }
+
+// ── Knowledge base ────────────────────────────────────────────────────────────
+
+model GlossaryTerm {
+  id         String   @id @default(uuid())
+  term       String
+  definition String
+  scope      String   // 'global' | 'mode:executive' | 'area:Finance' etc.
+  createdAt  DateTime @default(now())
+
+  @@unique([term, scope])
+  @@index([scope])
+}
+
+model AreaBriefing {
+  id          String   @id @default(uuid())
+  area        String
+  mode        String
+  content     String
+  reportCount Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([area, mode])
+  @@index([area])
+}
