@@ -28,7 +28,7 @@ export function useBrowserTabs() {
 
   useEffect(() => {
     fetch('/api/settings')
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.reject())
       .then((d: { settings?: Record<string, string> }) => {
         if (d.settings?.air_gap_mode === 'true') setAirGapped(true)
       })
@@ -43,16 +43,26 @@ export function useBrowserTabs() {
     setDispatchContext(`The user has the browser open at ${url}`)
 
     if (isYouTubeVideo(url)) {
-      const res = await fetch('/api/browser/fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
-      const data = await res.json() as PageResult
-      updateTab(tabId, { page: data, loading: false })
-      setDispatchContext(`The user is watching a YouTube video at ${url}`)
+      try {
+        const res = await fetch('/api/browser/fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
+        if (!res.ok) throw new Error('fetch failed')
+        const data = await res.json() as PageResult
+        updateTab(tabId, { page: data, loading: false })
+        setDispatchContext(`The user is watching a YouTube video at ${url}`)
+      } catch {
+        updateTab(tabId, { page: { type: 'error', error: 'Failed to load video', fallbackUrl: url }, loading: false })
+      }
       return
     }
     if (isSpotifyEmbed(url)) {
-      const res = await fetch('/api/browser/fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
-      const data = await res.json() as PageResult
-      updateTab(tabId, { page: data, loading: false })
+      try {
+        const res = await fetch('/api/browser/fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
+        if (!res.ok) throw new Error('fetch failed')
+        const data = await res.json() as PageResult
+        updateTab(tabId, { page: data, loading: false })
+      } catch {
+        updateTab(tabId, { page: { type: 'error', error: 'Failed to load embed', fallbackUrl: url }, loading: false })
+      }
       return
     }
     if (isYouTubeDomain(url) && viewMode === 'live') {
@@ -70,6 +80,7 @@ export function useBrowserTabs() {
     if (viewMode === 'reader' || isYouTubeDomain(url)) {
       try {
         const res = await fetch('/api/browser/fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
+        if (!res.ok) throw new Error('fetch failed')
         const data = await res.json() as PageResult
         if (data.type === 'article' && data.text.trim().length < 200) {
           updateTab(tabId, {
@@ -228,6 +239,7 @@ export function useBrowserTabs() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: active.currentUrl, title, favicon }),
       })
+      if (!res.ok) return
       const data = await res.json() as { bookmark?: BrowserBookmark }
       if (data.bookmark) setBookmarks(prev => [data.bookmark!, ...prev])
     }

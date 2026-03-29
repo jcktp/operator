@@ -135,14 +135,19 @@ export function usePulseFeeds(hasDefaultFeeds: boolean) {
     e.preventDefault()
     if (!form.name || !form.url) return
     setAdding(true)
-    await fetch('/api/pulse', {
+    const res = await fetch('/api/pulse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
+    setAdding(false)
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({})) as { error?: string }
+      setRefreshError({ id: 'add', message: d.error ?? 'Failed to add feed' })
+      return
+    }
     setForm({ name: '', url: '', type: 'rss' })
     setShowAdd(false)
-    setAdding(false)
     await load()
   }
 
@@ -176,9 +181,10 @@ export function usePulseFeeds(hasDefaultFeeds: boolean) {
       setTimeout(() => setDeletingId(null), 3000)
       return
     }
-    await fetch(`/api/pulse/${id}`, { method: 'DELETE' })
-    if (activeFeed === id) setActiveFeed(null)
+    const res = await fetch(`/api/pulse/${id}`, { method: 'DELETE' })
     setDeletingId(null)
+    if (!res.ok) return
+    if (activeFeed === id) setActiveFeed(null)
     await load()
   }
 
@@ -205,12 +211,13 @@ export function usePulseFeeds(hasDefaultFeeds: boolean) {
 
   const handleSaveEdit = async (id: string) => {
     setSavingEdit(true)
-    await fetch(`/api/pulse/${id}`, {
+    const res = await fetch(`/api/pulse/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editForm),
     })
     setSavingEdit(false)
+    if (!res.ok) return
     setEditingId(null)
     await load()
   }
