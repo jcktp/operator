@@ -81,9 +81,10 @@ export function buildPersona(def: PersonaDef): Persona {
     tagline: def.tagline,
     description: def.description,
     temperature: def.temperature,
-    buildSystemPrompt: (context, userMemory, _hasSearch) =>
+    buildSystemPrompt: (context, userMemory, hasSearch) =>
       `You are ${def.name} — ${def.roleIntro}.${userContext()}\n\n${def.instructions}` +
       `\n\n${noteToolInstructions()}` +
+      (hasSearch ? `\n\nWEB SEARCH — you have access to the search_web tool. Use it for any question that is not answered by the documents below — current events, facts, geography, prices, distances, real-time data, or anything outside the provided context. Always call search_web before saying you don't know something that could be looked up.` : '') +
       (context ? `\n\n${def.contextLabel}:\n${context}` : '') +
       (userMemory ? `\n\n${def.memoryLabel}:\n${userMemory}` : '') +
       (context ? DOCUMENT_GROUNDING_RULES : '') +

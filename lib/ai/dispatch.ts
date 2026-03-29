@@ -14,7 +14,7 @@ export async function dispatchChat(
 ): Promise<ChatResult> {
   const personas = getPersonasForMode(process.env.APP_MODE)
   const persona = personas[personaId]
-  const hasSearch = !!process.env.BRAVE_SEARCH_KEY
+  const hasSearch = process.env.OLLAMA_WEB_ACCESS === 'true'
   const systemPrompt = persona.buildSystemPrompt(context, userMemory, hasSearch)
   return chatWithTools(messages, systemPrompt, persona.temperature)
 }
@@ -27,7 +27,7 @@ export function dispatchChatStream(
 ): ReadableStream<Uint8Array> {
   const personas = getPersonasForMode(process.env.APP_MODE)
   const persona = personas[personaId]
-  const hasSearch = !!process.env.BRAVE_SEARCH_KEY
+  const hasSearch = process.env.OLLAMA_WEB_ACCESS === 'true'
   const mode = process.env.APP_MODE ?? 'executive'
 
   return new ReadableStream<Uint8Array>({

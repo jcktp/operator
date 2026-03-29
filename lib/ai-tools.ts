@@ -87,9 +87,9 @@ export function availableTools(includeJournal = true): ToolDef[] {
   if (provider !== 'ollama' || includeJournal) tools.push(TOOL_SAVE_JOURNAL)
 
   // Web access tools: available for all providers when the user has enabled web access
+  // search_web always included — uses Brave if key configured, DuckDuckGo as fallback
   if (process.env.OLLAMA_WEB_ACCESS === 'true') {
-    tools.push(TOOL_WEATHER, TOOL_FETCH)
-    if (process.env.BRAVE_SEARCH_KEY) tools.push(TOOL_SEARCH)
+    tools.push(TOOL_WEATHER, TOOL_FETCH, TOOL_SEARCH)
   }
 
   return tools
@@ -172,22 +172,70 @@ async function toolWeather(location: string): Promise<string> {
 
 async function toolSearch(query: string): Promise<string> {
   const key = process.env.BRAVE_SEARCH_KEY
-  if (!key) return 'Web search is not configured. Add a Brave Search API key in Settings.'
 
+  if (key) {
+    const res = await fetch(
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5&safesearch=off`,
+      {
+        headers: { 'Accept': 'application/json', 'X-Subscription-Token': key },
+        signal: AbortSignal.timeout(8000),
+      }
+    )
+    const data = await res.json() as { web?: { results?: Array<{ title: string; url: string; description: string }> } }
+    const results = data.web?.results ?? []
+    if (!results.length) return `No search results found for: "${query}"`
+    return results.map((r, i) =>
+      `${i + 1}. **${r.title}**\n   ${r.description}\n   ${r.url}`
+    ).join('\n\n')
+  }
+
+  // DuckDuckGo fallback — free, no key required
   const res = await fetch(
-    `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5&safesearch=off`,
+    `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1`,
     {
-      headers: { 'Accept': 'application/json', 'X-Subscription-Token': key },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Operator/1.0)' },
       signal: AbortSignal.timeout(8000),
     }
   )
-  const data = await res.json() as { web?: { results?: Array<{ title: string; url: string; description: string }> } }
-  const results = data.web?.results ?? []
-  if (!results.length) return `No search results found for: "${query}"`
+  const ddg = await res.json() as {
+    Answer?: string
+    AbstractText?: string
+    AbstractSource?: string
+    AbstractURL?: string
+    RelatedTopics?: Array<{ Text?: string; FirstURL?: string; Name?: string; Topics?: Array<{ Text?: string; FirstURL?: string }> }>
+  }
 
-  return results.map((r, i) =>
-    `${i + 1}. **${r.title}**\n   ${r.description}\n   ${r.url}`
-  ).join('\n\n')
+  const lines: string[] = []
+
+  if (ddg.Answer) {
+    lines.push(`**Answer:** ${ddg.Answer}`)
+  }
+  if (ddg.AbstractText) {
+    const source = ddg.AbstractSource ? ` (${ddg.AbstractSource})` : ''
+    lines.push(`**Summary${source}:** ${ddg.AbstractText}`)
+    if (ddg.AbstractURL) lines.push(`   ${ddg.AbstractURL}`)
+  }
+
+  const topics = ddg.RelatedTopics ?? []
+  let count = 0
+  for (const t of topics) {
+    if (count >= 4) break
+    if (t.Text && t.FirstURL) {
+      lines.push(`\n${count + 1}. ${t.Text}\n   ${t.FirstURL}`)
+      count++
+    } else if (t.Topics) {
+      for (const sub of t.Topics) {
+        if (count >= 4) break
+        if (sub.Text && sub.FirstURL) {
+          lines.push(`\n${count + 1}. ${sub.Text}\n   ${sub.FirstURL}`)
+          count++
+        }
+      }
+    }
+  }
+
+  if (!lines.length) return `No results found for: "${query}"`
+  return lines.join('\n')
 }
 
 async function toolFetchUrl(url: string): Promise<string> {
