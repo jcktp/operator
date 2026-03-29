@@ -26,6 +26,7 @@ const ALLOWED_KEYS = new Set([
   'bluesky_identifier', 'bluesky_app_password', 'mastodon_access_token',
   'sound_enabled', 'custom_areas', 'auto_lock_minutes', 'air_gap_mode', 'dark_mode',
   'backup_path', 'last_backup',
+  'onboarding_complete',
 ])
 
 export async function GET(req: NextRequest) {

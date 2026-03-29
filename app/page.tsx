@@ -55,6 +55,9 @@ export default async function OverviewPage({
     redirect('/login')
   }
 
+  const onboardingRow = await prisma.setting.findUnique({ where: { key: 'onboarding_complete' } })
+  if (onboardingRow?.value !== 'true') redirect('/onboarding')
+
   const params = await searchParams
   const tab = params.tab
   const filterFrom = params.from
