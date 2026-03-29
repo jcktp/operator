@@ -1,11 +1,23 @@
+'use client'
+
 import { Radio } from 'lucide-react'
+import { useTheme, type ThemeMode } from '@/components/ThemeProvider'
+import { cn } from '@/lib/utils'
 
 interface Props {
   userName: string
   onNext: () => void
 }
 
+const MODES: { value: ThemeMode; label: string; desc: string }[] = [
+  { value: 'light',  label: 'Light',  desc: 'Always light' },
+  { value: 'dark',   label: 'Dark',   desc: 'Always dark' },
+  { value: 'system', label: 'Auto',   desc: 'Follows your OS' },
+]
+
 export default function StepWelcome({ userName, onNext }: Props) {
+  const { mode, setMode } = useTheme()
+
   return (
     <div className="space-y-8">
       <div className="text-center space-y-3">
@@ -48,6 +60,29 @@ export default function StepWelcome({ userName, onNext }: Props) {
         <p className="text-xs text-amber-700 dark:text-amber-400">
           Open source under BSL 1.1 · free for personal and non-commercial use.
         </p>
+      </div>
+
+      {/* Appearance */}
+      <div>
+        <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 mb-3">How would you like the app to look?</p>
+        <div className="grid grid-cols-3 gap-2">
+          {MODES.map(m => (
+            <button
+              key={m.value}
+              type="button"
+              onClick={() => setMode(m.value)}
+              className={cn(
+                'flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-center transition-colors',
+                mode === m.value
+                  ? 'border-gray-900 dark:border-zinc-100 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
+                  : 'border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 hover:border-gray-300 dark:hover:border-zinc-600'
+              )}
+            >
+              <span className="text-sm font-medium">{m.label}</span>
+              <span className={cn('text-xs', mode === m.value ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>{m.desc}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <button
