@@ -57,6 +57,31 @@ export function normalizeUrl(input: string): string {
   return `https://${s}`
 }
 
+// Domains known to block iframe embedding (X-Frame-Options or CSP frame-ancestors).
+// We skip the iframe entirely for these and show a clear "open in tab" UI instead.
+const IFRAME_BLOCKED_PATTERNS: RegExp[] = [
+  /(?:^|\.)google\.[a-z.]+/,
+  /(?:^|\.)bing\.com/,
+  /(?:^|\.)duckduckgo\.com/,
+  /(?:^|\.)yahoo\.com/,
+  /(?:^|\.)facebook\.com/,
+  /(?:^|\.)instagram\.com/,
+  /(?:^|\.)twitter\.com/,
+  /(?:^|\.)x\.com/,
+  /(?:^|\.)linkedin\.com/,
+  /(?:^|\.)reddit\.com/,
+  /(?:^|\.)gmail\.com/,
+  /(?:^|\.)netflix\.com/,
+  /(?:^|\.)twitch\.tv/,
+]
+
+export function isKnownIframeBlocked(url: string): boolean {
+  try {
+    const host = new URL(url).hostname
+    return IFRAME_BLOCKED_PATTERNS.some(p => p.test(host))
+  } catch { return false }
+}
+
 // Only specific video/track URLs get the embed player — not homepages or channels
 export function isYouTubeVideo(url: string) {
   return /youtube\.com\/watch(\?|$)/.test(url)

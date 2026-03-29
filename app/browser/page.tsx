@@ -8,7 +8,7 @@ import DispatchPanel from '@/app/dispatch/DispatchPanel'
 import {
   type Tab, type BrowserBookmark, type PageResult, type ViewMode,
   makeTab, normalizeUrl, isYouTubeVideo, isYouTubeDomain, isSpotifyEmbed, isEmbedUrl,
-  tabLabel, saveTabs, loadSavedTabs,
+  isKnownIframeBlocked, tabLabel, saveTabs, loadSavedTabs,
 } from './browserHelpers'
 import BrowserStartPage from './BrowserStartPage'
 import BrowserArticleView from './BrowserArticleView'
@@ -147,11 +147,29 @@ export default function BrowserPage() {
       updateTab(tabId, { loading: false })
       return
     }
+    // Known iframe-blocked domains: skip iframe, show clear UI immediately
+    if (viewMode === 'live' && isKnownIframeBlocked(url)) {
+      const host = (() => { try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url } })()
+      updateTab(tabId, {
+        page: { type: 'error', error: `${host} blocks embedding in external apps. Open it in a tab to use it normally.`, fallbackUrl: url },
+        loading: false,
+      })
+      return
+    }
+
     // Reader mode OR YouTube non-video: fetch server-side
     if (viewMode === 'reader' || isYouTubeDomain(url)) {
       try {
         const res = await fetch('/api/browser/fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
         const data = await res.json() as PageResult
+        // Detect JS-only pages: article returned but with negligible text content
+        if (data.type === 'article' && data.text.trim().length < 200) {
+          updateTab(tabId, {
+            page: { type: 'error', error: 'This page requires JavaScript to render and can\'t be read in Reader mode. Try Live mode or open it in a tab.', fallbackUrl: url },
+            loading: false,
+          })
+          return
+        }
         updateTab(tabId, { page: data, loading: false })
         if (data.type === 'article') {
           setDispatchContext(`The user is reading: "${data.title}" at ${url}.\n\n${data.text.slice(0, 3000)}`)
@@ -160,7 +178,7 @@ export default function BrowserPage() {
         updateTab(tabId, { page: { type: 'error', error: 'Request failed', fallbackUrl: url }, loading: false })
       }
     } else {
-      // Live mode: show iframe directly — overlay hint handles sites that block embedding
+      // Live mode: show iframe directly — overlay hint handles any remaining sites that block embedding
       updateTab(tabId, { loading: false })
       setDispatchContext(`The user has the browser open at ${url}`)
     }
@@ -474,24 +492,26 @@ export default function BrowserPage() {
 
           {/* Reader/Live: error */}
           {!activeTab.loading && activeTab.page?.type === 'error' && (
-            <div className="h-full flex flex-col items-center justify-center gap-4 text-center px-6 bg-[#fafafa]">
-              <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
-                <Search size={20} className="text-amber-400" />
+            <div className="h-full flex flex-col items-center justify-center gap-5 text-center px-8 bg-[#fafafa]">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                <ExternalLink size={20} className="text-gray-400" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-700">Couldn&apos;t load this page</p>
-                <p className="text-xs text-gray-500 mt-1">{activeTab.page.error}</p>
+              <div className="space-y-1 max-w-sm">
+                <p className="text-sm font-semibold text-gray-800">Page didn&apos;t load</p>
+                <p className="text-xs text-gray-500 leading-relaxed">{activeTab.page.error}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 w-full max-w-[220px]">
+                <button
+                  onClick={() => { if (activeTab.page?.type === 'error') openExternal(activeTab.page.fallbackUrl) }}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium rounded-xl transition-colors"
+                >
+                  <ExternalLink size={14} /> Open in tab
+                </button>
                 {activeTab.viewMode === 'reader' && (
-                  <button onClick={() => switchMode('live')} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors">
+                  <button onClick={() => switchMode('live')} className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-xl transition-colors">
                     <Monitor size={12} /> Try Live mode
                   </button>
                 )}
-                <button onClick={() => { if (activeTab.page?.type === 'error') openExternal(activeTab.page.fallbackUrl) }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium rounded-lg border border-indigo-200 transition-colors">
-                  <ExternalLink size={12} /> Open in tab
-                </button>
               </div>
             </div>
           )}
@@ -506,13 +526,25 @@ export default function BrowserPage() {
                 title="browser"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
               />
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-                <button
-                  onClick={() => openExternal(activeTab.currentUrl)}
-                  className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full text-xs text-gray-500 hover:text-gray-800 shadow-sm transition-colors"
-                >
-                  <ExternalLink size={11} /> Page not loading? Open in tab
-                </button>
+              {/* Bottom bar — helps when iframe fails silently */}
+              <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none flex justify-center pb-4">
+                <div className="pointer-events-auto flex items-center gap-3 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-md px-4 py-2.5">
+                  <p className="text-xs text-gray-500">Page not loading?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => switchMode('reader')}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors"
+                    >
+                      <AlignLeft size={12} /> Try Reader
+                    </button>
+                    <button
+                      onClick={() => openExternal(activeTab.currentUrl)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-900 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition-colors"
+                    >
+                      <ExternalLink size={12} /> Open in tab
+                    </button>
+                  </div>
+                </div>
               </div>
             </>
           )}
