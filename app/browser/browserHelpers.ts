@@ -29,11 +29,9 @@ export interface BrowserBookmark {
 
 // Tab factory
 
-let _tabIdCounter = 0
-
 export function makeTab(overrides: Partial<Tab> = {}): Tab {
   return {
-    id: String(++_tabIdCounter),
+    id: crypto.randomUUID(),
     urlInput: '',
     currentUrl: '',
     viewMode: 'live',
@@ -109,7 +107,7 @@ export function tabLabel(tab: Tab): string {
 
 // Session persistence
 
-export const SESSION_KEY = 'operator_browser_tabs'
+export const SESSION_KEY = 'operator_browser_tabs_v2'
 
 export function saveTabs(tabs: Tab[], activeId: string) {
   try {
