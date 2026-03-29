@@ -301,6 +301,33 @@ operator/
 
 ---
 
+## License
+
+Operator is released under the **Business Source License 1.1** (BSL 1.1). The licensor is Jorick Thijs Polderman. Under this license:
+
+- **Non-commercial use is permitted** — personal projects, academic research, journalism, and internal business tooling (not offered as a product or service to third parties) are allowed at no cost.
+- **Commercial use** — deploying Operator as or within a product or service offered to third parties requires a commercial license. Contact the licensor for terms.
+- **Change date** — on January 1, 2032, the license automatically converts to MIT, making Operator fully open source.
+
+The full license text is in [`license.md`](./license.md).
+
+---
+
+## Disclaimer
+
+> **Operator is provided as-is, without warranty of any kind.**
+
+This software is a local intelligence tool that processes documents and generates AI-assisted summaries, analyses, and suggestions. By using it, you accept the following:
+
+- **No liability for use.** The author(s) accept no responsibility for how Operator is used, what it is used on, or any consequences — direct or indirect — that arise from its use.
+- **No liability for AI outputs.** Operator relies on large language models (local or cloud-based) to generate analysis. These outputs are probabilistic, may be incorrect, and must not be treated as professional legal, financial, medical, journalistic, or other expert advice. All AI-generated content should be independently verified before acting on it.
+- **No liability for decisions.** Any decision made — personally, professionally, or otherwise — based on content produced by Operator is solely the responsibility of the person making that decision.
+- **You are responsible for your data.** Operator stores documents and notes locally on your machine. The author(s) accept no responsibility for data loss, accidental exposure, or misuse of data processed through the application.
+
+If you use Operator in a professional context, you are responsible for ensuring it complies with any applicable laws, regulations, or internal policies in your jurisdiction.
+
+---
+
 ## Tech stack
 
 | Layer | Technology |

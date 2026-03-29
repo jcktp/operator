@@ -60,17 +60,17 @@ export default async function EntityGraphPage({
 
   return (
     <div className="pt-14 h-screen flex flex-col">
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-gray-200 bg-white shrink-0">
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shrink-0">
         <Link
           href="/entities"
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors"
         >
           <ArrowLeft size={12} />
           Entities
         </Link>
-        <span className="text-gray-300">/</span>
-        <span className="text-sm font-medium text-gray-900">{name}</span>
-        <span className="ml-auto text-xs text-gray-400">
+        <span className="text-gray-300 dark:text-zinc-600">/</span>
+        <span className="text-sm font-medium text-gray-900 dark:text-zinc-50">{name}</span>
+        <span className="ml-auto text-xs text-gray-400 dark:text-zinc-500">
           {initialData.nodes.length - 1} related entit{initialData.nodes.length - 1 !== 1 ? 'ies' : 'y'} across {centreReportIds.length} document{centreReportIds.length !== 1 ? 's' : ''}
         </span>
       </div>
