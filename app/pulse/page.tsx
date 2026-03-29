@@ -1,11 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Rss, Plus, Trash2, RefreshCw, BookOpen, X, ExternalLink, Loader2, ChevronDown, Pencil, Check, Globe, ChevronLeft, ChevronRight, Eraser, Tag } from 'lucide-react'
+import { Rss, Plus, Trash2, RefreshCw, Loader2, ChevronDown, Pencil, Check, Globe, ChevronLeft, ChevronRight, Eraser, Tag, X } from 'lucide-react'
 import { formatRelativeDate, cn } from '@/lib/utils'
-import { PULSE_DIRECTORY, DIRECTORY_CATEGORIES } from '@/lib/pulse-directory'
 import { useMode } from '@/components/ModeContext'
 import { useSettings } from '@/lib/use-settings'
+import { RefreshDropdown, TypeDropdown } from './PulseDropdowns'
+import PulseItemCard from './PulseItemCard'
+import PulseAddFeedForm from './PulseAddFeedForm'
+import PulseFeedDirectory from './PulseFeedDirectory'
 
 interface PulseItem {
   id: string
@@ -25,42 +28,6 @@ interface PulseFeed {
   enabled: boolean
   lastFetched: string | null
   items: PulseItem[]
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  rss:      'RSS',
-  reddit:   'Reddit',
-  youtube:  'YouTube',
-  bluesky:  'Bluesky',
-  mastodon: 'Mastodon',
-  webhook:  'Webhook',
-}
-
-const TYPE_COLORS: Record<string, string> = {
-  rss:      'bg-orange-50 text-orange-700 border-orange-200',
-  reddit:   'bg-red-50 text-red-700 border-red-200',
-  youtube:  'bg-red-50 text-red-800 border-red-300',
-  bluesky:  'bg-sky-50 text-sky-700 border-sky-200',
-  mastodon: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  webhook:  'bg-purple-50 text-purple-700 border-purple-200',
-}
-
-const TYPE_HINT: Record<string, string> = {
-  rss:      'RSS or Atom feed URL',
-  reddit:   'Subreddit name or URL — e.g. r/news',
-  youtube:  'YouTube channel URL or channel ID starting with UC',
-  bluesky:  'Handle (e.g. you.bsky.social) for public posts, or type "timeline" for your home feed (requires credentials in Settings → AI → Social)',
-  mastodon: '@user@instance.social for a public profile, or just instance domain (e.g. mastodon.social) for your home timeline (requires token in Settings → AI → Social)',
-  webhook:  'URL returning JSON array of { title, url, summary, publishedAt }',
-}
-
-const TYPE_PLACEHOLDER: Record<string, string> = {
-  rss:      'https://example.com/feed.xml',
-  reddit:   'r/MachineLearning',
-  youtube:  'youtube.com/channel/UC…',
-  bluesky:  'you.bsky.social  or  timeline',
-  mastodon: '@you@mastodon.social  or  mastodon.social',
-  webhook:  'https://example.com/webhook',
 }
 
 export default function PulsePage() {
@@ -437,119 +404,24 @@ export default function PulsePage() {
 
       {/* Add feed form */}
       {showAdd && (
-        <form onSubmit={handleAdd} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Add feed</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                required
-                placeholder="Hacker News"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Type *</label>
-              <TypeDropdown value={form.type} onChange={v => setForm(f => ({
-              ...f,
-              type: v,
-              url: v === 'bluesky' && bskyConfigured ? 'timeline' : f.url,
-            }))} />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              {form.type === 'twitter' ? 'Username *' : 'URL *'}
-            </label>
-            <input
-              type="text"
-              value={form.url}
-              onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
-              required
-              placeholder={TYPE_PLACEHOLDER[form.type] ?? 'https://…'}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-            />
-            {form.type === 'bluesky' ? (
-              bskyConfigured ? (
-                <p className="text-xs text-green-600 mt-1">Bluesky credentials configured. <span className="text-gray-400">Use <code className="font-mono">timeline</code> for your home feed, or enter any handle for a public profile.</span></p>
-              ) : (
-                <p className="text-xs mt-1">
-                  <span className="text-amber-600 font-medium">No Bluesky credentials set.</span>
-                  <span className="text-gray-400"> For your home timeline, <a href="/settings" className="underline text-gray-600 hover:text-gray-900">add your handle and app password in Settings → Pulse</a>. Public profile feeds work without credentials.</span>
-                </p>
-              )
-            ) : (
-              <p className="text-xs text-gray-400 mt-1">{TYPE_HINT[form.type]}</p>
-            )}
-          </div>
-          <button
-            type="submit"
-            disabled={adding}
-            className="bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2"
-          >
-            {adding && <Loader2 size={13} className="animate-spin" />}
-            {adding ? 'Fetching…' : 'Add feed'}
-          </button>
-        </form>
+        <PulseAddFeedForm
+          form={form}
+          setForm={setForm}
+          onSubmit={handleAdd}
+          adding={adding}
+          bskyConfigured={bskyConfigured}
+        />
       )}
 
       {/* Feed directory */}
       {showDirectory && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">Feed directory</h2>
-            <span className="text-xs text-gray-400">{PULSE_DIRECTORY.length} sources</span>
-          </div>
-          {/* Category filter */}
-          <div className="px-5 py-2.5 border-b border-gray-100 flex gap-1.5 flex-wrap">
-            {DIRECTORY_CATEGORIES.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setDirCategory(cat)}
-                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                  dirCategory === cat
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-          {/* Feed list */}
-          <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
-            {PULSE_DIRECTORY.filter(e => dirCategory === 'All' || e.category === dirCategory).map(entry => {
-              const alreadyAdded = existingUrls.has(entry.url)
-              const isAdding = addingFromDir.has(entry.url)
-              return (
-                <div key={entry.url} className="flex items-center justify-between px-5 py-2.5 hover:bg-gray-50/60">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">{entry.name}</span>
-                      <span className="text-[11px] text-gray-400 border border-gray-200 rounded-full px-1.5 py-px">{entry.category}</span>
-                    </div>
-                  </div>
-                  <button
-                    disabled={alreadyAdded || isAdding}
-                    onClick={() => handleAddFromDir(entry.name, entry.url)}
-                    className={`ml-3 shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors ${
-                      alreadyAdded
-                        ? 'border-green-200 text-green-600 bg-green-50 cursor-default'
-                        : isAdding
-                        ? 'border-gray-200 text-gray-400 cursor-wait'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
-                  >
-                    {isAdding ? <Loader2 size={11} className="animate-spin" /> : alreadyAdded ? 'Added' : 'Add'}
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        <PulseFeedDirectory
+          existingUrls={existingUrls}
+          dirCategory={dirCategory}
+          setDirCategory={setDirCategory}
+          addingFromDir={addingFromDir}
+          onAdd={handleAddFromDir}
+        />
       )}
 
       {feeds.length === 0 ? (
@@ -679,88 +551,17 @@ export default function PulsePage() {
             ) : (
               <>
                 {allItems.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map(item => (
-                  <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded border ${TYPE_COLORS[item.feedType] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                            {item.feedName}
-                          </span>
-                          {item.publishedAt && (
-                            <span className="text-xs text-gray-400">{formatRelativeDate(item.publishedAt)}</span>
-                          )}
-                        </div>
-                        <p className={`text-sm font-medium leading-snug ${matchesKeywords(item) ? 'text-gray-900' : 'text-gray-900'}`}>
-                          {isKeywordMode && activeKeywords.size > 0 ? highlightKeywords(item.title) : item.title}
-                        </p>
-                        {item.summary && item.summary !== item.title && (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {isKeywordMode && activeKeywords.size > 0 ? highlightKeywords(item.summary) : item.summary}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {item.url && (
-                          <a
-                            href={`/browser?url=${encodeURIComponent(item.url)}`}
-                            className="p-1.5 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100"
-                            title="Open in Operator Browser"
-                          >
-                            <ExternalLink size={13} />
-                          </a>
-                        )}
-                        {item.savedToJournal ? (
-                          <div className="flex items-center gap-1">
-                            <a href="/journal?folder=Pulse"
-                              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-green-200 text-green-600 bg-green-50 hover:bg-green-100 transition-colors"
-                              title="Saved to Journal — click to view"
-                            >
-                              <BookOpen size={11} />
-                              Saved
-                            </a>
-                            <button
-                              onClick={() => handleUnsaveFromJournal(item.id)}
-                              disabled={savingItemId === item.id}
-                              className="p-1 rounded text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors"
-                              title="Remove from Journal"
-                            >
-                              {savingItemId === item.id ? <Loader2 size={10} className="animate-spin" /> : <X size={10} />}
-                            </button>
-                          </div>
-                        ) : isKeywordMode ? (
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              value={savingFolder[item.id] ?? 'Pulse'}
-                              onChange={e => setSavingFolder(sf => ({ ...sf, [item.id]: e.target.value }))}
-                              placeholder="Folder"
-                              className="w-20 text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-gray-900"
-                            />
-                            <button
-                              onClick={() => handleSaveToJournal(item.id, savingFolder[item.id])}
-                              disabled={savingItemId === item.id}
-                              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
-                              title="Save to Journal"
-                            >
-                              {savingItemId === item.id ? <Loader2 size={11} className="animate-spin" /> : <BookOpen size={11} />}
-                              Save
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleSaveToJournal(item.id)}
-                            disabled={savingItemId === item.id}
-                            className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
-                            title="Save to Journal"
-                          >
-                            {savingItemId === item.id ? <Loader2 size={11} className="animate-spin" /> : <BookOpen size={11} />}
-                            Save
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <PulseItemCard
+                    key={item.id}
+                    item={item}
+                    isKeywordMode={isKeywordMode}
+                    activeKeywords={activeKeywords}
+                    savingItemId={savingItemId}
+                    savingFolder={savingFolder}
+                    setSavingFolder={setSavingFolder}
+                    onSave={handleSaveToJournal}
+                    onUnsave={handleUnsaveFromJournal}
+                  />
                 ))}
 
                 {/* Pagination */}
@@ -797,95 +598,3 @@ export default function PulsePage() {
   )
 }
 
-const REFRESH_OPTIONS = [
-  { value: 0, label: 'No auto-refresh' },
-  { value: 5, label: 'Every 5 min' },
-  { value: 15, label: 'Every 15 min' },
-  { value: 30, label: 'Every 30 min' },
-  { value: 60, label: 'Every hour' },
-]
-
-function RefreshDropdown({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const label = REFRESH_OPTIONS.find(o => o.value === value)?.label ?? 'No auto-refresh'
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-left flex items-center gap-1.5 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
-      >
-        <span>{label}</span>
-        <ChevronDown size={13} className="text-gray-400" />
-      </button>
-      {open && (
-        <div className="absolute right-0 z-20 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-md py-1">
-          {REFRESH_OPTIONS.map(o => (
-            <button
-              key={o.value}
-              type="button"
-              onClick={() => { onChange(o.value); setOpen(false) }}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${value === o.value ? 'text-gray-900 font-medium' : 'text-gray-700'}`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function TypeDropdown({ value, onChange, compact }: { value: string; onChange: (v: string) => void; compact?: boolean }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const options = ['rss', 'reddit', 'youtube', 'bluesky', 'mastodon', 'webhook']
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className={`w-full border border-gray-200 rounded-lg px-3 text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white ${
-          compact ? 'py-1 text-xs' : 'py-2 text-sm h-[38px]'
-        }`}
-      >
-        <span className="text-gray-900">{TYPE_LABELS[value] ?? value}</span>
-        <ChevronDown size={compact ? 11 : 14} className="text-gray-400" />
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-md py-1">
-          {options.map(o => (
-            <button
-              key={o}
-              type="button"
-              onClick={() => { onChange(o); setOpen(false) }}
-              className={`w-full text-left px-3 hover:bg-gray-50 text-gray-900 ${compact ? 'py-1.5 text-xs' : 'py-2 text-sm'}`}
-            >
-              {TYPE_LABELS[o]}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
