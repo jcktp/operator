@@ -19,7 +19,9 @@ function openExternal(url: string) {
   a.href = url
   a.target = '_blank'
   a.rel = 'noopener noreferrer'
+  document.body.appendChild(a)
   a.click()
+  document.body.removeChild(a)
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -282,7 +284,7 @@ export default function BrowserPage() {
   const isYTDomain = activeTab.currentUrl ? isYouTubeDomain(activeTab.currentUrl) : false
   const isYTVideo  = activeTab.currentUrl ? isYouTubeVideo(activeTab.currentUrl) : false
   // Live iframe: show only when in live mode, not an embed, not a YouTube domain
-  const showIframe = activeTab.viewMode === 'live' && !!activeTab.currentUrl && !isEmbed && !isEmbedUrl(activeTab.currentUrl) && !isYTDomain
+  const showIframe = activeTab.viewMode === 'live' && !!activeTab.currentUrl && !isEmbed && !isEmbedUrl(activeTab.currentUrl) && !isYTDomain && activeTab.page?.type !== 'error'
 
   return (
     <div className="flex h-full">
