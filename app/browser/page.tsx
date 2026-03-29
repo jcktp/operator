@@ -149,7 +149,22 @@ export default function BrowserPage() {
         updateTab(tabId, { page: { type: 'error', error: 'Request failed', fallbackUrl: url }, loading: false })
       }
     } else {
-      // Live mode: iframe handles it directly
+      // Live mode: check for X-Frame-Options before showing iframe
+      try {
+        const check = await fetch('/api/browser/fetch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, headOnly: true }),
+        })
+        const { xFrameBlocked } = await check.json() as { xFrameBlocked?: boolean }
+        if (xFrameBlocked) {
+          updateTab(tabId, {
+            page: { type: 'error', error: 'This site blocks embedding. Switch to Reader mode, or open it in a tab.', fallbackUrl: url },
+            loading: false,
+          })
+          return
+        }
+      } catch { /* network error — proceed with iframe */ }
       updateTab(tabId, { loading: false })
       setDispatchContext(`The user has the browser open at ${url}`)
     }

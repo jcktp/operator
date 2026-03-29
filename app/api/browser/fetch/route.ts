@@ -103,11 +103,39 @@ function extractReadableContent(html: string, pageUrl: string): { html: string; 
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
+const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Cache-Control': 'no-cache',
+  'Pragma': 'no-cache',
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json() as { url?: string }
+    const { url, headOnly } = await req.json() as { url?: string; headOnly?: boolean }
     if (!url || !url.startsWith('http')) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
+    }
+
+    // headOnly: lightweight framing check — no body fetched
+    if (headOnly) {
+      try {
+        const res = await fetch(url, {
+          method: 'HEAD',
+          headers: BROWSER_HEADERS,
+          signal: AbortSignal.timeout(6_000),
+          redirect: 'follow',
+        })
+        const xfo = res.headers.get('x-frame-options')
+        const csp = res.headers.get('content-security-policy') ?? ''
+        // Any X-Frame-Options value blocks us; CSP frame-ancestors blocks unless it allows wildcard
+        const xFrameBlocked = !!xfo || (csp.includes('frame-ancestors') && !csp.includes('frame-ancestors *'))
+        return NextResponse.json({ xFrameBlocked })
+      } catch {
+        // Can't reach server or HEAD not supported — assume embeddable
+        return NextResponse.json({ xFrameBlocked: false })
+      }
     }
 
     // YouTube video — only specific video URLs, not homepage/channel pages
@@ -127,12 +155,8 @@ export async function POST(req: NextRequest) {
     try {
       const res = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
+          ...BROWSER_HEADERS,
           'Accept-Encoding': 'gzip, deflate, br',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
           'Sec-Fetch-Dest': 'document',
           'Sec-Fetch-Mode': 'navigate',
           'Sec-Fetch-Site': 'none',
