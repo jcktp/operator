@@ -39,13 +39,13 @@ export function getSuggestions(persona: PersonaId, role: string, modeId: string)
     return ['What evidence-gathering strategies should I pursue?', 'What legal angles am I not considering?', 'What precedents might apply to this case?']
   }
 
-  if (modeId === 'consulting') {
-    if (persona === 'dispatch') // Mapper
-      return ['What deliverables are at risk of slipping?', 'What commitments have been made but not tracked?', 'Summarise engagement progress and outstanding work']
-    if (persona === 'debrief') // Partner
-      return ["What objections will the client raise to this recommendation?", 'Where is my evidence base weakest?', 'What would a competing firm recommend instead?']
-    // recon → Ideate
-    return ['What frameworks could apply to this client problem?', 'What have analogous companies done in this situation?', 'Generate 5 unconventional approaches to this challenge']
+  if (modeId === 'human_resources') {
+    if (persona === 'dispatch') // Pulse
+      return ['What are the key attrition or retention signals in these reports?', 'Summarise headcount and engagement trends across areas', 'Which HR areas need immediate attention?']
+    if (persona === 'debrief') // Counsel
+      return ["What's the employee experience risk in this decision?", 'What compliance issues should I check before acting?', "What unintended consequences am I not seeing?"]
+    // recon → Architect
+    return ['What HR initiatives have worked for similar workforce challenges?', 'Generate 5 approaches to improve engagement in this area', 'What frameworks could apply to this people problem?']
   }
 
   // executive (default) — role-aware

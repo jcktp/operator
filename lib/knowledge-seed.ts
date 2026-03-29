@@ -3,7 +3,7 @@ import { prisma } from './db'
 type SeedEntry = { term: string; definition: string; scope: string }
 
 // Bump this version string whenever new terms are added — triggers a re-seed on next startup.
-const SEED_VERSION = '2'
+const SEED_VERSION = '3'
 
 const SEEDS: SeedEntry[] = [
   // ── Global (all modes) ──────────────────────────────────────────────────────
@@ -77,23 +77,45 @@ const SEEDS: SeedEntry[] = [
   { term: 'SEO',   definition: 'Search Engine Optimisation',             scope: 'mode:executive' },
   { term: 'SEM',   definition: 'Search Engine Marketing — paid search advertising', scope: 'mode:executive' },
 
-  // ── Consulting ─────────────────────────────────────────────────────────────
-  { term: 'SOW',        definition: 'Statement of Work',                        scope: 'mode:consulting' },
-  { term: 'MSA',        definition: 'Master Service Agreement',                 scope: 'mode:consulting' },
-  { term: 'RACI',       definition: 'Responsible, Accountable, Consulted, Informed — accountability matrix', scope: 'mode:consulting' },
-  { term: 'PMO',        definition: 'Project Management Office',                scope: 'mode:consulting' },
-  { term: 'MVP',        definition: 'Minimum Viable Product',                   scope: 'mode:consulting' },
-  { term: 'C-suite',    definition: 'Chief-level executives (CEO, CFO, COO, CTO, etc.)', scope: 'mode:consulting' },
-  { term: 'SWOT',       definition: 'Strengths, Weaknesses, Opportunities, Threats — strategic assessment framework', scope: 'mode:consulting' },
-  { term: 'MECE',       definition: 'Mutually Exclusive, Collectively Exhaustive — principle for structuring analysis without gaps or overlap', scope: 'mode:consulting' },
-  { term: 'CAGR',       definition: 'Compound Annual Growth Rate',              scope: 'mode:consulting' },
-  { term: 'run rate',   definition: 'Annualised projection of current-period performance', scope: 'mode:consulting' },
-  { term: 'quick win',  definition: 'Low-effort, high-impact improvement achievable in the near term', scope: 'mode:consulting' },
-  { term: 'workstream', definition: 'Distinct track of work within a larger project, typically owned by a sub-team', scope: 'mode:consulting' },
-  { term: 'synergy',    definition: 'Value created by combining two entities or processes that exceeds what each produces separately', scope: 'mode:consulting' },
-  { term: 'KSF',        definition: 'Key Success Factor — critical capability or condition required to achieve the objective', scope: 'mode:consulting' },
-  { term: 'ROA',        definition: 'Return on Assets',                         scope: 'mode:consulting' },
-  { term: 'ROE',        definition: 'Return on Equity',                         scope: 'mode:consulting' },
+  // ── Human Resources ─────────────────────────────────────────────────────────
+  { term: 'HRBP',       definition: 'HR Business Partner — HR professional embedded with a business unit to align people strategy with business goals', scope: 'mode:human_resources' },
+  { term: 'CHRO',       definition: 'Chief Human Resources Officer',            scope: 'mode:human_resources' },
+  { term: 'ATS',        definition: 'Applicant Tracking System',                scope: 'mode:human_resources' },
+  { term: 'HRIS',       definition: 'Human Resources Information System — software for managing employee data, payroll, and HR workflows', scope: 'mode:human_resources' },
+  { term: 'HCM',        definition: 'Human Capital Management — suite of HR software covering hire-to-retire processes', scope: 'mode:human_resources' },
+  { term: 'TTH',        definition: 'Time to Hire — calendar days from job opening to offer acceptance', scope: 'mode:human_resources' },
+  { term: 'TTS',        definition: 'Time to Start — days from accepted offer to first day in role', scope: 'mode:human_resources' },
+  { term: 'TTA',        definition: 'Time to Accept — days from offer extended to offer accepted or declined', scope: 'mode:human_resources' },
+  { term: 'offer acceptance rate', definition: 'Percentage of job offers accepted out of total offers extended', scope: 'mode:human_resources' },
+  { term: 'HC',         definition: 'Headcount — total number of employees in a given population', scope: 'mode:human_resources' },
+  { term: 'FTE',        definition: 'Full-Time Equivalent — normalised headcount unit (e.g. two 0.5 FTEs = 1 FTE)', scope: 'mode:human_resources' },
+  { term: 'attrition',  definition: 'Rate at which employees leave, calculated as departures ÷ average headcount over a period', scope: 'mode:human_resources' },
+  { term: 'voluntary attrition', definition: 'Employee-initiated departures (resignations), as distinct from involuntary (terminations, redundancies)', scope: 'mode:human_resources' },
+  { term: 'regrettable attrition', definition: 'Departures of high-performing or hard-to-replace employees the organisation wished to retain', scope: 'mode:human_resources' },
+  { term: 'retention rate', definition: 'Percentage of employees who remain in the organisation over a given period', scope: 'mode:human_resources' },
+  { term: 'eNPS',       definition: 'Employee Net Promoter Score — measures likelihood of employees recommending the company as a workplace (scale −100 to +100)', scope: 'mode:human_resources' },
+  { term: 'engagement score', definition: 'Composite measure of employee commitment, motivation, and connection to the organisation', scope: 'mode:human_resources' },
+  { term: 'PTO',        definition: 'Paid Time Off',                            scope: 'mode:human_resources' },
+  { term: 'ONA',        definition: 'Organisational Network Analysis — maps informal communication and collaboration patterns across teams', scope: 'mode:human_resources' },
+  { term: 'L&D',        definition: 'Learning & Development — training, upskilling, and professional growth programmes', scope: 'mode:human_resources' },
+  { term: 'succession planning', definition: 'Process of identifying and developing internal candidates for critical roles', scope: 'mode:human_resources' },
+  { term: 'talent review', definition: 'Structured assessment of employee performance and potential, typically used to populate a 9-box grid', scope: 'mode:human_resources' },
+  { term: '9-box grid', definition: 'Talent framework plotting employees on performance (low/medium/high) vs potential (low/medium/high) axes', scope: 'mode:human_resources' },
+  { term: 'PIP',        definition: 'Performance Improvement Plan — formal document outlining expectations and timeline for underperforming employees', scope: 'mode:human_resources' },
+  { term: 'DEI',        definition: 'Diversity, Equity & Inclusion',            scope: 'mode:human_resources' },
+  { term: 'DEIB',       definition: 'Diversity, Equity, Inclusion & Belonging', scope: 'mode:human_resources' },
+  { term: 'ERG',        definition: 'Employee Resource Group — voluntary, employee-led group supporting underrepresented communities', scope: 'mode:human_resources' },
+  { term: 'comp & ben', definition: 'Compensation & Benefits — total rewards including salary, bonus, equity, healthcare, and other perks', scope: 'mode:human_resources' },
+  { term: 'total comp',  definition: 'Total Compensation — all forms of pay and benefits combined (salary + bonus + equity + benefits)', scope: 'mode:human_resources' },
+  { term: 'pay equity', definition: 'Ensuring employees in comparable roles receive comparable pay regardless of gender, race, or other protected characteristics', scope: 'mode:human_resources' },
+  { term: 'FLSA',       definition: 'Fair Labor Standards Act — US law governing minimum wage, overtime, and exempt/non-exempt classification', scope: 'mode:human_resources' },
+  { term: 'exempt vs non-exempt', definition: 'FLSA classification: exempt employees are not entitled to overtime; non-exempt employees are', scope: 'mode:human_resources' },
+  { term: 'FMLA',       definition: 'Family and Medical Leave Act — US law providing up to 12 weeks unpaid protected leave for qualifying reasons', scope: 'mode:human_resources' },
+  { term: 'EAP',        definition: 'Employee Assistance Programme — confidential support service for personal, mental health, and financial issues', scope: 'mode:human_resources' },
+  { term: 'onboarding', definition: 'Structured process for integrating new employees into the organisation, role, and culture', scope: 'mode:human_resources' },
+  { term: 'offboarding', definition: 'Structured process for managing an employee\'s departure, including exit interviews, knowledge transfer, and access removal', scope: 'mode:human_resources' },
+  { term: 'exit interview', definition: 'Structured conversation with a departing employee to understand their reasons for leaving', scope: 'mode:human_resources' },
+  { term: 'employee relations', definition: 'Management of the employer–employee relationship, including conflict resolution, grievances, and disciplinary processes', scope: 'mode:human_resources' },
 
   // ── Journalism ─────────────────────────────────────────────────────────────
   { term: 'FOIA',          definition: 'Freedom of Information Act request',          scope: 'mode:journalism' },

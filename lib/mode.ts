@@ -4,7 +4,7 @@ export type AppMode =
   | 'team_lead'
   | 'market_research'
   | 'legal'
-  | 'consulting'
+  | 'human_resources'
 
 export interface ModeFeatures {
   /** Named entity extraction, cross-linking, and entity search */
@@ -272,39 +272,38 @@ export const MODES: Record<AppMode, ModeConfig> = {
     },
   },
 
-  consulting: {
-    id: 'consulting',
-    label: 'Consulting',
-    tagline: 'Client engagements, deliverables & progress',
-    icon: '💼',
-    personLabel: 'Client',
-    personLabelPlural: 'Clients',
-    documentLabel: 'Deliverable',
-    documentLabelPlural: 'Deliverables',
-    collectionLabel: 'Engagement',
-    collectionLabelPlural: 'Engagements',
-    navPeople: 'Clients',
-    navDocuments: 'Add Deliverable',
-    navLibrary: 'Deliverables',
+  human_resources: {
+    id: 'human_resources',
+    label: 'Human Resources',
+    tagline: 'People operations, talent & workforce analytics',
+    icon: '🫂',
+    personLabel: 'Employee',
+    personLabelPlural: 'Employees',
+    documentLabel: 'Report',
+    documentLabelPlural: 'Reports',
+    collectionLabel: 'Area',
+    collectionLabelPlural: 'Areas',
+    navPeople: 'Employees',
+    navDocuments: 'Add Report',
+    navLibrary: 'Library',
     navJournal: 'Journal',
-    uploadTitle: 'Add Deliverable or Document',
-    uploadDescription: 'Upload client documents, deliverables, meeting notes, or status reports.',
-    uploadAreaLabel: 'Engagement',
-    defaultAreas: ['Strategy', 'Operations', 'Digital Transformation', 'Finance', 'HR & Org', 'Technology', 'Marketing', 'Risk & Compliance', 'Change Management'],
+    uploadTitle: 'Add HR Report',
+    uploadDescription: 'Upload HR reports, survey results, workforce analytics, or policy documents.',
+    uploadAreaLabel: 'HR Area',
+    defaultAreas: ['Recruitment', 'Onboarding', 'L&D', 'Compensation & Benefits', 'Employee Relations', 'HR Operations', 'Workforce Planning', 'DEI', 'Performance Management', 'Payroll', 'Engagement', 'Offboarding'],
     acceptedFileTypes: BASE_FILE_TYPES,
-    defaultJournalFolders: ['Client Notes', 'Meeting Notes', 'Ideas', 'Research', 'General'],
-    emptyStateTitle: 'No deliverables yet',
-    emptyStateBody: 'Upload your first document to start tracking your engagement work.',
-    emptyStateCta: 'Add first deliverable',
-    aiContext: 'You are assisting a consultant. Focus on client value delivery, project progress, risks, and actionable recommendations. Frame insights in terms of client impact.',
-    analysisFraming: 'Extract project progress, deliverable status, risks, and key recommendations. Identify milestones achieved, outstanding commitments, and any scope or timeline concerns.',
+    defaultJournalFolders: ['HR Notes', 'Policy Drafts', 'Interview Notes', 'Team Feedback', 'General'],
+    emptyStateTitle: 'No reports yet',
+    emptyStateBody: 'Upload your first HR report to track workforce health and surface people insights.',
+    emptyStateCta: 'Add first report',
+    aiContext: 'You are assisting an HR professional. Focus on workforce health, talent trends, employee engagement, compliance risks, and organisational effectiveness. Treat all employee data with sensitivity.',
+    analysisFraming: 'Extract workforce metrics, headcount trends, attrition signals, and engagement indicators. Flag compliance risks, recurring employee relations issues, and gaps in HR processes. Identify what is improving and what requires intervention.',
     features: {
       ...DEFAULT_FEATURES,
-      entities: true,
-      timeline: true,
       documentComparison: true,
-      journalDescription: 'Engagement notes organised by client — meetings, decisions, research',
-      extraNavItems: [{ href: '/entities', label: 'Stakeholders', icon: 'Users' }],
+      metricsBoard: true,
+      journalDescription: 'HR notes organised by area — policy, interviews, team feedback',
+      extraNavItems: [{ href: '/metrics', label: 'Metrics', icon: 'BarChart2' }],
     },
   },
 }

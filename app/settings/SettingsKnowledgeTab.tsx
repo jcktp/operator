@@ -128,13 +128,13 @@ function YouPanel() {
 // ── Glossary panel ────────────────────────────────────────────────────────────
 
 const SCOPE_OPTIONS = [
-  { value: 'global',              label: 'Global (all modes)' },
-  { value: 'mode:executive',      label: 'Executive mode' },
-  { value: 'mode:consulting',     label: 'Consulting mode' },
-  { value: 'mode:journalism',     label: 'Journalism mode' },
-  { value: 'mode:team-lead',      label: 'Team Lead mode' },
-  { value: 'mode:market-research', label: 'Market Research mode' },
-  { value: 'mode:legal',          label: 'Legal mode' },
+  { value: 'global',                   label: 'Global (all modes)' },
+  { value: 'mode:executive',           label: 'Executive mode' },
+  { value: 'mode:human_resources',     label: 'Human Resources mode' },
+  { value: 'mode:journalism',          label: 'Journalism mode' },
+  { value: 'mode:team-lead',           label: 'Team Lead mode' },
+  { value: 'mode:market-research',     label: 'Market Research mode' },
+  { value: 'mode:legal',               label: 'Legal mode' },
 ]
 
 function scopeLabel(scope: string): string {

@@ -106,7 +106,7 @@ import { JOURNALISM_PERSONA_DEFS } from './journalism'
 import { TEAM_LEAD_PERSONA_DEFS } from './team_lead'
 import { MARKET_RESEARCH_PERSONA_DEFS } from './market_research'
 import { LEGAL_PERSONA_DEFS } from './legal'
-import { CONSULTING_PERSONA_DEFS } from './consulting'
+import { HUMAN_RESOURCES_PERSONA_DEFS } from './human_resources'
 
 const PERSONA_DEFS_BY_MODE: Record<AppMode, Record<PersonaId, PersonaDef>> = {
   executive: EXECUTIVE_PERSONA_DEFS,
@@ -114,7 +114,7 @@ const PERSONA_DEFS_BY_MODE: Record<AppMode, Record<PersonaId, PersonaDef>> = {
   team_lead: TEAM_LEAD_PERSONA_DEFS,
   market_research: MARKET_RESEARCH_PERSONA_DEFS,
   legal: LEGAL_PERSONA_DEFS,
-  consulting: CONSULTING_PERSONA_DEFS,
+  human_resources: HUMAN_RESOURCES_PERSONA_DEFS,
 }
 
 export function getPersonasForMode(modeId?: string): Record<PersonaId, Persona> {
