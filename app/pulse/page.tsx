@@ -276,8 +276,8 @@ export default function PulsePage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Pulse</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Pulse</h1>
+          <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">
             Live feeds — RSS, Reddit, YouTube, Bluesky, Mastodon, and webhooks.
           </p>
           {lastAutoRefresh && (
@@ -295,7 +295,7 @@ export default function PulsePage() {
               onClick={refreshAll}
               disabled={autoRefreshing}
               title="Refresh all feeds"
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-40"
+              className="p-1.5 rounded-lg text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40"
             >
               <RefreshCw size={14} className={autoRefreshing ? 'animate-spin' : ''} />
             </button>
@@ -305,8 +305,8 @@ export default function PulsePage() {
             onClick={() => { setShowDirectory(s => !s); setShowAdd(false) }}
             className={`inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors ${
               showDirectory
-                ? 'bg-gray-100 text-gray-700 border-gray-200'
-                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                ? 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 border-gray-200 dark:border-zinc-700'
+                : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-200 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800'
             }`}
           >
             <Globe size={14} />
@@ -314,7 +314,7 @@ export default function PulsePage() {
           </button>
           <button
             onClick={() => { setShowAdd(s => !s); setShowDirectory(false) }}
-            className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center gap-1.5 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors"
           >
             {showAdd ? <X size={14} /> : <Plus size={14} />}
             {showAdd ? 'Cancel' : 'Add feed'}
@@ -324,11 +324,11 @@ export default function PulsePage() {
 
       {/* Journalism: keyword monitoring */}
       {isKeywordMode && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Tag size={13} className="text-gray-400" />
-              <span className="text-sm font-medium text-gray-700">Keyword monitoring</span>
+              <Tag size={13} className="text-gray-400 dark:text-zinc-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-zinc-200">Keyword monitoring</span>
               {activeKeywords.size > 0 && (
                 <button
                   onClick={() => setActiveKeywords(new Set())}
@@ -338,7 +338,7 @@ export default function PulsePage() {
                 </button>
               )}
             </div>
-            <span className="text-xs text-gray-400">{keywords.length} keyword{keywords.length !== 1 ? 's' : ''}</span>
+            <span className="text-xs text-gray-400 dark:text-zinc-500">{keywords.length} keyword{keywords.length !== 1 ? 's' : ''}</span>
           </div>
           <form
             onSubmit={e => {
@@ -354,12 +354,12 @@ export default function PulsePage() {
               value={keywordInput}
               onChange={e => setKeywordInput(e.target.value)}
               placeholder="Add keyword (e.g. climate, corruption)…"
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="flex-1 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
             />
             <button
               type="submit"
               disabled={!keywordInput.trim()}
-              className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+              className="text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-40"
             >
               Add
             </button>
@@ -374,8 +374,8 @@ export default function PulsePage() {
                     className={cn(
                       'flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border cursor-pointer select-none transition-colors',
                       active
-                        ? 'bg-amber-100 border-amber-300 text-amber-900'
-                        : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-amber-100 dark:bg-amber-900 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100'
+                        : 'bg-gray-100 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700'
                     )}
                     onClick={() => setActiveKeywords(s => {
                       const n = new Set(s)
@@ -390,7 +390,7 @@ export default function PulsePage() {
                         setKeywords(ks => ks.filter(k => k !== kw))
                         setActiveKeywords(s => { const n = new Set(s); n.delete(kw); return n })
                       }}
-                      className="text-gray-400 hover:text-gray-700"
+                      className="text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200"
                     >
                       <X size={10} />
                     </button>
@@ -426,11 +426,11 @@ export default function PulsePage() {
 
       {feeds.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
-            <Rss size={20} className="text-gray-400" />
+          <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center mb-4">
+            <Rss size={20} className="text-gray-400 dark:text-zinc-500" />
           </div>
-          <p className="text-sm text-gray-500">No feeds yet.</p>
-          <p className="text-xs text-gray-400 mt-1">Add RSS, Reddit, YouTube, Bluesky, or Mastodon feeds.</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">No feeds yet.</p>
+          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Add RSS, Reddit, YouTube, Bluesky, or Mastodon feeds.</p>
         </div>
       ) : (
         <div className="flex gap-6 items-start">
@@ -439,29 +439,29 @@ export default function PulsePage() {
             <button
               onClick={() => { setActiveFeed(null); setPage(1) }}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                activeFeed === null ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'
+                activeFeed === null ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
               }`}
             >
               <span>All feeds</span>
-              <span className={`text-xs ${activeFeed === null ? 'text-gray-300' : 'text-gray-400'}`}>{allItems.length}</span>
+              <span className={`text-xs ${activeFeed === null ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500'}`}>{allItems.length}</span>
             </button>
 
             {feeds.map(f => (
               <div key={f.id}>
                 {editingId === f.id ? (
                   // Inline edit form
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 space-y-2">
+                  <div className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg p-2.5 space-y-2">
                     <input
                       autoFocus
                       value={editForm.name}
                       onChange={e => setEditForm(ef => ({ ...ef, name: e.target.value }))}
-                      className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-gray-900"
+                      className="w-full border border-gray-200 dark:border-zinc-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-700 dark:text-zinc-100"
                       placeholder="Feed name"
                     />
                     <input
                       value={editForm.url}
                       onChange={e => setEditForm(ef => ({ ...ef, url: e.target.value }))}
-                      className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-gray-900"
+                      className="w-full border border-gray-200 dark:border-zinc-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-700 dark:text-zinc-100"
                       placeholder="URL / username"
                     />
                     <TypeDropdown value={editForm.type} onChange={v => setEditForm(ef => ({ ...ef, type: v }))} compact />
@@ -470,7 +470,7 @@ export default function PulsePage() {
                         type="button"
                         disabled={savingEdit}
                         onClick={() => handleSaveEdit(f.id)}
-                        className="flex-1 flex items-center justify-center gap-1 bg-gray-900 text-white text-xs font-medium py-1 rounded hover:bg-gray-800 disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-1 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium py-1 rounded hover:bg-gray-800 dark:hover:bg-zinc-200 disabled:opacity-50"
                       >
                         {savingEdit ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
                         Save
@@ -478,7 +478,7 @@ export default function PulsePage() {
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
-                        className="flex-1 text-xs text-gray-500 py-1 rounded border border-gray-200 hover:bg-gray-100"
+                        className="flex-1 text-xs text-gray-500 dark:text-zinc-400 py-1 rounded border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700"
                       >
                         Cancel
                       </button>
@@ -489,11 +489,11 @@ export default function PulsePage() {
                     <button
                       onClick={() => { setActiveFeed(f.id === activeFeed ? null : f.id); setEditingId(null); setPage(1) }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                        activeFeed === f.id ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'
+                        activeFeed === f.id ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
                       }`}
                     >
                       <span className="truncate text-left">{f.name}</span>
-                      <span className={`text-xs shrink-0 ml-1 ${activeFeed === f.id ? 'text-gray-300' : 'text-gray-400'}`}>
+                      <span className={`text-xs shrink-0 ml-1 ${activeFeed === f.id ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500'}`}>
                         {f.items.length}
                       </span>
                     </button>
@@ -504,32 +504,32 @@ export default function PulsePage() {
                     )}
 
                     {/* Feed actions — shown on hover */}
-                    <div className="absolute right-1 top-1 hidden group-hover:flex items-center gap-0.5 bg-white/90 rounded">
+                    <div className="absolute right-1 top-1 hidden group-hover:flex items-center gap-0.5 bg-white/90 dark:bg-zinc-900/90 rounded">
                       <button
                         onClick={() => handleRefresh(f.id)}
                         disabled={refreshingId === f.id}
-                        className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
+                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200"
                         title="Refresh"
                       >
                         <RefreshCw size={11} className={refreshingId === f.id ? 'animate-spin' : ''} />
                       </button>
                       <button
                         onClick={() => startEdit(f)}
-                        className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
+                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200"
                         title="Edit"
                       >
                         <Pencil size={11} />
                       </button>
                       <button
                         onClick={() => handleClearFeed(f.id)}
-                        className={`p-1 rounded ${clearingId === f.id ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-amber-500 hover:bg-gray-100'}`}
+                        className={`p-1 rounded ${clearingId === f.id ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950' : 'text-gray-400 dark:text-zinc-500 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-zinc-800'}`}
                         title={clearingId === f.id ? 'Click again to clear all items' : 'Clear feed items'}
                       >
                         <Eraser size={11} />
                       </button>
                       <button
                         onClick={() => handleDelete(f.id)}
-                        className={`p-1 rounded ${deletingId === f.id ? 'text-red-600 bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'}`}
+                        className={`p-1 rounded ${deletingId === f.id ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950' : 'text-gray-400 dark:text-zinc-500 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-zinc-800'}`}
                         title={deletingId === f.id ? 'Click again to confirm delete' : 'Delete feed'}
                       >
                         <Trash2 size={11} />
@@ -545,8 +545,8 @@ export default function PulsePage() {
           <div className="flex-1 min-w-0 space-y-3">
             {allItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <p className="text-sm text-gray-500">No items yet.</p>
-                <p className="text-xs text-gray-400 mt-1">Refresh a feed to load items.</p>
+                <p className="text-sm text-gray-500 dark:text-zinc-400">No items yet.</p>
+                <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Refresh a feed to load items.</p>
               </div>
             ) : (
               <>
@@ -567,22 +567,22 @@ export default function PulsePage() {
                 {/* Pagination */}
                 {allItems.length > ITEMS_PER_PAGE && (
                   <div className="flex items-center justify-between pt-2">
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 dark:text-zinc-500">
                       {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, allItems.length)} of {allItems.length}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setPage(p => Math.max(1, p - 1))}
                         disabled={page === 1}
-                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
+                        className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-default transition-colors"
                       >
                         <ChevronLeft size={13} />
                       </button>
-                      <span className="text-xs text-gray-600 px-2">Page {page} of {Math.ceil(allItems.length / ITEMS_PER_PAGE)}</span>
+                      <span className="text-xs text-gray-600 dark:text-zinc-300 px-2">Page {page} of {Math.ceil(allItems.length / ITEMS_PER_PAGE)}</span>
                       <button
                         onClick={() => setPage(p => Math.min(Math.ceil(allItems.length / ITEMS_PER_PAGE), p + 1))}
                         disabled={page >= Math.ceil(allItems.length / ITEMS_PER_PAGE)}
-                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
+                        className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-default transition-colors"
                       >
                         <ChevronRight size={13} />
                       </button>

@@ -85,13 +85,13 @@ export default async function OverviewPage({
   if (reports.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
-          <FileText size={20} className="text-gray-400" />
+        <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center mb-4">
+          <FileText size={20} className="text-gray-400 dark:text-zinc-500" />
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">{modeConfig.emptyStateTitle}</h1>
-        <p className="text-gray-500 text-sm max-w-sm mb-6">{modeConfig.emptyStateBody}</p>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-zinc-50 mb-2">{modeConfig.emptyStateTitle}</h1>
+        <p className="text-gray-500 dark:text-zinc-400 text-sm max-w-sm mb-6">{modeConfig.emptyStateBody}</p>
         <Link href="/upload"
-          className="inline-flex items-center gap-2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+          className="inline-flex items-center gap-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors">
           <Upload size={15} />{modeConfig.emptyStateCta}
         </Link>
       </div>

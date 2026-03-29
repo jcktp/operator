@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #fafafa;
@@ -7,6 +8,16 @@
   --border: #e5e5e5;
   --muted: #737373;
   --accent: #0a0a0a;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --surface: #18181b;
+  --border: #3f3f46;
+  --muted: #71717a;
+  --accent: #fafafa;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -40,6 +51,23 @@ body {
   50%  { transform: translateX(150%);  width: 40% }
   100% { transform: translateX(150%);  width: 40% }
 }
+
+/* ── Dark mode overrides for vanilla CSS blocks ─────────────────────────── */
+.dark .tiptap-editor { color: #e4e4e7; }
+.dark .tiptap-editor h1, .dark .tiptap-editor h2 { color: #fafafa; }
+.dark .tiptap-editor h3 { color: #e4e4e7; }
+.dark .tiptap-editor strong { color: #fafafa; }
+.dark .tiptap-editor code { background: #3f3f46; color: #e4e4e7; }
+.dark .tiptap-editor blockquote { border-left-color: #52525b; color: #a1a1aa; }
+.dark .tiptap-editor p.is-editor-empty:first-child::before { color: #52525b; }
+
+.dark .doc-content { color: #e4e4e7; }
+.dark .doc-content h1, .dark .doc-content h2 { color: #fafafa; }
+.dark .doc-content h3 { color: #e4e4e7; }
+.dark .doc-content strong { color: #fafafa; }
+.dark .doc-content th { background: #27272a; border-color: #3f3f46; color: #fafafa; }
+.dark .doc-content td { border-color: #3f3f46; }
+.dark .doc-content tr:nth-child(even) td { background: #27272a; }
 
 /* Tiptap editor content */
 .tiptap-editor { font-size: 0.875rem; line-height: 1.7; color: #374151; }

@@ -28,36 +28,36 @@ function SearchableDropdown({ value, placeholder, options, onChange }: { value: 
   return (
     <div className="relative" ref={ref}>
       <button type="button" onClick={() => { setOpen(o => !o); setTimeout(() => inputRef.current?.focus(), 50) }}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white h-[38px]">
-        <span className={value ? 'text-gray-900' : 'text-gray-400'}>{selectedLabel || placeholder}</span>
-        <ChevronDown size={14} className="text-gray-400 shrink-0" />
+        className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 bg-white dark:bg-zinc-800 h-[38px]">
+        <span className={value ? 'text-gray-900 dark:text-zinc-100' : 'text-gray-400 dark:text-zinc-500'}>{selectedLabel || placeholder}</span>
+        <ChevronDown size={14} className="text-gray-400 dark:text-zinc-500 shrink-0" />
       </button>
       {open && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
-            <Search size={12} className="text-gray-400 shrink-0" />
+        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-md overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-zinc-700">
+            <Search size={12} className="text-gray-400 dark:text-zinc-500 shrink-0" />
             <input
               ref={inputRef}
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Type to search…"
-              className="flex-1 text-sm outline-none bg-transparent placeholder-gray-400"
+              className="flex-1 text-sm outline-none bg-transparent placeholder-gray-400 dark:placeholder-zinc-500 dark:text-zinc-100"
               onClick={e => e.stopPropagation()}
             />
           </div>
           <div className="py-1 max-h-48 overflow-y-auto">
             <button type="button" onClick={() => { onChange(''); setOpen(false); setQuery('') }}
-              className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50">
+              className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-zinc-500 hover:bg-gray-50 dark:hover:bg-zinc-700">
               {placeholder}
             </button>
             {filtered.map(o => (
               <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); setQuery('') }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 text-gray-900">
+                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100">
                 {o.label}
               </button>
             ))}
             {filtered.length === 0 && (
-              <p className="px-3 py-2 text-xs text-gray-400">No matches</p>
+              <p className="px-3 py-2 text-xs text-gray-400 dark:text-zinc-500">No matches</p>
             )}
           </div>
         </div>
@@ -178,10 +178,10 @@ export default function RequestTab() {
   if (link) {
     return (
       <div className="space-y-5">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
+        <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl p-5 text-center">
           <CheckCircle size={24} className="text-green-500 mx-auto mb-2" />
-          <p className="text-sm font-semibold text-gray-900">Request link ready</p>
-          <p className="text-xs text-gray-500 mt-0.5">Send this to the person you want the {modeConfig.documentLabel.toLowerCase()} from</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Request link ready</p>
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Send this to the person you want the {modeConfig.documentLabel.toLowerCase()} from</p>
         </div>
         {tunnelUrl && (
           <div className="flex items-center gap-1.5 text-[10px] text-green-600 font-medium px-1">
@@ -204,21 +204,21 @@ export default function RequestTab() {
             </p>
           </div>
         )}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-1.5">
-            <p className="text-xs font-medium text-gray-500">Shareable link</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-zinc-400">Shareable link</p>
           </div>
           <div className="flex gap-2">
             <input readOnly value={link}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-700 bg-gray-50 focus:outline-none" />
+              className="flex-1 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono text-gray-700 dark:text-zinc-200 bg-gray-50 dark:bg-zinc-800 focus:outline-none" />
             <button onClick={copy}
-              className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors">
+              className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors">
               {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy</>}
             </button>
           </div>
         </div>
         <button onClick={reset}
-          className="w-full border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+          className="w-full border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
           Create another request
         </button>
       </div>
@@ -236,16 +236,16 @@ export default function RequestTab() {
         </div>
       )}
       {!tunnelUrl && !localUrl && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
+        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex gap-2">
           <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-700">
+          <p className="text-xs text-amber-700 dark:text-amber-300">
             Remote access is off — generated links only work on this machine. Enable it in <strong>Settings → Remote Submissions</strong>.
           </p>
         </div>
       )}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-4">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">From {modeConfig.personLabel.toLowerCase()} <span className="text-gray-400 font-normal">(optional)</span></label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-zinc-200 mb-1.5">From {modeConfig.personLabel.toLowerCase()} <span className="text-gray-400 dark:text-zinc-500 font-normal">(optional)</span></label>
           <SearchableDropdown
             value={directReportId}
             placeholder="Not specified"
@@ -254,13 +254,13 @@ export default function RequestTab() {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">Report title <span className="text-red-400">*</span></label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-zinc-200 mb-1.5">Report title <span className="text-red-400">*</span></label>
           <input type="text" value={title} onChange={e => setTitle(e.target.value)} required
             placeholder="e.g. Q1 Engineering Update"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">Area <span className="text-red-400">*</span></label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-zinc-200 mb-1.5">Area <span className="text-red-400">*</span></label>
           <SearchableDropdown
             value={area}
             placeholder="Select area…"
@@ -269,17 +269,17 @@ export default function RequestTab() {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">Message to recipient <span className="text-gray-400 font-normal">(optional)</span></label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-zinc-200 mb-1.5">Message to recipient <span className="text-gray-400 dark:text-zinc-500 font-normal">(optional)</span></label>
           <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3}
             placeholder="e.g. Please include your pipeline numbers and any blockers for this quarter."
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none" />
+            className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 resize-none dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
         </div>
       </div>
-      <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs text-gray-500 leading-relaxed">
+      <div className="bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-xl px-4 py-3 text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
         A unique link will be generated. The recipient can open it in any browser — no account or login required.
       </div>
       <button type="submit" disabled={!title || !area || generating}
-        className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+        className="w-full bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
         {generating ? <><Loader2 size={14} className="animate-spin" />{generatingStep || 'Generating…'}</> : <><Link2 size={14} />Generate request link</>}
       </button>
     </form>

@@ -195,8 +195,8 @@ export default async function DashboardPage({
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-0.5">No {modeConfig.documentLabelPlural.toLowerCase()} match the current filters.</p>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Dashboard</h1>
+            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">No {modeConfig.documentLabelPlural.toLowerCase()} match the current filters.</p>
           </div>
           <DashboardFilters
             areas={allAreas.map(a => a.area)}
@@ -208,7 +208,7 @@ export default async function DashboardPage({
           />
         </div>
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Activity size={32} className="text-gray-200 mb-4" />
+          <Activity size={32} className="text-gray-200 dark:text-zinc-700 mb-4" />
           <p className="text-gray-500 text-sm">No {modeConfig.documentLabelPlural.toLowerCase()} in this period.</p>
         </div>
       </div>
@@ -221,8 +221,8 @@ export default async function DashboardPage({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Dashboard</h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
             {totalReports} {totalReports !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()} · {areasCount} area{areasCount !== 1 ? 's' : ''}
             {filterArea && ` · ${filterArea}`}
           </p>
@@ -263,7 +263,7 @@ export default async function DashboardPage({
 
       {/* Area cards */}
       <section>
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Areas</h2>
+        <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3">Areas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {areaCards.map(({ area, latest, metrics, changes, health, count }) => {
             const improved = changes.filter(c => c.direction === 'improved').length
@@ -272,12 +272,12 @@ export default async function DashboardPage({
               improved > declined ? 'up' : declined > improved ? 'down' : 'flat'
 
             return (
-              <div key={area} className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-gray-300 hover:shadow-sm transition-all">
+              <div key={area} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl overflow-hidden hover:border-gray-300 dark:hover:border-zinc-600 hover:shadow-sm transition-all">
                 <div className="px-5 pt-5 pb-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <AreaBadge area={area} />
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <span className="text-xs text-gray-400 dark:text-zinc-500 flex items-center gap-1">
                         <Clock size={10} />{formatRelativeDate(latest.createdAt)}
                       </span>
                     </div>
@@ -288,7 +288,7 @@ export default async function DashboardPage({
                   </div>
 
                   {latest.summary && (
-                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-4">{latest.summary}</p>
+                    <p className="text-sm text-gray-600 dark:text-zinc-300 line-clamp-2 leading-relaxed mb-4">{latest.summary}</p>
                   )}
 
                   {metrics.length > 0 && (
@@ -296,16 +296,16 @@ export default async function DashboardPage({
                       {metrics.map((m, i) => (
                         <div key={i} className={cn(
                           'rounded-xl px-3 py-2.5',
-                          m.status === 'positive' ? 'bg-green-50' :
-                          m.status === 'negative' ? 'bg-red-50' :
-                          m.status === 'warning'  ? 'bg-amber-50' : 'bg-gray-50'
+                          m.status === 'positive' ? 'bg-green-50 dark:bg-green-950' :
+                          m.status === 'negative' ? 'bg-red-50 dark:bg-red-950' :
+                          m.status === 'warning'  ? 'bg-amber-50 dark:bg-amber-950' : 'bg-gray-50 dark:bg-zinc-800'
                         )}>
-                          <p className="text-xs text-gray-400 truncate">{m.label}</p>
+                          <p className="text-xs text-gray-400 dark:text-zinc-500 truncate">{m.label}</p>
                           <p className={cn(
                             'text-base font-semibold mt-0.5',
-                            m.status === 'positive' ? 'text-green-700' :
-                            m.status === 'negative' ? 'text-red-700' :
-                            m.status === 'warning'  ? 'text-amber-700' : 'text-gray-900'
+                            m.status === 'positive' ? 'text-green-700 dark:text-green-300' :
+                            m.status === 'negative' ? 'text-red-700 dark:text-red-300' :
+                            m.status === 'warning'  ? 'text-amber-700 dark:text-amber-300' : 'text-gray-900 dark:text-zinc-50'
                           )}>{m.value}</p>
                         </div>
                       ))}
@@ -314,26 +314,26 @@ export default async function DashboardPage({
                 </div>
 
                 {changes.length > 0 && (
-                  <div className="border-t border-gray-100 px-5 py-3 flex gap-4 overflow-x-auto">
+                  <div className="border-t border-gray-100 dark:border-zinc-800 px-5 py-3 flex gap-4 overflow-x-auto">
                     {changes.slice(0, 3).map((c, i) => (
                       <div key={i} className="flex items-center gap-1.5 shrink-0 text-xs">
                         <span className={cn('font-bold',
-                          c.direction === 'improved' ? 'text-green-600' :
-                          c.direction === 'declined' ? 'text-red-600' : 'text-gray-400'
+                          c.direction === 'improved' ? 'text-green-600 dark:text-green-400' :
+                          c.direction === 'declined' ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-zinc-500'
                         )}>
                           {c.direction === 'improved' ? '↑' : c.direction === 'declined' ? '↓' : '→'}
                         </span>
-                        <span className="text-gray-500 truncate max-w-[120px]">{c.metric}</span>
-                        <span className="text-gray-400 font-mono">{c.current}</span>
+                        <span className="text-gray-500 dark:text-zinc-400 truncate max-w-[120px]">{c.metric}</span>
+                        <span className="text-gray-400 dark:text-zinc-500 font-mono">{c.current}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                <div className="border-t border-gray-100 px-5 py-3 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{count} {count !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}</span>
+                <div className="border-t border-gray-100 dark:border-zinc-800 px-5 py-3 flex items-center justify-between">
+                  <span className="text-xs text-gray-400 dark:text-zinc-500">{count} {count !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}</span>
                   <Link href={`/library?area=${encodeURIComponent(area)}`}
-                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 transition-colors font-medium">
+                    className="flex items-center gap-1 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-50 transition-colors font-medium">
                     View all <ArrowRight size={11} />
                   </Link>
                 </div>
@@ -349,24 +349,24 @@ export default async function DashboardPage({
 
           {allFlags.length > 0 && (
             <section>
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <AlertTriangle size={11} /> Flags & Risks
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {allFlags.slice(0, 6).map((f, i) => (
                   <Link key={i} href={`/reports/${f.reportId}`}
-                    className="group bg-white border border-gray-200 rounded-xl p-4 hover:border-red-200 hover:shadow-sm transition-all flex flex-col gap-2">
+                    className="group bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 hover:border-red-200 dark:hover:border-red-800 hover:shadow-sm transition-all flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span className={cn(
                         'text-xs font-bold px-1.5 py-0.5 rounded',
-                        f.type === 'risk' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                        f.type === 'risk' ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300' : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
                       )}>
                         {f.type}
                       </span>
                       <AreaBadge area={f.area} />
                     </div>
-                    <p className="text-sm text-gray-700 leading-snug line-clamp-3">{f.text}</p>
-                    <span className="text-xs text-gray-400 group-hover:text-gray-600 flex items-center gap-0.5 mt-auto">
+                    <p className="text-sm text-gray-700 dark:text-zinc-200 leading-snug line-clamp-3">{f.text}</p>
+                    <span className="text-xs text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300 flex items-center gap-0.5 mt-auto">
                       View {modeConfig.documentLabel.toLowerCase()} <ArrowRight size={10} />
                     </span>
                   </Link>
@@ -377,20 +377,20 @@ export default async function DashboardPage({
 
           {allQuestions.length > 0 && (
             <section>
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <HelpCircle size={11} /> Questions to ask
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {allQuestions.slice(0, 6).map((q, i) => (
                   <Link key={i} href={`/reports/${q.reportId}`}
-                    className="group bg-white border border-gray-200 rounded-xl p-4 hover:border-indigo-200 hover:shadow-sm transition-all flex flex-col gap-2">
+                    className="group bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-sm transition-all flex flex-col gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600">?</span>
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300">?</span>
                       <AreaBadge area={q.area} />
-                      {q.directName && <span className="text-xs text-gray-400">{q.directName}</span>}
+                      {q.directName && <span className="text-xs text-gray-400 dark:text-zinc-500">{q.directName}</span>}
                     </div>
-                    <p className="text-sm text-gray-800 font-medium leading-snug line-clamp-3">{q.text}</p>
-                    <span className="text-xs text-gray-400 group-hover:text-gray-600 flex items-center gap-0.5 mt-auto">
+                    <p className="text-sm text-gray-800 dark:text-zinc-100 font-medium leading-snug line-clamp-3">{q.text}</p>
+                    <span className="text-xs text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300 flex items-center gap-0.5 mt-auto">
                       View {modeConfig.documentLabel.toLowerCase()} <ArrowRight size={10} />
                     </span>
                   </Link>

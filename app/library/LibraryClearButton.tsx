@@ -28,8 +28,8 @@ export default function LibraryClearButton() {
       disabled={clearing}
       className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
         confirm
-          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-          : 'text-gray-500 border-gray-200 hover:text-gray-700 hover:border-gray-300'
+          ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-300 border-red-200 dark:border-red-800 hover:bg-red-100'
+          : 'text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:text-gray-700 dark:hover:text-zinc-200 hover:border-gray-300'
       }`}
     >
       <Trash2 size={12} />

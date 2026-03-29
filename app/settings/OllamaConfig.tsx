@@ -58,15 +58,15 @@ export default function OllamaConfig({
   }
 
   return (
-    <div className="space-y-4 pt-1 border-t border-gray-100">
+    <div className="space-y-4 pt-1 border-t border-gray-100 dark:border-zinc-800">
       {/* Host */}
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1.5">Ollama host</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">Ollama host</label>
         <div className="flex gap-2">
           <input type="text" value={ollamaHost} onChange={e => setOllamaHost(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            className="flex-1 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100" />
           <button type="button" onClick={checkOllama}
-            className="shrink-0 border border-gray-200 text-gray-600 text-xs font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+            className="shrink-0 border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 text-xs font-medium px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
             {ollamaStatus === 'checking' ? <Loader2 size={13} className="animate-spin" /> : 'Test'}
           </button>
         </div>
@@ -85,10 +85,10 @@ export default function OllamaConfig({
       {/* Model picker */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-medium text-gray-600">
+          <label className="text-xs font-medium text-gray-600 dark:text-zinc-300">
             Model
             {savedModel && savedProvider === 'ollama' && (
-              <span className="ml-2 text-gray-400 font-normal">current: <code className="font-mono">{savedModel}</code></span>
+              <span className="ml-2 text-gray-400 dark:text-zinc-500 font-normal">current: <code className="font-mono">{savedModel}</code></span>
             )}
           </label>
           <button type="button" onClick={refreshModels} disabled={refreshing}
@@ -103,7 +103,7 @@ export default function OllamaConfig({
             const isSelected = ollamaModel === m.id && !customModel
             const isCurrent = m.id === savedModel && savedProvider === 'ollama'
             return (
-              <label key={m.id} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}>
+              <label key={m.id} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-gray-900 dark:border-zinc-300 bg-gray-50 dark:bg-zinc-800' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-500'}`}>
                 <div className="mt-0.5 shrink-0">
                   {isSelected
                     ? <div className="w-3.5 h-3.5 rounded-full bg-gray-900 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-white" /></div>
@@ -113,10 +113,10 @@ export default function OllamaConfig({
                   onChange={() => { setOllamaModel(m.id); setCustomModel('') }} className="sr-only" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-gray-900">{m.label}</span>
-                    <code className="text-xs text-gray-400 font-mono">{m.id}</code>
+                    <span className="text-sm font-medium text-gray-900 dark:text-zinc-50">{m.label}</span>
+                    <code className="text-xs text-gray-400 dark:text-zinc-500 font-mono">{m.id}</code>
                   </div>
-                  <p className="text-xs text-gray-400">{m.note}</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500">{m.note}</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {isCurrent && <span className="text-xs text-blue-600 font-medium">active</span>}
@@ -128,10 +128,10 @@ export default function OllamaConfig({
         </div>
 
         <div className="mt-3">
-          <label className="block text-xs font-medium text-gray-600 mb-1.5">Or enter any model name</label>
+          <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">Or enter any model name</label>
           <input type="text" value={customModel} onChange={e => setCustomModel(e.target.value)}
             placeholder="e.g. deepseek-r1:1.5b"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
         </div>
       </div>
 
@@ -148,9 +148,9 @@ export default function OllamaConfig({
         </div>
       )}
 
-      <div className="bg-gray-50 rounded-lg p-3">
-        <p className="text-xs text-gray-500 mb-1">Pull a model manually:</p>
-        <code className="text-xs font-mono text-gray-700">ollama pull {selectedModel}</code>
+      <div className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3">
+        <p className="text-xs text-gray-500 dark:text-zinc-400 mb-1">Pull a model manually:</p>
+        <code className="text-xs font-mono text-gray-700 dark:text-zinc-200">ollama pull {selectedModel}</code>
       </div>
 
       {/* Web access toggle */}
@@ -158,18 +158,18 @@ export default function OllamaConfig({
         <div className="flex items-center gap-2">
           {webAccess ? <Globe size={14} className="text-gray-500" /> : <GlobeLock size={14} className="text-gray-400" />}
           <div>
-            <p className="text-xs font-medium text-gray-700">Online access</p>
-            <p className="text-xs text-gray-400">Allow AI to fetch URLs and check weather</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-zinc-200">Online access</p>
+            <p className="text-xs text-gray-400 dark:text-zinc-500">Allow AI to fetch URLs and check weather</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setWebAccess(!webAccess)}
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${webAccess ? 'bg-gray-900' : 'bg-gray-200'}`}
+          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${webAccess ? 'bg-gray-900 dark:bg-zinc-100' : 'bg-gray-200 dark:bg-zinc-700'}`}
           role="switch"
           aria-checked={webAccess}
         >
-          <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${webAccess ? 'translate-x-4' : 'translate-x-0'}`} />
+          <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white dark:bg-zinc-900 shadow transition-transform ${webAccess ? 'translate-x-4' : 'translate-x-0'}`} />
         </button>
       </div>
     </div>

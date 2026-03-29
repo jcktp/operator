@@ -38,19 +38,19 @@ export default async function MetricsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Metrics</h1>
-        <p className="text-gray-500 text-sm mt-0.5">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Metrics</h1>
+        <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">
           All KPIs and metrics extracted from your {modeConfig.documentLabelPlural.toLowerCase()}, across every {modeConfig.collectionLabel.toLowerCase()}.
         </p>
       </div>
 
       {allMetrics.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
+          <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center mb-4">
             <span className="text-2xl">📊</span>
           </div>
-          <p className="text-sm text-gray-500">No metrics yet.</p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 dark:text-zinc-400">No metrics yet.</p>
+          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">
             Upload and analyse {modeConfig.documentLabelPlural.toLowerCase()} to see KPIs here.
           </p>
         </div>

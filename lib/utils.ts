@@ -99,16 +99,16 @@ export function extractJsonFromText(text: string): string {
 }
 
 export const AREA_COLORS: Record<string, string> = {
-  Finance: 'bg-sky-50 text-sky-700 border-sky-200',
-  'HR & People': 'bg-violet-50 text-violet-700 border-violet-200',
-  Sales: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  Marketing: 'bg-pink-50 text-pink-700 border-pink-200',
-  Operations: 'bg-stone-50 text-stone-600 border-stone-200',
-  Product: 'bg-purple-50 text-purple-700 border-purple-200',
-  Engineering: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-  Legal: 'bg-zinc-50 text-zinc-600 border-zinc-200',
-  'Customer Success': 'bg-teal-50 text-teal-700 border-teal-200',
-  Recruitment: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
-  Strategy: 'bg-slate-50 text-slate-600 border-slate-200',
-  Other: 'bg-gray-50 text-gray-600 border-gray-200',
+  Finance: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800',
+  'HR & People': 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800',
+  Sales: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800',
+  Marketing: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950 dark:text-pink-300 dark:border-pink-800',
+  Operations: 'bg-stone-50 text-stone-600 border-stone-200 dark:bg-stone-900 dark:text-stone-300 dark:border-stone-700',
+  Product: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800',
+  Engineering: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800',
+  Legal: 'bg-zinc-50 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-600',
+  'Customer Success': 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800',
+  Recruitment: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-950 dark:text-fuchsia-300 dark:border-fuchsia-800',
+  Strategy: 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600',
+  Other: 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-600',
 }

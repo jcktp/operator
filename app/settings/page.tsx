@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useTheme } from '@/components/ThemeProvider'
 import { useRouter } from 'next/navigation'
 import { useSetMode } from '@/components/ModeContext'
 import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle, X, Plus } from 'lucide-react'
@@ -29,6 +30,7 @@ async function saveSetting(key: string, value: string) {
 export default function SettingsPage() {
   const router = useRouter()
   const setMode = useSetMode()
+  const { theme, toggle } = useTheme()
   const [ollamaHost, setOllamaHost] = useState('http://localhost:11434')
   const [ollamaModel, setOllamaModel] = useState('llama3.2:3b')
   const [savedModel, setSavedModel] = useState('llama3.2:3b')
@@ -246,7 +248,7 @@ export default function SettingsPage() {
     router.refresh()
   }
 
-  if (loading) return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={20} className="animate-spin text-gray-400" /></div>
+  if (loading) return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={20} className="animate-spin text-gray-400 dark:text-zinc-500" /></div>
 
   const TABS: { id: Tab; label: string }[] = [
     { id: 'profile',   label: 'Profile' },
@@ -269,12 +271,12 @@ export default function SettingsPage() {
       )}
 
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Configure your Operator workspace.</p>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Settings</h1>
+        <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">Configure your Operator workspace.</p>
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-5 border-b border-gray-200">
+      <div className="flex gap-5 border-b border-gray-200 dark:border-zinc-700">
         {TABS.map(t => (
           <button
             key={t.id}
@@ -282,7 +284,7 @@ export default function SettingsPage() {
             onClick={() => setTab(t.id)}
             className={cn(
               'pb-2 text-xs font-medium transition-colors border-b-2 -mb-px',
-              tab === t.id ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'
+              tab === t.id ? 'border-gray-900 dark:border-zinc-400 text-gray-900 dark:text-zinc-50' : 'border-transparent text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'
             )}
           >
             {t.label}
@@ -294,31 +296,31 @@ export default function SettingsPage() {
         {/* Profile tab */}
         {tab === 'profile' && (
           <>
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-gray-900">Profile</h2>
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Profile</h2>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Your name</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">Your name</label>
                   <input type="text" value={ceoName} onChange={e => setCeoName(e.target.value)} placeholder="Alex Chen"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                    className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Company</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">Company</label>
                   <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Acme Corp"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                    className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Your role</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">Your role</label>
                 <input type="text" value={userRole} onChange={e => setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                  className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-900">App Mode</h2>
-                {appMode !== savedMode && <span className="text-xs text-amber-600">Unsaved</span>}
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">App Mode</h2>
+                {appMode !== savedMode && <span className="text-xs text-amber-600 dark:text-amber-300">Unsaved</span>}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {MODE_LIST.map(m => (
@@ -328,7 +330,7 @@ export default function SettingsPage() {
                     setAreasCustomized(false)
                   }}
                     className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
-                      appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
+                      appMode === m.id ? 'border-gray-900 dark:border-zinc-400 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900' : 'border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-50 hover:border-gray-300 dark:hover:border-zinc-500'
                     )}>
                     <ModeIcon modeId={m.id} className="w-6 h-6" />
                     <div className="text-xs font-semibold mt-1">{m.label}</div>
@@ -338,46 +340,68 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Sound effects</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Walkie-talkie chirp on startup and shutdown</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Sound effects</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">Walkie-talkie chirp on startup and shutdown</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSoundEnabled(v => !v)}
                   className={cn(
                     'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                    soundEnabled ? 'bg-gray-900' : 'bg-gray-200'
+                    soundEnabled ? 'bg-gray-900 dark:bg-zinc-100' : 'bg-gray-200 dark:bg-zinc-700'
                   )}
                 >
                   <span className={cn(
-                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
+                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white dark:bg-zinc-900 shadow transform transition-transform',
                     soundEnabled ? 'translate-x-4' : 'translate-x-0'
                   )} />
                 </button>
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-900">Areas</h2>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Dark mode</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">Switch to a monochrome dark theme</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggle}
+                  className={cn(
+                    'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                    theme === 'dark' ? 'bg-gray-900 dark:bg-zinc-100' : 'bg-gray-200 dark:bg-zinc-700'
+                  )}
+                >
+                  <span className={cn(
+                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white dark:bg-zinc-900 shadow transform transition-transform',
+                    theme === 'dark' ? 'translate-x-4' : 'translate-x-0'
+                  )} />
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Areas</h2>
                 {areasCustomized && (
                   <button type="button"
                     onClick={() => { setCustomAreas(getModeConfig(appMode).defaultAreas); setAreasCustomized(false) }}
-                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                    className="text-xs text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors">
                     Reset to {getModeConfig(appMode).label} defaults
                   </button>
                 )}
               </div>
-              <p className="text-xs text-gray-400">Areas appear when uploading {getModeConfig(appMode).documentLabelPlural.toLowerCase()} and creating request links. Switching modes resets to that mode&apos;s defaults unless you&apos;ve customised them.</p>
+              <p className="text-xs text-gray-400 dark:text-zinc-500">Areas appear when uploading {getModeConfig(appMode).documentLabelPlural.toLowerCase()} and creating request links. Switching modes resets to that mode&apos;s defaults unless you&apos;ve customised them.</p>
               <div className="flex flex-wrap gap-2">
                 {customAreas.map(area => (
-                  <span key={area} className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-gray-100 text-xs text-gray-700 rounded-md">
+                  <span key={area} className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-gray-100 dark:bg-zinc-800 text-xs text-gray-700 dark:text-zinc-200 rounded-md">
                     {area}
                     <button type="button" onClick={() => { setCustomAreas(a => a.filter(x => x !== area)); setAreasCustomized(true) }}
-                      className="text-gray-400 hover:text-gray-700 transition-colors">
+                      className="text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors">
                       <X size={11} />
                     </button>
                   </span>
@@ -396,7 +420,7 @@ export default function SettingsPage() {
                     }
                   }}
                   placeholder="Add area…"
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="flex-1 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
                 />
                 <button
                   type="button"
@@ -404,26 +428,26 @@ export default function SettingsPage() {
                     const v = newArea.trim()
                     if (v && !customAreas.includes(v)) { setCustomAreas(a => [...a, v]); setNewArea(''); setAreasCustomized(true) }
                   }}
-                  className="px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+                  className="px-3 py-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors"
                 >
                   Add
                 </button>
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-              <h2 className="text-sm font-semibold text-gray-900">Security</h2>
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Security</h2>
 
               {/* Auto-lock */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-700">Auto-lock</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Lock after inactivity and require password</p>
+                  <p className="text-sm text-gray-700 dark:text-zinc-200">Auto-lock</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">Lock after inactivity and require password</p>
                 </div>
                 <select
                   value={autoLockMinutes}
                   onChange={e => setAutoLockMinutes(parseInt(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="text-sm border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400"
                 >
                   <option value={0}>Never</option>
                   <option value={5}>5 min</option>
@@ -437,25 +461,25 @@ export default function SettingsPage() {
               {/* Air-gap mode */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-700">Air-gap mode</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Block all outbound network calls (cloud AI, web search, feeds)</p>
+                  <p className="text-sm text-gray-700 dark:text-zinc-200">Air-gap mode</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">Block all outbound network calls (cloud AI, web search, feeds)</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setAirGapMode(v => !v)}
                   className={cn(
                     'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                    airGapMode ? 'bg-red-500' : 'bg-gray-200'
+                    airGapMode ? 'bg-red-500' : 'bg-gray-200 dark:bg-zinc-700'
                   )}
                 >
                   <span className={cn(
-                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
+                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white dark:bg-zinc-900 shadow transform transition-transform',
                     airGapMode ? 'translate-x-4' : 'translate-x-0'
                   )} />
                 </button>
               </div>
               {airGapMode && (
-                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <p className="text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
                   Air-gap active — only Ollama (local) analysis works. Cloud providers and Pulse feeds are disabled.
                 </p>
               )}
@@ -466,12 +490,12 @@ export default function SettingsPage() {
         {/* AI tab */}
         {tab === 'ai' && (
           <>
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-gray-900">AI Provider</h2>
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">AI Provider</h2>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => setAiProvider('ollama')}
                   className={cn('flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors text-left',
-                    aiProvider === 'ollama' ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
+                    aiProvider === 'ollama' ? 'border-gray-900 dark:border-zinc-400 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-zinc-50' : 'border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:border-gray-300 dark:hover:border-zinc-500')}>
                   <Server size={13} className="shrink-0" />
                   <span>Local (Ollama)</span>
                   {savedProvider === 'ollama' && <span className="ml-auto text-xs text-blue-600 font-medium">active</span>}
@@ -479,7 +503,7 @@ export default function SettingsPage() {
                 {CLOUD_PROVIDERS.map(p => (
                   <button key={p.id} type="button" onClick={() => setAiProvider(p.id)}
                     className={cn('flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors text-left',
-                      aiProvider === p.id ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
+                      aiProvider === p.id ? 'border-gray-900 dark:border-zinc-400 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-zinc-50' : 'border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:border-gray-300 dark:hover:border-zinc-500')}>
                     <ProviderLogo id={p.id} size={13} />
                     <span>{p.label}</span>
                     {savedProvider === p.id && <span className="ml-auto text-xs text-blue-600 font-medium">active</span>}
@@ -488,7 +512,7 @@ export default function SettingsPage() {
               </div>
             </div>
             {aiProvider === 'ollama' && (
-              <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5">
                 <OllamaConfig
                   ollamaHost={ollamaHost} setOllamaHost={setOllamaHost}
                   ollamaModel={ollamaModel} setOllamaModel={setOllamaModel}
@@ -501,7 +525,7 @@ export default function SettingsPage() {
               </div>
             )}
             {CLOUD_PROVIDERS.map(p => aiProvider === p.id && (
-              <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-5">
+              <div key={p.id} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5">
                 <CloudProviderConfig
                   activeProvider={p.id}
                   savedProvider={savedProvider}
@@ -529,7 +553,7 @@ export default function SettingsPage() {
 
         {(tab === 'profile' || tab === 'ai') && (
           <button type="button" onClick={handleSave} disabled={saving}
-            className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="w-full bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {saving
               ? <><Loader2 size={14} className="animate-spin" /> {needsPull ? 'Pulling model…' : 'Saving…'}</>
               : saved ? <><CheckCircle size={14} /> Saved</>
@@ -553,15 +577,15 @@ export default function SettingsPage() {
       )}
 
       {/* AI Context (knowledge base) tab */}
-      {tab === 'knowledge' && <SettingsKnowledgeTab />}
+      {tab === 'knowledge' && <SettingsKnowledgeTab appMode={appMode} />}
 
       {/* Danger tab */}
       {tab === 'danger' && <div className="space-y-5">
         <AuditLogPanel />
 
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-1">About Operator</h2>
-          <p className="text-xs text-gray-400 leading-relaxed">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50 mb-1">About Operator</h2>
+          <p className="text-xs text-gray-400 dark:text-zinc-500 leading-relaxed">
             Operator is fully local. Reports are saved to <code className="font-mono">~/Documents/Operator Reports/</code>.
             {savedProvider === 'ollama'
               ? ' All analysis runs via Ollama on your machine — no data is sent externally.'
@@ -569,22 +593,22 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <div ref={dangerRef} id="danger" className="bg-white border border-red-100 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-red-600 mb-1">Danger zone</h2>
-        <p className="text-xs text-gray-400 mb-4">These actions are permanent and cannot be undone.</p>
+        <div ref={dangerRef} id="danger" className="bg-white dark:bg-zinc-900 border border-red-100 dark:border-red-900 rounded-xl p-5">
+        <h2 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Danger zone</h2>
+        <p className="text-xs text-gray-400 dark:text-zinc-500 mb-4">These actions are permanent and cannot be undone.</p>
 
         {uninstallPhase === 'idle' && (
           <div className="flex items-start gap-4">
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-800">Uninstall Operator</p>
-              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+              <p className="text-sm font-medium text-gray-800 dark:text-zinc-100">Uninstall Operator</p>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5 leading-relaxed">
                 Permanently deletes all your reports, journal entries, contacts, Pulse feeds, settings, and AI analysis data. Also removes the local AI model downloaded by this app and the entire application folder. <strong>Nothing is recoverable after this.</strong>
               </p>
             </div>
             <button
               type="button"
               onClick={() => setUninstallPhase('confirming')}
-              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
             >
               <Trash2 size={14} /> Uninstall
             </button>
@@ -592,20 +616,20 @@ export default function SettingsPage() {
         )}
 
         {uninstallPhase === 'confirming' && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-4 space-y-3">
             <div className="flex items-start gap-2">
               <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-red-700">This cannot be undone</p>
-                <p className="text-xs text-red-600 mt-1 leading-relaxed">
+                <p className="text-sm font-semibold text-red-700 dark:text-red-300">This cannot be undone</p>
+                <p className="text-xs text-red-600 dark:text-red-300 mt-1 leading-relaxed">
                   This will permanently delete:
                 </p>
-                <ul className="text-xs text-red-600 mt-1 space-y-0.5 list-disc list-inside">
+                <ul className="text-xs text-red-600 dark:text-red-300 mt-1 space-y-0.5 list-disc list-inside">
                   <li>All your reports and analysis data</li>
                   <li>The local Ollama AI model pulled for this app</li>
                   <li>The entire Operator application folder</li>
                 </ul>
-                <p className="text-xs text-red-500 mt-2">
+                <p className="text-xs text-red-500 dark:text-red-400 mt-2">
                   Ollama itself will <strong>not</strong> be uninstalled. Only the model this app downloaded will be removed.
                 </p>
               </div>
@@ -614,7 +638,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setUninstallPhase('idle')}
-                className="flex-1 border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
               >
                 Cancel
               </button>

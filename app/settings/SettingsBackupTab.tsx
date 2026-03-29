@@ -21,14 +21,14 @@ export default function SettingsBackupTab({ lastBackup, onBackupDone, initialBac
   const [restoreConfirming, setRestoreConfirming] = useState(false)
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5 space-y-4">
       <div>
-        <h2 className="text-sm font-semibold text-gray-900">Backup & Export</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Download a copy of your data or restore from a previous backup.</p>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Backup & Export</h2>
+        <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Download a copy of your data or restore from a previous backup.</p>
       </div>
 
       {lastBackup && (
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-400 dark:text-zinc-500">
           Last backup: {new Date(lastBackup).toLocaleString()}
         </p>
       )}
@@ -38,7 +38,7 @@ export default function SettingsBackupTab({ lastBackup, onBackupDone, initialBac
           href="/api/backup/export"
           download
           onClick={() => onBackupDone(new Date().toISOString())}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm font-medium text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
         >
           <Download size={13} /> Export JSON
         </a>
@@ -46,22 +46,22 @@ export default function SettingsBackupTab({ lastBackup, onBackupDone, initialBac
           href="/api/backup/export-db"
           download
           onClick={() => onBackupDone(new Date().toISOString())}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm font-medium text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
         >
           <Database size={13} /> Export DB
         </a>
       </div>
-      <p className="text-[11px] text-gray-400">JSON export includes all records. DB export is the raw SQLite file that can restore everything.</p>
+      <p className="text-[11px] text-gray-400 dark:text-zinc-500">JSON export includes all records. DB export is the raw SQLite file that can restore everything.</p>
 
       <div className="space-y-2">
-        <label className="block text-xs font-medium text-gray-600">Auto-backup folder</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300">Auto-backup folder</label>
         <div className="flex gap-2">
           <input
             type="text"
             value={backupPath}
             onChange={e => setBackupPath(e.target.value)}
             placeholder="/Volumes/MyDrive/Backups"
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="flex-1 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
           />
           <button
             type="button"
@@ -97,17 +97,17 @@ export default function SettingsBackupTab({ lastBackup, onBackupDone, initialBac
           </button>
         </div>
         {backupStatus === 'error' && <p className="text-xs text-red-600">{backupError}</p>}
-        <p className="text-[11px] text-gray-400">Copies the database and all uploaded files to this path. Useful for external drives.</p>
+        <p className="text-[11px] text-gray-400 dark:text-zinc-500">Copies the database and all uploaded files to this path. Useful for external drives.</p>
       </div>
 
-      <div className="space-y-2 pt-1 border-t border-gray-100">
-        <label className="block text-xs font-medium text-gray-600 pt-2">Restore from backup</label>
-        <p className="text-[11px] text-gray-400">Upload a <code className="font-mono">.db</code> file to restore all data. Current data will be overwritten.</p>
+      <div className="space-y-2 pt-1 border-t border-gray-100 dark:border-zinc-800">
+        <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 pt-2">Restore from backup</label>
+        <p className="text-[11px] text-gray-400 dark:text-zinc-500">Upload a <code className="font-mono">.db</code> file to restore all data. Current data will be overwritten.</p>
         <input
           type="file"
           accept=".db"
           onChange={e => { setRestoreFile(e.target.files?.[0] ?? null); setRestoreConfirming(false); setRestoreStatus('idle') }}
-          className="block text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-gray-200 file:text-xs file:font-medium file:text-gray-700 file:bg-white hover:file:bg-gray-50 file:cursor-pointer"
+          className="block text-xs text-gray-500 dark:text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-gray-200 dark:file:border-zinc-700 file:text-xs file:font-medium file:text-gray-700 dark:file:text-zinc-200 file:bg-white dark:file:bg-zinc-800 hover:file:bg-gray-50 dark:hover:file:bg-zinc-700 file:cursor-pointer"
         />
         {restoreFile && !restoreConfirming && restoreStatus === 'idle' && (
           <button
@@ -119,14 +119,14 @@ export default function SettingsBackupTab({ lastBackup, onBackupDone, initialBac
           </button>
         )}
         {restoreConfirming && restoreStatus === 'idle' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+          <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 rounded-lg p-3 space-y-2">
             <div className="flex items-start gap-2">
-              <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700">This will <strong>overwrite all current data</strong>. The page will reload after restore. This cannot be undone unless you have a separate backup.</p>
+              <AlertTriangle size={14} className="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-300">This will <strong>overwrite all current data</strong>. The page will reload after restore. This cannot be undone unless you have a separate backup.</p>
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => setRestoreConfirming(false)}
-                className="flex-1 border border-gray-200 text-gray-700 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                className="flex-1 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                 Cancel
               </button>
               <button
@@ -160,7 +160,7 @@ export default function SettingsBackupTab({ lastBackup, onBackupDone, initialBac
           </div>
         )}
         {restoreStatus === 'running' && (
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-zinc-400">
             <Loader2 size={13} className="animate-spin" /> Restoring…
           </div>
         )}

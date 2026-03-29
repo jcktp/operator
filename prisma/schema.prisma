@@ -199,6 +199,7 @@ model AreaBriefing {
   area        String
   mode        String
   content     String
+  userNotes   String?
   reportCount Int      @default(0)
   updatedAt   DateTime @updatedAt
 

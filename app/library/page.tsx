@@ -72,8 +72,8 @@ export default async function LibraryPage({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">{modeConfig.navLibrary}</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">{modeConfig.navLibrary}</h1>
+          <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">
             All {modeConfig.documentLabelPlural.toLowerCase()}, by {modeConfig.collectionLabel.toLowerCase()}. Full history with diffs and questions.
           </p>
         </div>
@@ -82,11 +82,11 @@ export default async function LibraryPage({
 
       {allReports.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
-            <FileText size={20} className="text-gray-400" />
+          <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center mb-4">
+            <FileText size={20} className="text-gray-400 dark:text-zinc-500" />
           </div>
-          <p className="text-sm text-gray-500">No {modeConfig.documentLabelPlural.toLowerCase()} yet.</p>
-          <Link href="/upload" className="mt-4 inline-flex items-center gap-2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+          <p className="text-sm text-gray-500 dark:text-zinc-400">No {modeConfig.documentLabelPlural.toLowerCase()} yet.</p>
+          <Link href="/upload" className="mt-4 inline-flex items-center gap-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors">
             Upload your first {modeConfig.documentLabel.toLowerCase()}
           </Link>
         </div>
@@ -99,12 +99,12 @@ export default async function LibraryPage({
               className={cn(
                 'flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors',
                 !selectedArea
-                  ? 'bg-gray-900 text-white font-medium'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
+                  : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
               )}
             >
               <span>All areas</span>
-              <span className={cn('text-xs', !selectedArea ? 'text-gray-300' : 'text-gray-400')}>
+              <span className={cn('text-xs', !selectedArea ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>
                 {allReports.length}
               </span>
             </Link>
@@ -119,12 +119,12 @@ export default async function LibraryPage({
                   className={cn(
                     'flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors',
                     isActive
-                      ? 'bg-gray-900 text-white font-medium'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
+                      : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
                   )}
                 >
                   <span className="truncate">{area}</span>
-                  <span className={cn('text-xs shrink-0', isActive ? 'text-gray-300' : 'text-gray-400')}>
+                  <span className={cn('text-xs shrink-0', isActive ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>
                     {areaStats[area].count}
                   </span>
                 </Link>
@@ -137,7 +137,7 @@ export default async function LibraryPage({
             {selectedArea && (
               <div className="flex items-center gap-3 mb-4">
                 <AreaBadge area={selectedArea} />
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-zinc-400">
                   {areaStats[selectedArea]?.count} {areaStats[selectedArea]?.count !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}
                   {' · '}last {formatRelativeDate(areaStats[selectedArea]?.latest)}
                 </span>

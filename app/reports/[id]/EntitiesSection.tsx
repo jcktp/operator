@@ -59,7 +59,7 @@ export default function EntitiesSection({
 
   return (
     <section>
-      <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+      <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
         <Users size={11} />
         Entities
       </h2>
@@ -73,12 +73,12 @@ export default function EntitiesSection({
               onClick={() => setFilter(opt)}
               className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                 filter === opt
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                  ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-gray-900 dark:border-zinc-100'
+                  : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
               }`}
             >
               {opt === 'all' ? 'All' : ENTITY_LABELS[opt]}
-              <span className={`ml-1.5 ${filter === opt ? 'text-gray-300' : 'text-gray-400'}`}>
+              <span className={`ml-1.5 ${filter === opt ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500'}`}>
                 {counts[opt]}
               </span>
             </button>
@@ -86,22 +86,22 @@ export default function EntitiesSection({
         ))}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
         {filtered.map((entity) => {
           const cross = crossLinkMap.get(entity.name)
           return (
             <div key={entity.id} className="flex items-start gap-3 px-4 py-3">
-              <span className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border mt-0.5 ${ENTITY_COLORS[entity.type] ?? 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+              <span className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border mt-0.5 ${ENTITY_COLORS[entity.type] ?? 'bg-gray-50 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 border-gray-200 dark:border-zinc-700'}`}>
                 {ENTITY_LABELS[entity.type] ?? entity.type}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">{entity.name}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-zinc-50">{entity.name}</p>
                 {entity.context && (
-                  <p className="text-xs text-gray-400 mt-0.5">{entity.context}</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{entity.context}</p>
                 )}
                 {cross && cross.reportIds.length > 0 && (
                   <div className="mt-1.5">
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-zinc-400">
                       Also appears in{' '}
                       {cross.reportIds.slice(0, 3).map((rid, i) => (
                         <span key={rid}>

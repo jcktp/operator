@@ -112,6 +112,9 @@ const BROWSER_HEADERS = {
 }
 
 export async function POST(req: NextRequest) {
+  if (process.env.AIR_GAP_MODE === 'true') {
+    return NextResponse.json({ error: 'Air-gap mode is enabled — the browser is blocked.' }, { status: 403 })
+  }
   try {
     const { url } = await req.json() as { url?: string }
     if (!url || !url.startsWith('http')) {

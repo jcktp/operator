@@ -43,16 +43,16 @@ export default function AuditLogPanel() {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-900">Audit log</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Audit log</h2>
         <div className="flex items-center gap-2">
           {logs.length > 0 && (
             <button
               type="button"
               onClick={exportCsv}
               title="Export as CSV"
-              className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+              className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 flex items-center gap-1"
             >
               <Download size={11} />
               Export CSV
@@ -62,7 +62,7 @@ export default function AuditLogPanel() {
             type="button"
             disabled={loading}
             onClick={load}
-            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+            className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 flex items-center gap-1"
           >
             {loading ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
             Load
@@ -71,14 +71,14 @@ export default function AuditLogPanel() {
       </div>
 
       {logs.length === 0 ? (
-        <p className="text-xs text-gray-400">Click Load to view recent actions.</p>
+        <p className="text-xs text-gray-400 dark:text-zinc-500">Click Load to view recent actions.</p>
       ) : (
         <div className="space-y-1 max-h-60 overflow-y-auto">
           {logs.map(log => (
-            <div key={log.id} className="flex items-start gap-2 text-xs py-1 border-b border-gray-50 last:border-0">
-              <span className="text-gray-400 shrink-0 tabular-nums">{new Date(log.createdAt).toLocaleString()}</span>
-              <span className="font-mono text-gray-700 shrink-0">{log.action}</span>
-              {log.detail && <span className="text-gray-400 truncate">{log.detail}</span>}
+            <div key={log.id} className="flex items-start gap-2 text-xs py-1 border-b border-gray-50 dark:border-zinc-800 last:border-0">
+              <span className="text-gray-400 dark:text-zinc-500 shrink-0 tabular-nums">{new Date(log.createdAt).toLocaleString()}</span>
+              <span className="font-mono text-gray-700 dark:text-zinc-200 shrink-0">{log.action}</span>
+              {log.detail && <span className="text-gray-400 dark:text-zinc-500 truncate">{log.detail}</span>}
             </div>
           ))}
         </div>

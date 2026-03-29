@@ -57,21 +57,21 @@ export default function CombinedTimelineModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-zinc-700">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-zinc-50 flex items-center gap-2">
             <Clock size={16} />
             Combined Timeline
-            <span className="text-sm font-normal text-gray-400">
+            <span className="text-sm font-normal text-gray-400 dark:text-zinc-500">
               · {reportIds.length} document{reportIds.length !== 1 ? 's' : ''}
             </span>
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors"
           >
             <X size={18} />
           </button>
@@ -80,7 +80,7 @@ export default function CombinedTimelineModal({
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {loading && (
-            <div className="flex items-center justify-center py-12 gap-2 text-gray-400">
+            <div className="flex items-center justify-center py-12 gap-2 text-gray-400 dark:text-zinc-500">
               <Loader2 size={16} className="animate-spin" />
               <span className="text-sm">Building timeline…</span>
             </div>
@@ -91,7 +91,7 @@ export default function CombinedTimelineModal({
           )}
 
           {!loading && !error && events.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-8">
+            <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-8">
               No dated events found in the selected documents.
             </p>
           )}
@@ -102,22 +102,22 @@ export default function CombinedTimelineModal({
                 <div key={event.id} className="flex items-start gap-4">
                   {/* Timeline spine */}
                   <div className="flex flex-col items-center shrink-0 pt-1.5">
-                    <div className="w-2 h-2 rounded-full bg-gray-300 shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-600 shrink-0" />
                     {i < events.length - 1 && (
-                      <div className="w-px bg-gray-100 flex-1 min-h-[20px] mt-1" />
+                      <div className="w-px bg-gray-100 dark:bg-zinc-800 flex-1 min-h-[20px] mt-1" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 pb-4">
                     <div className="flex items-baseline gap-2 flex-wrap mb-0.5">
-                      <span className="text-xs font-semibold text-gray-500">{event.dateText}</span>
+                      <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400">{event.dateText}</span>
                       <Link
                         href={`/reports/${event.reportId}`}
-                        className={`text-xs px-1.5 py-0.5 rounded font-medium hover:opacity-80 transition-opacity ${reportColorMap.get(event.reportId) ?? 'bg-gray-100 text-gray-600'}`}
+                        className={`text-xs px-1.5 py-0.5 rounded font-medium hover:opacity-80 transition-opacity ${reportColorMap.get(event.reportId) ?? 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300'}`}
                       >
                         {event.reportTitle.length > 40 ? event.reportTitle.slice(0, 40) + '…' : event.reportTitle}
                       </Link>
                     </div>
-                    <p className="text-sm text-gray-700">{event.event}</p>
+                    <p className="text-sm text-gray-700 dark:text-zinc-200">{event.event}</p>
                   </div>
                 </div>
               ))}

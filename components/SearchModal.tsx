@@ -143,19 +143,19 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden dark:bg-zinc-900"
         onClick={e => e.stopPropagation()}
       >
         {/* Mode tabs + input */}
-        <div className="border-b border-gray-100">
-          <div className="flex gap-0 border-b border-gray-100">
+        <div className="border-b border-gray-100 dark:border-zinc-800">
+          <div className="flex gap-0 border-b border-gray-100 dark:border-zinc-800">
             <button
               onClick={() => setMode('search')}
               className={cn(
                 'flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px',
                 mode === 'search'
-                  ? 'text-gray-900 border-gray-900'
-                  : 'text-gray-400 border-transparent hover:text-gray-600'
+                  ? 'text-gray-900 border-gray-900 dark:text-zinc-50 dark:border-zinc-50'
+                  : 'text-gray-400 border-transparent hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300'
               )}
             >
               <Search size={11} /> Search
@@ -165,8 +165,8 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
               className={cn(
                 'flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px',
                 mode === 'topic'
-                  ? 'text-gray-900 border-gray-900'
-                  : 'text-gray-400 border-transparent hover:text-gray-600'
+                  ? 'text-gray-900 border-gray-900 dark:text-zinc-50 dark:border-zinc-50'
+                  : 'text-gray-400 border-transparent hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300'
               )}
             >
               <Layers size={11} /> Research topic
@@ -174,17 +174,17 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
           </div>
           <div className="flex items-center gap-3 px-4 py-3">
             {loading
-              ? <Loader2 size={16} className="text-gray-400 shrink-0 animate-spin" />
-              : <Search size={16} className="text-gray-400 shrink-0" />
+              ? <Loader2 size={16} className="text-gray-400 shrink-0 animate-spin dark:text-zinc-500" />
+              : <Search size={16} className="text-gray-400 shrink-0 dark:text-zinc-500" />
             }
             <input
               ref={inputRef}
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder={mode === 'search' ? `Search ${docLabelPlural.toLowerCase()}, insights, ${journalLabel.toLowerCase()}…` : `Research a topic across all ${docLabelPlural.toLowerCase()}…`}
-              className="flex-1 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent"
+              className="flex-1 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent dark:text-zinc-50 dark:placeholder-zinc-500"
             />
-            <kbd className="hidden sm:inline text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">Esc</kbd>
+            <kbd className="hidden sm:inline text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 dark:text-zinc-500 dark:border-zinc-700">Esc</kbd>
           </div>
         </div>
 
@@ -215,22 +215,22 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
                           onMouseEnter={() => setActiveIdx(i)}
                           className={cn(
                             'w-full text-left px-4 py-2.5 flex items-start gap-3 transition-colors',
-                            isActive ? 'bg-gray-50' : 'hover:bg-gray-50'
+                            isActive ? 'bg-gray-50 dark:bg-zinc-800' : 'hover:bg-gray-50 dark:hover:bg-zinc-800'
                           )}
                         >
-                          <FileText size={14} className="text-gray-400 shrink-0 mt-0.5" />
+                          <FileText size={14} className="text-gray-400 shrink-0 mt-0.5 dark:text-zinc-500" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-medium border', color)}>
                                 {r.area}
                               </span>
-                              <span className="text-sm font-medium text-gray-900 truncate">{r.title}</span>
+                              <span className="text-sm font-medium text-gray-900 truncate dark:text-zinc-50">{r.title}</span>
                               {r.directReport && (
-                                <span className="text-xs text-gray-400">{r.directReport.name}</span>
+                                <span className="text-xs text-gray-400 dark:text-zinc-500">{r.directReport.name}</span>
                               )}
                             </div>
                             {r.snippet && (
-                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{r.snippet}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 dark:text-zinc-400">{r.snippet}</p>
                             )}
                           </div>
                         </button>
@@ -252,21 +252,21 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
                           onMouseEnter={() => setActiveIdx(idx)}
                           className={cn(
                             'w-full text-left px-4 py-2.5 flex items-start gap-3 transition-colors',
-                            isActive ? 'bg-gray-50' : 'hover:bg-gray-50'
+                            isActive ? 'bg-gray-50 dark:bg-zinc-800' : 'hover:bg-gray-50 dark:hover:bg-zinc-800'
                           )}
                         >
-                          <BookOpen size={14} className="text-gray-400 shrink-0 mt-0.5" />
+                          <BookOpen size={14} className="text-gray-400 shrink-0 mt-0.5 dark:text-zinc-500" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               {j.folder && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium border bg-gray-50 text-gray-600 border-gray-200">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium border bg-gray-50 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
                                   {j.folder}
                                 </span>
                               )}
-                              <span className="text-sm font-medium text-gray-900 truncate">{j.title}</span>
+                              <span className="text-sm font-medium text-gray-900 truncate dark:text-zinc-50">{j.title}</span>
                             </div>
                             {j.snippet && (
-                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{j.snippet}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 dark:text-zinc-400">{j.snippet}</p>
                             )}
                           </div>
                         </button>
@@ -289,21 +289,21 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
                     <button
                       key={hit.reportId}
                       onClick={() => { router.push(`/reports/${hit.reportId}`); onClose() }}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 dark:hover:bg-zinc-800 dark:border-zinc-800"
                     >
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-medium border', color)}>
                           {hit.area}
                         </span>
-                        <span className="text-sm font-medium text-gray-900 truncate">{hit.reportTitle}</span>
-                        {hit.directName && <span className="text-xs text-gray-400">{hit.directName}</span>}
-                        <span className="text-[10px] text-gray-400 ml-auto">{hit.date}</span>
+                        <span className="text-sm font-medium text-gray-900 truncate dark:text-zinc-50">{hit.reportTitle}</span>
+                        {hit.directName && <span className="text-xs text-gray-400 dark:text-zinc-500">{hit.directName}</span>}
+                        <span className="text-[10px] text-gray-400 ml-auto dark:text-zinc-500">{hit.date}</span>
                       </div>
                       <div className="space-y-1">
                         {hit.matches.map((m, i) => (
                           <div key={i} className="flex items-start gap-2">
-                            <span className="text-[10px] text-gray-400 shrink-0 mt-0.5 w-14 text-right">{FIELD_LABEL[m.field]}</span>
-                            <p className="text-xs text-gray-600 line-clamp-2">{m.text}</p>
+                            <span className="text-[10px] text-gray-400 shrink-0 mt-0.5 w-14 text-right dark:text-zinc-500">{FIELD_LABEL[m.field]}</span>
+                            <p className="text-xs text-gray-600 line-clamp-2 dark:text-zinc-300">{m.text}</p>
                           </div>
                         ))}
                       </div>
@@ -328,15 +328,15 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
 
         {/* Footer */}
         {mode === 'search' && hasResults && (
-          <div className="border-t border-gray-100 px-4 py-2 flex items-center gap-4">
-            <span className="text-[10px] text-gray-400 flex items-center gap-1.5">
-              <kbd className="border border-gray-200 rounded px-1 py-0.5">↑↓</kbd> navigate
+          <div className="border-t border-gray-100 px-4 py-2 flex items-center gap-4 dark:border-zinc-800">
+            <span className="text-[10px] text-gray-400 flex items-center gap-1.5 dark:text-zinc-500">
+              <kbd className="border border-gray-200 rounded px-1 py-0.5 dark:border-zinc-700">↑↓</kbd> navigate
             </span>
-            <span className="text-[10px] text-gray-400 flex items-center gap-1.5">
-              <kbd className="border border-gray-200 rounded px-1 py-0.5">↵</kbd> open
+            <span className="text-[10px] text-gray-400 flex items-center gap-1.5 dark:text-zinc-500">
+              <kbd className="border border-gray-200 rounded px-1 py-0.5 dark:border-zinc-700">↵</kbd> open
             </span>
-            <span className="text-[10px] text-gray-400 flex items-center gap-1.5">
-              <kbd className="border border-gray-200 rounded px-1 py-0.5">Esc</kbd> close
+            <span className="text-[10px] text-gray-400 flex items-center gap-1.5 dark:text-zinc-500">
+              <kbd className="border border-gray-200 rounded px-1 py-0.5 dark:border-zinc-700">Esc</kbd> close
             </span>
           </div>
         )}

@@ -64,7 +64,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1 min-w-0 py-8 px-4 sm:px-6">
           {children}
         </main>
-        <aside className="w-1/4 shrink-0 sticky top-14 h-[calc(100vh-56px)] py-4 pr-4 border-l border-gray-200">
+        <aside className="w-1/4 shrink-0 sticky top-14 h-[calc(100vh-56px)] py-4 pr-4 border-l border-gray-200 dark:border-zinc-800">
           <DispatchPanel
             context={aiContext}
             onClose={() => { setOpen(false); setPendingMessage('') }}
@@ -86,7 +86,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         target="_blank"
         rel="noopener noreferrer"
         onClick={playChirp}
-        className="fixed bottom-4 right-4 flex items-center gap-1.5 text-[10px] text-gray-300 hover:text-gray-500 transition-colors select-none"
+        className="fixed bottom-4 right-4 flex items-center gap-1.5 text-[10px] text-gray-300 hover:text-gray-500 transition-colors select-none dark:text-zinc-700 dark:hover:text-zinc-500"
       >
         <svg width="10" height="14" viewBox="0 0 16 22" fill="none" aria-hidden="true">
           {/* Antenna */}

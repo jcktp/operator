@@ -165,8 +165,8 @@ export default function DirectsPage() {
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">{modeConfig.navPeople}</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">{modeConfig.navPeople}</h1>
+          <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">
             {modeConfig.personLabelPlural} you work with, by {modeConfig.collectionLabel.toLowerCase()}.
           </p>
         </div>
@@ -177,8 +177,8 @@ export default function DirectsPage() {
               className={cn(
                 'inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors',
                 clearingAll
-                  ? 'border-red-300 text-red-600 bg-red-50 hover:bg-red-100'
-                  : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                  ? 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 hover:bg-red-100 dark:hover:bg-red-900'
+                  : 'border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800'
               )}
             >
               <Trash2 size={14} />
@@ -187,14 +187,14 @@ export default function DirectsPage() {
           )}
           <button
             onClick={() => setShowImporter(true)}
-            className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-1.5 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
           >
             <Upload size={14} />
             Import
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center gap-1.5 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors"
           >
             {showForm ? <X size={14} /> : <Plus size={14} />}
             {showForm ? 'Cancel' : `Add ${modeConfig.personLabel.toLowerCase()}`}
@@ -204,44 +204,44 @@ export default function DirectsPage() {
 
       {/* Add form */}
       {showForm && (
-        <form onSubmit={handleAdd} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900">Add {modeConfig.personLabel.toLowerCase()}</h2>
+        <form onSubmit={handleAdd} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Add {modeConfig.personLabel.toLowerCase()}</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Name *</label>
               <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 required placeholder="Jane Smith"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Title *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Title *</label>
               <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                 required placeholder="CFO"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Area *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Area *</label>
               <AreaDropdown value={form.area} options={areas} onChange={v => setForm(f => ({ ...f, area: v }))} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Email</label>
               <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 placeholder="jane@company.com"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Phone</label>
               <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="+1 555 123 4567"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
             </div>
           </div>
           <button type="submit" disabled={saving}
-            className="bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2">
+            className="bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center gap-2">
             {saving && <Loader2 size={13} className="animate-spin" />}
             Save
           </button>
@@ -250,11 +250,11 @@ export default function DirectsPage() {
 
       {directs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-            <Users size={18} className="text-gray-400" />
+          <div className="w-10 h-10 bg-gray-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center mb-3">
+            <Users size={18} className="text-gray-400 dark:text-zinc-500" />
           </div>
-          <p className="text-sm text-gray-500">No {modeConfig.personLabelPlural.toLowerCase()} yet.</p>
-          <p className="text-xs text-gray-400 mt-1">Add them manually or import from a contacts file.</p>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">No {modeConfig.personLabelPlural.toLowerCase()} yet.</p>
+          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Add them manually or import from a contacts file.</p>
         </div>
       ) : (
         <div className="flex gap-6 items-start">
@@ -264,11 +264,11 @@ export default function DirectsPage() {
               onClick={() => setSelectedArea(null)}
               className={cn(
                 'w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors text-left',
-                !selectedArea ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'
+                !selectedArea ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
               )}
             >
               <span>All areas</span>
-              <span className={cn('text-xs', !selectedArea ? 'text-gray-300' : 'text-gray-400')}>{directs.length}</span>
+              <span className={cn('text-xs', !selectedArea ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>{directs.length}</span>
             </button>
 
             {usedAreas.map(area => {
@@ -279,11 +279,11 @@ export default function DirectsPage() {
                   onClick={() => setSelectedArea(isActive ? null : area)}
                   className={cn(
                     'w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors text-left',
-                    isActive ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'
+                    isActive ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
                   )}
                 >
                   <span className="truncate">{area}</span>
-                  <span className={cn('text-xs shrink-0', isActive ? 'text-gray-300' : 'text-gray-400')}>{areaStats[area]}</span>
+                  <span className={cn('text-xs shrink-0', isActive ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>{areaStats[area]}</span>
                 </button>
               )
             })}
@@ -293,23 +293,23 @@ export default function DirectsPage() {
           <div className="flex-1 min-w-0 space-y-4">
             {/* Search */}
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 pointer-events-none" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={`Search ${modeConfig.personLabelPlural.toLowerCase()} by name, title, area…`}
-                className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
               />
               {search && (
-                <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300">
                   <X size={13} />
                 </button>
               )}
             </div>
 
             {(search || selectedArea) && (
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-400 dark:text-zinc-500">
                 {filtered.length === 0
                   ? `No ${modeConfig.personLabelPlural.toLowerCase()} match`
                   : `${filtered.length} ${filtered.length !== 1 ? modeConfig.personLabelPlural.toLowerCase() : modeConfig.personLabel.toLowerCase()}`}
@@ -320,25 +320,25 @@ export default function DirectsPage() {
 
             {filtered.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-sm text-gray-400">No results{search ? ` for "${search}"` : ''}</p>
+                <p className="text-sm text-gray-400 dark:text-zinc-500">No results{search ? ` for "${search}"` : ''}</p>
               </div>
             ) : (
               <>
-                <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+                <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
                   {pageItems.map(d => (
                     <div
                       key={d.id}
                       onClick={() => setEditingContact(d)}
-                      className="flex items-center justify-between px-4 py-4 gap-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between px-4 py-4 gap-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <span className="text-sm font-medium text-gray-900">{d.name}</span>
-                          <span className="text-xs text-gray-500">{d.title}</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-zinc-50">{d.name}</span>
+                          <span className="text-xs text-gray-500 dark:text-zinc-400">{d.title}</span>
                           <AreaBadge area={d.area} />
                           {d.notes && <span title="Has notes"><StickyNote size={11} className="text-amber-400 shrink-0" /></span>}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+                        <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-zinc-500 flex-wrap">
                           {d.email && (
                             <span className="flex items-center gap-1">
                               <Mail size={10} />
@@ -363,8 +363,8 @@ export default function DirectsPage() {
                         onClick={e => { e.stopPropagation(); handleDelete(d.id) }}
                         className={cn('shrink-0 text-xs font-medium px-2 py-1 rounded border transition-colors',
                           deletingId === d.id
-                            ? 'border-red-300 text-red-600 bg-red-50'
-                            : 'border-gray-200 text-gray-400 hover:text-gray-600'
+                            ? 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950'
+                            : 'border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'
                         )}
                       >
                         {deletingId === d.id ? 'Confirm' : <Trash2 size={13} />}
@@ -376,22 +376,22 @@ export default function DirectsPage() {
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between pt-2">
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 dark:text-zinc-500">
                       {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setPage(p => Math.max(1, p - 1))}
                         disabled={safePage === 1}
-                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
+                        className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-default transition-colors"
                       >
                         <ChevronLeft size={13} />
                       </button>
-                      <span className="text-xs text-gray-600 px-2">Page {safePage} of {totalPages}</span>
+                      <span className="text-xs text-gray-600 dark:text-zinc-300 px-2">Page {safePage} of {totalPages}</span>
                       <button
                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                         disabled={safePage === totalPages}
-                        className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
+                        className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-default transition-colors"
                       >
                         <ChevronRightIcon size={13} />
                       </button>

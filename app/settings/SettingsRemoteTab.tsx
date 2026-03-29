@@ -19,28 +19,28 @@ export default function SettingsRemoteTab() {
   }, [])
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5 space-y-4">
       <div>
-        <h2 className="text-sm font-semibold text-gray-900">Remote Submissions</h2>
-        <p className="text-xs text-gray-500 mt-0.5">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Remote Submissions</h2>
+        <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
           Allow direct reports to submit reports via a secure public link, without installing Operator.
         </p>
       </div>
 
       {!tunnelInstalled ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700 space-y-1.5">
+        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-300 space-y-1.5">
           <p className="font-medium">cloudflared not installed</p>
-          <p>Run <code className="bg-amber-100 rounded px-1 font-mono">./start.sh</code> — it installs cloudflared automatically.</p>
+          <p>Run <code className="bg-amber-100 dark:bg-amber-900 rounded px-1 font-mono">./start.sh</code> — it installs cloudflared automatically.</p>
         </div>
       ) : tunnelRunning && tunnelUrl ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-            <span className="text-xs text-green-700 font-medium">Tunnel active</span>
+            <span className="text-xs text-green-700 dark:text-green-300 font-medium">Tunnel active</span>
           </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex items-center gap-2">
-            <Globe size={12} className="text-gray-400 shrink-0" />
-            <span className="text-xs text-gray-700 font-mono truncate flex-1">{tunnelUrl}</span>
+          <div className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 flex items-center gap-2">
+            <Globe size={12} className="text-gray-400 dark:text-zinc-500 shrink-0" />
+            <span className="text-xs text-gray-700 dark:text-zinc-200 font-mono truncate flex-1">{tunnelUrl}</span>
             <button
               type="button"
               onClick={() => { navigator.clipboard.writeText(tunnelUrl!); setTunnelCopied(true); setTimeout(() => setTunnelCopied(false), 2000) }}
@@ -49,14 +49,14 @@ export default function SettingsRemoteTab() {
               {tunnelCopied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
             </button>
           </div>
-          <p className="text-[11px] text-gray-400">Report request links will use this URL while the tunnel is active. The URL changes each session.</p>
+          <p className="text-[11px] text-gray-400 dark:text-zinc-500">Report request links will use this URL while the tunnel is active. The URL changes each session.</p>
           <button
             type="button"
             onClick={async () => {
               await fetch('/api/tunnel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'stop' }) })
               setTunnelRunning(false); setTunnelUrl(null)
             }}
-            className="text-xs text-gray-500 hover:text-gray-700 underline"
+            className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 underline"
           >
             Disable tunnel
           </button>
@@ -65,7 +65,7 @@ export default function SettingsRemoteTab() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-gray-300 shrink-0" />
-            <span className="text-xs text-gray-500">Inactive — links only work on this machine</span>
+            <span className="text-xs text-gray-500 dark:text-zinc-400">Inactive — links only work on this machine</span>
           </div>
           <button
             type="button"
@@ -80,7 +80,7 @@ export default function SettingsRemoteTab() {
                 setTunnelStarting(false)
               }
             }}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm font-medium text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
           >
             {tunnelStarting ? <><Loader2 size={13} className="animate-spin" /> Starting tunnel…</> : <><Globe size={13} /> Enable remote access</>}
           </button>

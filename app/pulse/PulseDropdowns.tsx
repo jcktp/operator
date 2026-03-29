@@ -39,19 +39,19 @@ export function RefreshDropdown({ value, onChange }: { value: number; onChange: 
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-left flex items-center gap-1.5 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900"
+        className="border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-left flex items-center gap-1.5 bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400"
       >
         <span>{label}</span>
-        <ChevronDown size={13} className="text-gray-400" />
+        <ChevronDown size={13} className="text-gray-400 dark:text-zinc-500" />
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-md py-1">
+        <div className="absolute right-0 z-20 mt-1 w-40 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-md py-1">
           {REFRESH_OPTIONS.map(o => (
             <button
               key={o.value}
               type="button"
               onClick={() => { onChange(o.value); setOpen(false) }}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${value === o.value ? 'text-gray-900 font-medium' : 'text-gray-700'}`}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 ${value === o.value ? 'text-gray-900 dark:text-zinc-50 font-medium' : 'text-gray-700 dark:text-zinc-200'}`}
             >
               {o.label}
             </button>
@@ -80,21 +80,21 @@ export function TypeDropdown({ value, onChange, compact }: { value: string; onCh
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className={`w-full border border-gray-200 rounded-lg px-3 text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white ${
+        className={`w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 bg-white dark:bg-zinc-900 ${
           compact ? 'py-1 text-xs' : 'py-2 text-sm h-[38px]'
         }`}
       >
-        <span className="text-gray-900">{TYPE_LABELS[value] ?? value}</span>
-        <ChevronDown size={compact ? 11 : 14} className="text-gray-400" />
+        <span className="text-gray-900 dark:text-zinc-50">{TYPE_LABELS[value] ?? value}</span>
+        <ChevronDown size={compact ? 11 : 14} className="text-gray-400 dark:text-zinc-500" />
       </button>
       {open && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-md py-1">
+        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-md py-1">
           {options.map(o => (
             <button
               key={o}
               type="button"
               onClick={() => { onChange(o); setOpen(false) }}
-              className={`w-full text-left px-3 hover:bg-gray-50 text-gray-900 ${compact ? 'py-1.5 text-xs' : 'py-2 text-sm'}`}
+              className={`w-full text-left px-3 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-900 dark:text-zinc-50 ${compact ? 'py-1.5 text-xs' : 'py-2 text-sm'}`}
             >
               {TYPE_LABELS[o]}
             </button>

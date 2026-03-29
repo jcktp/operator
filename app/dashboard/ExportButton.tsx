@@ -38,7 +38,7 @@ export default function ExportButton({ rows, period }: { rows: ExportRow[]; peri
   return (
     <button
       onClick={download}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:text-gray-900 transition-colors"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg hover:border-gray-300 dark:hover:border-zinc-500 hover:text-gray-900 dark:hover:text-zinc-50 transition-colors"
     >
       <Download size={13} />
       Export CSV

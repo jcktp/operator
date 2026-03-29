@@ -38,7 +38,7 @@ function highlight(text: string, activeKeywords: Set<string>): React.ReactNode {
   const pattern = new RegExp(`(${[...activeKeywords].map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
   const parts = text.split(pattern)
   return parts.map((part, i) =>
-    pattern.test(part) ? <mark key={i} className="bg-amber-100 text-amber-900 rounded px-0.5">{part}</mark> : part
+    pattern.test(part) ? <mark key={i} className="bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100 rounded px-0.5">{part}</mark> : part
   )
 }
 
@@ -46,22 +46,22 @@ export default function PulseItemCard({ item, isKeywordMode, activeKeywords, sav
   const showHighlight = isKeywordMode && activeKeywords.size > 0
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4">
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded border ${TYPE_COLORS[item.feedType] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+            <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded border ${TYPE_COLORS[item.feedType] ?? 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 border-gray-200 dark:border-zinc-700'}`}>
               {item.feedName}
             </span>
             {item.publishedAt && (
-              <span className="text-xs text-gray-400">{formatRelativeDate(item.publishedAt)}</span>
+              <span className="text-xs text-gray-400 dark:text-zinc-500">{formatRelativeDate(item.publishedAt)}</span>
             )}
           </div>
-          <p className="text-sm font-medium leading-snug text-gray-900">
+          <p className="text-sm font-medium leading-snug text-gray-900 dark:text-zinc-50">
             {showHighlight ? highlight(item.title, activeKeywords) : item.title}
           </p>
           {item.summary && item.summary !== item.title && (
-            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1 line-clamp-2">
               {showHighlight ? highlight(item.summary, activeKeywords) : item.summary}
             </p>
           )}
@@ -71,7 +71,7 @@ export default function PulseItemCard({ item, isKeywordMode, activeKeywords, sav
           {item.url && (
             <a
               href={`/browser?url=${encodeURIComponent(item.url)}`}
-              className="p-1.5 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100"
+              className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 rounded hover:bg-gray-100 dark:hover:bg-zinc-800"
               title="Open in Operator Browser"
             >
               <ExternalLink size={13} />
@@ -80,7 +80,7 @@ export default function PulseItemCard({ item, isKeywordMode, activeKeywords, sav
           {item.savedToJournal ? (
             <div className="flex items-center gap-1">
               <a href="/journal?folder=Pulse"
-                className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-green-200 text-green-600 bg-green-50 hover:bg-green-100 transition-colors"
+                className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-green-200 dark:border-green-800 text-green-600 dark:text-green-300 bg-green-50 dark:bg-green-950 hover:bg-green-100 dark:hover:bg-green-900 transition-colors"
                 title="Saved to Journal — click to view"
               >
                 <BookOpen size={11} />
@@ -89,7 +89,7 @@ export default function PulseItemCard({ item, isKeywordMode, activeKeywords, sav
               <button
                 onClick={() => onUnsave(item.id)}
                 disabled={savingItemId === item.id}
-                className="p-1 rounded text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors"
+                className="p-1 rounded text-gray-300 dark:text-zinc-600 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
                 title="Remove from Journal"
               >
                 {savingItemId === item.id ? <Loader2 size={10} className="animate-spin" /> : <X size={10} />}
@@ -102,12 +102,12 @@ export default function PulseItemCard({ item, isKeywordMode, activeKeywords, sav
                 value={savingFolder[item.id] ?? 'Pulse'}
                 onChange={e => setSavingFolder(sf => ({ ...sf, [item.id]: e.target.value }))}
                 placeholder="Folder"
-                className="w-20 text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                className="w-20 text-xs border border-gray-200 dark:border-zinc-700 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
               />
               <button
                 onClick={() => onSave(item.id, savingFolder[item.id])}
                 disabled={savingItemId === item.id}
-                className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                 title="Save to Journal"
               >
                 {savingItemId === item.id ? <Loader2 size={11} className="animate-spin" /> : <BookOpen size={11} />}

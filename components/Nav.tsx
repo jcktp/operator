@@ -17,8 +17,10 @@ import { useState, useEffect, useRef } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
 import { playShutdownBeep } from '@/lib/beep'
 import { useMode } from '@/components/ModeContext'
+import { useTheme } from '@/components/ThemeProvider'
 import StatusIndicator from '@/components/StatusIndicator'
 import SearchModal from '@/components/SearchModal'
+import { Moon, Sun, ShieldOff } from 'lucide-react'
 
 export default function Nav() {
   const pathname = usePathname()
@@ -26,6 +28,7 @@ export default function Nav() {
   const { shutdown, forceShutdown } = useShutdown()
 
   const config = useMode()
+  const { theme, toggle: toggleTheme } = useTheme()
   const [powerMenuOpen, setPowerMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const powerMenuRef = useRef<HTMLDivElement>(null)
@@ -48,6 +51,15 @@ export default function Nav() {
   }, [])
 
   const hidden = pathname.startsWith('/request/') || pathname === '/login' || pathname === '/starting'
+  const [airGapped, setAirGapped] = useState(false)
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then((d: { settings?: Record<string, string> }) => {
+        if (d.settings?.air_gap_mode === 'true') setAirGapped(true)
+      })
+      .catch(() => {})
+  }, [])
 
   const links = [
     { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -58,7 +70,7 @@ export default function Nav() {
     { href: '/directs', label: config.navPeople, icon: Users },
     { href: '/journal', label: config.navJournal, icon: BookOpen },
     { href: '/pulse', label: 'Pulse', icon: Radio },
-    { href: '/browser', label: 'Browser', icon: Globe },
+    ...(!airGapped ? [{ href: '/browser', label: 'Browser', icon: Globe }] : []),
     { href: '/dispatch', label: 'Dispatch', icon: MessageSquare },
     { href: '/settings', label: 'Settings', icon: Settings },
   ]
@@ -133,6 +145,16 @@ export default function Nav() {
     forceShutdown()
   }
 
+  const toggleAirGap = async () => {
+    const next = !airGapped
+    setAirGapped(next)
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'air_gap_mode', value: next ? 'true' : 'false' }),
+    }).catch(() => {})
+  }
+
   if (hidden) return null
 
   return (
@@ -148,14 +170,14 @@ export default function Nav() {
         <Link
           href="/library"
           onClick={dismissNotif}
-          className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg shadow-md px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+          className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg shadow-md px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 whitespace-nowrap dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
           Report received from <span className="font-medium ml-1">{newReport.name}</span>
         </Link>
       </div>
     )}
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 dark:bg-zinc-900 dark:border-zinc-800">
       <div className="w-full px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
 
@@ -163,7 +185,7 @@ export default function Nav() {
           <Link href="/" className="flex items-center gap-2 group shrink-0 mr-8">
             <WalkieTalkie />
             <span
-              className="text-xl text-gray-900"
+              className="text-xl text-gray-900 dark:text-white"
               style={{ fontFamily: 'var(--font-caveat)', fontWeight: 700 }}
             >
               operator
@@ -176,7 +198,7 @@ export default function Nav() {
               const isActive = pathname === href || (href !== '/' && pathname.startsWith(href))
               const linkClass = cn(
                 'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
-                isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                isActive ? 'bg-gray-100 text-gray-900 dark:bg-zinc-800 dark:text-zinc-50' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800'
               )
               if (href === '/library') {
                 return (
@@ -202,41 +224,68 @@ export default function Nav() {
           <button
             onClick={() => setSearchOpen(true)}
             title="Search (⌘K)"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors shrink-0 dark:text-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-zinc-800"
           >
             <Search size={13} />
-            <span className="hidden lg:inline text-gray-300">⌘K</span>
+            <span className="hidden lg:inline text-gray-300 dark:text-zinc-600">⌘K</span>
           </button>
 
           {/* Power menu — right side */}
           <div className="flex items-center gap-1 shrink-0 ml-2">
-            <StatusIndicator />
-            <div className="w-px h-4 bg-gray-200" />
+            <div className="flex items-center gap-1.5">
+              {airGapped && (
+                <span className="text-[10px] font-medium text-sky-500 dark:text-sky-400 leading-none">Air-gap</span>
+              )}
+              <StatusIndicator />
+            </div>
+            <div className="w-px h-4 bg-gray-200 dark:bg-zinc-700" />
             <div className="relative" ref={powerMenuRef}>
               <button
                 onClick={() => setPowerMenuOpen(s => !s)}
                 title="Power menu"
                 className={cn(
                   'flex items-center gap-0.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
-                  powerMenuOpen ? 'bg-gray-100 text-gray-700' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
+                  powerMenuOpen ? 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50 dark:text-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
                 )}
               >
                 <Power size={13} />
                 <ChevronDown size={10} />
               </button>
               {powerMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[130px] z-50">
+                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px] z-50 dark:bg-zinc-900 dark:border-zinc-700">
+                  {/* Dark mode toggle */}
+                  <button
+                    onClick={() => { toggleTheme(); setPowerMenuOpen(false) }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
+                    {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                  </button>
+                  {/* Air-gap toggle */}
+                  <button
+                    onClick={() => { toggleAirGap(); setPowerMenuOpen(false) }}
+                    className={cn(
+                      'flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors',
+                      airGapped
+                        ? 'text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950'
+                        : 'text-gray-600 hover:bg-gray-50 dark:text-zinc-300 dark:hover:bg-zinc-800'
+                    )}
+                  >
+                    <ShieldOff size={12} />
+                    {airGapped ? 'Disable air-gap' : 'Enable air-gap'}
+                  </button>
+                  <div className="mx-2 my-1 h-px bg-gray-100 dark:bg-zinc-800" />
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
                     <LogOut size={12} />
                     Log out
                   </button>
-                  <div className="mx-2 my-1 h-px bg-gray-100" />
+                  <div className="mx-2 my-1 h-px bg-gray-100 dark:bg-zinc-800" />
                   <button
                     onClick={handleShutdown}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
                   >
                     <Power size={12} />
                     Shut down

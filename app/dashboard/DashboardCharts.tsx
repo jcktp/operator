@@ -25,8 +25,8 @@ function healthColor(h: number) {
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-5">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">{title}</p>
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl p-5">
+      <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-4">{title}</p>
       {children}
     </div>
   )
@@ -137,6 +137,6 @@ export default function DashboardCharts({ areaHealth, reportsOverTime, flagsByTy
 
 function Empty({ label = 'No data' }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center h-[220px] text-gray-300 text-sm">{label}</div>
+    <div className="flex items-center justify-center h-[220px] text-gray-300 dark:text-zinc-600 text-sm">{label}</div>
   )
 }

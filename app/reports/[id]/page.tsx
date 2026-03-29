@@ -132,9 +132,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const directionColor: Record<string, string> = {
     improved: 'text-green-600',
     declined: 'text-red-600',
-    unchanged: 'text-gray-400',
+    unchanged: 'text-gray-400 dark:text-zinc-500',
     new: 'text-blue-600',
-    removed: 'text-gray-400',
+    removed: 'text-gray-400 dark:text-zinc-500',
   }
 
   // Period-over-period helpers
@@ -168,7 +168,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   return (
     <ReportContent>
       {/* Back */}
-      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors">
         <ArrowLeft size={14} />
         Overview
       </Link>
@@ -178,14 +178,14 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <AreaBadge area={report.area} />
-            <span className="text-xs text-gray-400">{formatRelativeDate(report.createdAt)}</span>
+            <span className="text-xs text-gray-400 dark:text-zinc-500">{formatRelativeDate(report.createdAt)}</span>
             {history.length > 0 && (
-              <span className="text-xs text-gray-400">· {history.length} prior {history.length !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}</span>
+              <span className="text-xs text-gray-400 dark:text-zinc-500">· {history.length} prior {history.length !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}</span>
             )}
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">{report.title}</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">{report.title}</h1>
 
-          <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 flex-wrap">
+          <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 dark:text-zinc-500 flex-wrap">
             <span className="flex items-center gap-1">
               <FileText size={11} />
               {report.fileName} · {formatFileSize(report.fileSize)}
@@ -232,49 +232,49 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
       {/* Summary */}
       {report.summary && (
-        <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Summary</h2>
-          <p className="text-sm text-gray-700 leading-relaxed">{report.summary}</p>
+        <section className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3">Summary</h2>
+          <p className="text-sm text-gray-700 dark:text-zinc-200 leading-relaxed">{report.summary}</p>
         </section>
       )}
 
       {/* What changed — comparison with previous */}
       {comparison && (
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <GitCompare size={11} />
             {labels.comparison}
           </h2>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl overflow-hidden">
             {comparison.headline && (
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                <p className="text-sm font-medium text-gray-800">{comparison.headline}</p>
+              <div className="px-4 py-3 bg-gray-50 dark:bg-zinc-800 border-b border-gray-100 dark:border-zinc-700">
+                <p className="text-sm font-medium text-gray-800 dark:text-zinc-100">{comparison.headline}</p>
               </div>
             )}
 
             {comparison.changes.length > 0 && (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-zinc-800">
                 {comparison.changes.map((change, i) => (
                   <div key={i} className="flex items-start gap-3 px-4 py-3">
-                    <span className={`shrink-0 text-sm font-bold w-4 text-center ${directionColor[change.direction] ?? 'text-gray-400'}`}>
+                    <span className={`shrink-0 text-sm font-bold w-4 text-center ${directionColor[change.direction] ?? 'text-gray-400 dark:text-zinc-500'}`}>
                       {directionIcon[change.direction] ?? '·'}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-gray-900">{change.metric}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-zinc-50">{change.metric}</span>
                         {change.significance === 'high' && (
-                          <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-medium">significant</span>
+                          <span className="text-xs bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-300 px-1.5 py-0.5 rounded font-medium">significant</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
-                        <span className="line-through text-gray-400">{change.previous}</span>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
+                        <span className="line-through text-gray-400 dark:text-zinc-500">{change.previous}</span>
                         <span>→</span>
                         <span className={`font-medium ${
                           change.direction === 'improved' ? 'text-green-700' :
-                          change.direction === 'declined' ? 'text-red-700' : 'text-gray-700'
+                          change.direction === 'declined' ? 'text-red-700' : 'text-gray-700 dark:text-zinc-200'
                         }`}>{change.current}</span>
                       </div>
-                      {change.note && <p className="text-xs text-gray-400 mt-0.5">{change.note}</p>}
+                      {change.note && <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{change.note}</p>}
                     </div>
                   </div>
                 ))}
@@ -282,10 +282,10 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             )}
 
             {(comparison.newTopics.length > 0 || comparison.removedTopics.length > 0) && (
-              <div className="px-4 py-3 border-t border-gray-100 flex gap-6 flex-wrap">
+              <div className="px-4 py-3 border-t border-gray-100 dark:border-zinc-800 flex gap-6 flex-wrap">
                 {comparison.newTopics.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-gray-500 mb-1">New this report</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">New this report</p>
                     <div className="flex flex-wrap gap-1">
                       {comparison.newTopics.map((t, i) => (
                         <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{t}</span>
@@ -295,10 +295,10 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                 )}
                 {comparison.removedTopics.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-gray-500 mb-1">Not mentioned this time</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">Not mentioned this time</p>
                     <div className="flex flex-wrap gap-1">
                       {comparison.removedTopics.map((t, i) => (
-                        <span key={i} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{t}</span>
+                        <span key={i} className="text-xs bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 px-2 py-0.5 rounded-full">{t}</span>
                       ))}
                     </div>
                   </div>
@@ -312,37 +312,37 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       {/* Metrics */}
       {metrics.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <TrendingUp size={11} />
             {labels.metrics}
             {periodLabel && (
-              <span className="ml-1 text-gray-300 font-normal normal-case tracking-normal">
+              <span className="ml-1 text-gray-300 dark:text-zinc-600 font-normal normal-case tracking-normal">
                 · vs prior {modeConfig.documentLabel.toLowerCase()} ({periodLabel})
               </span>
             )}
           </h2>
-          <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
             {metrics.map((m, i) => {
               const change = changesByMetric.get(m.label.toLowerCase())
               const pp = change ? ppDelta(change.previous, change.current) : null
               return (
                 <div key={i} className="flex items-start justify-between px-4 py-3 gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{m.label}</p>
-                    {m.context && <p className="text-xs text-gray-400 mt-0.5">{m.context}</p>}
+                    <p className="text-sm font-medium text-gray-900 dark:text-zinc-50">{m.label}</p>
+                    {m.context && <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{m.context}</p>}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     {change && (
                       <div className="flex items-center gap-1.5 text-xs">
-                        <span className="text-gray-400 line-through">{change.previous}</span>
-                        <span className={cn('font-medium', directionColor[change.direction] ?? 'text-gray-400')}>
+                        <span className="text-gray-400 dark:text-zinc-500 line-through">{change.previous}</span>
+                        <span className={cn('font-medium', directionColor[change.direction] ?? 'text-gray-400 dark:text-zinc-500')}>
                           {directionIcon[change.direction] ?? '·'}
                           {pp && <span className="ml-0.5 font-normal">{pp}</span>}
                         </span>
                       </div>
                     )}
                     {m.status && m.status !== 'neutral' && <StatusBadge status={m.status} />}
-                    <span className="text-sm font-semibold text-gray-900">{m.value}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-zinc-50">{m.value}</span>
                   </div>
                 </div>
               )
@@ -354,17 +354,17 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       {/* Insights */}
       {insights.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <AlertTriangle size={11} />
             {labels.flags}
           </h2>
-          <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
             {insights.map((insight, i) => (
               <div key={i} className="flex items-start gap-3 px-4 py-3">
                 <InsightTypeBadge type={insight.type} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-700">{insight.text}</p>
-                  {insight.area && <p className="text-xs text-gray-400 mt-0.5">{insight.area}</p>}
+                  <p className="text-sm text-gray-700 dark:text-zinc-200">{insight.text}</p>
+                  {insight.area && <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{insight.area}</p>}
                 </div>
               </div>
             ))}
@@ -375,24 +375,24 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       {/* Questions */}
       {questions.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <HelpCircle size={11} />
             {labels.questionsHeading}{report.directReport ? ` — ${report.directReport.name}` : ''}
           </h2>
           <div className="space-y-3">
             {[...highQuestions, ...otherQuestions].map((q, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-xl px-4 py-4">
+              <div key={i} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-sm font-medium text-gray-900">{q.text}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-zinc-50">{q.text}</p>
                   <span className={`shrink-0 text-xs px-1.5 py-0.5 rounded font-medium ${
-                    q.priority === 'high' ? 'bg-red-50 text-red-600' :
-                    q.priority === 'medium' ? 'bg-amber-50 text-amber-600' :
-                    'bg-gray-50 text-gray-500'
+                    q.priority === 'high' ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-300' :
+                    q.priority === 'medium' ? 'bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-300' :
+                    'bg-gray-50 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400'
                   }`}>
                     {q.priority}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 leading-relaxed">{q.why}</p>
+                <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2 leading-relaxed">{q.why}</p>
               </div>
             ))}
           </div>
@@ -440,11 +440,11 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       {/* History for this area */}
       {history.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <Clock size={11} />
             Previous {report.area} {modeConfig.documentLabelPlural.toLowerCase()}
           </h2>
-          <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
             {history.map(prev => {
               let prevComparison: Comparison | null = null
               prevComparison = parseJsonSafe<Comparison | null>(prev.comparison, null)
@@ -452,18 +452,18 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                 <Link
                   key={prev.id}
                   href={`/reports/${prev.id}`}
-                  className="flex items-start gap-4 px-4 py-3 hover:bg-gray-50 transition-colors"
+                  className="flex items-start gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{prev.title}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-zinc-50">{prev.title}</p>
                     {prevComparison?.headline && (
-                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{prevComparison.headline}</p>
+                      <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5 line-clamp-1">{prevComparison.headline}</p>
                     )}
                     {!prevComparison && prev.summary && (
-                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{prev.summary}</p>
+                      <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5 line-clamp-1">{prev.summary}</p>
                     )}
                   </div>
-                  <span className="shrink-0 text-xs text-gray-400">{formatRelativeDate(prev.createdAt)}</span>
+                  <span className="shrink-0 text-xs text-gray-400 dark:text-zinc-500">{formatRelativeDate(prev.createdAt)}</span>
                 </Link>
               )
             })}
@@ -474,13 +474,13 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       {/* Raw content */}
       <section>
         <details className="group" open={['xlsx', 'xls', 'csv', 'docx', 'doc', 'pdf'].includes(report.fileType) || undefined}>
-          <summary className="cursor-pointer text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 list-none hover:text-gray-600 transition-colors">
+          <summary className="cursor-pointer text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 list-none hover:text-gray-600 dark:hover:text-zinc-300 transition-colors">
             <FileText size={11} />
             {labels.content}
-            <span className="ml-1 text-gray-300 group-open:hidden">▸</span>
-            <span className="ml-1 text-gray-300 hidden group-open:inline">▾</span>
+            <span className="ml-1 text-gray-300 dark:text-zinc-600 group-open:hidden">▸</span>
+            <span className="ml-1 text-gray-300 dark:text-zinc-600 hidden group-open:inline">▾</span>
           </summary>
-          <div className="mt-3 bg-white border border-gray-200 rounded-xl p-4">
+          <div className="mt-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4">
             <RawContent
               content={report.rawContent}
               displayContent={report.displayContent ?? undefined}

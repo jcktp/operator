@@ -36,8 +36,8 @@ export default function DashboardFilters({ areas, directs, activeArea, activeFro
           className={cn(
             'px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors',
             activeArea === area
-              ? 'bg-gray-900 text-white border-gray-900'
-              : 'bg-white text-gray-700 border-gray-200 hover:text-gray-900 hover:border-gray-300'
+              ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-gray-900 dark:border-zinc-100'
+              : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-200 border-gray-200 dark:border-zinc-700 hover:text-gray-900 dark:hover:text-zinc-50 hover:border-gray-300 dark:hover:border-zinc-500'
           )}
         >
           {area}
@@ -48,7 +48,7 @@ export default function DashboardFilters({ areas, directs, activeArea, activeFro
         <select
           value={activeDirect ?? ''}
           onChange={e => update('direct', e.target.value || undefined)}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:border-gray-400 cursor-pointer"
+          className="text-sm border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 focus:outline-none focus:border-gray-400 dark:focus:border-zinc-500 cursor-pointer"
         >
           <option value="">All directs</option>
           {directs.map(d => (

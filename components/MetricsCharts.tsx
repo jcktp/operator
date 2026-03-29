@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { useTheme } from '@/components/ThemeProvider'
 
 export interface MetricPoint {
   date: string
@@ -87,6 +88,9 @@ function DeltaBadge({ current, previous, status }: { current: number; previous: 
 }
 
 function MetricCard({ series }: { series: MetricSeries }) {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+
   const numericPoints = series.points.map(p => ({
     ...p,
     n: p.numericValue,
@@ -107,17 +111,24 @@ function MetricCard({ series }: { series: MetricSeries }) {
   const useLineChart = chartData.length >= 3
   const color = latestStatus ? STATUS_COLORS[latestStatus] ?? '#6b7280' : '#3b82f6'
 
+  const gridStroke   = dark ? '#3f3f46' : '#f3f4f6'
+  const tickFill     = dark ? '#71717a' : '#9ca3af'
+  const tooltipStyle = dark
+    ? { fontSize: 11, borderRadius: 8, border: '1px solid #3f3f46', padding: '4px 8px', backgroundColor: '#18181b', color: '#e4e4e7' }
+    : { fontSize: 11, borderRadius: 8, border: '1px solid #e5e7eb', padding: '4px 8px', backgroundColor: '#ffffff', color: '#111827' }
+  const labelStyle   = { color: dark ? '#a1a1aa' : '#6b7280' }
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4">
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4">
       <div className="flex items-start justify-between mb-1">
-        <p className="text-xs font-medium text-gray-600 truncate max-w-[70%]">{series.label}</p>
+        <p className="text-xs font-medium text-gray-600 dark:text-zinc-400 truncate max-w-[70%]">{series.label}</p>
         {latest && prev && latest.n !== null && prev.n !== null && (
           <DeltaBadge current={latest.n} previous={prev.n} status={latestStatus} />
         )}
       </div>
 
       {latest && (
-        <p className="text-xl font-semibold text-gray-900 mb-2" style={{ color: latestStatus ? STATUS_COLORS[latestStatus] : undefined }}>
+        <p className="text-xl font-semibold text-gray-900 dark:text-zinc-50 mb-2" style={{ color: latestStatus ? STATUS_COLORS[latestStatus] : undefined }}>
           {latest.displayValue}
         </p>
       )}
@@ -127,12 +138,10 @@ function MetricCard({ series }: { series: MetricSeries }) {
           <ResponsiveContainer width="100%" height="100%">
             {useLineChart ? (
               <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                <XAxis dataKey="date" tick={{ fontSize: 9, fill: tickFill }} tickLine={false} axisLine={false} />
                 <YAxis hide domain={['auto', 'auto']} />
-                <Tooltip
-                  contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e5e7eb', padding: '4px 8px' }}
-                  labelStyle={{ color: '#6b7280' }}
+                <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(_v: any, _n: any, props: any) => [props.payload?.label ?? formatCompact(_v as number), '']}
                 />
@@ -140,12 +149,10 @@ function MetricCard({ series }: { series: MetricSeries }) {
               </LineChart>
             ) : (
               <BarChart data={chartData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                <XAxis dataKey="date" tick={{ fontSize: 9, fill: tickFill }} tickLine={false} axisLine={false} />
                 <YAxis hide domain={[0, 'auto']} />
-                <Tooltip
-                  contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e5e7eb', padding: '4px 8px' }}
-                  labelStyle={{ color: '#6b7280' }}
+                <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(_v: any, _n: any, props: any) => [props.payload?.label ?? formatCompact(_v as number), '']}
                 />
@@ -160,12 +167,12 @@ function MetricCard({ series }: { series: MetricSeries }) {
         <div className="space-y-1">
           {series.points.slice(-3).reverse().map((p, i) => (
             <div key={i} className="flex items-center justify-between text-xs">
-              <span className="text-gray-400">{new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              <span className="text-gray-400 dark:text-zinc-500">{new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
               <span className={`font-medium ${
-                p.status === 'positive' ? 'text-green-600'
-                  : p.status === 'negative' ? 'text-red-600'
-                  : p.status === 'warning' ? 'text-amber-600'
-                  : 'text-gray-700'
+                p.status === 'positive' ? 'text-green-600 dark:text-green-400'
+                  : p.status === 'negative' ? 'text-red-600 dark:text-red-400'
+                  : p.status === 'warning' ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-gray-700 dark:text-zinc-300'
               }`}>{p.displayValue}</span>
             </div>
           ))}
@@ -181,7 +188,7 @@ export function AreaMetricsSection({ area }: { area: AreaMetricData }) {
 
   return (
     <div>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{area.area}</h3>
+      <h3 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">{area.area}</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {charted.map(m => <MetricCard key={m.label} series={m} />)}
       </div>
@@ -195,7 +202,7 @@ export function MetricsChartsSection({ areas }: { areas: AreaMetricData[] }) {
 
   return (
     <section className="space-y-6">
-      <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Metric Trends</h2>
+      <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Metric Trends</h2>
       {visible.map(a => <AreaMetricsSection key={a.area} area={a} />)}
     </section>
   )

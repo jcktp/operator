@@ -24,8 +24,8 @@ export default async function JournalPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">{modeConfig.navJournal}</h1>
-        <p className="text-gray-500 text-sm mt-0.5">{description}</p>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">{modeConfig.navJournal}</h1>
+        <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">{description}</p>
       </div>
       <JournalShell entries={serialized} />
     </div>

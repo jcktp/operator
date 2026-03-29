@@ -24,7 +24,7 @@ const ALLOWED_KEYS = new Set([
   'ceo_name', 'company_name', 'user_role',
   'user_memory',
   'bluesky_identifier', 'bluesky_app_password', 'mastodon_access_token',
-  'sound_enabled', 'custom_areas', 'auto_lock_minutes', 'air_gap_mode',
+  'sound_enabled', 'custom_areas', 'auto_lock_minutes', 'air_gap_mode', 'dark_mode',
   'backup_path', 'last_backup',
 ])
 

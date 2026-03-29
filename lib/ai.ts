@@ -656,8 +656,11 @@ export async function loadKnowledgeForArea(area: string): Promise<KnowledgeConte
     .map(([label, terms]) => `VOCABULARY — ${label}: ${terms.join(' | ')}`)
     .join('\n')
 
-  const briefingBlock = briefingRow
-    ? `CURRENT STATE — ${area}: ${briefingRow.content}`
+  const briefingParts: string[] = []
+  if (briefingRow?.content) briefingParts.push(briefingRow.content)
+  if (briefingRow?.userNotes) briefingParts.push(`User notes: ${briefingRow.userNotes}`)
+  const briefingBlock = briefingParts.length > 0
+    ? `CURRENT STATE — ${area}: ${briefingParts.join('\n')}`
     : ''
 
   return { userMemory, glossaryBlock, briefingBlock }
