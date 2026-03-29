@@ -19,7 +19,7 @@ import ModeIcon from './ModeIcons'
 import { useSettingsState } from './useSettingsState'
 
 export default function SettingsPage() {
-  const { theme, toggle } = useTheme()
+  const { theme, mode, setMode } = useTheme()
   const dangerRef = useRef<HTMLDivElement>(null)
   const [uninstallPhase, setUninstallPhase] = useState<'idle' | 'confirming' | 'running' | 'done'>('idle')
 
@@ -147,24 +147,31 @@ export default function SettingsPage() {
             </div>
 
             <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Dark mode</p>
-                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">Switch to a monochrome dark theme</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Appearance</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">
+                    {mode === 'system' ? `Auto — following system (${theme})` : mode === 'dark' ? 'Dark theme' : 'Light theme'}
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={toggle}
-                  className={cn(
-                    'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                    theme === 'dark' ? 'bg-gray-900 dark:bg-zinc-100' : 'bg-gray-200 dark:bg-zinc-700'
-                  )}
-                >
-                  <span className={cn(
-                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white dark:bg-zinc-900 shadow transform transition-transform',
-                    theme === 'dark' ? 'translate-x-4' : 'translate-x-0'
-                  )} />
-                </button>
+                <div className="flex rounded-lg border border-gray-200 dark:border-zinc-700 overflow-hidden shrink-0">
+                  {(['light', 'dark', 'system'] as const).map((m, i) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMode(m)}
+                      className={cn(
+                        'px-3 py-1.5 text-xs font-medium transition-colors',
+                        i > 0 && 'border-l border-gray-200 dark:border-zinc-700',
+                        mode === m
+                          ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
+                          : 'text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                      )}
+                    >
+                      {m === 'system' ? 'Auto' : m.charAt(0).toUpperCase() + m.slice(1)}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
