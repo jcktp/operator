@@ -243,7 +243,10 @@ export default function BrowserPage() {
               <BrowserArticleView html={activeTab.page.html} />
               {b.selectedText && (
                 <div className="sticky bottom-16 left-0 right-0 flex justify-center pointer-events-none">
-                  <div className="pointer-events-auto flex items-center gap-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl px-3 py-2 shadow-lg">
+                  <div
+                    className="pointer-events-auto flex items-center gap-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl px-3 py-2 shadow-lg"
+                    onMouseDown={e => e.preventDefault()}
+                  >
                     <span className="text-xs text-gray-300 dark:text-zinc-500">{b.selectedText.length} chars</span>
                     <button onClick={b.openSelectionModal} className="flex items-center gap-1.5 text-xs font-medium hover:text-gray-200 dark:hover:text-zinc-700 transition-colors">
                       <Upload size={12} /> Import selection
