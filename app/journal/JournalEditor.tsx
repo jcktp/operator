@@ -167,17 +167,14 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
     if (!text.trim()) return
     setRewriting(true)
     try {
-      const res = await fetch('/api/dispatch/chat', {
+      const res = await fetch('/api/journal/rewrite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: `Rewrite and restructure these notes to be more coherent and holistic. Fix grammar, improve flow, and reorganise sections logically. Do NOT add new facts, numbers, or claims — only work with what is already written. Return ONLY the rewritten text, no commentary:\n\n${text}` }],
-          context: '',
-        }),
+        body: JSON.stringify({ text }),
       })
-      const content = await readStreamContent(res)
-      if (content) {
-        editor.commands.setContent(`<p>${content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`)
+      const data = await res.json() as { content?: string; error?: string }
+      if (data.content) {
+        editor.commands.setContent(`<p>${data.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`)
         save(editor.getHTML())
       }
     } finally {
