@@ -113,30 +113,11 @@ const BROWSER_HEADERS = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { url, headOnly } = await req.json() as { url?: string; headOnly?: boolean }
+    const { url } = await req.json() as { url?: string }
     if (!url || !url.startsWith('http')) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
     }
 
-    // headOnly: lightweight framing check — no body fetched
-    if (headOnly) {
-      try {
-        const res = await fetch(url, {
-          method: 'HEAD',
-          headers: BROWSER_HEADERS,
-          signal: AbortSignal.timeout(6_000),
-          redirect: 'follow',
-        })
-        const xfo = res.headers.get('x-frame-options')
-        const csp = res.headers.get('content-security-policy') ?? ''
-        // Any X-Frame-Options value blocks us; CSP frame-ancestors blocks unless it allows wildcard
-        const xFrameBlocked = !!xfo || (csp.includes('frame-ancestors') && !csp.includes('frame-ancestors *'))
-        return NextResponse.json({ xFrameBlocked })
-      } catch {
-        // Can't reach server or HEAD not supported — assume embeddable
-        return NextResponse.json({ xFrameBlocked: false })
-      }
-    }
 
     // YouTube video — only specific video URLs, not homepage/channel pages
     const ytId = extractYouTubeId(url)

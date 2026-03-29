@@ -160,20 +160,7 @@ export default function BrowserPage() {
         updateTab(tabId, { page: { type: 'error', error: 'Request failed', fallbackUrl: url }, loading: false })
       }
     } else {
-      // Live mode: check for X-Frame-Options — auto-fall back to reader if blocked
-      try {
-        const check = await fetch('/api/browser/fetch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, headOnly: true }),
-        })
-        const { xFrameBlocked } = await check.json() as { xFrameBlocked?: boolean }
-        if (xFrameBlocked) {
-          updateTab(tabId, { viewMode: 'reader' })
-          await doFetch(tabId, url, 'reader')
-          return
-        }
-      } catch { /* network error — proceed with iframe */ }
+      // Live mode: show iframe directly — overlay hint handles sites that block embedding
       updateTab(tabId, { loading: false })
       setDispatchContext(`The user has the browser open at ${url}`)
     }
