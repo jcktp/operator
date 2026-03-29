@@ -200,7 +200,16 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
         }
       }
 
-      await autoSave([...next, { role: 'assistant' as const, content: fullContent || 'No response.' }], chatId)
+      // If the stream ended with no content (e.g. tool call completed but model
+      // emitted no follow-up text), add a visible placeholder so loading clears.
+      if (firstChunk) {
+        const fallbackContent = fullContent || 'No response.'
+        setLoading(false)
+        setMessages(m => [...m, { role: 'assistant' as const, content: fallbackContent }])
+        fullContent = fallbackContent
+      }
+
+      await autoSave([...next, { role: 'assistant' as const, content: fullContent }], chatId)
 
       if (savedNote) {
         setSavedNoteTitle(savedNote.title)

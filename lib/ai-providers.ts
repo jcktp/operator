@@ -377,7 +377,14 @@ async function chatOllamaStream(
           const result = await executeTool(tc.function.name, tc.function.arguments as Record<string, string>)
           msgs.push({ role: 'tool' as never, content: result })
         }
+      } else if (accContent) {
+        return
       } else {
+        // Model returned no tool calls and no content — small models often
+        // fail to synthesise a response after tool results. Do one explicit
+        // non-streaming follow-up without tools so the model just answers.
+        const fallback = await ollama.chat({ model, messages: msgs, options: { temperature } })
+        if (fallback.message.content) emit(fallback.message.content)
         return
       }
     }
