@@ -114,6 +114,9 @@ export default function BrowserPage() {
   // ── Fetching ─────────────────────────────────────────────────────────────────
 
   const doFetch = useCallback(async (tabId: string, url: string, viewMode: ViewMode) => {
+    // Reset context immediately so stale content from a previous page is never used
+    setDispatchContext(`The user has the browser open at ${url}`)
+
     // YouTube/Spotify embed: just extract ID from URL — no network needed
     if (isYouTubeVideo(url)) {
       const res = await fetch('/api/browser/fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
