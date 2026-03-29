@@ -147,6 +147,19 @@ export function useBrowserTabs() {
     if (hydrated) saveTabs(tabs, activeTabId)
   }, [tabs, activeTabId, hydrated])
 
+  // Sync dispatchContext when the active tab changes (tab switch doesn't call doFetch)
+  useEffect(() => {
+    const tab = tabs.find(t => t.id === activeTabId)
+    if (!tab) return
+    if (tab.page?.type === 'article') {
+      setDispatchContext(`The user is reading: "${tab.page.title}" at ${tab.currentUrl}.\n\n${tab.page.text.slice(0, 3000)}`)
+    } else if (tab.currentUrl) {
+      setDispatchContext(`The user has the browser open at ${tab.currentUrl}`)
+    } else {
+      setDispatchContext('')
+    }
+  }, [activeTabId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     fetch('/api/browser/bookmarks')
       .then(r => r.json())
