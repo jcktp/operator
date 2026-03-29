@@ -58,8 +58,8 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${dmSans.variable} ${dmMono.variable} ${caveat.variable} h-full${isDark ? ' dark' : ''}`}>
       <head>
-        {/* Inline script prevents flash-of-light on dark mode reload */}
-        <Script id="dark-mode-init" strategy="beforeInteractive">{`try{if(localStorage.getItem('dark_mode')==='true')document.documentElement.classList.add('dark')}catch(e){}`}</Script>
+        {/* Inline script prevents flash-of-light on dark mode reload. Falls back to system preference if no explicit setting saved. */}
+        <Script id="dark-mode-init" strategy="beforeInteractive">{`try{var s=localStorage.getItem('dark_mode');if(s==='true'||(s===null&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`}</Script>
       </head>
       <body className="min-h-full bg-background">
         <ThemeProvider initialTheme={isDark ? 'dark' : 'light'}>
