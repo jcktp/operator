@@ -21,6 +21,7 @@ interface Message {
 
 interface Props {
   context: string
+  currentUrl?: string
   onClose?: () => void
   initialChat?: { id: string; title: string; messages: Message[] }
   initialMessage?: string
@@ -28,7 +29,7 @@ interface Props {
 
 // ── Component ─────────────────────────────────────────────────────────────
 
-export default function DispatchPanel({ context, onClose, initialChat, initialMessage }: Props) {
+export default function DispatchPanel({ context, currentUrl, onClose, initialChat, initialMessage }: Props) {
   const modeConfig = useMode()
   const { settings, saveSetting } = useSettings()
   const personaMap = getPersonasForMode(modeConfig.id)
@@ -73,6 +74,16 @@ export default function DispatchPanel({ context, onClose, initialChat, initialMe
       setUserMemory(d.memory ?? '')
     }).catch(() => {})
   }, [])
+
+  const prevUrlRef = useRef<string | undefined>(currentUrl)
+  useEffect(() => {
+    if (currentUrl && prevUrlRef.current && currentUrl !== prevUrlRef.current) {
+      setMessages([])
+      setChatId(null)
+      setPendingAttachment(null)
+    }
+    prevUrlRef.current = currentUrl
+  }, [currentUrl])
 
   const toggleWebAccess = async () => {
     const next = !webAccess

@@ -259,7 +259,7 @@ export default function BrowserPage() {
 
   return (
     <div className="flex h-full">
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-full">
 
         {/* Tab bar — Safari style */}
         <div className="flex items-center gap-1 bg-white border-b border-gray-200 px-3 py-1.5 overflow-x-auto shrink-0">
@@ -484,20 +484,32 @@ export default function BrowserPage() {
 
           {/* Live iframe */}
           {showIframe && !activeTab.loading && (
-            <iframe
-              key={activeTab.currentUrl}
-              src={activeTab.currentUrl}
-              className="absolute inset-0 w-full h-full border-0"
-              title="browser"
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
-            />
+            <>
+              <iframe
+                key={activeTab.currentUrl}
+                src={activeTab.currentUrl}
+                className="absolute inset-0 w-full h-full border-0"
+                title="browser"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
+              />
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                <a
+                  href={activeTab.currentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full text-xs text-gray-500 hover:text-gray-800 shadow-sm transition-colors"
+                >
+                  <ExternalLink size={11} /> Page not loading? Open in tab
+                </a>
+              </div>
+            </>
           )}
         </div>
       </div>
 
       {/* Dispatch */}
       <aside className="w-[320px] shrink-0 h-full border-l border-gray-200 overflow-hidden">
-        <DispatchPanel context={dispatchContext} />
+        <DispatchPanel context={dispatchContext} currentUrl={activeTab?.currentUrl ?? ''} />
       </aside>
     </div>
   )
