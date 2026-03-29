@@ -18,7 +18,10 @@ Upload documents and get structured AI analysis — summaries, key metrics, risk
 | **Document analysis** | AI extracts summaries, metrics, risks, opportunities, and follow-up questions from each upload |
 | **Library** | Every document stored with full history; compare two versions side by side |
 | **Dashboard** | Cross-area overview with AI-generated health signals across all documents |
+| **Metrics** | KPI board aggregating every metric extracted across all documents, grouped by area with source attribution |
 | **Dispatch** | AI chat with 3 mode-specific personas; has access to all your document context and remembers facts across conversations |
+| **Browser** | In-app web browser with reader and live modes, bookmark management, and one-click save to journal or dispatch |
+| **Pulse** | Feed aggregator for RSS, Reddit, YouTube, Bluesky, and Mastodon — with keyword monitoring and auto-refresh |
 | **Journal** | Private note-taking with folder organisation and AI grammar correction |
 | **Remote submissions** | Shareable link so others can submit files from any device, no app required |
 | **Works offline** | Local LLM via Ollama — no data leaves your machine unless you choose a cloud provider |
@@ -261,12 +264,17 @@ The tunnel is temporary (new URL each session) and shuts down when you close Ope
 operator/
 ├── app/                   # Next.js App Router pages and API routes
 │   ├── api/               # Backend API routes (AI, documents, settings, etc.)
+│   ├── browser/           # In-app web browser (reader + live modes, bookmarks)
+│   ├── directs/           # Contact management (direct reports, sources, team members)
 │   ├── dispatch/          # AI chat panel
-│   ├── entities/          # Entity overview and relationship graph (journalism, legal, market research, consulting)
+│   ├── entities/          # Entity overview and relationship graph
 │   ├── journal/           # Private notes
 │   ├── library/           # Document browser
+│   ├── metrics/           # KPI board aggregated across all documents
+│   ├── pulse/             # Feed aggregator (RSS, Reddit, YouTube, Bluesky, Mastodon)
 │   ├── reports/           # Individual document view
 │   ├── settings/          # App configuration
+│   ├── timeline/          # Chronological event view across documents
 │   └── upload/            # File upload and document analysis
 ├── components/            # Shared React components
 ├── lib/                   # Core logic (AI, providers, personas, encryption, tunnel)
