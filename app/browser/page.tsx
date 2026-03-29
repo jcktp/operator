@@ -160,7 +160,7 @@ export default function BrowserPage() {
         updateTab(tabId, { page: { type: 'error', error: 'Request failed', fallbackUrl: url }, loading: false })
       }
     } else {
-      // Live mode: check for X-Frame-Options before showing iframe
+      // Live mode: check for X-Frame-Options — auto-fall back to reader if blocked
       try {
         const check = await fetch('/api/browser/fetch', {
           method: 'POST',
@@ -169,10 +169,8 @@ export default function BrowserPage() {
         })
         const { xFrameBlocked } = await check.json() as { xFrameBlocked?: boolean }
         if (xFrameBlocked) {
-          updateTab(tabId, {
-            page: { type: 'error', error: 'This site blocks embedding. Switch to Reader mode, or open it in a tab.', fallbackUrl: url },
-            loading: false,
-          })
+          updateTab(tabId, { viewMode: 'reader' })
+          await doFetch(tabId, url, 'reader')
           return
         }
       } catch { /* network error — proceed with iframe */ }
