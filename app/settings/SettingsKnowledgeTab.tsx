@@ -177,8 +177,8 @@ const SCOPE_OPTIONS = [
   { value: 'mode:executive',           label: 'Executive mode' },
   { value: 'mode:human_resources',     label: 'Human Resources mode' },
   { value: 'mode:journalism',          label: 'Journalism mode' },
-  { value: 'mode:team-lead',           label: 'Team Lead mode' },
-  { value: 'mode:market-research',     label: 'Market Research mode' },
+  { value: 'mode:team_lead',           label: 'Team Lead mode' },
+  { value: 'mode:market_research',     label: 'Market Research mode' },
   { value: 'mode:legal',               label: 'Legal mode' },
 ]
 
