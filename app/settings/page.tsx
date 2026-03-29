@@ -16,6 +16,7 @@ import SettingsRemoteTab from './SettingsRemoteTab'
 import SettingsBackupTab from './SettingsBackupTab'
 import SettingsPulseTab from './SettingsPulseTab'
 import SettingsKnowledgeTab from './SettingsKnowledgeTab'
+import ModeIcon from './ModeIcons'
 
 async function saveSetting(key: string, value: string) {
   await fetch('/api/settings', {
@@ -329,7 +330,7 @@ export default function SettingsPage() {
                     className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
                       appMode === m.id ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
                     )}>
-                    <span className="text-base">{m.icon}</span>
+                    <ModeIcon modeId={m.id} className="w-6 h-6" />
                     <div className="text-xs font-semibold mt-1">{m.label}</div>
                     {savedMode === m.id && appMode !== m.id && <div className="text-[10px] text-blue-400 mt-0.5">current</div>}
                   </button>
