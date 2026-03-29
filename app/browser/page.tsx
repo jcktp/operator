@@ -13,6 +13,15 @@ import {
 import BrowserStartPage from './BrowserStartPage'
 import BrowserArticleView from './BrowserArticleView'
 
+// Reliably opens a URL in a new browser tab — works across popup-blocked and PWA contexts
+function openExternal(url: string) {
+  const a = document.createElement('a')
+  a.href = url
+  a.target = '_blank'
+  a.rel = 'noopener noreferrer'
+  a.click()
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function BrowserPage() {
@@ -403,7 +412,7 @@ export default function BrowserPage() {
           )}
 
           {activeTab.currentUrl && (
-            <button onClick={() => window.open(activeTab.currentUrl, '_blank', 'noopener,noreferrer')} title="Open in browser tab" className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <button onClick={() => openExternal(activeTab.currentUrl)} title="Open in browser tab" className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
               <ExternalLink size={14} />
             </button>
           )}
@@ -462,7 +471,7 @@ export default function BrowserPage() {
                 <p className="text-sm font-medium text-gray-700">YouTube blocks embedding</p>
                 <p className="text-xs text-gray-500 mt-1 max-w-xs">Paste a specific video URL (youtube.com/watch?v=…) to play it inline, or open YouTube in a browser tab.</p>
               </div>
-              <button onClick={() => window.open(activeTab.currentUrl, '_blank', 'noopener,noreferrer')}
+              <button onClick={() => openExternal(activeTab.currentUrl)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded-lg border border-red-200 transition-colors">
                 <ExternalLink size={12} /> Open YouTube in tab
               </button>
@@ -492,7 +501,7 @@ export default function BrowserPage() {
                     <Monitor size={12} /> Try Live mode
                   </button>
                 )}
-                <button onClick={() => { if (activeTab.page?.type === 'error') window.open(activeTab.page.fallbackUrl, '_blank', 'noopener,noreferrer') }}
+                <button onClick={() => { if (activeTab.page?.type === 'error') openExternal(activeTab.page.fallbackUrl) }}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium rounded-lg border border-indigo-200 transition-colors">
                   <ExternalLink size={12} /> Open in tab
                 </button>
@@ -512,7 +521,7 @@ export default function BrowserPage() {
               />
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
                 <button
-                  onClick={() => window.open(activeTab.currentUrl, '_blank', 'noopener,noreferrer')}
+                  onClick={() => openExternal(activeTab.currentUrl)}
                   className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full text-xs text-gray-500 hover:text-gray-800 shadow-sm transition-colors"
                 >
                   <ExternalLink size={11} /> Page not loading? Open in tab
