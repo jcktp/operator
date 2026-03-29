@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans, DM_Mono, Caveat } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import Nav from '@/components/Nav'
 import { ShutdownProvider } from '@/components/ShutdownProvider'
@@ -58,7 +59,7 @@ export default async function RootLayout({
     <html lang="en" className={`${dmSans.variable} ${dmMono.variable} ${caveat.variable} h-full${isDark ? ' dark' : ''}`}>
       <head>
         {/* Inline script prevents flash-of-light on dark mode reload */}
-        <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem('dark_mode')==='true')document.documentElement.classList.add('dark')}catch(e){}` }} />
+        <Script id="dark-mode-init" strategy="beforeInteractive">{`try{if(localStorage.getItem('dark_mode')==='true')document.documentElement.classList.add('dark')}catch(e){}`}</Script>
       </head>
       <body className="min-h-full bg-background">
         <ThemeProvider initialTheme={isDark ? 'dark' : 'light'}>

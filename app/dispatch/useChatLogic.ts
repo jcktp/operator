@@ -32,7 +32,7 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
   const [urlInput, setUrlInput] = useState('')
   const [fetchingUrl, setFetchingUrl] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
-  const [webAccess, setWebAccess] = useState(() => settings.ollama_web_access === 'true')
+  const [webAccess, setWebAccess] = useState(false)
   const [persona, setPersona] = useState<PersonaId>('dispatch')
   const [userMemory, setUserMemory] = useState('')
   const [view, setView] = useState<'chat' | 'history'>('chat')
@@ -55,7 +55,7 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
   }
 
   const syncSettings = () => {
-    setWebAccess(settings.ollama_web_access !== 'false')
+    setWebAccess(settings.ollama_web_access === 'true')
     setUserName(settings.ceo_name ?? '')
     setUserRole(settings.user_role ?? '')
   }
