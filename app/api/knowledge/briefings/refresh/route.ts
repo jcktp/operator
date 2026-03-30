@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No reports found for this area' }, { status: 404 })
   }
 
-  const mode = process.env.APP_MODE ?? 'executive'
+  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const mode = modeRow?.value ?? 'executive'
   const briefing = await generateAreaBriefing(area, mode, reports)
   return NextResponse.json({ briefing })
 }

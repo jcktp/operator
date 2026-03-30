@@ -15,7 +15,8 @@ export async function loadKnowledgeForArea(area: string): Promise<KnowledgeConte
     await seedGlossaryIfEmpty()
   } catch { /* non-blocking */ }
 
-  const mode = process.env.APP_MODE ?? 'executive'
+  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const mode = modeRow?.value ?? 'executive'
 
   const [memoryRow, glossaryTerms, briefingRow] = await Promise.all([
     prisma.setting.findUnique({ where: { key: 'user_memory' } }),

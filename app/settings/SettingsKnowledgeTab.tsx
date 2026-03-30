@@ -342,6 +342,7 @@ function AreaKnowledgePanel() {
   const [briefings, setBriefings] = useState<AreaBriefing[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshingArea, setRefreshingArea] = useState<string | null>(null)
+  const [clearingArea, setClearingArea] = useState<string | null>(null)
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({})
   const [savingNotes, setSavingNotes] = useState<string | null>(null)
   const [page, setPage] = useState(0)
@@ -374,6 +375,25 @@ function AreaKnowledgePanel() {
       }
     } finally {
       setRefreshingArea(null)
+    }
+  }
+
+  async function clearBriefing(area: string) {
+    setClearingArea(area)
+    try {
+      await fetch('/api/knowledge/briefings', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ area }),
+      })
+      setBriefings(prev => {
+        const next = prev.filter(b => b.area !== area)
+        const maxPage = Math.max(0, Math.ceil(next.length / PAGE_SIZE) - 1)
+        if (page > maxPage) setPage(maxPage)
+        return next
+      })
+    } finally {
+      setClearingArea(null)
     }
   }
 
@@ -413,17 +433,30 @@ function AreaKnowledgePanel() {
                 {b.reportCount} report{b.reportCount !== 1 ? 's' : ''} · updated {new Date(b.updatedAt).toLocaleDateString()}
               </p>
             </div>
-            <button
-              onClick={() => refresh(b.area)}
-              disabled={refreshingArea === b.area}
-              className={cn(
-                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-xs font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800',
-                refreshingArea === b.area && 'opacity-60 pointer-events-none'
-              )}
-            >
-              <RefreshCw size={12} className={cn(refreshingArea === b.area && 'animate-spin')} />
-              Refresh
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => refresh(b.area)}
+                disabled={refreshingArea === b.area || clearingArea === b.area}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-xs font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800',
+                  (refreshingArea === b.area || clearingArea === b.area) && 'opacity-60 pointer-events-none'
+                )}
+              >
+                <RefreshCw size={12} className={cn(refreshingArea === b.area && 'animate-spin')} />
+                Refresh
+              </button>
+              <button
+                onClick={() => clearBriefing(b.area)}
+                disabled={clearingArea === b.area || refreshingArea === b.area}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900 text-xs font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950',
+                  (clearingArea === b.area || refreshingArea === b.area) && 'opacity-60 pointer-events-none'
+                )}
+              >
+                {clearingArea === b.area ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                Clear
+              </button>
+            </div>
           </div>
 
           {/* AI-generated briefing */}

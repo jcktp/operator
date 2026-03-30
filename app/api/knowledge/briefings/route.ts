@@ -9,12 +9,19 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   const { area, notes } = await req.json() as { area?: string; notes?: string }
   if (!area) return NextResponse.json({ error: 'area required' }, { status: 400 })
-  const mode = process.env.APP_MODE ?? 'executive'
-  // Only update userNotes; leave content and reportCount untouched
+  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const mode = modeRow?.value ?? 'executive'
   const updated = await prisma.areaBriefing.updateMany({
     where: { area, mode },
     data: { userNotes: notes ?? null },
   })
   if (updated.count === 0) return NextResponse.json({ error: 'not found' }, { status: 404 })
+  return NextResponse.json({ ok: true })
+}
+
+export async function DELETE(req: NextRequest) {
+  const { area } = await req.json() as { area?: string }
+  if (!area) return NextResponse.json({ error: 'area required' }, { status: 400 })
+  await prisma.areaBriefing.deleteMany({ where: { area } })
   return NextResponse.json({ ok: true })
 }
