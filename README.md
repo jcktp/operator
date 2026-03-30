@@ -41,7 +41,7 @@ Operator is a private intelligence workspace. Upload documents and get structure
 | **Dashboard** | Cross-area overview with AI-generated health signals across all documents |
 | **Metrics board** | KPI board aggregating every metric extracted across all documents, grouped by area with source attribution |
 | **Dispatch** | AI chat with 3 mode-specific personas; has access to all your document context, supports web search, and remembers facts across conversations |
-| **Investigation Hub** | Four-tab hub for entity management, timeline, interactive story map, and AI-assisted storyline builder |
+| **Entities page** | Four-tab hub for entity management, timeline, interactive story map, and AI-assisted storyline builder (Journalism & Legal modes) |
 | **Browser** | In-app web browser with reader and live modes, bookmark management, and one-click save to journal or dispatch |
 | **Pulse** | Feed aggregator for RSS, Reddit, YouTube, Bluesky, and Mastodon — with keyword monitoring and auto-refresh |
 | **Journal** | Private note-taking with folder organisation and AI grammar correction |
@@ -74,14 +74,14 @@ Features are enabled per mode based on what makes sense for that domain.
 | Metrics board | ✓ | | | | | ✓ |
 | Entity extraction | | ✓ | | ✓ | ✓ | |
 | Entity graph | | ✓ | | ✓ | ✓ | |
-| Investigation Hub | | ✓ | | | ✓ | |
+| Entities page (tabs) | | ✓ | | | ✓ | |
 | Timeline | | ✓ | ✓ | | ✓ | |
 | Redaction detection | | ✓ | | | ✓ | |
 | Verification checklist | | ✓ | | ✓ | ✓ | |
 | Keyword monitoring | | ✓ | | | | |
 | Investigation template | | ✓ | | | ✓ | |
 
-**Investigation Hub** (Journalism & Legal) includes four tabs:
+**Entities page** (Journalism & Legal) includes four tabs:
 - **Entities** — named persons, organisations, locations, dates, and financial figures with cross-document linking
 - **Timeline** — interactive chronological timeline (TimelineJS) built from all documents in the mode
 - **Story Map** — geocoded interactive map of all location entities extracted across documents

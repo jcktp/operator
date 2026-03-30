@@ -586,11 +586,15 @@ export async function chat(messages: Message[], temperature = 0.1, jsonMode = fa
       const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
       const model = process.env.OLLAMA_MODEL ?? 'qwen3:4b'
       const ollama = new Ollama({ host })
-      const response = await ollama.chat({ model, messages, options: { temperature, ...(jsonMode ? { format: 'json' } : {}) } })
+      // think: false disables qwen3's extended chain-of-thought mode, which can add minutes to
+      // structured analysis calls. Thinking is useful for open-ended chat, not JSON extraction.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const noThink = { think: false } as any
+      const response = await ollama.chat({ model, messages, options: { temperature, ...noThink, ...(jsonMode ? { format: 'json' } : {}) } })
       // Small models sometimes return empty content when format:json is forced.
       // Retry without the format constraint — the prompt's own JSON instruction handles structure.
       if (jsonMode && !response.message.content?.trim()) {
-        const retry = await ollama.chat({ model, messages, options: { temperature } })
+        const retry = await ollama.chat({ model, messages, options: { temperature, ...noThink } })
         return retry.message.content
       }
       return response.message.content
