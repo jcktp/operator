@@ -1,3 +1,4 @@
+import { Clock } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import type { ModeConfig } from '@/lib/mode'
 import { buildTimelineJSData } from './TimelineJSViewer'
@@ -21,7 +22,7 @@ export default async function TimelineTab({ modeConfig }: Props) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center mb-4">
-          <span className="text-2xl">🕐</span>
+          <Clock size={20} className="text-gray-400 dark:text-zinc-500" />
         </div>
         <p className="text-sm text-gray-500 dark:text-zinc-400">No timeline events yet.</p>
         <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">

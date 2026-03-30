@@ -48,9 +48,22 @@ Generate a structured story brief. Reply with ONLY valid JSON:
 
 Limits: max 8 events, max 8 claims. Use only information from the documents above. status must be "unverified" for all new claims.`
 
-  const text = await chat([{ role: 'user', content: prompt }], 0.2, true)
-  const json = extractJsonFromText(text)
-  const parsed = JSON.parse(json) as GeneratedBrief
+  let text: string
+  try {
+    text = await chat([{ role: 'user', content: prompt }], 0.2, true)
+  } catch (e) {
+    console.error('Story brief AI call failed:', e)
+    return NextResponse.json({ error: 'AI request failed' }, { status: 502 })
+  }
+
+  let parsed: GeneratedBrief
+  try {
+    const json = extractJsonFromText(text)
+    parsed = JSON.parse(json) as GeneratedBrief
+  } catch {
+    console.error('Story brief JSON parse failed. Raw output:', text.slice(0, 500))
+    return NextResponse.json({ error: 'AI returned malformed output — try again' }, { status: 502 })
+  }
 
   return NextResponse.json({
     narrative: typeof parsed.narrative === 'string' ? parsed.narrative : '',

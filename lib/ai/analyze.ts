@@ -271,9 +271,16 @@ Limits: max 10 metrics, 5 insights, 4 questions.`
     }
   }
 
+  // Normalize metrics: some models return "name" instead of "label"
+  const rawMetrics = Array.isArray(parsed.metrics) ? (parsed.metrics as unknown as Record<string, unknown>[]) : []
+  const metrics = rawMetrics.map(m => ({
+    ...m,
+    label: (((m.label ?? m.name) as string | undefined) ?? '').trim(),
+  })).filter(m => (m.label as string).length > 0) as typeof parsed.metrics
+
   return {
     summary: typeof parsed.summary === 'string' ? parsed.summary : '',
-    metrics: Array.isArray(parsed.metrics) ? parsed.metrics : [],
+    metrics,
     insights: Array.isArray(parsed.insights) ? parsed.insights : [],
     questions: Array.isArray(parsed.questions) ? parsed.questions : [],
   }

@@ -50,6 +50,7 @@ export default function StorylineEditor({ story, allReports, onUpdate, onDelete 
   const [claims, setClaims] = useState<Claim[]>(parseJson(story.claimStatuses, []))
   const [evidence, setEvidence] = useState<Evidence[]>(story.evidence)
   const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [newEvidenceUrl, setNewEvidenceUrl] = useState('')
   const [newEvidenceTitle, setNewEvidenceTitle] = useState('')
@@ -80,12 +81,17 @@ export default function StorylineEditor({ story, allReports, onUpdate, onDelete 
   const handleGenerate = async () => {
     if (reportIds.length === 0) return
     setGenerating(true)
+    setGenerateError(null)
     try {
       const res = await fetch('/api/storyline/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reportIds }),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Generation failed' }))
+        throw new Error(err.error ?? 'Generation failed')
+      }
       const data = await res.json() as {
         narrative: string
         events: Event[]
@@ -105,6 +111,8 @@ export default function StorylineEditor({ story, allReports, onUpdate, onDelete 
         claimStatuses: JSON.stringify(newClaims),
         reportIds,
       })
+    } catch (e) {
+      setGenerateError(e instanceof Error ? e.message : 'Generation failed')
     } finally {
       setGenerating(false)
     }
@@ -181,6 +189,9 @@ export default function StorylineEditor({ story, allReports, onUpdate, onDelete 
         {generating ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
         {generating ? 'Generating story brief…' : narrative ? 'Regenerate story brief' : 'Generate story brief'}
       </button>
+      {generateError && (
+        <p className="text-xs text-red-500 dark:text-red-400 text-center">{generateError}</p>
+      )}
 
       {/* Narrative */}
       {narrative && (

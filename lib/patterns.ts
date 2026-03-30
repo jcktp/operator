@@ -91,6 +91,7 @@ export function buildPatternSummary(reports: ReportForPatterns[]): PatternSummar
   const metricSeries: Record<string, { area: string; label: string; points: Array<{ n: number; display: string }> }> = {}
   for (const r of sorted) {
     for (const m of parseJsonSafe<Metric[]>(r.metrics, [])) {
+      if (!m.label || !m.value) continue
       const n = parseNumeric(m.value)
       if (n === null) continue
       const key = `${r.area}::${normalise(m.label)}`
@@ -131,6 +132,7 @@ export function buildPatternSummary(reports: ReportForPatterns[]): PatternSummar
   const rawFlags: RawFlag[] = []
   for (const r of sorted) {
     for (const i of parseJsonSafe<Insight[]>(r.insights, [])) {
+      if (!i.text || !i.type) continue
       if (i.type === 'risk' || i.type === 'anomaly') {
         rawFlags.push({ area: r.area, type: i.type, text: i.text })
       }
@@ -170,6 +172,7 @@ export function buildPatternSummary(reports: ReportForPatterns[]): PatternSummar
   const rawQs: RawQ[] = []
   for (const r of sorted) {
     for (const q of parseJsonSafe<Question[]>(r.questions, [])) {
+      if (!q.text) continue
       if (q.priority === 'high') rawQs.push({ area: r.area, text: q.text })
     }
   }
