@@ -165,11 +165,11 @@ else
 fi
 
 # ── 6. Dependencies ───────────────────────────────────────────────────────────
-if [ ! -d "node_modules" ]; then
-  step "Installing dependencies (first run — this takes a minute)..."
+if [ ! -d "node_modules" ] || [ "package-lock.json" -nt "node_modules" ]; then
+  step "Installing dependencies..."
   npm install --loglevel=error
 else
-  step "Dependencies already installed"
+  step "Dependencies up to date"
 fi
 
 # ── 6b. Prisma generate (skip if client already up to date) ──────────────────
