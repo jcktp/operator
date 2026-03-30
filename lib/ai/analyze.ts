@@ -238,6 +238,8 @@ Limits: max 10 metrics, 5 insights, 4 questions. Use only data from the document
 
   const ollamaPrompt = `${knowledgePrefix}Analyze this ${modeConfig.documentLabel.toLowerCase()}. Extract only facts that appear in the text — never calculate or invent numbers.
 
+${modeConfig.analysisFraming}
+
 Document: ${reportTitle} (${area})${from}
 
 ${truncated}

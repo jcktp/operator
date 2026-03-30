@@ -13,6 +13,7 @@ import ReportContent from './ReportContent'
 import RawContent from './RawContent'
 import CopyNarrativeButton from './CopyNarrativeButton'
 import ExportAnalysisPDFButton from './ExportAnalysisPDFButton'
+import ReanalyzeButton from './ReanalyzeButton'
 import EntitiesSection from './EntitiesSection'
 import TimelineSection from './TimelineSection'
 import RedactionsSection from './RedactionsSection'
@@ -207,6 +208,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <ReanalyzeButton reportId={report.id} />
           <ExportAnalysisPDFButton
             title={report.title}
             area={report.area}

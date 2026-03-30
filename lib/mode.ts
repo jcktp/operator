@@ -111,7 +111,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateBody: 'Upload your first report to get a unified view of your business.',
     emptyStateCta: 'Add first report',
     aiContext: 'You are advising a business executive. Focus on operational performance, financial health, team effectiveness, and strategic opportunities.',
-    analysisFraming: 'Extract business metrics, operational insights, risks, and opportunities. Identify trends and anomalies relative to targets or prior periods.',
+    analysisFraming: 'Lead with implications, not just facts — what does this mean for the business? A risk is financial exposure, execution failure, or competitive disadvantage; quantify it where possible. An opportunity is revenue expansion, cost efficiency, or strategic optionality. Surface trends across periods and flag anomalies relative to targets or stated goals. Questions should focus on decision ownership, magnitude, and time window: who needs to act, by when, and what happens if they don\'t.',
     features: {
       ...DEFAULT_FEATURES,
       documentComparison: true,
@@ -146,7 +146,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateBody: 'Add your first notes or photos to start building your story archive.',
     emptyStateCta: 'Add first notes',
     aiContext: 'You are assisting an investigative journalist. Prioritise verifiable claims, source attribution, factual consistency, and contradictions across notes. Never fabricate quotes or sources.',
-    analysisFraming: 'Extract factual claims with source attribution where present. Flag any inconsistencies or contradictions between sources. Surface direct quotes separately from paraphrase. Note any claims that require verification or lack a named source.',
+    analysisFraming: 'Distinguish verified fact from reported claim from inference — label each explicitly in your analysis. A risk is an unverifiable assertion, a source motive that could invert the narrative, or a gap in the chain of custody. An opportunity is a corroboration lead, a secondary source angle, or an unreported connection worth pursuing. Surface verbatim quotes as separate observations, distinct from paraphrase. Questions should challenge the story: what would disprove this? Who corroborates independently? Flag what is missing as much as what is present.',
     features: {
       ...DEFAULT_FEATURES,
       entities: true,
@@ -187,7 +187,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateBody: 'Upload your first team update to track progress and surface blockers.',
     emptyStateCta: 'Add first update',
     aiContext: 'You are assisting a team lead. Focus on delivery progress, blockers, team health, sprint velocity, and commitment tracking.',
-    analysisFraming: 'Extract team progress, completed work, blockers, and upcoming commitments. Flag risks to delivery timelines and recurring issues across updates.',
+    analysisFraming: 'Surface what is blocking progress, morale signals, and recurring patterns. A risk is burnout, knowledge concentration, or unaddressed friction — frame without blame and assume good intent. An opportunity is a quick win, an underused capability, or a process improvement the team hasn\'t named. Metrics should capture delivery pace and commitment accuracy. Questions should focus on unblocking: is this a skill gap or a process gap? Who has capacity to help? What would reduce friction this sprint?',
     features: {
       ...DEFAULT_FEATURES,
       timeline: true,
@@ -222,7 +222,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateBody: 'Upload your first interview or dataset to start identifying themes and patterns.',
     emptyStateCta: 'Add first interview',
     aiContext: 'You are assisting a market researcher. Focus on identifying recurring themes, patterns, outliers, and actionable insights across multiple data sources.',
-    analysisFraming: 'Extract key themes, verbatim quotes from respondents, and emerging patterns. Identify areas of consensus and divergence. Flag notable outliers or contradictions worth exploring further.',
+    analysisFraming: 'Identify distinct respondent segments and their motivations separately — resist aggregating across groups. A risk is missing the real objection beneath the stated one, or treating all respondents as uniform. An opportunity is an unmet need, an underserved segment, or a messaging angle that resonates with a specific group. Surface verbatim quotes as direct evidence; label them separately from inferred themes. Questions should probe willingness-to-pay gaps, missing use cases, and what would change respondent behaviour.',
     features: {
       ...DEFAULT_FEATURES,
       entities: true,
@@ -258,7 +258,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateBody: 'Upload your first document to start building your case archive.',
     emptyStateCta: 'Add first case file',
     aiContext: 'You are assisting a legal professional. Prioritise accuracy, chronological consistency, evidence chain integrity, and factual precision. Never speculate beyond what the documents contain.',
-    analysisFraming: 'Extract key dates, parties, and legal claims. Flag any factual inconsistencies or contradictions. Surface evidence references and note any apparent gaps in the record or missing documentation.',
+    analysisFraming: 'Frame every finding as exposure: if X is disputed, this document shows Y, creating Z risk. A risk is financial liability, unenforceable language, missing protections, or precedent against your position. An opportunity is a protective clause, favourable precedent, or appropriate risk allocation to the other party. Distinguish between likely interpretation and possible interpretation; never speculate about untested law. Questions should clarify ambiguity: which party bears this if disputed? What is not in this document that should be?',
     features: {
       ...DEFAULT_FEATURES,
       entities: true,
@@ -297,7 +297,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     emptyStateBody: 'Upload your first HR report to track workforce health and surface people insights.',
     emptyStateCta: 'Add first report',
     aiContext: 'You are assisting an HR professional. Focus on workforce health, talent trends, employee engagement, compliance risks, and organisational effectiveness. Treat all employee data with sensitivity.',
-    analysisFraming: 'Extract workforce metrics, headcount trends, attrition signals, and engagement indicators. Flag compliance risks, recurring employee relations issues, and gaps in HR processes. Identify what is improving and what requires intervention.',
+    analysisFraming: 'Prioritise early-warning signals: flight risk patterns, cultural health drivers, equity gaps, and engagement predictors. A risk is turnover spike potential, legal exposure (harassment patterns, equity violations), or a disengagement cascade that could spread. An opportunity is a retention intervention before departure, untapped talent development, or a root-cause fix — which is usually culture, not compensation. Distinguish one-off complaints from systemic patterns. Questions should target intervention: is this a pay issue or a culture issue? Which groups are at highest risk and what would meaningful improvement look like to them?',
     features: {
       ...DEFAULT_FEATURES,
       documentComparison: true,
