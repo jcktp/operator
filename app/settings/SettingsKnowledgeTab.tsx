@@ -65,11 +65,12 @@ function YouPanel() {
 
   useEffect(() => {
     fetch('/api/dispatch/memory')
-      .then(r => r.json() as Promise<{ memory?: string }>)
+      .then(r => { if (!r.ok) throw new Error(`${r.status} ${r.statusText}`); return r.json() as Promise<{ memory?: string }> })
       .then(d => {
         const raw = d.memory ?? ''
         setFacts(raw.split('\n').map(f => f.trim()).filter(Boolean))
       })
+      .catch(err => console.error('Failed to load user memory:', err))
       .finally(() => setLoading(false))
   }, [])
 
@@ -203,8 +204,9 @@ function GlossaryPanel({ appMode }: { appMode: AppMode }) {
 
   useEffect(() => {
     fetch('/api/knowledge/glossary')
-      .then(r => r.json() as Promise<{ terms?: GlossaryTerm[] }>)
+      .then(r => { if (!r.ok) throw new Error(`${r.status} ${r.statusText}`); return r.json() as Promise<{ terms?: GlossaryTerm[] }> })
       .then(d => setTerms(d.terms ?? []))
+      .catch(err => console.error('Failed to load glossary:', err))
       .finally(() => setLoading(false))
   }, [])
 
@@ -346,7 +348,7 @@ function AreaKnowledgePanel() {
 
   useEffect(() => {
     fetch('/api/knowledge/briefings')
-      .then(r => r.json() as Promise<{ briefings?: AreaBriefing[] }>)
+      .then(r => { if (!r.ok) throw new Error(`${r.status} ${r.statusText}`); return r.json() as Promise<{ briefings?: AreaBriefing[] }> })
       .then(d => {
         const list = d.briefings ?? []
         setBriefings(list)
@@ -354,6 +356,7 @@ function AreaKnowledgePanel() {
         for (const b of list) notes[b.area] = b.userNotes ?? ''
         setEditingNotes(notes)
       })
+      .catch(err => console.error('Failed to load area briefings:', err))
       .finally(() => setLoading(false))
   }, [])
 

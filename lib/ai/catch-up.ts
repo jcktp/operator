@@ -35,7 +35,7 @@ Reply with ONLY valid JSON, no other text:
   "topQuestions": [{"text": "most important question for the ${modeConfig.label.toLowerCase()} to ask", "why": "why it matters", "priority": "high|medium|low"}]
 }
 
-Limits: max 4 crossInsights, 4 topQuestions. Only use what the ${modeConfig.documentLabelPlural.toLowerCase()} contain.`
+Limits: max 4 crossInsights, 4 topQuestions. Use ONLY information present in the ${modeConfig.documentLabelPlural.toLowerCase()} above. Do not invent metrics, names, or facts not present in the data.`
 
   const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
   const json = extractJsonFromText(text)
@@ -93,7 +93,9 @@ export async function generateCatchMeUp(
     ? `\nThe following patterns have been automatically detected across multiple ${modeConfig.documentLabelPlural.toLowerCase()} — reference them specifically in your narrative when relevant:\n\n${patternBlock}\n`
     : ''
 
-  const prompt = `You are briefing a ${modeConfig.label.toLowerCase()} who hasn't checked their reports in a while. Write a "catch me up" digest — a flowing narrative of 4-6 paragraphs covering what's been happening across the business. Lead with the most important developments, then cover each key area, and close with the top things they should act on or ask about. Write conversationally, as if speaking to them directly. No bullet points.${patternSection}
+  const prompt = `You are briefing a ${modeConfig.label.toLowerCase()} who hasn't checked their reports in a while. Write a "catch me up" digest — a flowing narrative of 4-6 paragraphs covering what's been happening. Lead with the most important developments, then cover each key area, and close with the top things they should act on or ask about. Write conversationally, as if speaking to them directly. No bullet points.
+
+STRICT: Use only the data provided in the reports below. Do not invent metrics, names, figures, or events that are not present in the data. Only reference topics that actually appear in the reports provided.${patternSection}
 
 Recent ${modeConfig.documentLabelPlural.toLowerCase()}:
 ${reportsText}`

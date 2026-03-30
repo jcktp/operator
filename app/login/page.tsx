@@ -42,7 +42,7 @@ export default function LoginPage() {
     try {
       const res = await fetch('/api/auth/setup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ name, role, password, appMode: selectedMode }),
       })
       const data = await res.json() as { ok?: boolean; error?: string }
@@ -52,6 +52,8 @@ export default function LoginPage() {
       } else {
         setError(data.error ?? 'Setup failed')
       }
+    } catch {
+      setError('Could not connect to server. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -71,7 +73,7 @@ export default function LoginPage() {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ password }),
       })
       const data = await res.json() as { ok?: boolean; error?: string; attemptsLeft?: number; uninstalled?: boolean }
@@ -86,6 +88,8 @@ export default function LoginPage() {
         setPassword('')
         passwordRef.current?.focus()
       }
+    } catch {
+      setError('Could not connect to server. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -195,7 +199,7 @@ export default function LoginPage() {
                 <input
                   type="text" value={name} onChange={e => setName(e.target.value)} required
                   placeholder="Alex Chen"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
                 />
               </div>
               <div>
@@ -203,7 +207,7 @@ export default function LoginPage() {
                 <input
                   type="text" value={role} onChange={e => setRole(e.target.value)}
                   placeholder="e.g. CEO, Journalist, Team Lead"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
                 />
                 <p className="text-[11px] text-gray-400 mt-1">The AI will tailor responses to your role.</p>
               </div>
@@ -215,7 +219,7 @@ export default function LoginPage() {
                     type={showPass ? 'text' : 'password'}
                     value={password} onChange={e => setPassword(e.target.value)} required
                     placeholder="Min. 6 characters"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                   <button type="button" onClick={() => setShowPass(v => !v)}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -229,7 +233,7 @@ export default function LoginPage() {
                   type={showPass ? 'text' : 'password'}
                   value={confirm} onChange={e => setConfirm(e.target.value)} required
                   placeholder="Repeat password"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
                 />
               </div>
             </div>

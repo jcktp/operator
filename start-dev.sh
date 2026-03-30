@@ -282,7 +282,7 @@ if [ "$AI_PROVIDER" != "ollama" ]; then
   step "Cloud AI provider ($AI_PROVIDER) — skipping model download"
   sleep 2
 else
-  DEFAULT_MODEL="llama3.2:3b"
+  DEFAULT_MODEL="qwen3:4b"
   MODEL=$(node -e "
 const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
 const { PrismaClient } = require('@prisma/client');

@@ -1,4 +1,5 @@
 import type { ModeConfig } from '@/lib/mode'
+import ModeIcon from '@/app/settings/ModeIcons'
 
 interface Props {
   modeConfig: ModeConfig
@@ -34,7 +35,9 @@ export default function StepMode({ modeConfig, onNext, onBack }: Props) {
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-3 mb-1">
-          <span className="text-2xl">{modeConfig.icon}</span>
+          <div className="w-8 h-8 text-gray-700 dark:text-zinc-200 shrink-0">
+            <ModeIcon modeId={modeConfig.id} className="w-8 h-8" />
+          </div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-50">{modeConfig.label} mode</h2>
         </div>
         <p className="text-sm text-gray-500 dark:text-zinc-400 ml-10">{modeConfig.tagline}</p>

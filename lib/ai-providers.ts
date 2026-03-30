@@ -141,6 +141,7 @@ async function chatAnthropicStream(
   systemPrompt: string,
   temperature: number,
   emit: (chunk: string) => void,
+  onToolCall?: (name: string, input: Record<string, string>) => void,
 ): Promise<void> {
   const key = getSecret('ANTHROPIC_API_KEY')
   if (!key) throw new Error('ANTHROPIC_API_KEY not set')
@@ -156,11 +157,10 @@ async function chatAnthropicStream(
     if (toolBlocks.length > 0) {
       msgs.push({ role: 'assistant', content: allBlocks })
       const results = await Promise.all(
-        toolBlocks.map(async b => ({
-          type: 'tool_result',
-          tool_use_id: b.id,
-          content: await executeTool(b.name, b.input),
-        }))
+        toolBlocks.map(async b => {
+          onToolCall?.(b.name, b.input)
+          return { type: 'tool_result', tool_use_id: b.id, content: await executeTool(b.name, b.input) }
+        })
       )
       msgs.push({ role: 'user', content: results })
     } else {
@@ -238,6 +238,7 @@ async function chatOpenAIStream(
   model: string,
   skipTools: boolean,
   emit: (chunk: string) => void,
+  onToolCall?: (name: string, input: Record<string, string>) => void,
 ): Promise<void> {
   if (!apiKey) throw new Error(`API key not set for ${endpoint}`)
   const tools = skipTools ? [] : availableTools().map(t => ({
@@ -262,6 +263,7 @@ async function chatOpenAIStream(
         toolCalls.map(async tc => {
           let args: Record<string, string> = {}
           try { args = JSON.parse(tc.args || '{}') } catch {}
+          onToolCall?.(tc.name, args)
           return { role: 'tool', tool_call_id: tc.id, content: await executeTool(tc.name, args) } as OAIMsg
         })
       )
@@ -279,6 +281,7 @@ async function chatGoogleStream(
   systemPrompt: string,
   temperature: number,
   emit: (chunk: string) => void,
+  onToolCall?: (name: string, input: Record<string, string>) => void,
 ): Promise<void> {
   const key = getSecret('GOOGLE_API_KEY')
   if (!key) throw new Error('GOOGLE_API_KEY not set')
@@ -325,6 +328,7 @@ async function chatGoogleStream(
     const funcCall = parts.find(p => p.functionCall)
     if (funcCall?.functionCall) {
       contents.push({ role: 'model', parts })
+      onToolCall?.(funcCall.functionCall.name, funcCall.functionCall.args)
       const result = await executeTool(funcCall.functionCall.name, funcCall.functionCall.args)
       contents.push({ role: 'user', parts: [{ functionResponse: { name: funcCall.functionCall.name, response: { content: result } } }] })
     } else {
@@ -341,9 +345,10 @@ async function chatOllamaStream(
   systemPrompt: string,
   temperature: number,
   emit: (chunk: string) => void,
+  onToolCall?: (name: string, input: Record<string, string>) => void,
 ): Promise<void> {
   const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
-  const model = process.env.OLLAMA_MODEL ?? 'llama3.2:3b'
+  const model = process.env.OLLAMA_MODEL ?? 'qwen3:4b'
   const ollama = new Ollama({ host })
   const tools = availableTools(hasNoteSaveIntent(messages))
   const ollamaTools = tools.map(t => ({
@@ -374,7 +379,9 @@ async function chatOllamaStream(
       if (finalToolCalls?.length) {
         msgs.push({ role: 'assistant', content: accContent })
         for (const tc of finalToolCalls) {
-          const result = await executeTool(tc.function.name, tc.function.arguments as Record<string, string>)
+          const args = tc.function.arguments as Record<string, string>
+          onToolCall?.(tc.function.name, args)
+          const result = await executeTool(tc.function.name, args)
           msgs.push({ role: 'tool' as never, content: result })
         }
       } else if (accContent) {
@@ -419,32 +426,35 @@ export function chatWithToolsStream(
 
       resetNoteSaved()
       const emit = (text: string) => { if (text) enqueue({ t: 'chunk', v: text }) }
+      const onToolCall = (name: string, input: Record<string, string>) => {
+        enqueue({ t: 'tool', name, query: input.query ?? '' })
+      }
 
       try {
         switch (provider) {
           case 'anthropic':
-            await chatAnthropicStream(messages, systemPrompt, temperature, emit)
+            await chatAnthropicStream(messages, systemPrompt, temperature, emit, onToolCall)
             break
           case 'openai':
-            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.openai.com/v1/chat/completions', getSecret('OPENAI_API_KEY') ?? '', process.env.OPENAI_MODEL ?? 'gpt-4o-mini', false, emit)
+            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.openai.com/v1/chat/completions', getSecret('OPENAI_API_KEY') ?? '', process.env.OPENAI_MODEL ?? 'gpt-4o-mini', false, emit, onToolCall)
             break
           case 'groq':
-            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.groq.com/openai/v1/chat/completions', getSecret('GROQ_API_KEY') ?? '', process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant', false, emit)
+            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.groq.com/openai/v1/chat/completions', getSecret('GROQ_API_KEY') ?? '', process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant', false, emit, onToolCall)
             break
           case 'google':
-            await chatGoogleStream(messages, systemPrompt, temperature, emit)
+            await chatGoogleStream(messages, systemPrompt, temperature, emit, onToolCall)
             break
           case 'xai':
-            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.x.ai/v1/chat/completions', getSecret('XAI_API_KEY') ?? '', process.env.XAI_MODEL ?? 'grok-3-mini', false, emit)
+            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.x.ai/v1/chat/completions', getSecret('XAI_API_KEY') ?? '', process.env.XAI_MODEL ?? 'grok-3-mini', false, emit, onToolCall)
             break
           case 'perplexity':
-            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.perplexity.ai/chat/completions', getSecret('PERPLEXITY_API_KEY') ?? '', process.env.PERPLEXITY_MODEL ?? 'llama-3.1-sonar-small-128k-online', true, emit)
+            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.perplexity.ai/chat/completions', getSecret('PERPLEXITY_API_KEY') ?? '', process.env.PERPLEXITY_MODEL ?? 'llama-3.1-sonar-small-128k-online', true, emit, onToolCall)
             break
           case 'mistral':
-            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.mistral.ai/v1/chat/completions', getSecret('MISTRAL_API_KEY') ?? '', process.env.MISTRAL_MODEL ?? 'mistral-small-latest', false, emit)
+            await chatOpenAIStream(messages, systemPrompt, temperature, 'https://api.mistral.ai/v1/chat/completions', getSecret('MISTRAL_API_KEY') ?? '', process.env.MISTRAL_MODEL ?? 'mistral-small-latest', false, emit, onToolCall)
             break
           default:
-            await chatOllamaStream(messages, systemPrompt, temperature, emit)
+            await chatOllamaStream(messages, systemPrompt, temperature, emit, onToolCall)
         }
         const noteSaved = getNoteSaved()
         enqueue({ t: 'done', noteSaved: noteSaved ?? null })
@@ -574,9 +584,15 @@ export async function chat(messages: Message[], temperature = 0.1, jsonMode = fa
     }
     default: {
       const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
-      const model = process.env.OLLAMA_MODEL ?? 'llama3.2:3b'
+      const model = process.env.OLLAMA_MODEL ?? 'qwen3:4b'
       const ollama = new Ollama({ host })
       const response = await ollama.chat({ model, messages, options: { temperature, ...(jsonMode ? { format: 'json' } : {}) } })
+      // Small models sometimes return empty content when format:json is forced.
+      // Retry without the format constraint — the prompt's own JSON instruction handles structure.
+      if (jsonMode && !response.message.content?.trim()) {
+        const retry = await ollama.chat({ model, messages, options: { temperature } })
+        return retry.message.content
+      }
       return response.message.content
     }
   }

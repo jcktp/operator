@@ -167,7 +167,18 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
             </div>
           ))}
 
-          {c.loading && c.messages.at(-1)?.role !== 'assistant' && (
+          {c.searching && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 dark:bg-zinc-800 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2">
+                <Globe size={12} className="text-green-500 animate-pulse shrink-0" />
+                <span className="text-xs text-gray-500 dark:text-zinc-400">
+                  Searching the web for: <span className="font-medium text-gray-700 dark:text-zinc-200 truncate max-w-[200px] inline-block align-bottom">{c.searching}</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          {c.loading && !c.searching && c.messages.at(-1)?.role !== 'assistant' && (
             <div className="flex justify-start">
               <div className="bg-gray-100 dark:bg-zinc-800 rounded-2xl rounded-bl-sm px-4 py-3">
                 <div className="flex gap-1">

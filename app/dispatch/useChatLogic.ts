@@ -41,6 +41,7 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
   const [userName, setUserName] = useState('')
   const [userRole, setUserRole] = useState('')
   const [savedNoteTitle, setSavedNoteTitle] = useState<string | null>(null)
+  const [searching, setSearching] = useState<string | null>(null)
 
   const savedNoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -192,10 +193,11 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
         for (const line of lines) {
           if (!line.trim()) continue
           try {
-            const ev = JSON.parse(line) as { t: string; v?: string; noteSaved?: { title: string; folder: string } | null; error?: string }
-            if (ev.t === 'chunk' && ev.v) { fullContent += ev.v; addOrUpdate(fullContent) }
-            else if (ev.t === 'done') { savedNote = ev.noteSaved ?? null }
-            else if (ev.t === 'error') { fullContent = `Error: ${ev.error ?? 'Unknown error'}`; addOrUpdate(fullContent) }
+            const ev = JSON.parse(line) as { t: string; v?: string; name?: string; query?: string; noteSaved?: { title: string; folder: string } | null; error?: string }
+            if (ev.t === 'chunk' && ev.v) { setSearching(null); fullContent += ev.v; addOrUpdate(fullContent) }
+            else if (ev.t === 'tool' && ev.name === 'search_web') { setSearching(ev.query ?? 'the web') }
+            else if (ev.t === 'done') { setSearching(null); savedNote = ev.noteSaved ?? null }
+            else if (ev.t === 'error') { setSearching(null); fullContent = `Error: ${ev.error ?? 'Unknown error'}`; addOrUpdate(fullContent) }
           } catch {}
         }
       }
@@ -222,6 +224,7 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
       setMessages(m => [...m, { role: 'assistant', content: 'Network error — could not reach the AI.' }])
     } finally {
       setLoading(false)
+      setSearching(null)
     }
   }
 
@@ -269,7 +272,7 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
     showUrlInput, setShowUrlInput,
     webAccess, persona, setPersona, userMemory, setUserMemory,
     view, setView, history, historyLoading,
-    userName, userRole, savedNoteTitle,
+    userName, userRole, savedNoteTitle, searching,
     // Refs
     bottomRef, inputRef, fileRef, prevUrlRef,
     // Actions

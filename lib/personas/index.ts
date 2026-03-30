@@ -85,9 +85,10 @@ export function buildPersona(def: PersonaDef): Persona {
       `You are ${def.name} — ${def.roleIntro}.${userContext()}\n\n${def.instructions}` +
       `\n\n${noteToolInstructions()}` +
       (hasSearch ? `\n\nWEB SEARCH — you have access to the search_web tool. Use it for any question that is not answered by the documents below — current events, facts, geography, prices, distances, real-time data, or anything outside the provided context. Always call search_web before saying you don't know something that could be looked up.` : '') +
-      (context ? `\n\n${def.contextLabel}:\n${context}` : '') +
+      (context
+        ? `\n\n${def.contextLabel}:\n${context}${DOCUMENT_GROUNDING_RULES}`
+        : `\n\nDOCUMENTS: No documents have been uploaded yet. If asked about documents, reports, data, metrics, or analysis — say clearly that no documents are loaded and suggest uploading one. Do not invent or reference any documents, figures, or facts.`) +
       (userMemory ? `\n\n${def.memoryLabel}:\n${userMemory}` : '') +
-      (context ? DOCUMENT_GROUNDING_RULES : '') +
       `\n${SAFETY_RULES}`,
   }
 }

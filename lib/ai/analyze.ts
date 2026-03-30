@@ -259,8 +259,13 @@ Limits: max 10 metrics, 5 insights, 4 questions.`
     const json = extractJsonFromText(text)
     parsed = JSON.parse(json) as ReportAnalysis
   } catch (e) {
-    console.error('analyzeReport JSON parse failed:', e, 'raw response:', text.slice(0, 500))
-    return { summary: '', metrics: [], insights: [], questions: [] }
+    console.error('analyzeReport JSON parse failed:', e, 'raw response:', text?.slice(0, 500))
+    return {
+      summary: 'Analysis could not be completed — the AI model did not return a structured response. Try re-uploading the document, or switch to a different AI provider in Settings.',
+      metrics: [],
+      insights: [],
+      questions: [],
+    }
   }
 
   return {

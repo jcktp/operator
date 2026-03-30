@@ -12,6 +12,7 @@ import DispatchReportButton from './DispatchReportButton'
 import ReportContent from './ReportContent'
 import RawContent from './RawContent'
 import CopyNarrativeButton from './CopyNarrativeButton'
+import ExportAnalysisPDFButton from './ExportAnalysisPDFButton'
 import EntitiesSection from './EntitiesSection'
 import TimelineSection from './TimelineSection'
 import RedactionsSection from './RedactionsSection'
@@ -206,6 +207,16 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <ExportAnalysisPDFButton
+            title={report.title}
+            area={report.area}
+            directName={report.directReport?.name}
+            reportDate={report.reportDate ? formatDate(report.reportDate) : undefined}
+            summary={report.summary ?? undefined}
+            metrics={metrics}
+            insights={insights}
+            questions={questions}
+          />
           <CopyNarrativeButton
             title={report.title}
             area={report.area}

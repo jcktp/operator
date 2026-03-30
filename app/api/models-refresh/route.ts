@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server'
 // Curated list of small, quality models — checked periodically
 // These are models from ollama.com/library that run well locally on consumer hardware
 const CURATED_MODELS = [
-  { id: 'llama3.2:3b',      label: 'Llama 3.2 3B',       note: 'Fast and capable — recommended default', tags: ['fast', 'quality'] },
+  { id: 'qwen3:4b',          label: 'Qwen3 4B',            note: 'Recommended default — strong instruction following and structured output', tags: ['quality', 'structured'] },
+  { id: 'llama3.2:3b',      label: 'Llama 3.2 3B',       note: 'Fast and lightweight',                   tags: ['fast'] },
   { id: 'llama3.2:1b',      label: 'Llama 3.2 1B',       note: 'Fastest, lightest',                      tags: ['fast'] },
   { id: 'llama3.1:8b',      label: 'Llama 3.1 8B',       note: 'Excellent quality, needs ~6 GB RAM',     tags: ['quality'] },
   { id: 'qwen2.5:3b',       label: 'Qwen 2.5 3B',        note: 'Great at structured output',             tags: ['structured'] },

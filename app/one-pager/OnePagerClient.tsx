@@ -34,47 +34,62 @@ export default function OnePagerClient({
   const handleExport = () => {
     if (!reports?.length) return
     const heading = weekLabel ? `Executive One Pager — ${weekLabel}` : 'Executive One Pager'
-    const lines: string[] = [heading, '='.repeat(heading.length), '']
 
-    for (const r of reports) {
-      const from = r.directName ? ` · ${r.directName}${r.directTitle ? `, ${r.directTitle}` : ''}` : ''
-      lines.push(`[${r.area}${from}]`)
-      lines.push(r.title)
-      lines.push('')
-      if (r.summary) { lines.push(r.summary); lines.push('') }
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-      if (r.metrics.length > 0) {
-        lines.push('Metrics')
-        for (const m of r.metrics) lines.push(`  ${m.label}: ${m.value}`)
-        lines.push('')
-      }
-
+    const sections = reports.map(r => {
+      const from = r.directName ? ` &middot; ${esc(r.directName)}${r.directTitle ? `, ${esc(r.directTitle)}` : ''}` : ''
+      const metricsHtml = r.metrics.length > 0
+        ? `<div class="section-block"><div class="block-label">Metrics</div>${r.metrics.map(m => `<div class="metric-row"><span class="metric-label">${esc(m.label)}</span><span class="metric-value">${esc(m.value)}</span></div>`).join('')}</div>`
+        : ''
       const flags = r.insights.filter(i => i.type === 'risk' || i.type === 'anomaly')
-      if (flags.length > 0) {
-        lines.push('Flags')
-        for (const f of flags) lines.push(`  [${f.type}] ${f.text}`)
-        lines.push('')
-      }
-
+      const flagsHtml = flags.length > 0
+        ? `<div class="section-block"><div class="block-label">Flags</div>${flags.map(f => `<div class="flag-row"><span class="flag-type">${esc(f.type)}</span><span class="flag-text">${esc(f.text)}</span></div>`).join('')}</div>`
+        : ''
       const highQ = r.questions.filter(q => q.priority === 'high')
-      if (highQ.length > 0) {
-        lines.push('Key Questions')
-        for (const q of highQ) lines.push(`  ? ${q.text}`)
-        lines.push('')
-      }
+      const questionsHtml = highQ.length > 0
+        ? `<div class="section-block"><div class="block-label">Key Questions</div>${highQ.map(q => `<div class="question-row">${esc(q.text)}</div>`).join('')}</div>`
+        : ''
+      return `<div class="report-section">
+        <div class="report-meta">${esc(r.area)}${from}</div>
+        <div class="report-title">${esc(r.title)}</div>
+        ${r.summary ? `<p class="report-summary">${esc(r.summary)}</p>` : ''}
+        ${metricsHtml}${flagsHtml}${questionsHtml}
+      </div>`
+    }).join('')
 
-      lines.push('─'.repeat(50), '')
-    }
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(heading)}</title><style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #111; background: #fff; padding: 32px 40px; line-height: 1.5; }
+      h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; color: #111; }
+      .week-label { font-size: 12px; color: #888; margin-bottom: 28px; }
+      .report-section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; page-break-inside: avoid; }
+      .report-section:last-child { border-bottom: none; }
+      .report-meta { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; font-weight: 600; margin-bottom: 4px; }
+      .report-title { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 8px; }
+      .report-summary { font-size: 12px; color: #374151; margin-bottom: 12px; line-height: 1.6; }
+      .section-block { margin-bottom: 10px; }
+      .block-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; margin-bottom: 5px; }
+      .metric-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f3f4f6; }
+      .metric-label { color: #374151; }
+      .metric-value { font-weight: 600; color: #111; }
+      .flag-row { display: flex; align-items: flex-start; gap: 8px; padding: 3px 0; }
+      .flag-type { font-size: 10px; font-weight: 700; text-transform: uppercase; background: #fef2f2; color: #dc2626; padding: 1px 5px; border-radius: 3px; white-space: nowrap; margin-top: 1px; }
+      .question-row { padding: 3px 0; color: #374151; }
+      .question-row::before { content: '?  '; color: #6b7280; font-weight: 700; }
+      @media print { body { padding: 0; } }
+    </style></head><body>
+      <h1>${esc(heading)}</h1>
+      ${weekLabel ? `<div class="week-label">${esc(weekLabel)}</div>` : '<div class="week-label"></div>'}
+      ${sections}
+    </body></html>`
 
-    const content = lines.join('\n')
-    const blob = new Blob([content], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    const slug = heading.replace(/[^a-z0-9]+/gi, '-').toLowerCase()
-    a.download = `${slug}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => { win.print() }, 300)
   }
 
   const handleSaveAsReport = async () => {
@@ -113,7 +128,7 @@ export default function OnePagerClient({
             className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
           >
             <Download size={14} />
-            Export
+            Export PDF
           </button>
           <button
             onClick={handleSaveAsReport}

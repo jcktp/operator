@@ -11,7 +11,7 @@ interface Props {
 
 export default function ModelPullOverlay({ pull, selectedModel, onClose }: Props) {
   return (
-    <div className="fixed inset-0 z-50 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-[200] bg-gray-950/80 backdrop-blur-sm flex items-center justify-center p-6">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-sm shadow-xl space-y-5">
         <div className="flex items-center gap-3">
           {pull.done
