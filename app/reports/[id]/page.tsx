@@ -115,7 +115,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   // Title of the previous report (for journalism comparison label)
   const prevReportTitle = history[0]?.title
 
-  const metrics    = parseJsonSafe<Metric[]>(report.metrics, [])
+  const metrics    = parseJsonSafe<Record<string, unknown>[]>(report.metrics, [])
+    .map(m => ({ ...m, label: (((m.label ?? m.name) as string | undefined) ?? '').trim() }))
+    .filter(m => m.label) as Metric[]
   const insights   = parseJsonSafe<Insight[]>(report.insights, [])
   const questions  = parseJsonSafe<Question[]>(report.questions, [])
   const comparison = parseJsonSafe<Comparison | null>(report.comparison, null)

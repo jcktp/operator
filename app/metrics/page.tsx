@@ -22,7 +22,9 @@ export default async function MetricsPage() {
 
   // Flatten all metrics with source info
   const allMetrics = reports.flatMap(r => {
-    const parsed = parseJsonSafe<Metric[]>(r.metrics, [])
+    const parsed = parseJsonSafe<Record<string, unknown>[]>(r.metrics, [])
+      .map(m => ({ ...m, label: (((m.label ?? m.name) as string | undefined) ?? '').trim() }))
+      .filter(m => m.label) as Metric[]
     return parsed.map(m => ({
       ...m,
       reportId: r.id,
