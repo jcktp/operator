@@ -153,7 +153,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
   // Build lookup: metric label → comparison change
   const changesByMetric = new Map(
-    (comparison?.changes ?? []).map(c => [c.metric.toLowerCase(), c])
+    (comparison?.changes ?? []).filter(c => c.metric).map(c => [c.metric.toLowerCase(), c])
   )
 
   // Calculate percentage point delta for % values
@@ -336,7 +336,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </h2>
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
             {metrics.map((m, i) => {
-              const change = changesByMetric.get(m.label.toLowerCase())
+              const change = m.label ? changesByMetric.get(m.label.toLowerCase()) : undefined
               const pp = change ? ppDelta(change.previous, change.current) : null
               return (
                 <div key={i} className="flex items-start justify-between px-4 py-3 gap-4">
@@ -374,7 +374,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
             {insights.map((insight, i) => (
               <div key={i} className="flex items-start gap-3 px-4 py-3">
-                <InsightTypeBadge type={insight.type} />
+                <div className="w-24 shrink-0">
+                  <InsightTypeBadge type={insight.type} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-700 dark:text-zinc-200">{insight.text}</p>
                   {insight.area && <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{insight.area}</p>}

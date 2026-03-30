@@ -55,7 +55,7 @@ export function InsightTypeBadge({ type }: { type: string }) {
     opportunity: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
   }
   return (
-    <span className={cn('inline-flex items-center justify-center w-24 shrink-0 px-1.5 py-0.5 rounded text-xs font-medium capitalize', colors[type] ?? 'bg-gray-50 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400')}>
+    <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium capitalize', colors[type] ?? 'bg-gray-50 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400')}>
       {type}
     </span>
   )

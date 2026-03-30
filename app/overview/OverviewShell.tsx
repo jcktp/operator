@@ -287,7 +287,9 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
                     {topInsights.map((insight, i) => (
                       <Link key={i} href={`/reports/${insight.reportId}`}
                         className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
-                        <InsightTypeBadge type={insight.type as 'risk' | 'anomaly' | 'observation' | 'opportunity'} />
+                        <div className="w-24 shrink-0">
+                          <InsightTypeBadge type={insight.type as 'risk' | 'anomaly' | 'observation' | 'opportunity'} />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-700 dark:text-zinc-200">{insight.text}</p>
                           <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{insight.reportTitle}</p>
