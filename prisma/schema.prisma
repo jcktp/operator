@@ -206,3 +206,31 @@ model AreaBriefing {
   @@unique([area, mode])
   @@index([area])
 }
+
+// ── Storyline ─────────────────────────────────────────────────────────────────
+
+model Story {
+  id            String         @id @default(uuid())
+  title         String
+  reportIds     String         // JSON array of report IDs
+  narrative     String?        // AI-generated + edited narrative text
+  events        String?        // JSON: ordered annotated events
+  claimStatuses String?        // JSON: { claimId, status, note }[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  evidence      EvidenceItem[]
+}
+
+model EvidenceItem {
+  id         String   @id @default(uuid())
+  storyId    String
+  story      Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  url        String
+  title      String
+  accessedAt DateTime?
+  archiveUrl String?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@index([storyId])
+}

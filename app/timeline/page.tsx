@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getModeConfig } from '@/lib/mode'
 import TimelineClient from './TimelineClient'
@@ -8,6 +8,11 @@ export const dynamic = 'force-dynamic'
 export default async function TimelinePage() {
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
   const modeConfig = getModeConfig(modeRow?.value)
+
+  // Journalism mode: timeline lives inside the Investigation Hub
+  if (modeConfig.features.entities && modeConfig.features.timeline) {
+    redirect('/entities?tab=timeline')
+  }
 
   // Available for any mode that has timeline feature AND exposes it in nav
   if (!modeConfig.features.timeline || !modeConfig.features.extraNavItems.some(n => n.href === '/timeline')) {
