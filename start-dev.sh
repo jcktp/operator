@@ -123,12 +123,15 @@ if ! command -v ollama &>/dev/null; then
 fi
 step "Ollama found"
 
-# ── 4. cloudflared (optional — installed in background, non-blocking) ─────────
-install_cloudflared_bg() {
+# ── 4. cloudflared (optional — installed/updated in background, non-blocking) ─
+update_tools_bg() {
   case "$PLATFORM" in
     macOS)
-      brew install cloudflared >/dev/null 2>&1 || true ;;
+      brew upgrade ollama cloudflared >/dev/null 2>&1 || true ;;
     Linux)
+      # Re-running the Ollama install script also updates it when a newer version exists
+      curl -fsSL https://ollama.com/install.sh | sh >/dev/null 2>&1 || true
+      # Update cloudflared binary
       ARCH="$(uname -m)"
       case "$ARCH" in x86_64) CF_ARCH="amd64" ;; aarch64|arm64) CF_ARCH="arm64" ;; *) CF_ARCH="amd64" ;; esac
       CF_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}"
@@ -139,9 +142,10 @@ install_cloudflared_bg() {
 }
 if command -v cloudflared &>/dev/null; then
   step "cloudflared ready"
+  update_tools_bg &
 else
-  warn "cloudflared not found — installing in background..."
-  install_cloudflared_bg &
+  warn "cloudflared not found — installing in background (also updating Ollama)..."
+  update_tools_bg &
 fi
 
 # ── 5. Environment file ───────────────────────────────────────────────────────
