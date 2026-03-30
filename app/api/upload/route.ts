@@ -85,6 +85,10 @@ export async function POST(req: NextRequest) {
       if (direct) directName = direct.name
     }
 
+    // Read mode from DB — process.env.APP_MODE is not reliably set at runtime
+    const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+    const appMode = modeRow?.value ?? 'executive'
+
     // Find the most recent prior report for the same area (for comparison + series detection)
     const previousReport = await prisma.report.findFirst({
       where: {
@@ -110,7 +114,7 @@ export async function POST(req: NextRequest) {
     // Run AI analysis
     let analysis = null
     try {
-      analysis = await analyzeReport(rawContent, title, area, directName)
+      analysis = await analyzeReport(rawContent, title, area, directName, appMode)
     } catch (e) {
       console.error('AI analysis failed:', e)
     }
@@ -131,7 +135,8 @@ export async function POST(req: NextRequest) {
             previousReport.metrics,
             analysis.summary,
             JSON.stringify(analysis.metrics),
-            area
+            area,
+            appMode
           )
         } catch (e) { console.error('Comparison failed:', e) }
       })(),
@@ -173,7 +178,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Optional mode features: additional analysis steps — all run in parallel
-    const modeFeatures = getModeConfig(process.env.APP_MODE).features
+    const modeFeatures = getModeConfig(appMode).features
     if (modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification || modeFeatures.documentComparison) {
       let entitiesResult: Awaited<ReturnType<typeof extractEntities>> = []
       let eventsResult: Awaited<ReturnType<typeof extractTimeline>> = []
@@ -243,13 +248,12 @@ export async function POST(req: NextRequest) {
 
     // Fire-and-forget: refresh area briefing after successful upload (non-blocking)
     if (analysis?.summary) {
-      const mode = process.env.APP_MODE ?? 'executive'
       prisma.report.findMany({
         where: { area },
         select: { summary: true, metrics: true, insights: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
         take: 20,
-      }).then(reports => generateAreaBriefing(area, mode, reports)).catch(() => {})
+      }).then(reports => generateAreaBriefing(area, appMode, reports)).catch(() => {})
     }
 
     return NextResponse.json({ report, hasPrevious: !!previousReport, seriesCandidate })

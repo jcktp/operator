@@ -179,9 +179,10 @@ export async function analyzeReport(
   content: string,
   reportTitle: string,
   area: string,
-  directName?: string
+  directName?: string,
+  mode?: string
 ): Promise<ReportAnalysis> {
-  const modeConfig = getModeConfig(process.env.APP_MODE)
+  const modeConfig = getModeConfig(mode ?? process.env.APP_MODE)
   const from = directName ? `\nSubmitted by: ${directName}` : ''
 
   let knowledgePrefix = ''
@@ -283,7 +284,8 @@ export async function compareReports(
   previousMetrics: string,
   currentSummary: string,
   currentMetrics: string,
-  area: string
+  area: string,
+  mode?: string
 ): Promise<ReportComparison> {
   const prevMetrics = parseJsonSafe<Metric[]>(previousMetrics, [])
   const currMetrics = parseJsonSafe<Metric[]>(currentMetrics, [])
@@ -291,7 +293,7 @@ export async function compareReports(
   const prevText = `Summary: ${previousSummary}\nMetrics: ${prevMetrics.map(m => `${m.label}: ${m.value}`).join(', ')}`
   const currText = `Summary: ${currentSummary}\nMetrics: ${currMetrics.map(m => `${m.label}: ${m.value}`).join(', ')}`
 
-  const modeConfig = getModeConfig(process.env.APP_MODE)
+  const modeConfig = getModeConfig(mode ?? process.env.APP_MODE)
   const prompt = `Compare two ${area} ${modeConfig.documentLabelPlural.toLowerCase()} for a ${modeConfig.label.toLowerCase()}. Identify what changed, improved, or declined.
 
 PREVIOUS REPORT:

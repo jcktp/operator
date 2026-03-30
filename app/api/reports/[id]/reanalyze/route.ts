@@ -24,7 +24,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   await loadAiSettings()
 
-  const analysis = await analyzeReport(report.rawContent, report.title, report.area, directName)
+  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const analysis = await analyzeReport(report.rawContent, report.title, report.area, directName, modeRow?.value)
 
   // Only commit if we got a real result (not the error-message fallback)
   if (!analysis.summary || analysis.summary.startsWith('Analysis could not be completed')) {

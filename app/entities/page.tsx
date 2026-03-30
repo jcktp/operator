@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 
 const TAB_ICONS: Record<string, React.ReactNode> = {
   entities:    <Users size={13} />,
-  timeline:    <Clock size={13} />,
+  timeline:    <Clock size={12} />,
   'story-map': <Map size={13} />,
   storyline:   <BookOpen size={13} />,
 }
