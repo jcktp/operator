@@ -184,10 +184,10 @@ export default function StorylineEditor({ story, allReports, onUpdate, onDelete 
       <button
         onClick={handleGenerate}
         disabled={generating || reportIds.length === 0}
-        className="w-full flex items-center justify-center gap-2 py-2.5 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded-xl hover:bg-gray-700 dark:hover:bg-zinc-200 transition-colors disabled:opacity-40"
+        className="w-full flex items-center justify-center gap-2 py-2.5 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium rounded-xl hover:bg-gray-700 dark:hover:bg-zinc-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {generating ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
-        {generating ? 'Generating story brief…' : narrative ? 'Regenerate story brief' : 'Generate story brief'}
+        {generating ? 'Generating story brief…' : reportIds.length === 0 ? 'Select source documents above first' : narrative ? 'Regenerate story brief' : 'Generate story brief'}
       </button>
       {generateError && (
         <p className="text-xs text-red-500 dark:text-red-400 text-center">{generateError}</p>
