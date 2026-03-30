@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
-import { analyzeReport } from '@/lib/ai'
+import { analyzeReport, extractEntities, extractTimeline } from '@/lib/ai'
+import { getModeConfig } from '@/lib/mode'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -25,7 +26,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   await loadAiSettings()
 
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-  const analysis = await analyzeReport(report.rawContent, report.title, report.area, directName, modeRow?.value)
+  const appMode = modeRow?.value
+  const modeFeatures = getModeConfig(appMode).features
+
+  const analysis = await analyzeReport(report.rawContent, report.title, report.area, directName, appMode)
 
   // Only commit if we got a real result (not the error-message fallback)
   if (!analysis.summary || analysis.summary.startsWith('Analysis could not be completed')) {
@@ -42,6 +46,42 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     },
     include: { directReport: true },
   })
+
+  // Re-extract entities and timeline if the mode supports them
+  if (modeFeatures.entities || modeFeatures.timeline) {
+    await Promise.all([
+      modeFeatures.entities
+        ? (async () => {
+            try {
+              const entities = await extractEntities(report.rawContent!, report.title, report.area)
+              if (entities.length > 0) {
+                await prisma.reportEntity.deleteMany({ where: { reportId: id } })
+                await prisma.reportEntity.createMany({
+                  data: entities.map(e => ({
+                    reportId: id, type: e.type, name: e.name, context: e.context ?? null,
+                  })),
+                })
+              }
+            } catch (e) { console.error('Entity re-extraction failed:', e) }
+          })()
+        : Promise.resolve(),
+      modeFeatures.timeline
+        ? (async () => {
+            try {
+              const events = await extractTimeline(report.rawContent!, report.title)
+              if (events.length > 0) {
+                await prisma.timelineEvent.deleteMany({ where: { reportId: id } })
+                await prisma.timelineEvent.createMany({
+                  data: events.map(e => ({
+                    reportId: id, dateText: e.dateText, dateSortKey: e.dateSortKey ?? null, event: e.event,
+                  })),
+                })
+              }
+            } catch (e) { console.error('Timeline re-extraction failed:', e) }
+          })()
+        : Promise.resolve(),
+    ])
+  }
 
   return NextResponse.json({ report: updated })
 }

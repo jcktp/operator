@@ -1,7 +1,7 @@
 import { Clock } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import type { ModeConfig } from '@/lib/mode'
-import { buildTimelineJSData } from './TimelineJSViewer'
+import { buildTimelineJSData } from './timelineUtils'
 import TimelineTabClient from './TimelineTabClient'
 
 interface Props {
