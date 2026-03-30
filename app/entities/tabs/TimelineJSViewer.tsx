@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Script from 'next/script'
 
 interface TLDate {
   year: string
@@ -86,10 +85,24 @@ export default function TimelineJSViewer({ data }: Props) {
   const [scriptLoaded, setScriptLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Load TimelineJS via DOM injection — avoids React 19 <script> tag warning
+  useEffect(() => {
+    if (window.TL) { setScriptLoaded(true); return }
+    const existing = document.querySelector('script[src="/timelinejs/timeline.js"]')
+    if (existing) {
+      existing.addEventListener('load', () => setScriptLoaded(true))
+      return
+    }
+    const script = document.createElement('script')
+    script.src = '/timelinejs/timeline.js'
+    script.onload = () => setScriptLoaded(true)
+    script.onerror = () => setError('Failed to load timeline script.')
+    document.head.appendChild(script)
+  }, [])
+
   useEffect(() => {
     if (!scriptLoaded || !containerRef.current || data.events.length === 0) return
 
-    // Clean up any prior instance
     if (timelineRef.current?.destroy) {
       try { timelineRef.current.destroy() } catch {}
     }
@@ -128,12 +141,6 @@ export default function TimelineJSViewer({ data }: Props) {
   return (
     <>
       <link rel="stylesheet" href="/timelinejs/timeline.css" />
-      <Script
-        src="/timelinejs/timeline.js"
-        strategy="afterInteractive"
-        onLoad={() => setScriptLoaded(true)}
-        onError={() => setError('Failed to load timeline script.')}
-      />
       {error && (
         <p className="text-sm text-red-500 text-center py-4">{error}</p>
       )}
