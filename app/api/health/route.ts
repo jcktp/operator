@@ -106,6 +106,8 @@ export async function GET() {
 
     if (provider === 'ollama') {
       const host = s.ollama_host ?? 'http://localhost:11434'
+      const model = s.ollama_model ?? 'phi4-mini'
+      aiLabel = model
       try {
         const res = await fetch(`${host}/api/tags`, { signal: AbortSignal.timeout(3000) })
         if (res.ok) {

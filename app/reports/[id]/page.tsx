@@ -346,9 +346,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                     <p className="text-sm font-medium text-gray-900 dark:text-zinc-50">{m.label}</p>
                     {m.context && <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{m.context}</p>}
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-start gap-2 max-w-[60%] min-w-0 text-right overflow-hidden">
                     {change && (
-                      <div className="flex items-center gap-1.5 text-xs">
+                      <div className="flex items-center gap-1.5 text-xs shrink-0 mt-0.5">
                         <span className="text-gray-400 dark:text-zinc-500 line-through">{change.previous}</span>
                         <span className={cn('font-medium', directionColor[change.direction] ?? 'text-gray-400 dark:text-zinc-500')}>
                           {directionIcon[change.direction] ?? '·'}
@@ -356,8 +356,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                         </span>
                       </div>
                     )}
-                    {m.status && m.status !== 'neutral' && <StatusBadge status={m.status} />}
-                    <span className="text-sm font-semibold text-gray-900 dark:text-zinc-50">{m.value}</span>
+                    {m.status && m.status !== 'neutral' && <span className="shrink-0 mt-0.5"><StatusBadge status={m.status} /></span>}
+                    <span className="text-sm font-semibold text-gray-900 dark:text-zinc-50 break-words min-w-0">{m.value}</span>
                   </div>
                 </div>
               )

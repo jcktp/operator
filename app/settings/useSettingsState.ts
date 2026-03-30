@@ -19,8 +19,8 @@ export function useSettingsState() {
   const setMode = useSetMode()
 
   const [ollamaHost, setOllamaHost] = useState('http://localhost:11434')
-  const [ollamaModel, setOllamaModel] = useState('qwen3:4b')
-  const [savedModel, setSavedModel] = useState('qwen3:4b')
+  const [ollamaModel, setOllamaModel] = useState('phi4-mini')
+  const [savedModel, setSavedModel] = useState('phi4-mini')
   const [customModel, setCustomModel] = useState('')
   const [ceoName, setCeoName] = useState('')
   const [companyName, setCompanyName] = useState('')
@@ -55,8 +55,8 @@ export function useSettingsState() {
     fetch('/api/settings').then(r => r.json()).then((data: { settings?: Record<string, string> }) => {
       const s = data.settings ?? {}
       setOllamaHost(s.ollama_host ?? 'http://localhost:11434')
-      setOllamaModel(s.ollama_model ?? 'qwen3:4b')
-      setSavedModel(s.ollama_model ?? 'qwen3:4b')
+      setOllamaModel(s.ollama_model ?? 'phi4-mini')
+      setSavedModel(s.ollama_model ?? 'phi4-mini')
       setCeoName(s.ceo_name ?? '')
       setCompanyName(s.company_name ?? '')
       setUserRole(s.user_role ?? '')

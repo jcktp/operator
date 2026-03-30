@@ -1,11 +1,11 @@
 export const DEFAULT_MODELS = [
-  { id: 'qwen3:4b', label: 'Qwen3 4B', note: 'Recommended — strong instruction following and structured output' },
+  { id: 'phi4-mini', label: 'Phi 4 Mini', note: 'Recommended — fast, high quality structured output' },
+  { id: 'qwen3:4b', label: 'Qwen3 4B', note: 'Strong instruction following and structured output' },
   { id: 'llama3.2:3b', label: 'Llama 3.2 3B', note: 'Fast and lightweight' },
   { id: 'llama3.2:1b', label: 'Llama 3.2 1B', note: 'Fastest, lightest' },
   { id: 'qwen2.5:3b', label: 'Qwen 2.5 3B', note: 'Great at structured output' },
   { id: 'gemma2:2b', label: 'Gemma 2 2B', note: 'Small and capable' },
   { id: 'mistral:7b', label: 'Mistral 7B', note: 'Best quality, needs more RAM' },
-  { id: 'phi3.5', label: 'Phi 3.5', note: 'Microsoft small model' },
 ]
 
 export const CLOUD_PROVIDERS = [

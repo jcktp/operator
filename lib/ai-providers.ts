@@ -348,7 +348,7 @@ async function chatOllamaStream(
   onToolCall?: (name: string, input: Record<string, string>) => void,
 ): Promise<void> {
   const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
-  const model = process.env.OLLAMA_MODEL ?? 'qwen3:4b'
+  const model = process.env.OLLAMA_MODEL ?? 'phi4-mini'
   const ollama = new Ollama({ host })
   const tools = availableTools(hasNoteSaveIntent(messages))
   const ollamaTools = tools.map(t => ({
@@ -584,7 +584,7 @@ export async function chat(messages: Message[], temperature = 0.1, jsonMode = fa
     }
     default: {
       const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
-      const model = process.env.OLLAMA_MODEL ?? 'qwen3:4b'
+      const model = process.env.OLLAMA_MODEL ?? 'phi4-mini'
       const ollama = new Ollama({ host })
       // think: false disables qwen3's extended chain-of-thought mode, which can add minutes to
       // structured analysis calls. Thinking is useful for open-ended chat, not JSON extraction.
