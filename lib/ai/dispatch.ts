@@ -10,9 +10,10 @@ export async function dispatchChat(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   context: string,
   personaId: PersonaId = 'dispatch',
-  userMemory = ''
+  userMemory = '',
+  mode?: string
 ): Promise<ChatResult> {
-  const personas = getPersonasForMode(process.env.APP_MODE)
+  const personas = getPersonasForMode(mode ?? process.env.APP_MODE)
   const persona = personas[personaId]
   const hasSearch = process.env.OLLAMA_WEB_ACCESS === 'true'
   const systemPrompt = persona.buildSystemPrompt(context, userMemory, hasSearch)
@@ -24,11 +25,12 @@ export function dispatchChatStream(
   context: string,
   personaId: PersonaId = 'dispatch',
   userMemory = '',
+  mode?: string
 ): ReadableStream<Uint8Array> {
-  const personas = getPersonasForMode(process.env.APP_MODE)
+  const resolvedMode = mode ?? process.env.APP_MODE ?? 'executive'
+  const personas = getPersonasForMode(resolvedMode)
   const persona = personas[personaId]
   const hasSearch = process.env.OLLAMA_WEB_ACCESS === 'true'
-  const mode = process.env.APP_MODE ?? 'executive'
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -36,7 +38,7 @@ export function dispatchChatStream(
       let enrichedMemory = userMemory
       try {
         const terms = await prisma.glossaryTerm.findMany({
-          where: { scope: { in: ['global', `mode:${mode}`] } },
+          where: { scope: { in: ['global', `mode:${resolvedMode}`] } },
           orderBy: [{ scope: 'asc' }, { term: 'asc' }],
         })
         if (terms.length > 0) {
@@ -101,7 +103,7 @@ export async function extractMemoryFacts(
   if (messages.length < 2) return []
 
   const recent = messages.slice(-6)
-  const modeConfig = getModeConfig(process.env.APP_MODE)
+  const modeConfig = getModeConfig(undefined) // executive framing is fine for memory extraction
   const prompt = `You are reading a short conversation between a ${modeConfig.label.toLowerCase()} and an AI assistant. Extract any NEW facts about this person's work, goals, or preferences that would be useful to remember in future conversations.
 
 Rules:

@@ -5,9 +5,11 @@ import { generateDashboardInsights } from '@/lib/ai'
 export async function GET() {
   // Apply saved Ollama settings
   const allSettings = await prisma.setting.findMany()
+  let appMode = 'executive'
   for (const s of allSettings) {
     if (s.key === 'ollama_host') process.env.OLLAMA_HOST = s.value
     if (s.key === 'ollama_model') process.env.OLLAMA_MODEL = s.value
+    if (s.key === 'app_mode') appMode = s.value
   }
 
   // Get the most recent report per area
@@ -38,7 +40,7 @@ export async function GET() {
   }>
 
   try {
-    const result = await generateDashboardInsights(validReports)
+    const result = await generateDashboardInsights(validReports, appMode)
     return NextResponse.json(result)
   } catch (e) {
     console.error('Insights generation failed:', e)

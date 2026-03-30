@@ -85,8 +85,9 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
     setCatchMeUpLoading(true)
     try {
       const res = await fetch('/api/catch-me-up')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as { digest: string }
-      setCatchMeUpText(data.digest)
+      setCatchMeUpText(data.digest ?? 'No digest returned.')
     } catch {
       setCatchMeUpText('Unable to generate digest. Check your AI provider settings.')
     } finally {

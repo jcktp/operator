@@ -102,8 +102,8 @@ function CsvDisplay({ json }: { json: string }) {
 // ── Word doc HTML display ───────────────────────────────────────────────────
 
 function WordDisplay({ html }: { html: string }) {
-  // mammoth output is trusted (from user's own uploaded files; no script tags generated)
-  return <div className="doc-content" dangerouslySetInnerHTML={{ __html: html }} />
+  const safeHtml = html.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/<script\b[^>]*>/gi, '')
+  return <div className="doc-content" dangerouslySetInnerHTML={{ __html: safeHtml }} />
 }
 
 // ── Plain text display ──────────────────────────────────────────────────────

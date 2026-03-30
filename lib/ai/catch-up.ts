@@ -5,7 +5,8 @@ import { chat } from '../ai-providers'
 import { buildPatternSummary, formatPatternSummary } from '../patterns'
 
 export async function generateDashboardInsights(
-  reports: Array<{ area: string; summary: string; metrics: string; insights: string }>
+  reports: Array<{ area: string; summary: string; metrics: string; insights: string }>,
+  mode?: string
 ): Promise<{ crossInsights: Insight[]; topQuestions: Question[]; healthSignal: string }> {
   if (reports.length === 0) {
     return { crossInsights: [], topQuestions: [], healthSignal: 'No reports available.' }
@@ -22,7 +23,7 @@ export async function generateDashboardInsights(
     })
     .join('\n')
 
-  const modeConfig = getModeConfig(process.env.APP_MODE)
+  const modeConfig = getModeConfig(mode ?? process.env.APP_MODE)
   const prompt = `You are advising a ${modeConfig.label.toLowerCase()} based on recent ${modeConfig.documentLabelPlural.toLowerCase()} from their ${modeConfig.personLabelPlural.toLowerCase()}.
 
 ${modeConfig.documentLabelPlural}:
@@ -38,12 +39,16 @@ Reply with ONLY valid JSON, no other text:
 Limits: max 4 crossInsights, 4 topQuestions. Use ONLY information present in the ${modeConfig.documentLabelPlural.toLowerCase()} above. Do not invent metrics, names, or facts not present in the data.`
 
   const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-  const json = extractJsonFromText(text)
-  const parsed = JSON.parse(json)
-  return {
-    healthSignal: parsed.healthSignal ?? '',
-    crossInsights: Array.isArray(parsed.crossInsights) ? parsed.crossInsights : [],
-    topQuestions: Array.isArray(parsed.topQuestions) ? parsed.topQuestions : [],
+  try {
+    const json = extractJsonFromText(text)
+    const parsed = JSON.parse(json)
+    return {
+      healthSignal: parsed.healthSignal ?? '',
+      crossInsights: Array.isArray(parsed.crossInsights) ? parsed.crossInsights : [],
+      topQuestions: Array.isArray(parsed.topQuestions) ? parsed.topQuestions : [],
+    }
+  } catch {
+    return { healthSignal: '', crossInsights: [], topQuestions: [] }
   }
 }
 
@@ -59,11 +64,12 @@ export async function generateCatchMeUp(
     questions?: string
     reportDate?: string | null
     createdAt?: string
-  }>
+  }>,
+  mode?: string
 ): Promise<string> {
   if (reports.length === 0) return 'No reports to catch up on yet.'
 
-  const modeConfig = getModeConfig(process.env.APP_MODE)
+  const modeConfig = getModeConfig(mode ?? process.env.APP_MODE)
 
   const patternReports = reports.map(r => ({
     area: r.area,

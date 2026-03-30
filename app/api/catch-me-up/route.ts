@@ -6,6 +6,8 @@ import { generateCatchMeUp } from '@/lib/ai'
 export async function GET() {
   try {
     await loadAiSettings()
+    const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+    const appMode = modeRow?.value ?? 'executive'
 
     const reports = await prisma.report.findMany({
       orderBy: { createdAt: 'desc' },
@@ -35,7 +37,8 @@ export async function GET() {
         questions: r.questions ?? '[]',
         reportDate: r.reportDate?.toISOString() ?? null,
         createdAt: r.createdAt.toISOString(),
-      }))
+      })),
+      appMode
     )
 
     return NextResponse.json({ digest })

@@ -12,12 +12,15 @@ export async function POST(req: NextRequest) {
       userMemory?: string
     }
     await loadAiSettings()
+    const { prisma } = await import('@/lib/db')
+    const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
 
     const stream = dispatchChatStream(
       messages,
       context ?? '',
       persona ?? 'dispatch',
       userMemory ?? '',
+      modeRow?.value,
     )
 
     return new Response(stream, {

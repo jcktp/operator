@@ -320,8 +320,13 @@ Reply with ONLY valid JSON:
 Limits: max 8 changes, max 4 newTopics, max 4 removedTopics.`
 
   const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
-  const json = extractJsonFromText(text)
-  const parsed = JSON.parse(json) as ReportComparison
+  let parsed: ReportComparison
+  try {
+    const json = extractJsonFromText(text)
+    parsed = JSON.parse(json) as ReportComparison
+  } catch {
+    return { headline: '', changes: [], newTopics: [], removedTopics: [] }
+  }
   return {
     headline: parsed.headline ?? '',
     changes: Array.isArray(parsed.changes) ? parsed.changes : [],

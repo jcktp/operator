@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ entry })
   } catch (e) {
     console.error('[journal POST]', e)
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to save entry' }, { status: 500 })
   }
 }
 
