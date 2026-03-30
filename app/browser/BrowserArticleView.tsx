@@ -1,4 +1,6 @@
 export default function BrowserArticleView({ html }: { html: string }) {
+  // React 19 warns on <script> tags in the render tree — strip any that slipped through server sanitization
+  const safeHtml = html.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/<script\b[^>]*>/gi, '')
   return (
     <div
       className="max-w-3xl mx-auto px-8 py-6
@@ -14,7 +16,7 @@ export default function BrowserArticleView({ html }: { html: string }) {
         [&_blockquote]:border-l-4 [&_blockquote]:border-gray-200 dark:[&_blockquote]:border-zinc-700 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-500 dark:[&_blockquote]:text-zinc-400
         [&_pre]:bg-gray-50 dark:[&_pre]:bg-zinc-800 [&_pre]:rounded [&_pre]:p-3 [&_pre]:overflow-x-auto [&_pre]:text-xs
         [&_code]:bg-gray-100 dark:[&_code]:bg-zinc-800 [&_code]:px-1 [&_code]:rounded [&_code]:text-xs"
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: safeHtml }}
     />
   )
 }

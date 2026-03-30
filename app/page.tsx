@@ -16,7 +16,8 @@ import { isValidSession, SESSION_COOKIE } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
-function parseMetricNumeric(value: string): number | null {
+function parseMetricNumeric(value: string | undefined | null): number | null {
+  if (!value) return null
   let s = value.trim().replace(/[£$€¥₹]/g, '').replace(/,/g, '').replace(/%$/, '')
   const suffixMatch = s.match(/^([-\d.]+)\s*([kmb])$/i)
   if (suffixMatch) {
@@ -217,7 +218,7 @@ export default async function OverviewPage({
     const labelText: Record<string, string> = {}
     const labelPoints: Record<string, MetricPoint[]> = {}
     for (const r of areaReports) {
-      for (const m of parseJsonSafe<Metric[]>(r.metrics, [])) {
+      for (const m of parseJsonSafe<Metric[]>(r.metrics, []).filter(m => m.label && m.value)) {
         const key = m.label.trim().toLowerCase()
         if (!labelText[key]) labelText[key] = m.label.trim()
         if (!labelPoints[key]) labelPoints[key] = []

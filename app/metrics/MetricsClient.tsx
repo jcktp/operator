@@ -42,8 +42,8 @@ export default function MetricsClient({
     if (selectedArea) list = list.filter(m => m.area === selectedArea)
     const q = search.trim().toLowerCase()
     if (q) list = list.filter(m =>
-      m.label.toLowerCase().includes(q) ||
-      m.value.toLowerCase().includes(q) ||
+      (m.label ?? '').toLowerCase().includes(q) ||
+      (m.value ?? '').toLowerCase().includes(q) ||
       m.reportTitle.toLowerCase().includes(q) ||
       (m.context ?? '').toLowerCase().includes(q)
     )

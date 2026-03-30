@@ -71,6 +71,7 @@ function extractReadableContent(html: string, pageUrl: string): { html: string; 
   // Strip noise blocks
   body = body
     .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<script\b[^>]*>/gi, '')           // strip unclosed <script> open tags
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<nav[\s\S]*?<\/nav>/gi, '')
     .replace(/<header[\s\S]*?<\/header>/gi, '')
