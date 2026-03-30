@@ -1,88 +1,102 @@
+<div align="center">
+
 # Operator
 
-> Local-first AI workspace — analyse documents, run investigations, track teams, and manage cases. Runs entirely on your machine.
+**Local-first AI workspace for documents, investigations, and team intelligence**
 
-![Local-first](https://img.shields.io/badge/runs%20locally-no%20cloud%20required-black?style=flat-square)
-![Ollama](https://img.shields.io/badge/AI-Ollama%20%7C%20Claude%20%7C%20GPT%20%7C%20Gemini%20%7C%20Groq%20%7C%20xAI%20%7C%20Perplexity%20%7C%20Mistral-black?style=flat-square)
-![SQLite](https://img.shields.io/badge/database-SQLite-black?style=flat-square)
-![Next.js](https://img.shields.io/badge/framework-Next.js%2016-black?style=flat-square)
+Upload documents. Get structured AI analysis. Everything runs on your machine.
+
+<br>
+
+![Local-first](https://img.shields.io/badge/runs%20locally-no%20cloud%20required-18181b?style=flat-square&labelColor=18181b&color=22c55e)
+![License](https://img.shields.io/badge/license-BSL%201.1-18181b?style=flat-square&labelColor=18181b&color=6366f1)
+![Next.js](https://img.shields.io/badge/Next.js%2016-Turbopack-18181b?style=flat-square&labelColor=18181b&color=3f3f46)
+![SQLite](https://img.shields.io/badge/database-SQLite-18181b?style=flat-square&labelColor=18181b&color=3f3f46)
+![Tailwind](https://img.shields.io/badge/styling-Tailwind%20v4-18181b?style=flat-square&labelColor=18181b&color=3f3f46)
+
+<br>
+
+![AI providers](https://img.shields.io/badge/AI-Ollama-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
+![AI providers](https://img.shields.io/badge/AI-Claude-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
+![AI providers](https://img.shields.io/badge/AI-GPT-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
+![AI providers](https://img.shields.io/badge/AI-Gemini-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
+![AI providers](https://img.shields.io/badge/AI-Groq-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
+![AI providers](https://img.shields.io/badge/AI-Mistral-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
+![AI providers](https://img.shields.io/badge/AI-xAI-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
+![AI providers](https://img.shields.io/badge/AI-Perplexity-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
+
+</div>
 
 ---
 
 ## What it does
 
-Upload documents and get structured AI analysis — summaries, key metrics, risk flags, entity extraction, timelines, and period-over-period comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
+Operator is a private intelligence workspace. Upload documents and get structured AI analysis — summaries, key metrics, risk flags, entity extraction, timelines, and period-over-period comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
 
 | Feature | Description |
 |---|---|
-| **Document analysis** | AI extracts summaries, metrics, risks, opportunities, and follow-up questions from each upload |
-| **Library** | Every document stored with full history; compare two versions side by side |
+| **Document analysis** | AI extracts summaries, metrics, risks, opportunities, and follow-up questions from every upload — with mode-specific framing per domain |
+| **Re-analysis** | Re-run AI analysis on any document without re-uploading — useful after switching models or AI providers |
+| **Library** | Every document stored with full history; compare versions side by side |
 | **Dashboard** | Cross-area overview with AI-generated health signals across all documents |
-| **Metrics** | KPI board aggregating every metric extracted across all documents, grouped by area with source attribution |
-| **Dispatch** | AI chat with 3 mode-specific personas; has access to all your document context and remembers facts across conversations |
+| **Metrics board** | KPI board aggregating every metric extracted across all documents, grouped by area with source attribution |
+| **Dispatch** | AI chat with 3 mode-specific personas; has access to all your document context, supports web search, and remembers facts across conversations |
+| **Investigation Hub** | Four-tab hub for entity management, timeline, interactive story map, and AI-assisted storyline builder |
 | **Browser** | In-app web browser with reader and live modes, bookmark management, and one-click save to journal or dispatch |
 | **Pulse** | Feed aggregator for RSS, Reddit, YouTube, Bluesky, and Mastodon — with keyword monitoring and auto-refresh |
 | **Journal** | Private note-taking with folder organisation and AI grammar correction |
-| **Remote submissions** | Shareable link so others can submit files from any device, no app required |
+| **One-pager** | AI-generated executive brief across all documents; export to PDF |
+| **Remote submissions** | Shareable link so others can submit files from any device; lands directly in your library |
 | **Works offline** | Local LLM via Ollama — no data leaves your machine unless you choose a cloud provider |
 
 ---
 
 ## App modes
 
-Switch modes in **Settings** to adapt the interface, AI framing, and terminology to your use case.
+Switch modes in **Settings** to adapt the interface, AI framing, and terminology to your use case. Each mode renames navigation labels, document types, and areas to match the domain, and gives every AI persona purpose-built instructions.
 
 | Mode | Use case | Dispatch personas |
 |---|---|---|
-| **Executive** | Business reporting & team oversight | Dispatch · Debrief · Recon |
-| **Journalism** | Field notes, sources & story research | Analyst · Editor · Scout |
-| **Team Lead** | Team updates, blockers & sprint tracking | Tracker · Retro · Spark |
-| **Market Research** | Interviews, surveys & pattern discovery | Signal · Probe · Horizon |
-| **Legal** | Case files, evidence & matter management | Clerk · Counsel · Brief |
-| **Consulting** | Client engagements, deliverables & progress | Mapper · Partner · Ideate |
-
-Each mode renames navigation labels, document types, and areas to match the domain, and gives the AI personas purpose-built instructions and system prompts.
+| ![Executive](https://img.shields.io/badge/Executive-📊-18181b?style=flat-square&labelColor=18181b&color=6366f1) | Business reporting & team oversight | Dispatch · Debrief · Recon |
+| ![Journalism](https://img.shields.io/badge/Journalism-📰-18181b?style=flat-square&labelColor=18181b&color=f59e0b) | Field notes, sources & story research | Analyst · Editor · Scout |
+| ![Team Lead](https://img.shields.io/badge/Team%20Lead-👥-18181b?style=flat-square&labelColor=18181b&color=22c55e) | Team updates, blockers & sprint tracking | Tracker · Retro · Spark |
+| ![Market Research](https://img.shields.io/badge/Market%20Research-🔍-18181b?style=flat-square&labelColor=18181b&color=0ea5e9) | Interviews, surveys & pattern discovery | Signal · Probe · Horizon |
+| ![Legal](https://img.shields.io/badge/Legal-⚖️-18181b?style=flat-square&labelColor=18181b&color=a78bfa) | Case files, evidence & matter management | Clerk · Counsel · Brief |
+| ![HR](https://img.shields.io/badge/Human%20Resources-🫂-18181b?style=flat-square&labelColor=18181b&color=f472b6) | People operations, talent & workforce analytics | Compass · Advocate · Spark |
 
 ### Mode-specific features
 
-Features are enabled per mode based on what makes sense for that domain. The full set of optional features:
+Features are enabled per mode based on what makes sense for that domain.
 
-| Feature | Description |
-|---|---|
-| **Entity extraction** | Named persons, organisations, locations, dates, and financial figures extracted from every document |
-| **Entity graph** | Force-directed visualisation of entity co-occurrence |
-| **Timeline** | Automatic chronological timeline extracted from document content |
-| **Combined timeline** | Select multiple documents in the library to merge their timelines |
-| **Redaction detection** | Flags documents with suspected redacted content; filter the library by redacted docs |
-| **Document comparison** | AI summary of what changed or was added between two versions of a document |
-| **Verification checklist** | Per-document checklist of claims that require independent verification |
-| **Keyword monitoring** | Track specific terms across live feeds in Pulse |
-| **Investigation template** | Structured folder template when creating a new notebook |
-
-Which features are active per mode:
-
-| Feature | Executive | Journalism | Team Lead | Market Research | Legal | Consulting |
+| Feature | Exec | Journalism | Team Lead | Market Research | Legal | HR |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | Document comparison | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Entity extraction | | ✓ | | ✓ | ✓ | ✓ |
-| Timeline | | ✓ | ✓ | | ✓ | ✓ |
+| Metrics board | ✓ | | | | | ✓ |
+| Entity extraction | | ✓ | | ✓ | ✓ | |
+| Entity graph | | ✓ | | ✓ | ✓ | |
+| Investigation Hub | | ✓ | | | ✓ | |
+| Timeline | | ✓ | ✓ | | ✓ | |
 | Redaction detection | | ✓ | | | ✓ | |
 | Verification checklist | | ✓ | | ✓ | ✓ | |
 | Keyword monitoring | | ✓ | | | | |
 | Investigation template | | ✓ | | | ✓ | |
 
-Legal mode also includes image file upload (for scanning physical documents and evidence) and a dedicated Parties nav page. Journalism mode adds Source protection reminders throughout the interface.
+**Investigation Hub** (Journalism & Legal) includes four tabs:
+- **Entities** — named persons, organisations, locations, dates, and financial figures with cross-document linking
+- **Timeline** — interactive chronological timeline (TimelineJS) built from all documents in the mode
+- **Story Map** — geocoded interactive map of all location entities extracted across documents
+- **Storyline** — AI-assisted narrative arc builder: select source documents, generate a story brief with timeline events and verifiable claims, track claim readiness to publication
 
 ---
 
 ## Requirements
 
-| Requirement | Notes |
+| | |
 |---|---|
 | **macOS, Linux, or Windows (WSL)** | Native Windows supported with some manual steps |
 | **Node.js 18+** | Installed automatically by `start.sh` if missing (macOS/Linux) |
 | **Ollama** | Installed automatically by `start.sh` if missing; required for local AI |
-| **~4 GB free disk space** | For the default model (`llama3.2:3b`) |
+| **~5 GB free disk space** | For the default model (`qwen3:4b`) |
 | **8 GB RAM minimum** | 16 GB recommended for comfortable local inference |
 
 Cloud AI providers (Anthropic, OpenAI, Google Gemini, Groq, xAI, Perplexity, Mistral) are optional — use any of them instead of or alongside Ollama.
@@ -93,11 +107,10 @@ Cloud AI providers (Anthropic, OpenAI, Google Gemini, Groq, xAI, Perplexity, Mis
 
 ### Step 1 — Download
 
-**Option A: Download ZIP (no git required)**
+**Option A: Download ZIP** *(no git required)*
 
-1. Go to the repository page on GitHub
-2. Click the green **Code** button → **Download ZIP**
-3. Once downloaded, find the ZIP file in your **Downloads** folder and double-click it to extract
+1. Click the green **Code** button → **Download ZIP**
+2. Find the ZIP in **Downloads** and double-click to extract
 
 **Option B: Clone with git**
 
@@ -105,114 +118,68 @@ Cloud AI providers (Anthropic, OpenAI, Google Gemini, Groq, xAI, Perplexity, Mis
 git clone https://github.com/jcktp/operator.git
 ```
 
----
-
-### Step 2 — Move the folder
-
-Move the `operator` folder somewhere permanent on your machine — not in Downloads where it might get cleaned up.
-
-```
-~/operator                    # directly in your home folder
-~/Projects/operator           # inside a Projects folder
-~/Documents/operator          # inside Documents
-```
-
-**On macOS:** Open Finder, drag the `operator` folder from Downloads to your preferred location.
-
-**From the terminal:**
+### Step 2 — Move the folder somewhere permanent
 
 ```bash
-# Move to your home folder
-mv ~/Downloads/operator ~/operator
-
-# Or move to a Projects folder (creates it if it doesn't exist)
-mkdir -p ~/Projects
-mv ~/Downloads/operator ~/Projects/operator
+mkdir -p ~/Projects && mv ~/Downloads/operator ~/Projects/operator
 ```
 
----
+Not in Downloads — it may get cleaned up.
 
-### Step 3 — Open a terminal and navigate to the folder
-
-Open **Terminal** (macOS: `Cmd + Space` → type Terminal → Enter).
+### Step 3 — Run
 
 ```bash
 cd ~/Projects/operator
-```
-
-Confirm you're in the right place:
-
-```bash
-ls
-```
-
-You should see files like `start.sh`, `package.json`, `README.md`, and folders like `app/`, `components/`, `prisma/`.
-
----
-
-### Step 4 — Run
-
-There are two scripts depending on how you want to use it:
-
-| Script | Mode | Best for |
-|---|---|---|
-| `bash start.sh` | Production — runs a full build first, then serves the optimised output | Sharing with others, or when you want maximum stability |
-| `bash start-dev.sh` | Development — changes visible on browser refresh, no rebuild needed | Running it yourself, day-to-day use |
-
-```bash
 bash start-dev.sh
 ```
 
-That's it. The script handles everything automatically:
+The script handles everything on first run:
 
 1. Installs Homebrew if missing (macOS only)
 2. Installs Node.js if missing
 3. Installs Ollama if missing
-4. Installs cloudflared if missing (optional — needed for remote submissions)
+4. Installs cloudflared if missing (needed for remote submissions)
 5. Creates `.env.local` on first run
 6. Installs npm dependencies
 7. Sets up and migrates the SQLite database
 8. Starts the Ollama server
-9. Pulls the default AI model (`llama3.2:3b`) — **this takes a few minutes the very first time** (skipped if you've configured a cloud provider)
-10. Starts the app on port 3000 and opens it in your browser
+9. Pulls the default AI model (`qwen3:4b`) — **takes a few minutes the first time**
+10. Starts the app on `http://localhost:3000` and opens it in your browser
 
 ```
-Operator — starting up (macOS)
+Operator — starting up
 
-▶ Homebrew found
 ▶ Node v22.0.0
 ▶ Ollama found
-▶ cloudflared found
-▶ .env.local already exists
 ▶ Dependencies already installed
-▶ Generating Prisma client...
-▶ Setting up database...
 ▶ Database ready
-▶ Starting Operator server...
-▶ Waiting for server to be ready...
-▶ Opening Operator in your browser...
-▶ Starting AI engine...
-▶ Model: llama3.2:3b
-▶ Model already available
+▶ Model: qwen3:4b — already available
 ▶ Ready!
 
 Operator is running at http://localhost:3000
-Press Ctrl+C to stop, or use the power button in the app.
+Press Ctrl+C to stop.
 ```
 
-To stop the app, press **Ctrl+C** in the terminal window, or click the power button inside the app.
+> **Every subsequent run:** Just `cd` to the folder and run `bash start-dev.sh`. All setup steps are skipped — starts in a few seconds.
 
-> **Every subsequent run:** Just open a terminal, `cd` to the operator folder, and run `bash start-dev.sh` again. All setup steps are skipped — it starts in a few seconds.
+Two scripts are available:
+
+| Script | Mode | Best for |
+|---|---|---|
+| `bash start-dev.sh` | Development — no rebuild needed | Day-to-day personal use |
+| `bash start.sh` | Production — full build first | Sharing with others, maximum stability |
 
 ---
 
-## First-time setup inside the app
+## First-time setup
 
-Once Operator is running, go to **Settings** to personalise it:
+On first launch, Operator runs an onboarding wizard:
 
-1. **Profile** — enter your name, company, and role. The AI will address you by name and tailor its responses to your context.
-2. **App mode** — choose the mode that matches your use case. This adapts the navigation, terminology, AI framing, and Dispatch personas.
-3. **AI provider** — defaults to Ollama (local). To use a cloud model, enter an API key for any supported provider and select it.
+1. **Appearance** — choose Light, Dark, or Auto (follows system preference)
+2. **Mode** — pick the mode that matches your use case
+3. **Profile** — enter your name, company, and role so the AI can tailor its responses
+
+You can change all of these later in **Settings**.
 
 ---
 
@@ -222,18 +189,18 @@ Once Operator is running, go to **Settings** to personalise it:
 
 Ollama runs entirely on your machine. No data is sent anywhere.
 
-| Setting | Default |
+| | Default |
 |---|---|
-| Model | `llama3.2:3b` |
+| Model | `qwen3:4b` |
 | Host | `http://localhost:11434` |
 
-You can switch to a different Ollama model (e.g. `mistral`, `llama3.1:8b`, `gemma3:4b`) in **Settings → AI**. The model downloads automatically.
+Switch to any other Ollama model (e.g. `llama3.1:8b`, `gemma3:4b`, `mistral`) in **Settings → AI**. The model downloads automatically.
 
 ### Cloud providers
 
-Enter API keys in **Settings → AI**. Keys are stored encrypted in the local SQLite database — they never leave your machine except when making a direct API call to the provider you've selected.
+Enter API keys in **Settings → AI**. Keys are encrypted with AES-256-GCM in the local database — they never leave your machine except in direct API calls to the provider you've selected.
 
-| Provider | Key format | Where to get it |
+| Provider | Key format | |
 |---|---|---|
 | Anthropic (Claude) | `sk-ant-...` | console.anthropic.com |
 | OpenAI (GPT) | `sk-...` | platform.openai.com |
@@ -247,18 +214,31 @@ Enter API keys in **Settings → AI**. Keys are stored encrypted in the local SQ
 
 ## Remote submissions
 
-Others can submit files to you from any device — no app required. Enable this in **Settings → Remote**:
+Others can submit files to you from any device — no app required. Enable in **Settings → Remote**:
 
 1. Click **Enable remote access** — starts a Cloudflare Quick Tunnel
-2. Copy the generated public URL (e.g. `https://random-name.trycloudflare.com`)
-3. Share it — recipients open it in any browser and upload their file
-4. The document lands directly in your Operator library
+2. Copy the generated public URL and share it
+3. Recipients upload in any browser; the file lands in your library
 
-The tunnel is temporary (new URL each session) and shuts down when you close Operator.
+The tunnel is temporary (new URL each session) and closes when Operator shuts down.
+
+---
+
+## Security
+
+| | |
+|---|---|
+| **Encryption at rest** | All API keys encrypted with AES-256-GCM before storage |
+| **Session auth** | Password-protected on first run; signed HTTP-only cookies, invalidated on shutdown |
+| **Local only by default** | Binds to `localhost`; nothing is reachable externally unless you enable the tunnel |
+| **No telemetry** | No analytics, no tracking, no external calls except to AI providers you've configured |
 
 ---
 
 ## Directory structure
+
+<details>
+<summary>Show structure</summary>
 
 ```
 operator/
@@ -267,64 +247,35 @@ operator/
 │   ├── browser/           # In-app web browser (reader + live modes, bookmarks)
 │   ├── directs/           # Contact management (direct reports, sources, team members)
 │   ├── dispatch/          # AI chat panel
-│   ├── entities/          # Entity overview and relationship graph
+│   ├── entities/          # Investigation Hub (entities, timeline, story map, storyline)
+│   │   ├── tabs/          # Hub tab components (TimelineJS, OpenLayers map, Storyline)
+│   │   └── storyline/     # Storyline editor, claims tracker, report picker
 │   ├── journal/           # Private notes
 │   ├── library/           # Document browser
-│   ├── metrics/           # KPI board aggregated across all documents
-│   ├── pulse/             # Feed aggregator (RSS, Reddit, YouTube, Bluesky, Mastodon)
-│   ├── reports/           # Individual document view
+│   ├── metrics/           # KPI board
+│   ├── one-pager/         # AI executive brief with PDF export
+│   ├── pulse/             # Feed aggregator
+│   ├── reports/           # Individual document view with re-analysis
 │   ├── settings/          # App configuration
-│   ├── timeline/          # Chronological event view across documents
-│   └── upload/            # File upload and document analysis
+│   ├── timeline/          # Standalone chronological event view
+│   └── upload/            # File upload
 ├── components/            # Shared React components
-├── lib/                   # Core logic (AI, providers, personas, encryption, tunnel)
-│   ├── ai.ts              # Analysis functions and Dispatch chat
+├── lib/                   # Core logic
+│   ├── ai/                # Analysis functions (analyze, catch-up, knowledge injection)
 │   ├── ai-providers.ts    # Provider implementations (Ollama, Anthropic, OpenAI, etc.)
 │   ├── personas/          # Per-mode AI persona definitions (one file per mode)
-│   └── mode.ts            # App mode configurations
+│   ├── map/               # OpenLayers story map initialisation
+│   └── mode.ts            # App mode configurations and feature flags
 ├── prisma/                # Database schema and migrations
 │   └── dev.db             # SQLite database (created on first run, gitignored)
-├── public/                # Static assets
+├── public/
+│   └── timelinejs/        # TimelineJS3 static assets (copied by postinstall)
 ├── start.sh               # Production startup script
 ├── start-dev.sh           # Development startup script
 └── .env.local             # Environment variables (created on first run, gitignored)
 ```
 
----
-
-## Security
-
-- **Encryption at rest** — all API keys are encrypted with AES-256-GCM before being stored in the database
-- **Session auth** — the app is protected by a password on first run; sessions use signed HTTP-only cookies and are invalidated on shutdown
-- **Local only by default** — the app binds to `localhost`; nothing is reachable from outside your machine unless you explicitly enable the tunnel
-- **No telemetry** — no analytics, no tracking, no external calls except to AI provider APIs you've configured
-
----
-
-## License
-
-Operator is released under the **Business Source License 1.1** (BSL 1.1). The licensor is Jorick Thijs Polderman. Under this license:
-
-- **Non-commercial use is permitted** — personal projects, academic research, journalism, and internal business tooling (not offered as a product or service to third parties) are allowed at no cost.
-- **Commercial use** — deploying Operator as or within a product or service offered to third parties requires a commercial license. Contact the licensor for terms.
-- **Change date** — on January 1, 2032, the license automatically converts to MIT, making Operator fully open source.
-
-The full license text is in [`license.md`](./license.md).
-
----
-
-## Disclaimer
-
-> **Operator is provided as-is, without warranty of any kind.**
-
-This software is a local intelligence tool that processes documents and generates AI-assisted summaries, analyses, and suggestions. By using it, you accept the following:
-
-- **No liability for use.** The author(s) accept no responsibility for how Operator is used, what it is used on, or any consequences — direct or indirect — that arise from its use.
-- **No liability for AI outputs.** Operator relies on large language models (local or cloud-based) to generate analysis. These outputs are probabilistic, may be incorrect, and must not be treated as professional legal, financial, medical, journalistic, or other expert advice. All AI-generated content should be independently verified before acting on it.
-- **No liability for decisions.** Any decision made — personally, professionally, or otherwise — based on content produced by Operator is solely the responsibility of the person making that decision.
-- **You are responsible for your data.** Operator stores documents and notes locally on your machine. The author(s) accept no responsibility for data loss, accidental exposure, or misuse of data processed through the application.
-
-If you use Operator in a professional context, you are responsible for ensuring it complies with any applicable laws, regulations, or internal policies in your jurisdiction.
+</details>
 
 ---
 
@@ -335,11 +286,35 @@ If you use Operator in a professional context, you are responsible for ensuring 
 | Framework | Next.js 16 (App Router, Turbopack) |
 | Database | SQLite via Prisma 7 + `better-sqlite3` adapter |
 | Local AI | Ollama |
-| Styling | Tailwind CSS |
+| Styling | Tailwind CSS v4 |
 | Rich text | Tiptap |
+| Maps | OpenLayers |
+| Timeline | TimelineJS3 |
 | Tunnel | Cloudflare Quick Tunnel (`cloudflared`) |
 | Auth | PBKDF2 password hashing, HTTP-only session cookies |
 
 ---
 
+## License
+
+Operator is released under the **Business Source License 1.1** (BSL 1.1). The licensor is Jorick Thijs Polderman.
+
+- **Non-commercial use is permitted** — personal projects, academic research, journalism, and internal business tooling are allowed at no cost.
+- **Commercial use** — deploying Operator as or within a product or service offered to third parties requires a commercial license. Contact the licensor for terms.
+- **Change date** — on January 1, 2032, the license automatically converts to MIT.
+
+Full license text: [`license.md`](./license.md)
+
+---
+
+## Disclaimer
+
+Operator is provided as-is, without warranty of any kind. AI-generated outputs are probabilistic and must not be treated as professional legal, financial, medical, journalistic, or other expert advice. All analysis should be independently verified before acting on it. The author(s) accept no responsibility for decisions made based on content produced by this software.
+
+---
+
+<div align="center">
+
 Built with purpose by Jorick.
+
+</div>
