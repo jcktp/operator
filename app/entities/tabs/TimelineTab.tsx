@@ -12,7 +12,7 @@ export default async function TimelineTab({ modeConfig }: Props) {
     orderBy: [{ dateSortKey: 'asc' }, { createdAt: 'asc' }],
     include: {
       report: {
-        select: { id: true, title: true, area: true },
+        select: { id: true, title: true, area: true, storyName: true },
       },
     },
   })
@@ -39,6 +39,7 @@ export default async function TimelineTab({ modeConfig }: Props) {
     reportId: e.report.id,
     reportTitle: e.report.title,
     area: e.report.area,
+    storyName: e.report.storyName ?? null,
     sourceName: null,
   }))
 

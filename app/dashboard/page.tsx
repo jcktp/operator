@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getModeConfig } from '@/lib/mode'
-import { cn, formatRelativeDate, parseJsonSafe } from '@/lib/utils'
+import { cn, formatRelativeDate, parseJsonSafe, parseMetrics } from '@/lib/utils'
 import type { Metric, Insight, Question } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import Link from 'next/link'
@@ -97,7 +97,7 @@ export default async function DashboardPage({
 
   const areaCards = Object.entries(areaGroups).map(([area, reports]) => {
     const latest = reports[0]
-    const metrics = parseJsonSafe<Metric[]>(latest.metrics, [])
+    const metrics = parseMetrics(latest.metrics)
     const changes = parseJsonSafe<{ changes: ComparisonChange[] }>(latest.comparison, { changes: [] }).changes
     const health = areaHealthScore(changes)
     return { area, reports, latest, metrics: metrics.slice(0, 4), changes, health, count: reports.length }
@@ -170,7 +170,7 @@ export default async function DashboardPage({
   const metricsByArea: MetricAreaDatum[] = areaCards.map(({ area, reports }) => {
     let positive = 0, negative = 0, warning = 0, neutral = 0
     for (const r of reports) {
-      parseJsonSafe<Metric[]>(r.metrics, []).forEach(m => {
+      parseMetrics(r.metrics).forEach(m => {
         if (m.status === 'positive') positive++
         else if (m.status === 'negative') negative++
         else if (m.status === 'warning') warning++
@@ -183,7 +183,7 @@ export default async function DashboardPage({
   // ── Export data ──────────────────────────────────────────────────────────
 
   const exportRows: ExportRow[] = allReports.map(r => {
-    const metrics = parseJsonSafe<Metric[]>(r.metrics, [])
+    const metrics = parseMetrics(r.metrics)
     const insights = parseJsonSafe<Insight[]>(r.insights, [])
     const questions = parseJsonSafe<Question[]>(r.questions, [])
     const changes = parseJsonSafe<{ changes: ComparisonChange[] }>(r.comparison, { changes: [] }).changes
@@ -209,7 +209,7 @@ export default async function DashboardPage({
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Dashboard</h1>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Situation Report</h1>
             <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">No {modeConfig.documentLabelPlural.toLowerCase()} match the current filters.</p>
           </div>
           <DashboardFilters
@@ -235,7 +235,7 @@ export default async function DashboardPage({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Dashboard</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Situation Report</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
             {totalReports} {totalReports !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()} · {areasCount} area{areasCount !== 1 ? 's' : ''}
             {filterArea && ` · ${filterArea}`}

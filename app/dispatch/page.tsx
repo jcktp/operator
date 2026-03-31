@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { parseJsonSafe } from '@/lib/utils'
+import { parseJsonSafe, parseMetrics } from '@/lib/utils'
 import type { Metric, Insight, Question } from '@/lib/utils'
 import { getModeConfig } from '@/lib/mode'
 import { buildPatternSummary, formatPatternSummary } from '@/lib/patterns'
@@ -35,7 +35,7 @@ export default async function DispatchPage() {
     const meta = `Area: ${r.area}${date ? ` | Date: ${date}` : ''}${from}`
 
     // Analysis section — always complete, no truncation
-    const metrics = parseJsonSafe<Metric[]>(r.metrics, [])
+    const metrics = parseMetrics(r.metrics)
     const insights = parseJsonSafe<Insight[]>(r.insights, [])
     const questions = parseJsonSafe<Question[]>(r.questions, [])
     const analysisLines: string[] = []

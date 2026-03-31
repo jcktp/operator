@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { logAction } from '@/lib/audit'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -25,6 +26,8 @@ export async function DELETE(req: NextRequest) {
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
+  const report = await prisma.report.findUnique({ where: { id }, select: { title: true, area: true } })
   await prisma.report.delete({ where: { id } })
+  void logAction('report:delete', report ? `${report.title} (${report.area})` : id)
   return NextResponse.json({ success: true })
 }

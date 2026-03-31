@@ -27,10 +27,13 @@ export default function OsintTab() {
     'Sanctions & Watchlists':     'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300',
     'Leaked & Public Archives':   'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
     'Geospatial & Satellite':     'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    'Image & Video Verification': 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+    'Social Media & Web':         'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
     'Social Media & Web Archiving': 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
     'Flight & Vessel Tracking':   'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
     'Financial & Ownership':      'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
     'Court & Legal Records':      'bg-zinc-100 text-zinc-700 dark:bg-zinc-700/50 dark:text-zinc-300',
+    'Bellingcat Toolkit':         'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
   }
 
   return (

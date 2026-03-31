@@ -13,6 +13,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json({ report })
 }
 
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const body = await req.json() as { userNotes?: string; storyName?: string }
+  const data: Record<string, unknown> = {}
+  if (body.userNotes !== undefined) data.userNotes = body.userNotes
+  if (body.storyName !== undefined) data.storyName = body.storyName
+  const report = await prisma.report.update({ where: { id }, data })
+  return NextResponse.json({ report })
+}
+
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const report = await prisma.report.findUnique({ where: { id }, select: { title: true, area: true } })

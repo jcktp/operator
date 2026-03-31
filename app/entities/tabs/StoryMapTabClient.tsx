@@ -5,6 +5,6 @@ import type { RawLocation } from './StoryMapClient'
 
 const StoryMapClient = dynamic(() => import('./StoryMapClient'), { ssr: false })
 
-export default function StoryMapTabClient({ locations }: { locations: RawLocation[] }) {
-  return <StoryMapClient locations={locations} />
+export default function StoryMapTabClient({ locations, storyNames }: { locations: RawLocation[]; storyNames: string[] }) {
+  return <StoryMapClient locations={locations} storyNames={storyNames} />
 }

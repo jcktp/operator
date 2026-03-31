@@ -60,6 +60,8 @@ model Report {
   resolvedFlags  String?
   imagePath      String?
   filePath       String?  // relative path within getReportsRoot(), set for uploaded (non-image) files
+  storyName      String?  // optional story grouping label (all modes)
+  userNotes      String?  // analyst notes visible on the report page
   isLongitudinal Boolean       @default(false)
   seriesId       String?
   series         ReportSeries? @relation(fields: [seriesId], references: [id])
@@ -281,6 +283,7 @@ model UploadJobItem {
   displayContent String?   // structured display content (Excel JSON etc.)
   directReportId String?
   reportDate     String?   // ISO date string
+  storyName      String?
   savedFilePath  String?   // relative path within reports folder
   status         String    @default("queued")  // queued|processing|done|error
   reportId       String?

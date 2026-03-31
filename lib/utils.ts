@@ -62,6 +62,27 @@ export interface Metric {
   status?: 'positive' | 'negative' | 'neutral' | 'warning'
 }
 
+/** Parse and sanitise a metrics JSON string, dropping any entries where label or value is not a plain string. */
+export function parseMetrics(json: string | null | undefined): Metric[] {
+  const raw = parseJsonSafe<unknown[]>(json ?? null, [])
+  return raw.filter((m): m is Metric => {
+    if (!m || typeof m !== 'object') return false
+    const o = m as Record<string, unknown>
+    const label = o.label ?? o.name
+    const value = o.value
+    return typeof label === 'string' && typeof value === 'string' && label.length > 0
+  }).map(m => {
+    const o = m as unknown as Record<string, unknown>
+    return {
+      label: (o.label ?? o.name) as string,
+      value: o.value as string,
+      ...(typeof o.context === 'string' ? { context: o.context } : {}),
+      ...(typeof o.trend === 'string' ? { trend: o.trend as Metric['trend'] } : {}),
+      ...(typeof o.status === 'string' ? { status: o.status as Metric['status'] } : {}),
+    }
+  })
+}
+
 export interface Insight {
   type: 'observation' | 'anomaly' | 'risk' | 'opportunity'
   text: string

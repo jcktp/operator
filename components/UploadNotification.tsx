@@ -24,13 +24,30 @@ interface Job {
 
 type DismissedSet = Set<string>
 
+const DISMISSED_KEY = 'operator:dismissed-jobs'
+
+function loadDismissed(): DismissedSet {
+  try { return new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) ?? '[]') as string[]) }
+  catch { return new Set() }
+}
+
+function saveDismissed(s: DismissedSet) {
+  try { localStorage.setItem(DISMISSED_KEY, JSON.stringify([...s])) } catch {}
+}
+
 export default function UploadNotification() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [dismissed, setDismissed] = useState<DismissedSet>(new Set())
   const [expanded, setExpanded] = useState(false)
+  const [cancelling, setCancelling] = useState<Set<string>>(new Set())
 
   const hasActive = jobs.some(j => j.status === 'queued' || j.status === 'processing')
   const visibleJobs = jobs.filter(j => !dismissed.has(j.id))
+
+  // Load persisted dismissed IDs after hydration (localStorage not available on server)
+  useEffect(() => {
+    setDismissed(loadDismissed())
+  }, [])
 
   const poll = useCallback(async () => {
     try {
@@ -43,14 +60,33 @@ export default function UploadNotification() {
 
   useEffect(() => {
     poll()
-    // Poll fast when active jobs exist, slow otherwise
     const interval = setInterval(poll, hasActive ? 2500 : 15000)
     return () => clearInterval(interval)
   }, [poll, hasActive])
 
   const dismiss = (jobId: string) => {
-    setDismissed(prev => new Set([...prev, jobId]))
+    setDismissed(prev => {
+      const next = new Set([...prev, jobId])
+      saveDismissed(next)
+      return next
+    })
     setExpanded(false)
+  }
+
+  const dismissAll = () => {
+    setDismissed(prev => {
+      const next = new Set([...prev, ...jobs.map(j => j.id)])
+      saveDismissed(next)
+      return next
+    })
+    setExpanded(false)
+  }
+
+  const cancel = async (jobId: string) => {
+    setCancelling(prev => new Set([...prev, jobId]))
+    await fetch(`/api/upload-jobs/${jobId}/cancel`, { method: 'POST' }).catch(() => {})
+    setCancelling(prev => { const s = new Set(prev); s.delete(jobId); return s })
+    poll()
   }
 
   if (visibleJobs.length === 0) return null
@@ -74,7 +110,7 @@ export default function UploadNotification() {
       : `${errorJobs.length} failed`
 
   return (
-    <div className="relative">
+    <div className="relative flex items-center gap-1">
       <button
         onClick={() => setExpanded(v => !v)}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -93,6 +129,17 @@ export default function UploadNotification() {
         }
         {statusText}
       </button>
+
+      {/* Clear-all button — only when no active jobs */}
+      {activeJobs.length === 0 && (
+        <button
+          onClick={dismissAll}
+          title="Clear notification"
+          className="p-1 text-gray-300 hover:text-gray-500 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors"
+        >
+          <X size={11} />
+        </button>
+      )}
 
       {expanded && (
         <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden">
@@ -121,7 +168,16 @@ export default function UploadNotification() {
                       }
                     </span>
                   </div>
-                  {!inProgress && (
+                  {inProgress ? (
+                    <button
+                      onClick={() => cancel(job.id)}
+                      disabled={cancelling.has(job.id)}
+                      title="Cancel analysis"
+                      className="text-xs text-red-400 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-40 shrink-0 transition-colors"
+                    >
+                      {cancelling.has(job.id) ? <Loader2 size={11} className="animate-spin" /> : 'Cancel'}
+                    </button>
+                  ) : (
                     <button
                       onClick={() => dismiss(job.id)}
                       className="text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 shrink-0"

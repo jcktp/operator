@@ -14,6 +14,7 @@ import RawContent from './RawContent'
 import CopyNarrativeButton from './CopyNarrativeButton'
 import ExportAnalysisPDFButton from './ExportAnalysisPDFButton'
 import ReanalyzeButton from './ReanalyzeButton'
+import ReportNotesEditor from './ReportNotesEditor'
 import EntitiesSection from './EntitiesSection'
 import TimelineSection from './TimelineSection'
 import RedactionsSection from './RedactionsSection'
@@ -257,6 +258,13 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           <p className="text-sm text-gray-700 dark:text-zinc-200 leading-relaxed">{report.summary}</p>
         </section>
       )}
+
+      {/* Analyst notes */}
+      <ReportNotesEditor
+        reportId={report.id}
+        initialNotes={report.userNotes ?? null}
+        storyName={report.storyName ?? null}
+      />
 
       {/* What changed — comparison with previous */}
       {showReportMetrics && comparison && (

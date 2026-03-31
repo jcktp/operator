@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     const directReportId = formData.get('directReportId') as string | null
     const reportDate = formData.get('reportDate') as string | null
     const jobId = formData.get('jobId') as string | null      // group multiple files into one job
+    const storyName = formData.get('storyName') as string | null
     const sortOrder = parseInt(formData.get('sortOrder') as string ?? '0', 10)
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
         displayContent,
         directReportId: directReportId || null,
         reportDate: reportDate || null,
+        storyName: storyName || null,
         savedFilePath,
         status: 'queued',
         sortOrder,

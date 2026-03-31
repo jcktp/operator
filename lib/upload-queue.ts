@@ -88,6 +88,7 @@ async function processItem(itemId: string): Promise<void> {
         area: item.area,
         directReportId: item.directReportId || null,
         reportDate: item.reportDate ? new Date(item.reportDate) : null,
+        storyName: item.storyName || null,
         summary: analysis?.summary?.trim() || null,
         metrics: analysis?.metrics ? JSON.stringify(analysis.metrics) : null,
         insights: analysis?.insights ? JSON.stringify(analysis.insights) : null,
@@ -192,6 +193,20 @@ async function runWorker(): Promise<void> {
   _workerRunning = true
 
   try {
+    // Recover items left in 'processing' by a previous server shutdown mid-job
+    const stuck = await prisma.uploadJobItem.updateMany({
+      where: { status: 'processing' },
+      data: { status: 'queued' },
+    })
+    if (stuck.count > 0) {
+      console.log(`[upload-queue] Recovered ${stuck.count} stuck item(s) to queued`)
+      // Also un-stuck any parent jobs that were marked processing
+      await prisma.uploadJob.updateMany({
+        where: { status: 'processing', items: { some: { status: 'queued' } } },
+        data: { status: 'queued' },
+      })
+    }
+
     while (true) {
       // Find next queued item across all active jobs
       const item = await prisma.uploadJobItem.findFirst({

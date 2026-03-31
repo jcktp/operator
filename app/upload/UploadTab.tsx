@@ -33,6 +33,7 @@ export default function UploadTab() {
   const [seriesCandidate, setSeriesCandidate] = useState<SeriesCandidate | null>(null)
   const [seriesLinked, setSeriesLinked] = useState(false)
   const [seriesLinking, setSeriesLinking] = useState(false)
+  const [storyName, setStoryName] = useState('')
   const [linkInput, setLinkInput] = useState('')
   const [linkError, setLinkError] = useState('')
 
@@ -119,6 +120,7 @@ export default function UploadTab() {
           formData.append('area', item.area)
           if (directReportId) formData.append('directReportId', directReportId)
           if (reportDate) formData.append('reportDate', reportDate)
+          if (storyName.trim()) formData.append('storyName', storyName.trim())
           if (jobId) formData.append('jobId', jobId)
           formData.append('sortOrder', String(idx - 1))
           const res = await fetch('/api/upload-background', { method: 'POST', body: formData })
@@ -142,7 +144,7 @@ export default function UploadTab() {
         const res = await fetch('/api/upload-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: item.url, title: item.title, area: item.area, directReportId: directReportId || null, reportDate: reportDate || null }),
+          body: JSON.stringify({ url: item.url, title: item.title, area: item.area, directReportId: directReportId || null, reportDate: reportDate || null, storyName: storyName.trim() || null }),
         })
         const data = await res.json() as { error?: string; report?: { id: string }; seriesCandidate?: SeriesCandidate }
         if (!res.ok) updateItem(item.id, { status: 'error', error: data.error ?? 'Failed' })
@@ -319,6 +321,13 @@ export default function UploadTab() {
           <label className="block text-xs font-medium text-gray-700 dark:text-zinc-200 mb-1.5">Report date <span className="text-gray-400 dark:text-zinc-500 font-normal">(optional)</span></label>
           <input type="date" value={reportDate} onChange={e => setReportDate(e.target.value)}
             className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-zinc-200 mb-1.5">Story / project name <span className="text-gray-400 dark:text-zinc-500 font-normal">(optional)</span></label>
+          <input type="text" value={storyName} onChange={e => setStoryName(e.target.value)}
+            placeholder="e.g. Operation Greenfield, Q2 Investigation…"
+            className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 placeholder-gray-400 dark:placeholder-zinc-500" />
+          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Groups these documents together under a named project across the app</p>
         </div>
       </div>
 

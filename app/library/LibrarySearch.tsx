@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Search, X, ArrowRight, GitCompare, Clock, EyeOff, CheckSquare, Square, Layers, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const PAGE_SIZE = 25
-import { cn, formatRelativeDate, formatDate, AREA_COLORS, parseJsonSafe } from '@/lib/utils'
+import { cn, formatRelativeDate, formatDate, AREA_COLORS, parseJsonSafe, parseMetrics } from '@/lib/utils'
 import type { Metric } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import CombinedTimelineModal from './CombinedTimelineModal'
@@ -141,7 +141,7 @@ export default function LibrarySearch({
 
       <div className="space-y-3">
         {pageItems.map((report) => {
-          const metrics    = parseJsonSafe<Metric[]>(report.metrics, [])
+          const metrics    = parseMetrics(report.metrics)
           const comparison = parseJsonSafe<Comparison | null>(report.comparison, null)
           const questions  = parseJsonSafe<{ text: string; priority: string }[]>(report.questions, [])
           const highQs     = questions.filter(q => q.priority === 'high')

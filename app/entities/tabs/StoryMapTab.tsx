@@ -7,10 +7,15 @@ export default async function StoryMapTab() {
   const locationEntities = await prisma.reportEntity.findMany({
     where: { type: 'location' },
     include: {
-      report: { select: { id: true, title: true, area: true } },
+      report: { select: { id: true, title: true, area: true, storyName: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
+
+  // Collect all story names for the filter
+  const storyNames = [...new Set(
+    locationEntities.map(e => e.report.storyName).filter(Boolean) as string[]
+  )].sort()
 
   // Group by name
   const grouped: Record<string, RawLocation> = {}
@@ -21,6 +26,7 @@ export default async function StoryMapTab() {
         reportIds: [],
         reportTitles: {},
         reportAreas: {},
+        reportStoryNames: {},
         contexts: [],
       }
     }
@@ -29,6 +35,7 @@ export default async function StoryMapTab() {
       g.reportIds.push(e.reportId)
       g.reportTitles[e.reportId] = e.report.title
       g.reportAreas[e.reportId] = e.report.area
+      if (e.report.storyName) g.reportStoryNames[e.reportId] = e.report.storyName
     }
     if (e.context && !g.contexts.includes(e.context)) {
       g.contexts.push(e.context)
@@ -38,5 +45,5 @@ export default async function StoryMapTab() {
   // Sort by frequency
   const locations = Object.values(grouped).sort((a, b) => b.reportIds.length - a.reportIds.length)
 
-  return <StoryMapTabClient locations={locations} />
+  return <StoryMapTabClient locations={locations} storyNames={storyNames} />
 }

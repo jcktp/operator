@@ -38,7 +38,7 @@ export default async function EntitiesPage({
     ...(modeConfig.features.timeline ? [{ id: 'timeline', label: 'Timeline' }] : []),
     { id: 'story-map',  label: 'Story Map' },
     { id: 'storyline',  label: 'Storyline' },
-    ...(modeConfig.features.investigationTemplate ? [{ id: 'resources', label: 'Resources' }] : []),
+    ...(modeConfig.features.investigationTemplate ? [{ id: 'resources', label: 'Investigative Hub' }] : []),
   ]
 
   const activeTab = tabs.find(t => t.id === tab)?.id ?? 'entities'

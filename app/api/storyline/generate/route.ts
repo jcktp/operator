@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getModeConfig } from '@/lib/mode'
 import { chat } from '@/lib/ai-providers'
-import { extractJsonFromText, parseJsonSafe } from '@/lib/utils'
+import { extractJsonFromText, parseJsonSafe, parseMetrics } from '@/lib/utils'
 import type { Metric, Insight } from '@/lib/utils'
 
 interface GeneratedBrief {
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   const modeConfig = getModeConfig(modeRow?.value)
 
   const reportsText = reports.map(r => {
-    const metrics = parseJsonSafe<Metric[]>(r.metrics, []).slice(0, 4).map(m => `${m.label}: ${m.value}`).join(', ')
+    const metrics = parseMetrics(r.metrics).slice(0, 4).map(m => `${m.label}: ${m.value}`).join(', ')
     const insights = parseJsonSafe<Insight[]>(r.insights, []).slice(0, 3).map(i => `[${i.type}] ${i.text}`).join('; ')
     return `${r.title} (${r.area}): ${r.summary ?? 'No summary'}${metrics ? ` | Metrics: ${metrics}` : ''}${insights ? ` | Flags: ${insights}` : ''}`
   }).join('\n')

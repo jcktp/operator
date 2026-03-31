@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { parseJsonSafe } from '@/lib/utils'
+import { parseJsonSafe, parseMetrics } from '@/lib/utils'
 import type { Metric, Insight, Question } from '@/lib/utils'
 import type { AreaMetricData, MetricPoint } from '@/components/MetricsCharts'
 import { FileText, Upload } from 'lucide-react'
@@ -125,7 +125,7 @@ export default async function OverviewPage({
       title: r.title,
       area: r.area,
       summary: r.summary,
-      metrics: parseJsonSafe<Metric[]>(r.metrics, []),
+      metrics: parseMetrics(r.metrics),
       insights: parseJsonSafe<Insight[]>(r.insights, []),
       questions: parseJsonSafe<Question[]>(r.questions, []),
       createdAt: r.createdAt.toISOString(),
@@ -192,7 +192,7 @@ export default async function OverviewPage({
     '',
     `${modeConfig.collectionLabelPlural.toUpperCase()}:`,
     ...activeAreas.map(r => {
-      const metrics = parseJsonSafe<Metric[]>(r.metrics, []).slice(0, 4)
+      const metrics = parseMetrics(r.metrics).slice(0, 4)
       return `- ${r.area}: ${r.summary ?? r.title}${metrics.length ? '\n  ' + labels.onePagerMetrics + ': ' + metrics.map(m => `${m.label} ${m.value}`).join(', ') : ''}`
     }),
   ]
@@ -218,7 +218,7 @@ export default async function OverviewPage({
     const labelText: Record<string, string> = {}
     const labelPoints: Record<string, MetricPoint[]> = {}
     for (const r of areaReports) {
-      for (const m of parseJsonSafe<Metric[]>(r.metrics, []).filter(m => m.label && m.value)) {
+      for (const m of parseMetrics(r.metrics).filter(m => m.label && m.value)) {
         const key = m.label.trim().toLowerCase()
         if (!labelText[key]) labelText[key] = m.label.trim()
         if (!labelPoints[key]) labelPoints[key] = []
@@ -249,7 +249,7 @@ export default async function OverviewPage({
       area: r.area,
       title: r.title,
       summary: r.summary,
-      metrics: parseJsonSafe<Metric[]>(r.metrics, []),
+      metrics: parseMetrics(r.metrics),
       createdAt: r.createdAt.toISOString(),
     })),
     topInsights: topInsights.slice(0, 5),

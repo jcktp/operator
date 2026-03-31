@@ -1,19 +1,21 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { X, MapPin, Loader2 } from 'lucide-react'
-import type { LocationPin } from '@/lib/map/olMap'
+import { X, MapPin, Loader2, Pencil, Minus, Pentagon, Trash2 } from 'lucide-react'
+import type { LocationPin, DrawMode, DrawLayerHandle } from '@/lib/map/olMap'
 
 export interface RawLocation {
   name: string
   reportIds: string[]
   reportTitles: Record<string, string>
   reportAreas: Record<string, string>
+  reportStoryNames: Record<string, string>
   contexts: string[]
 }
 
 interface Props {
   locations: RawLocation[]
+  storyNames: string[]
 }
 
 async function geocode(name: string): Promise<{ lat: number; lon: number } | null> {
@@ -50,9 +52,10 @@ async function geocodeAll(
   return { pins, failed }
 }
 
-export default function StoryMapClient({ locations }: Props) {
+export default function StoryMapClient({ locations, storyNames }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const destroyRef = useRef<(() => void) | null>(null)
+  const [allPins, setAllPins] = useState<LocationPin[]>([])
   const [pins, setPins] = useState<LocationPin[]>([])
   const [failedLocations, setFailedLocations] = useState<string[]>([])
   const [geocoding, setGeocoding] = useState(false)
@@ -61,6 +64,9 @@ export default function StoryMapClient({ locations }: Props) {
   const [selectedPin, setSelectedPin] = useState<LocationPin | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activeLayer, setActiveLayer] = useState<'osm' | 'satellite' | 'topo'>('osm')
+  const [activeStory, setActiveStory] = useState<string | null>(null)
+  const [drawMode, setDrawMode] = useState<DrawMode | null>(null)
+  const drawRef = useRef<DrawLayerHandle | null>(null)
 
   // Geocode all locations once
   useEffect(() => {
@@ -68,25 +74,38 @@ export default function StoryMapClient({ locations }: Props) {
     setGeocoding(true)
     setGeocodedCount(0)
     geocodeAll(locations, n => setGeocodedCount(n))
-      .then(({ pins: p, failed }) => { setPins(p); setFailedLocations(failed); setGeocoding(false) })
+      .then(({ pins: p, failed }) => { setAllPins(p); setPins(p); setFailedLocations(failed); setGeocoding(false) })
       .catch(e => { setError(String(e)); setGeocoding(false) })
   }, [locations])
 
-  // Init map once pins are ready, or re-init when layer changes
+  // Filter pins by active story
+  useEffect(() => {
+    if (!activeStory) { setPins(allPins); return }
+    const filtered = allPins.filter(p => {
+      const loc = locations.find(l => l.name === p.name)
+      if (!loc) return false
+      return Object.values(loc.reportStoryNames).includes(activeStory)
+    })
+    setPins(filtered)
+  }, [activeStory, allPins, locations])
+
+  // Init map once pins are ready, or re-init when layer/pins change
   const initMap = useCallback(async (pinsToShow: LocationPin[], layer: 'osm' | 'satellite' | 'topo') => {
     if (!mapRef.current || pinsToShow.length === 0) { setMapReady(true); return }
     destroyRef.current?.()
+    drawRef.current?.destroy()
     const { initStoryMap } = await import('@/lib/map/olMap')
-    const destroy = await initStoryMap(mapRef.current, pinsToShow, pin => setSelectedPin(pin), layer)
-    destroyRef.current = destroy
+    const result = await initStoryMap(mapRef.current, pinsToShow, pin => setSelectedPin(pin), layer)
+    destroyRef.current = result.destroy
+    drawRef.current = result.drawLayer
     setMapReady(true)
   }, [])
 
   useEffect(() => {
-    if (!geocoding && pins.length >= 0) {
+    if (!geocoding) {
       initMap(pins, activeLayer).catch(e => setError(String(e)))
     }
-    return () => { destroyRef.current?.(); destroyRef.current = null }
+    return () => { destroyRef.current?.(); destroyRef.current = null; drawRef.current = null }
   }, [geocoding, pins, activeLayer, initMap])
 
   if (locations.length === 0) {
@@ -105,6 +124,35 @@ export default function StoryMapClient({ locations }: Props) {
 
   return (
     <div className="space-y-3">
+      {/* Story filter chips */}
+      {storyNames.length > 0 && (
+        <div className="flex flex-wrap gap-1 items-center">
+          <span className="text-[10px] text-gray-400 dark:text-zinc-500 mr-1">Story:</span>
+          <button
+            onClick={() => setActiveStory(null)}
+            className={`text-xs px-2.5 py-0.5 rounded-full transition-colors ${
+              activeStory === null
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
+            }`}
+          >
+            All
+          </button>
+          {storyNames.map(s => (
+            <button
+              key={s}
+              onClick={() => setActiveStory(activeStory === s ? null : s)}
+              className={`text-xs px-2.5 py-0.5 rounded-full transition-colors ${
+                activeStory === s
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
       {/* Status bar */}
       {geocoding && (
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-zinc-400">
@@ -163,6 +211,40 @@ export default function StoryMapClient({ locations }: Props) {
                 <Loader2 size={13} className="animate-spin" />
                 {geocoding ? `Geocoding ${geocodedCount}/${locations.length}…` : 'Loading map…'}
               </div>
+            </div>
+          )}
+          {/* Draw toolbar — floating top-right inside map */}
+          {mapReady && pins.length > 0 && (
+            <div className="absolute top-3 right-3 z-20 flex flex-col gap-1">
+              {([
+                { mode: 'Point' as DrawMode, icon: <MapPin size={13} />, label: 'Point' },
+                { mode: 'LineString' as DrawMode, icon: <Minus size={13} />, label: 'Line' },
+                { mode: 'Polygon' as DrawMode, icon: <Pentagon size={13} />, label: 'Area' },
+              ]).map(({ mode, icon, label }) => (
+                <button
+                  key={mode}
+                  title={label}
+                  onClick={() => {
+                    const next = drawMode === mode ? null : mode
+                    setDrawMode(next)
+                    drawRef.current?.setMode(next)
+                  }}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium shadow transition-colors ${
+                    drawMode === mode
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700 hover:border-orange-300 dark:hover:border-orange-700'
+                  }`}
+                >
+                  {icon} {label}
+                </button>
+              ))}
+              <button
+                title="Clear drawings"
+                onClick={() => { drawRef.current?.clear(); setDrawMode(null); drawRef.current?.setMode(null) }}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700 hover:border-red-300 dark:hover:border-red-700 hover:text-red-500 shadow transition-colors"
+              >
+                <Trash2 size={13} /> Clear
+              </button>
             </div>
           )}
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol/ol.css" />

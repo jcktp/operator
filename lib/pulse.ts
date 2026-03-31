@@ -240,10 +240,26 @@ export async function fetchFeedItems(url: string, type: string): Promise<FeedIte
   if (type === 'reddit')  fetchUrl = normaliseRedditUrl(url)
   if (type === 'youtube') fetchUrl = normaliseYouTubeUrl(url)
 
-  const res = await fetch(fetchUrl, {
-    headers: { 'User-Agent': 'Operator/1.0 (feed reader)' },
-    signal: AbortSignal.timeout(10_000),
-  })
+  let res: Response
+  try {
+    res = await fetch(fetchUrl, {
+      headers: { 'User-Agent': 'Operator/1.0 (feed reader)' },
+      signal: AbortSignal.timeout(10_000),
+    })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    // Provide friendlier messages for common network failures
+    if (msg.includes('ENOTFOUND') || msg.includes('getaddrinfo')) {
+      throw new Error(`Could not resolve host — check the URL is correct`)
+    }
+    if (msg.includes('ECONNREFUSED')) {
+      throw new Error(`Connection refused by host`)
+    }
+    if (msg.includes('timeout') || msg.includes('AbortError') || msg.includes('TimeoutError')) {
+      throw new Error(`Feed timed out — the server took too long to respond`)
+    }
+    throw new Error(`Network error: ${msg}`)
+  }
 
   if (!res.ok) throw new Error(`HTTP ${res.status} from ${fetchUrl}`)
 

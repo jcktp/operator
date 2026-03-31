@@ -7,20 +7,14 @@ export interface OsintResource {
 }
 
 export const OSINT_RESOURCES: OsintResource[] = [
-  // People & Organisations
+
+  // ── People & Organisations ────────────────────────────────────────────────
   {
     name: 'OpenCorporates',
     description: 'Global company registry search covering 200+ jurisdictions.',
     url: 'https://opencorporates.com',
     category: 'People & Organisations',
     tags: ['company', 'registry', 'global'],
-  },
-  {
-    name: 'Orbis (BvD)',
-    description: 'Private company financial data and ownership structures.',
-    url: 'https://www.bvdinfo.com/en-gb/our-products/data/international/orbis',
-    category: 'People & Organisations',
-    tags: ['company', 'financials', 'ownership'],
   },
   {
     name: 'UK Companies House',
@@ -36,8 +30,50 @@ export const OSINT_RESOURCES: OsintResource[] = [
     category: 'People & Organisations',
     tags: ['ownership', 'beneficial', 'transparency'],
   },
+  {
+    name: 'Orbis (BvD)',
+    description: 'Private company financial data and ownership structures.',
+    url: 'https://www.bvdinfo.com/en-gb/our-products/data/international/orbis',
+    category: 'People & Organisations',
+    tags: ['company', 'financials', 'ownership'],
+  },
+  {
+    name: 'Wikidata',
+    description: 'Open knowledge base — biographical, corporate, and geographic data.',
+    url: 'https://www.wikidata.org',
+    category: 'People & Organisations',
+    tags: ['knowledge', 'open', 'biography'],
+  },
+  {
+    name: 'LinkedIn',
+    description: 'Professional profiles, company histories, and employment records.',
+    url: 'https://www.linkedin.com',
+    category: 'People & Organisations',
+    tags: ['professional', 'employment', 'biography'],
+  },
+  {
+    name: 'PeopleFinder',
+    description: 'US public records aggregator for individuals — addresses, relatives.',
+    url: 'https://www.peoplefinder.com',
+    category: 'People & Organisations',
+    tags: ['people', 'us', 'public records'],
+  },
+  {
+    name: 'Pipl',
+    description: 'Deep-web people search engine aggregating public records.',
+    url: 'https://pipl.com',
+    category: 'People & Organisations',
+    tags: ['people', 'deep web', 'identity'],
+  },
+  {
+    name: 'Namsor',
+    description: 'AI name classification — gender, origin, and likely nationality from names.',
+    url: 'https://namsor.app',
+    category: 'People & Organisations',
+    tags: ['names', 'classification', 'ai'],
+  },
 
-  // Sanctions & Watchlists
+  // ── Sanctions & Watchlists ────────────────────────────────────────────────
   {
     name: 'OFAC SDN Search',
     description: 'US Treasury Office of Foreign Assets Control sanctions list search.',
@@ -59,8 +95,22 @@ export const OSINT_RESOURCES: OsintResource[] = [
     category: 'Sanctions & Watchlists',
     tags: ['sanctions', 'un', 'security council'],
   },
+  {
+    name: 'World-Check (Refinitiv)',
+    description: 'Commercial risk-intelligence database for PEPs and sanctions screening.',
+    url: 'https://www.refinitiv.com/en/products/world-check-kyc-screening',
+    category: 'Sanctions & Watchlists',
+    tags: ['sanctions', 'pep', 'kyc', 'commercial'],
+  },
+  {
+    name: 'Interpol Notices',
+    description: 'Interpol Red Notice and diffusion list lookups.',
+    url: 'https://www.interpol.int/How-we-work/Notices/View-Red-Notices',
+    category: 'Sanctions & Watchlists',
+    tags: ['interpol', 'red notice', 'wanted'],
+  },
 
-  // Leaked & Public Archives
+  // ── Leaked & Public Archives ──────────────────────────────────────────────
   {
     name: 'ICIJ Offshore Leaks',
     description: 'Searchable database from Panama Papers, Pandora Papers, and other leaks.',
@@ -83,16 +133,30 @@ export const OSINT_RESOURCES: OsintResource[] = [
     tags: ['foia', 'public records', 'government'],
   },
   {
-    name: 'WikiLeaks',
-    description: 'Archive of leaked confidential documents from governments and corporations.',
-    url: 'https://wikileaks.org',
+    name: 'Cryptome',
+    description: 'Archive of leaked and declassified government and intelligence documents.',
+    url: 'https://cryptome.org',
     category: 'Leaked & Public Archives',
-    tags: ['leaks', 'government', 'classified'],
+    tags: ['leaks', 'declassified', 'intelligence'],
+  },
+  {
+    name: 'Internet Archive',
+    description: 'Wayback Machine + billions of books, films, audio recordings, and web pages.',
+    url: 'https://archive.org',
+    category: 'Leaked & Public Archives',
+    tags: ['archive', 'web', 'history', 'snapshots'],
+  },
+  {
+    name: 'GovTrack',
+    description: 'US Congress bill tracking, voting records, and legislator data.',
+    url: 'https://www.govtrack.us',
+    category: 'Leaked & Public Archives',
+    tags: ['government', 'congress', 'legislation', 'us'],
   },
 
-  // Geospatial & Satellite
+  // ── Geospatial & Satellite ────────────────────────────────────────────────
   {
-    name: 'Sentinel Hub',
+    name: 'Sentinel Hub EO Browser',
     description: 'Satellite imagery browser with historical and near-real-time data.',
     url: 'https://apps.sentinel-hub.com/eo-browser',
     category: 'Geospatial & Satellite',
@@ -107,50 +171,185 @@ export const OSINT_RESOURCES: OsintResource[] = [
   },
   {
     name: 'Google Earth Engine',
-    description: 'Cloud-based satellite imagery analysis platform for large-scale geospatial analysis.',
+    description: 'Cloud-based satellite imagery analysis for large-scale geospatial work.',
     url: 'https://earthengine.google.com',
     category: 'Geospatial & Satellite',
     tags: ['satellite', 'earth', 'analysis', 'google'],
   },
   {
     name: 'SunCalc',
-    description: 'Sun and shadow position calculator for photo and video geolocation verification.',
+    description: 'Sun and shadow position calculator for photo/video geolocation verification.',
     url: 'https://www.suncalc.org',
     category: 'Geospatial & Satellite',
     tags: ['verification', 'photo', 'shadow', 'geolocation'],
   },
+  {
+    name: 'GeoNames',
+    description: 'Free geographic database covering all countries with over 25 million place names.',
+    url: 'https://www.geonames.org',
+    category: 'Geospatial & Satellite',
+    tags: ['place names', 'geography', 'geocoding'],
+  },
+  {
+    name: 'Mapillary',
+    description: 'Crowdsourced street-level imagery — alternative to Google Street View.',
+    url: 'https://www.mapillary.com',
+    category: 'Geospatial & Satellite',
+    tags: ['street view', 'imagery', 'crowdsourced'],
+  },
+  {
+    name: 'What3Words',
+    description: 'Convert precise locations to/from three-word addresses.',
+    url: 'https://what3words.com',
+    category: 'Geospatial & Satellite',
+    tags: ['location', 'addressing', 'precision'],
+  },
+  {
+    name: 'NASA Worldview',
+    description: 'Interactive satellite imagery viewer with daily updates from NASA sensors.',
+    url: 'https://worldview.earthdata.nasa.gov',
+    category: 'Geospatial & Satellite',
+    tags: ['nasa', 'satellite', 'fire', 'weather', 'daily'],
+  },
+  {
+    name: 'Planet Labs Explorer',
+    description: 'Commercial daily satellite imagery for change detection.',
+    url: 'https://www.planet.com/explorer',
+    category: 'Geospatial & Satellite',
+    tags: ['satellite', 'daily', 'commercial', 'change detection'],
+  },
+  {
+    name: 'Google Maps (Street View)',
+    description: 'Street-level imagery and satellite view — useful for location verification.',
+    url: 'https://maps.google.com',
+    category: 'Geospatial & Satellite',
+    tags: ['street view', 'maps', 'verification'],
+  },
 
-  // Social Media & Web Archiving
+  // ── Image & Video Verification ────────────────────────────────────────────
   {
-    name: 'Wayback Machine',
-    description: 'Historical website snapshots dating back to the mid-1990s.',
-    url: 'https://web.archive.org',
-    category: 'Social Media & Web Archiving',
-    tags: ['archive', 'web', 'history', 'snapshots'],
+    name: 'Google Reverse Image Search',
+    description: 'Find similar images and earlier appearances of a photo online.',
+    url: 'https://images.google.com',
+    category: 'Image & Video Verification',
+    tags: ['image', 'reverse search', 'verification'],
   },
   {
-    name: 'InVID WeVerify',
-    description: 'Browser extension and web tools for video and image verification.',
+    name: 'TinEye',
+    description: 'Reverse image search engine — find where an image first appeared.',
+    url: 'https://tineye.com',
+    category: 'Image & Video Verification',
+    tags: ['image', 'reverse search', 'origination'],
+  },
+  {
+    name: 'InVID / WeVerify',
+    description: 'Browser extension and tools for video and image verification and metadata.',
     url: 'https://weverify.eu/tools',
-    category: 'Social Media & Web Archiving',
-    tags: ['verification', 'video', 'image', 'fakeness'],
+    category: 'Image & Video Verification',
+    tags: ['video', 'image', 'metadata', 'verification'],
   },
   {
-    name: 'Bellingcat Toolkit',
-    description: 'Curated OSINT toolkit spreadsheet maintained by Bellingcat investigators.',
-    url: 'https://docs.google.com/spreadsheets/d/18rtqh8EG2q1xBo2cLNyhIDuK9jrPGwYr9DI2UncoqJQ',
-    category: 'Social Media & Web Archiving',
-    tags: ['bellingcat', 'toolkit', 'curated', 'osint'],
+    name: 'FotoForensics',
+    description: 'Image error-level analysis (ELA) to detect editing and manipulation.',
+    url: 'https://fotoforensics.com',
+    category: 'Image & Video Verification',
+    tags: ['image', 'forensics', 'manipulation', 'ela'],
   },
+  {
+    name: 'Exif.tools',
+    description: 'Extract EXIF metadata (GPS, camera model, timestamps) from images.',
+    url: 'https://exif.tools',
+    category: 'Image & Video Verification',
+    tags: ['exif', 'metadata', 'gps', 'image'],
+  },
+  {
+    name: 'Yandex Reverse Image',
+    description: 'Russian reverse image search — often finds Cyrillic and Eastern European sources.',
+    url: 'https://yandex.com/images',
+    category: 'Image & Video Verification',
+    tags: ['image', 'reverse search', 'russia', 'yandex'],
+  },
+  {
+    name: 'Jeffrey\'s Exif Viewer',
+    description: 'Detailed EXIF metadata viewer for uploaded images.',
+    url: 'https://exifdata.com',
+    category: 'Image & Video Verification',
+    tags: ['exif', 'metadata', 'image'],
+  },
+
+  // ── Social Media & Web ────────────────────────────────────────────────────
   {
     name: 'Twitter/X Advanced Search',
     description: 'Search Twitter/X posts with date filters, keywords, and account filters.',
     url: 'https://x.com/search-advanced',
-    category: 'Social Media & Web Archiving',
-    tags: ['twitter', 'social media', 'search', 'archive'],
+    category: 'Social Media & Web',
+    tags: ['twitter', 'social media', 'search'],
+  },
+  {
+    name: 'Telegram Search (TGStat)',
+    description: 'Telegram channel and post search engine with analytics.',
+    url: 'https://tgstat.com',
+    category: 'Social Media & Web',
+    tags: ['telegram', 'channels', 'search'],
+  },
+  {
+    name: 'VKontakte (VK)',
+    description: 'Russian social network — relevant for Eastern European and conflict research.',
+    url: 'https://vk.com',
+    category: 'Social Media & Web',
+    tags: ['russia', 'social media', 'vk'],
+  },
+  {
+    name: 'Shodan',
+    description: 'Search engine for internet-connected devices — cameras, servers, SCADA systems.',
+    url: 'https://www.shodan.io',
+    category: 'Social Media & Web',
+    tags: ['iot', 'infrastructure', 'internet', 'devices'],
+  },
+  {
+    name: 'Hunter.io',
+    description: 'Find and verify professional email addresses associated with a domain.',
+    url: 'https://hunter.io',
+    category: 'Social Media & Web',
+    tags: ['email', 'domain', 'contact'],
+  },
+  {
+    name: 'Have I Been Pwned',
+    description: 'Check if an email address appeared in known data breaches.',
+    url: 'https://haveibeenpwned.com',
+    category: 'Social Media & Web',
+    tags: ['breach', 'email', 'security'],
+  },
+  {
+    name: 'URLScan.io',
+    description: 'Scan and analyse websites — screenshots, DOM, network requests.',
+    url: 'https://urlscan.io',
+    category: 'Social Media & Web',
+    tags: ['url', 'website', 'scan', 'malware'],
+  },
+  {
+    name: 'VirusTotal',
+    description: 'Analyse URLs, files, and domains for malicious content.',
+    url: 'https://www.virustotal.com',
+    category: 'Social Media & Web',
+    tags: ['malware', 'url', 'file', 'security'],
+  },
+  {
+    name: 'WHOIS Lookup',
+    description: 'Domain registration information — registrant, dates, nameservers.',
+    url: 'https://www.whois.com/whois',
+    category: 'Social Media & Web',
+    tags: ['domain', 'whois', 'registration'],
+  },
+  {
+    name: 'ViewDNS.info',
+    description: 'Reverse IP lookup, DNS history, and domain/hosting intelligence.',
+    url: 'https://viewdns.info',
+    category: 'Social Media & Web',
+    tags: ['dns', 'ip', 'domain', 'hosting'],
   },
 
-  // Flight & Vessel Tracking
+  // ── Flight & Vessel Tracking ──────────────────────────────────────────────
   {
     name: 'FlightAware',
     description: 'Real-time and historical commercial flight tracking worldwide.',
@@ -160,7 +359,7 @@ export const OSINT_RESOURCES: OsintResource[] = [
   },
   {
     name: 'ADS-B Exchange',
-    description: 'Unfiltered flight tracking data including military and private aircraft.',
+    description: 'Unfiltered flight tracking including military and private aircraft.',
     url: 'https://globe.adsbexchange.com',
     category: 'Flight & Vessel Tracking',
     tags: ['flight', 'adsb', 'unfiltered', 'military'],
@@ -179,11 +378,25 @@ export const OSINT_RESOURCES: OsintResource[] = [
     category: 'Flight & Vessel Tracking',
     tags: ['vessel', 'ship', 'maritime', 'history'],
   },
+  {
+    name: 'FlightRadar24',
+    description: 'Real-time commercial and private aircraft tracking with route history.',
+    url: 'https://www.flightradar24.com',
+    category: 'Flight & Vessel Tracking',
+    tags: ['flight', 'radar', 'real-time', 'routes'],
+  },
+  {
+    name: 'OpenSky Network',
+    description: 'Open-source ADS-B flight tracking with API access.',
+    url: 'https://opensky-network.org',
+    category: 'Flight & Vessel Tracking',
+    tags: ['flight', 'adsb', 'open source', 'api'],
+  },
 
-  // Financial & Ownership
+  // ── Financial & Ownership ─────────────────────────────────────────────────
   {
     name: 'OCCRP Aleph',
-    description: 'Investigative documents and data from OCCRP — companies, people, court records.',
+    description: 'Investigative documents and data — companies, people, court records from OCCRP.',
     url: 'https://aleph.occrp.org',
     category: 'Financial & Ownership',
     tags: ['occrp', 'documents', 'corruption', 'investigative'],
@@ -196,6 +409,27 @@ export const OSINT_RESOURCES: OsintResource[] = [
     tags: ['finance', 'political', 'us', 'donations'],
   },
   {
+    name: 'OpenSecrets',
+    description: 'US campaign finance, lobbying, and revolving door tracking.',
+    url: 'https://www.opensecrets.org',
+    category: 'Financial & Ownership',
+    tags: ['finance', 'lobbying', 'us', 'political'],
+  },
+  {
+    name: 'FEC.gov',
+    description: 'US Federal Election Commission — official campaign finance filings.',
+    url: 'https://www.fec.gov/data',
+    category: 'Financial & Ownership',
+    tags: ['fec', 'campaign finance', 'us', 'official'],
+  },
+  {
+    name: 'Global Financial Integrity',
+    description: 'Research on illicit financial flows, trade misinvoicing, and corruption.',
+    url: 'https://gfintegrity.org',
+    category: 'Financial & Ownership',
+    tags: ['financial flows', 'corruption', 'illicit', 'research'],
+  },
+  {
     name: 'OpenOwnership',
     description: 'Global beneficial ownership data and transparency research.',
     url: 'https://www.openownership.org',
@@ -203,7 +437,7 @@ export const OSINT_RESOURCES: OsintResource[] = [
     tags: ['ownership', 'beneficial', 'transparency', 'global'],
   },
 
-  // Court & Legal Records
+  // ── Court & Legal Records ─────────────────────────────────────────────────
   {
     name: 'PACER',
     description: 'US federal court electronic records — case filings and dockets.',
@@ -232,6 +466,106 @@ export const OSINT_RESOURCES: OsintResource[] = [
     category: 'Court & Legal Records',
     tags: ['court', 'uk', 'ireland', 'case law', 'free'],
   },
+  {
+    name: 'European Court of Human Rights',
+    description: 'ECHR case law database — judgments and decisions.',
+    url: 'https://hudoc.echr.coe.int',
+    category: 'Court & Legal Records',
+    tags: ['echr', 'human rights', 'europe', 'judgments'],
+  },
+
+  // ── Bellingcat Toolkit ────────────────────────────────────────────────────
+  {
+    name: 'Bellingcat Online Investigation Toolkit',
+    description: 'The complete Bellingcat-curated OSINT toolkit — 100s of tools across all categories.',
+    url: 'https://bellingcat.gitbook.io/toolkit',
+    category: 'Bellingcat Toolkit',
+    tags: ['bellingcat', 'toolkit', 'curated', 'comprehensive'],
+  },
+  {
+    name: 'Bellingcat (Website)',
+    description: 'Open-source investigations and guides from the Bellingcat team.',
+    url: 'https://www.bellingcat.com',
+    category: 'Bellingcat Toolkit',
+    tags: ['bellingcat', 'osint', 'investigations', 'guides'],
+  },
+  {
+    name: 'Bellingcat Discord',
+    description: 'Community server for OSINT practitioners — includes research collaboration channels.',
+    url: 'https://discord.gg/bellingcat',
+    category: 'Bellingcat Toolkit',
+    tags: ['community', 'discord', 'bellingcat'],
+  },
+  {
+    name: 'GeoHints',
+    description: 'Country and region identification hints for geolocating photos — used in GeoGuessr.',
+    url: 'https://geohints.com',
+    category: 'Bellingcat Toolkit',
+    tags: ['geolocation', 'hints', 'country identification'],
+  },
+  {
+    name: 'Copernicus Open Access Hub',
+    description: 'Free Sentinel satellite data downloads from the EU Copernicus programme.',
+    url: 'https://browser.dataspace.copernicus.eu',
+    category: 'Bellingcat Toolkit',
+    tags: ['satellite', 'sentinel', 'copernicus', 'free', 'eu'],
+  },
+  {
+    name: 'Shadow Calculator',
+    description: 'Determine the date/time a photo was taken based on shadow direction and length.',
+    url: 'https://www.suncalc.org/#/40.1789,-3.5156,3/2024.01.01/12:00',
+    category: 'Bellingcat Toolkit',
+    tags: ['shadow', 'date verification', 'sun', 'photo'],
+  },
+  {
+    name: 'Amnesty International YouTube DataViewer',
+    description: 'Extract keyframes and metadata from YouTube videos for verification.',
+    url: 'https://citizenevidence.amnestyusa.org',
+    category: 'Bellingcat Toolkit',
+    tags: ['youtube', 'video', 'verification', 'keyframes'],
+  },
+  {
+    name: 'OCCRP Visual Investigative Scenarios',
+    description: 'Build interactive network maps of relationships for published investigations.',
+    url: 'https://vis.occrp.org',
+    category: 'Bellingcat Toolkit',
+    tags: ['network', 'relationships', 'visualization', 'occrp'],
+  },
+  {
+    name: 'Import.io',
+    description: 'Extract structured data from websites without writing code.',
+    url: 'https://www.import.io',
+    category: 'Bellingcat Toolkit',
+    tags: ['scraping', 'data extraction', 'web'],
+  },
+  {
+    name: 'Maltego',
+    description: 'Link analysis and data visualisation for complex investigations.',
+    url: 'https://www.maltego.com',
+    category: 'Bellingcat Toolkit',
+    tags: ['link analysis', 'network', 'intelligence'],
+  },
+  {
+    name: 'SpiderFoot',
+    description: 'Open-source intelligence automation tool for target reconnaissance.',
+    url: 'https://github.com/smicallef/spiderfoot',
+    category: 'Bellingcat Toolkit',
+    tags: ['automation', 'reconnaissance', 'open source'],
+  },
+  {
+    name: 'Creepy',
+    description: 'Geolocation OSINT tool — extract geolocation info from social media.',
+    url: 'https://github.com/ilektrojohn/creepy',
+    category: 'Bellingcat Toolkit',
+    tags: ['geolocation', 'social media', 'osint'],
+  },
+  {
+    name: 'Metagoofil',
+    description: 'Extract metadata from public documents (PDF, DOCX) hosted on a target website.',
+    url: 'https://github.com/laramies/metagoofil',
+    category: 'Bellingcat Toolkit',
+    tags: ['metadata', 'documents', 'osint'],
+  },
 ]
 
 export const OSINT_CATEGORIES = [
@@ -239,8 +573,10 @@ export const OSINT_CATEGORIES = [
   'Sanctions & Watchlists',
   'Leaked & Public Archives',
   'Geospatial & Satellite',
-  'Social Media & Web Archiving',
+  'Image & Video Verification',
+  'Social Media & Web',
   'Flight & Vessel Tracking',
   'Financial & Ownership',
   'Court & Legal Records',
+  'Bellingcat Toolkit',
 ] as const

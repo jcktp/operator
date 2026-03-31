@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { url, title, area, directReportId, reportDate } = await req.json()
+    const { url, title, area, directReportId, reportDate, storyName } = await req.json()
 
     if (!url)   return NextResponse.json({ error: 'URL is required' }, { status: 400 })
     if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -179,6 +179,7 @@ export async function POST(req: NextRequest) {
         area,
         directReportId: directReportId || null,
         reportDate: reportDate ? new Date(reportDate) : null,
+        storyName: storyName || null,
         summary: analysis?.summary ?? null,
         metrics: analysis?.metrics ? JSON.stringify(analysis.metrics) : null,
         insights: analysis?.insights ? JSON.stringify(analysis.insights) : null,
