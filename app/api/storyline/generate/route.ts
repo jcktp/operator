@@ -56,13 +56,25 @@ Limits: max 8 events, max 8 claims. Use only information from the documents abov
     return NextResponse.json({ error: 'AI request failed' }, { status: 502 })
   }
 
+  // Strip <think>...</think> blocks produced by reasoning models (qwen3, deepseek-r1)
+  const stripped = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+
   let parsed: GeneratedBrief
   try {
-    const json = extractJsonFromText(text)
+    const json = extractJsonFromText(stripped)
     parsed = JSON.parse(json) as GeneratedBrief
   } catch {
-    console.error('Story brief JSON parse failed. Raw output:', text.slice(0, 500))
-    return NextResponse.json({ error: 'AI returned malformed output — try again' }, { status: 502 })
+    // Second attempt: retry without json mode for models that produce cleaner prose+JSON
+    console.warn('Story brief JSON parse failed, retrying without JSON mode. Preview:', stripped.slice(0, 200))
+    try {
+      const retry = await chat([{ role: 'user', content: prompt }], 0.1, false)
+      const retryStripped = retry.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+      const json = extractJsonFromText(retryStripped)
+      parsed = JSON.parse(json) as GeneratedBrief
+    } catch (retryErr) {
+      console.error('Story brief retry also failed:', retryErr)
+      return NextResponse.json({ error: 'The AI model could not produce a structured brief. Try selecting fewer documents or switching to a cloud provider.' }, { status: 502 })
+    }
   }
 
   return NextResponse.json({

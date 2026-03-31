@@ -27,6 +27,8 @@ export interface ModeFeatures {
   journalDescription: string | null
   /** Metrics board page — aggregated KPIs across all documents */
   metricsBoard: boolean
+  /** Show extracted metrics and period comparison on individual document pages */
+  showReportMetrics: boolean
   /** Extra nav items inserted after the library link (icon: lucide icon name) */
   extraNavItems: Array<{ href: string; label: string; icon: string }>
 }
@@ -78,6 +80,7 @@ const DEFAULT_FEATURES: ModeFeatures = {
   investigationTemplate: false,
   defaultFeeds: false,
   metricsBoard: false,
+  showReportMetrics: true,
   journalDescription: null,
   extraNavItems: [] as Array<{ href: string; label: string; icon: string }>,
 }
@@ -157,6 +160,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
       keywordMonitoring: true,
       investigationTemplate: true,
       defaultFeeds: true,
+      showReportMetrics: false,
       journalDescription: 'Investigation notes organised by folder — sources, timelines, claims',
       extraNavItems: [{ href: '/entities', label: 'Entities', icon: 'Network' }],
     },

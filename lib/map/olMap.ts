@@ -12,14 +12,17 @@ export interface LocationPin {
   contexts: string[]
 }
 
+type MapLayer = 'osm' | 'satellite' | 'topo'
+
 export async function initStoryMap(
   container: HTMLElement,
   pins: LocationPin[],
-  onPinClick: (pin: LocationPin) => void
+  onPinClick: (pin: LocationPin) => void,
+  layer: MapLayer = 'osm'
 ): Promise<() => void> {
   const { Map, View } = await import('ol')
   const { Tile: TileLayer, Vector: VectorLayer } = await import('ol/layer')
-  const { OSM, Vector: VectorSource } = await import('ol/source')
+  const { OSM, XYZ, Vector: VectorSource } = await import('ol/source')
   const { fromLonLat } = await import('ol/proj')
   const Feature = (await import('ol/Feature')).default
   const Point = (await import('ol/geom/Point')).default
@@ -55,12 +58,31 @@ export async function initStoryMap(
     },
   })
 
+  // Base tile layer — OSM, Esri satellite, or OpenTopoMap
+  let tileLayer: InstanceType<typeof TileLayer>
+  if (layer === 'satellite') {
+    tileLayer = new TileLayer({
+      source: new XYZ({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attributions: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 19,
+      }),
+    })
+  } else if (layer === 'topo') {
+    tileLayer = new TileLayer({
+      source: new XYZ({
+        url: 'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png',
+        attributions: 'Map data: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: © <a href="https://opentopomap.org">OpenTopoMap</a>',
+        maxZoom: 17,
+      }),
+    })
+  } else {
+    tileLayer = new TileLayer({ source: new OSM() })
+  }
+
   const map = new Map({
     target: container,
-    layers: [
-      new TileLayer({ source: new OSM() }),
-      vectorLayer,
-    ],
+    layers: [tileLayer, vectorLayer],
     view: new View({
       center: fromLonLat([0, 20]),
       zoom: 2,

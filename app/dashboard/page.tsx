@@ -11,6 +11,7 @@ import { StatCard, TrendIcon, HealthBar } from './DashboardCards'
 import DashboardFilters from './DashboardFilters'
 import DashboardCharts from './DashboardCharts'
 import ExportButton from './ExportButton'
+import JournalismBrief from './JournalismBrief'
 import type { AreaHealthDatum, TimelineDatum, InsightTypeDatum, MetricAreaDatum } from './DashboardCharts'
 import type { ExportRow } from './ExportButton'
 
@@ -68,6 +69,19 @@ export default async function DashboardPage({
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
   const modeConfig = getModeConfig(modeRow?.value)
+
+  // Journalism mode gets its own intelligence brief — skip the generic dashboard
+  if (modeConfig.features.entities) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Intelligence Brief</h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Entities, timeline, and claims extracted from all documents</p>
+        </div>
+        <JournalismBrief />
+      </div>
+    )
+  }
 
   const allAreas = await prisma.report.findMany({
     select: { area: true }, distinct: ['area'], orderBy: { area: 'asc' },

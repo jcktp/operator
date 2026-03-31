@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Plus, BookOpen, ChevronRight, Loader2 } from 'lucide-react'
 import StorylineEditor from '../storyline/StorylineEditor'
 import type { PickerReport } from '../storyline/StorylineReportPicker'
+import type { DirectOption } from '../storyline/StorylineSources'
 
 interface Evidence {
   id: string
@@ -15,6 +16,8 @@ interface Evidence {
 interface Story {
   id: string
   title: string
+  description: string | null
+  status: string
   reportIds: string
   narrative: string | null
   events: string | null
@@ -25,9 +28,10 @@ interface Story {
 interface Props {
   stories: Story[]
   allReports: PickerReport[]
+  allDirects: DirectOption[]
 }
 
-export default function StorylineTabClient({ stories: initialStories, allReports }: Props) {
+export default function StorylineTabClient({ stories: initialStories, allReports, allDirects }: Props) {
   const [stories, setStories] = useState<Story[]>(initialStories)
   const [selectedId, setSelectedId] = useState<string | null>(initialStories[0]?.id ?? null)
   const [creating, setCreating] = useState(false)
@@ -42,7 +46,7 @@ export default function StorylineTabClient({ stories: initialStories, allReports
       const res = await fetch('/api/storyline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle.trim(), reportIds: [] }),
+        body: JSON.stringify({ title: newTitle.trim(), reportIds: [], status: 'researching' }),
       })
       const data = await res.json() as { story: Story }
       setStories(prev => [data.story, ...prev])
@@ -132,6 +136,7 @@ export default function StorylineTabClient({ stories: initialStories, allReports
             key={selectedStory.id}
             story={selectedStory}
             allReports={allReports}
+            allDirects={allDirects}
             onUpdate={handleUpdate}
             onDelete={() => handleDelete(selectedStory.id)}
           />

@@ -1,10 +1,8 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import type { TimelineJSData } from './TimelineJSViewer'
+import CustomTimeline from './CustomTimeline'
+import type { TimelineEvent } from './CustomTimeline'
 
-const TimelineJSViewer = dynamic(() => import('./TimelineJSViewer'), { ssr: false })
-
-export default function TimelineTabClient({ data }: { data: TimelineJSData }) {
-  return <TimelineJSViewer data={data} />
+export default function TimelineTabClient({ events }: { events: TimelineEvent[] }) {
+  return <CustomTimeline events={events} />
 }

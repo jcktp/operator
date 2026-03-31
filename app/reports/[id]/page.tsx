@@ -61,7 +61,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   // Mode config
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
   const modeConfig = getModeConfig(modeRow?.value)
-  const { entities: showEntities, timeline: showTimeline, redactions: showRedactions, verification: showVerification, documentComparison: showDocComparison } = modeConfig.features
+  const { entities: showEntities, timeline: showTimeline, redactions: showRedactions, verification: showVerification, documentComparison: showDocComparison, showReportMetrics } = modeConfig.features
   const labels = getReportLabels(modeConfig.id)
 
   // Optional features data
@@ -80,31 +80,36 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   type CrossDocResult = { name: string; type: string; reportIds: string[]; reportTitles: Record<string, string> }
   const crossLinks: CrossDocResult[] = []
   if (showEntities && entities.length > 0) {
-    const linkableTypes = ['person', 'organisation', 'location']
-    const linkableEntities = entities.filter(e => linkableTypes.includes(e.type))
-    const uniqueNames = [...new Set(linkableEntities.map(e => e.name))]
+    try {
+      const linkableTypes = ['person', 'organisation', 'location']
+      const linkableEntities = entities.filter(e => linkableTypes.includes(e.type))
+      const uniqueNames = [...new Set(linkableEntities.map(e => e.name))]
 
-    await Promise.all(uniqueNames.map(async (name) => {
-      const others = await prisma.reportEntity.findMany({
-        where: { name, reportId: { not: id } },
-        select: { reportId: true },
-      })
-      if (others.length === 0) return
-      const distinctReportIds = [...new Set(others.map(o => o.reportId))]
-      const linkedReports = await prisma.report.findMany({
-        where: { id: { in: distinctReportIds } },
-        select: { id: true, title: true },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-      })
-      const entity = linkableEntities.find(e => e.name === name)
-      crossLinks.push({
-        name,
-        type: entity?.type ?? 'person',
-        reportIds: linkedReports.map(r => r.id),
-        reportTitles: Object.fromEntries(linkedReports.map(r => [r.id, r.title])),
-      })
-    }))
+      await Promise.all(uniqueNames.map(async (name) => {
+        const others = await prisma.reportEntity.findMany({
+          where: { name, reportId: { not: id } },
+          select: { reportId: true },
+        })
+        if (others.length === 0) return
+        const distinctReportIds = [...new Set(others.map(o => o.reportId))]
+        const linkedReports = await prisma.report.findMany({
+          where: { id: { in: distinctReportIds } },
+          select: { id: true, title: true },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        })
+        const entity = linkableEntities.find(e => e.name === name)
+        crossLinks.push({
+          name,
+          type: entity?.type ?? 'person',
+          reportIds: linkedReports.map(r => r.id),
+          reportTitles: Object.fromEntries(linkedReports.map(r => [r.id, r.title])),
+        })
+      }))
+    } catch (err) {
+      console.error('Cross-link lookup failed:', err)
+      // Non-fatal — page still renders without cross-links
+    }
   }
 
   // Parse journalism data
@@ -254,7 +259,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       )}
 
       {/* What changed — comparison with previous */}
-      {comparison && (
+      {showReportMetrics && comparison && (
         <section>
           <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <GitCompare size={11} />
@@ -325,7 +330,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       )}
 
       {/* Metrics */}
-      {metrics.length > 0 && (
+      {showReportMetrics && metrics.length > 0 && (
         <section>
           <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <TrendingUp size={11} />

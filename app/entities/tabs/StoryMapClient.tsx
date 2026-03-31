@@ -32,30 +32,35 @@ async function geocode(name: string): Promise<{ lat: number; lon: number } | nul
 async function geocodeAll(
   locations: RawLocation[],
   onProgress: (done: number) => void
-): Promise<LocationPin[]> {
+): Promise<{ pins: LocationPin[]; failed: string[] }> {
   const pins: LocationPin[] = []
+  const failed: string[] = []
   for (let i = 0; i < locations.length; i++) {
     const loc = locations[i]
     const coords = await geocode(loc.name)
     if (coords) {
       pins.push({ ...loc, lon: coords.lon, lat: coords.lat })
+    } else {
+      failed.push(loc.name)
     }
     onProgress(i + 1)
     // Nominatim rate limit: max 1 req/sec
     if (i < locations.length - 1) await new Promise(r => setTimeout(r, 1100))
   }
-  return pins
+  return { pins, failed }
 }
 
 export default function StoryMapClient({ locations }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const destroyRef = useRef<(() => void) | null>(null)
   const [pins, setPins] = useState<LocationPin[]>([])
+  const [failedLocations, setFailedLocations] = useState<string[]>([])
   const [geocoding, setGeocoding] = useState(false)
   const [geocodedCount, setGeocodedCount] = useState(0)
   const [mapReady, setMapReady] = useState(false)
   const [selectedPin, setSelectedPin] = useState<LocationPin | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [activeLayer, setActiveLayer] = useState<'osm' | 'satellite' | 'topo'>('osm')
 
   // Geocode all locations once
   useEffect(() => {
@@ -63,26 +68,26 @@ export default function StoryMapClient({ locations }: Props) {
     setGeocoding(true)
     setGeocodedCount(0)
     geocodeAll(locations, n => setGeocodedCount(n))
-      .then(p => { setPins(p); setGeocoding(false) })
+      .then(({ pins: p, failed }) => { setPins(p); setFailedLocations(failed); setGeocoding(false) })
       .catch(e => { setError(String(e)); setGeocoding(false) })
   }, [locations])
 
-  // Init map once pins are ready
-  const initMap = useCallback(async (pinsToShow: LocationPin[]) => {
+  // Init map once pins are ready, or re-init when layer changes
+  const initMap = useCallback(async (pinsToShow: LocationPin[], layer: 'osm' | 'satellite' | 'topo') => {
     if (!mapRef.current || pinsToShow.length === 0) { setMapReady(true); return }
     destroyRef.current?.()
     const { initStoryMap } = await import('@/lib/map/olMap')
-    const destroy = await initStoryMap(mapRef.current, pinsToShow, pin => setSelectedPin(pin))
+    const destroy = await initStoryMap(mapRef.current, pinsToShow, pin => setSelectedPin(pin), layer)
     destroyRef.current = destroy
     setMapReady(true)
   }, [])
 
   useEffect(() => {
     if (!geocoding && pins.length >= 0) {
-      initMap(pins).catch(e => setError(String(e)))
+      initMap(pins, activeLayer).catch(e => setError(String(e)))
     }
     return () => { destroyRef.current?.(); destroyRef.current = null }
-  }, [geocoding, pins, initMap])
+  }, [geocoding, pins, activeLayer, initMap])
 
   if (locations.length === 0) {
     return (
@@ -114,9 +119,34 @@ export default function StoryMapClient({ locations }: Props) {
         </p>
       )}
       {!geocoding && mapReady && pins.length > 0 && (
-        <p className="text-xs text-gray-400 dark:text-zinc-500">
-          {pins.length} of {locations.length} location{locations.length !== 1 ? 's' : ''} plotted · Click a pin for details
-        </p>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs text-gray-400 dark:text-zinc-500">
+            {pins.length} of {locations.length} location{locations.length !== 1 ? 's' : ''} plotted · Click a pin for details
+          </p>
+          {/* Layer switcher */}
+          <div className="flex gap-1">
+            {(['osm', 'satellite', 'topo'] as const).map(l => (
+              <button
+                key={l}
+                onClick={() => setActiveLayer(l)}
+                className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${
+                  activeLayer === l
+                    ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-gray-900 dark:border-zinc-100'
+                    : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500'
+                }`}
+              >
+                {l === 'osm' ? 'Standard' : l === 'satellite' ? 'Satellite' : 'Topo'}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Geocoding failures */}
+      {!geocoding && failedLocations.length > 0 && (
+        <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+          <span className="font-medium">{failedLocations.length} location{failedLocations.length !== 1 ? 's' : ''} could not be placed:</span>{' '}
+          {failedLocations.join(', ')}
+        </div>
       )}
 
       <div className="flex gap-4 items-start">
@@ -198,20 +228,24 @@ export default function StoryMapClient({ locations }: Props) {
         ) : (
           <aside className="w-64 shrink-0">
             <div className="space-y-1">
-              {locations.slice(0, 15).map(loc => (
-                <button
-                  key={loc.name}
-                  onClick={() => {
-                    const pin = pins.find(p => p.name === loc.name)
-                    if (pin) setSelectedPin(pin)
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  <MapPin size={11} className="text-indigo-400 shrink-0" />
-                  <span className="text-xs text-gray-700 dark:text-zinc-300 truncate flex-1">{loc.name}</span>
-                  <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0">{loc.reportIds.length}</span>
-                </button>
-              ))}
+              {locations.slice(0, 15).map(loc => {
+                const hasPin = pins.some(p => p.name === loc.name)
+                return (
+                  <button
+                    key={loc.name}
+                    onClick={() => {
+                      const pin = pins.find(p => p.name === loc.name)
+                      if (pin) setSelectedPin(pin)
+                    }}
+                    disabled={!hasPin}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${hasPin ? 'hover:bg-gray-50 dark:hover:bg-zinc-800' : 'opacity-50 cursor-not-allowed'}`}
+                  >
+                    <MapPin size={11} className={hasPin ? 'text-indigo-400 shrink-0' : 'text-gray-300 dark:text-zinc-600 shrink-0'} />
+                    <span className="text-xs text-gray-700 dark:text-zinc-300 truncate flex-1">{loc.name}</span>
+                    <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0">{loc.reportIds.length}</span>
+                  </button>
+                )
+              })}
               {locations.length > 15 && (
                 <p className="text-xs text-gray-400 dark:text-zinc-500 text-center pt-1">
                   +{locations.length - 15} more on map

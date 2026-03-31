@@ -18,6 +18,7 @@ model DirectReport {
   updatedAt      DateTime        @updatedAt
   reports        Report[]
   reportRequests ReportRequest[]
+  storySources   StorySource[]
 }
 
 model ReportRequest {
@@ -212,6 +213,8 @@ model AreaBriefing {
 model Story {
   id            String         @id @default(uuid())
   title         String
+  description   String?        // Brief description / working hypothesis
+  status        String         @default("researching")  // researching | writing | filed
   reportIds     String         // JSON array of report IDs
   narrative     String?        // AI-generated + edited narrative text
   events        String?        // JSON: ordered annotated events
@@ -219,6 +222,21 @@ model Story {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   evidence      EvidenceItem[]
+  sources       StorySource[]
+}
+
+model StorySource {
+  id             String       @id @default(uuid())
+  storyId        String
+  story          Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  directReportId String
+  directReport   DirectReport @relation(fields: [directReportId], references: [id], onDelete: Cascade)
+  tags           String       @default("[]")  // JSON string[] e.g. ["on-record","whistleblower"]
+  notes          String?
+  createdAt      DateTime     @default(now())
+
+  @@unique([storyId, directReportId])
+  @@index([storyId])
 }
 
 model EvidenceItem {
@@ -233,4 +251,43 @@ model EvidenceItem {
   createdAt  DateTime @default(now())
 
   @@index([storyId])
+}
+
+// ── Background upload jobs ─────────────────────────────────────────────────────
+
+model UploadJob {
+  id        String          @id @default(uuid())
+  status    String          @default("queued")  // queued|processing|done|error
+  total     Int
+  processed Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  items     UploadJobItem[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model UploadJobItem {
+  id             String    @id @default(uuid())
+  jobId          String
+  job            UploadJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  title          String
+  area           String
+  fileType       String
+  fileName       String
+  fileSizeBytes  Int
+  rawContent     String    // extracted text content, ready for AI analysis
+  displayContent String?   // structured display content (Excel JSON etc.)
+  directReportId String?
+  reportDate     String?   // ISO date string
+  savedFilePath  String?   // relative path within reports folder
+  status         String    @default("queued")  // queued|processing|done|error
+  reportId       String?
+  error          String?
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+
+  @@index([jobId])
+  @@index([status])
 }

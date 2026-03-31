@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db'
 import StorylineTabClient from './StorylineTabClient'
 
 export default async function StorylineTab() {
-  const [stories, reports] = await Promise.all([
+  const [stories, reports, directs] = await Promise.all([
     prisma.story.findMany({
       orderBy: { updatedAt: 'desc' },
       include: { evidence: { orderBy: { createdAt: 'asc' } } },
@@ -10,6 +10,10 @@ export default async function StorylineTab() {
     prisma.report.findMany({
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true, area: true, createdAt: true },
+    }),
+    prisma.directReport.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, title: true, area: true, updatedAt: true },
     }),
   ])
 
@@ -29,5 +33,10 @@ export default async function StorylineTab() {
     createdAt: r.createdAt.toISOString(),
   }))
 
-  return <StorylineTabClient stories={serializedStories} allReports={serializedReports} />
+  const serializedDirects = directs.map(d => ({
+    ...d,
+    updatedAt: d.updatedAt.toISOString(),
+  }))
+
+  return <StorylineTabClient stories={serializedStories} allReports={serializedReports} allDirects={serializedDirects} />
 }

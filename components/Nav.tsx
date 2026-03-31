@@ -19,6 +19,7 @@ import { playShutdownBeep } from '@/lib/beep'
 import { useMode } from '@/components/ModeContext'
 import { useTheme } from '@/components/ThemeProvider'
 import StatusIndicator from '@/components/StatusIndicator'
+import UploadNotification from '@/components/UploadNotification'
 import SearchModal from '@/components/SearchModal'
 import { Moon, Sun, ShieldOff } from 'lucide-react'
 
@@ -236,6 +237,7 @@ export default function Nav() {
               {airGapped && (
                 <span className="text-[10px] font-medium text-sky-500 dark:text-sky-400 leading-none">Air-gap</span>
               )}
+              <UploadNotification />
               <StatusIndicator />
             </div>
             <div className="w-px h-4 bg-gray-200 dark:bg-zinc-700" />

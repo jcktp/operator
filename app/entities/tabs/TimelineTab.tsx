@@ -1,7 +1,6 @@
 import { Clock } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import type { ModeConfig } from '@/lib/mode'
-import { buildTimelineJSData } from './timelineUtils'
 import TimelineTabClient from './TimelineTabClient'
 
 interface Props {
@@ -37,18 +36,20 @@ export default async function TimelineTab({ modeConfig }: Props) {
     dateText: e.dateText,
     dateSortKey: e.dateSortKey,
     event: e.event,
+    reportId: e.report.id,
     reportTitle: e.report.title,
     area: e.report.area,
+    sourceName: null,
   }))
 
-  const data = buildTimelineJSData(serialized)
+  const areaCount = new Set(serialized.map(e => e.area)).size
 
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-400 dark:text-zinc-500">
-        {events.length} event{events.length !== 1 ? 's' : ''} across {[...new Set(serialized.map(e => e.area))].length} area{[...new Set(serialized.map(e => e.area))].length !== 1 ? 's' : ''} · grouped by area
+        {events.length} event{events.length !== 1 ? 's' : ''} across {areaCount} area{areaCount !== 1 ? 's' : ''}
       </p>
-      <TimelineTabClient data={data} />
+      <TimelineTabClient events={serialized} />
     </div>
   )
 }

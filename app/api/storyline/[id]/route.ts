@@ -9,6 +9,8 @@ export async function PATCH(
   const { id } = await params
   const body = await req.json() as {
     title?: string
+    description?: string
+    status?: string
     narrative?: string
     events?: string
     claimStatuses?: string
@@ -16,6 +18,8 @@ export async function PATCH(
   }
   const data: Record<string, unknown> = {}
   if (body.title !== undefined) data.title = body.title
+  if (body.description !== undefined) data.description = body.description
+  if (body.status !== undefined) data.status = body.status
   if (body.narrative !== undefined) data.narrative = body.narrative
   if (body.events !== undefined) data.events = body.events
   if (body.claimStatuses !== undefined) data.claimStatuses = body.claimStatuses

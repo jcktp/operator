@@ -12,13 +12,15 @@ export async function GET() {
 
 // POST /api/storyline — create a story
 export async function POST(req: Request) {
-  const body = await req.json() as { title: string; reportIds: string[] }
+  const body = await req.json() as { title: string; reportIds: string[]; description?: string; status?: string }
   if (!body.title?.trim()) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   }
   const story = await prisma.story.create({
     data: {
       title: body.title.trim(),
+      description: body.description ?? null,
+      status: body.status ?? 'researching',
       reportIds: JSON.stringify(body.reportIds ?? []),
     },
     include: { evidence: true },

@@ -2,11 +2,12 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getModeConfig } from '@/lib/mode'
-import { Users, Clock, Map, BookOpen } from 'lucide-react'
+import { Users, Clock, Map, BookOpen, Globe } from 'lucide-react'
 import EntitiesTab from './tabs/EntitiesTab'
 import TimelineTab from './tabs/TimelineTab'
 import StoryMapTab from './tabs/StoryMapTab'
 import StorylineTab from './tabs/StorylineTab'
+import OsintTab from './tabs/OsintTab'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,7 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
   timeline:    <Clock size={12} />,
   'story-map': <Map size={13} />,
   storyline:   <BookOpen size={13} />,
+  resources:   <Globe size={13} />,
 }
 
 export default async function EntitiesPage({
@@ -36,6 +38,7 @@ export default async function EntitiesPage({
     ...(modeConfig.features.timeline ? [{ id: 'timeline', label: 'Timeline' }] : []),
     { id: 'story-map',  label: 'Story Map' },
     { id: 'storyline',  label: 'Storyline' },
+    ...(modeConfig.features.investigationTemplate ? [{ id: 'resources', label: 'Resources' }] : []),
   ]
 
   const activeTab = tabs.find(t => t.id === tab)?.id ?? 'entities'
@@ -89,6 +92,10 @@ export default async function EntitiesPage({
 
       {activeTab === 'storyline' && (
         <StorylineTab />
+      )}
+
+      {activeTab === 'resources' && modeConfig.features.investigationTemplate && (
+        <OsintTab />
       )}
     </div>
   )

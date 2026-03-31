@@ -93,32 +93,57 @@ export default function UploadTab() {
     const pendingItems = queue.filter(q => q.status === 'pending')
     if (pendingItems.length === 0 || submitting) return
     if (pendingItems.find(q => !q.area)) { alert('Please select an area for all files'); return }
+
+    // Use background mode for file uploads (not links — links are fast)
+    const fileItems = pendingItems.filter(q => q.type === 'file')
+    const linkItems = pendingItems.filter(q => q.type === 'link')
+    const useBackground = fileItems.length > 0
+
     setSubmitting(true)
     setProcessingIndex(1)
     setProcessingTotal(pendingItems.length)
 
-    let idx = 0
-    for (const item of pendingItems) {
-      idx++
-      setProcessingIndex(idx)
-      updateItem(item.id, { status: 'analyzing' })
-      try {
-        let res: Response
-        if (item.type === 'file' && item.file) {
+    if (useBackground && fileItems.length > 0) {
+      // Background mode: send files for queued analysis, return immediately
+      let jobId: string | null = null
+      let idx = 0
+      for (const item of fileItems) {
+        idx++
+        setProcessingIndex(idx)
+        updateItem(item.id, { status: 'analyzing' })
+        if (!item.file) continue
+        try {
           const formData = new FormData()
           formData.append('file', item.file)
           formData.append('title', item.title)
           formData.append('area', item.area)
           if (directReportId) formData.append('directReportId', directReportId)
           if (reportDate) formData.append('reportDate', reportDate)
-          res = await fetch('/api/upload', { method: 'POST', body: formData })
-        } else {
-          res = await fetch('/api/upload-link', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: item.url, title: item.title, area: item.area, directReportId: directReportId || null, reportDate: reportDate || null }),
-          })
+          if (jobId) formData.append('jobId', jobId)
+          formData.append('sortOrder', String(idx - 1))
+          const res = await fetch('/api/upload-background', { method: 'POST', body: formData })
+          const data = await res.json() as { error?: string; jobId?: string; itemId?: string }
+          if (!res.ok) {
+            updateItem(item.id, { status: 'error', error: data.error ?? 'Failed' })
+          } else {
+            jobId = data.jobId ?? jobId
+            updateItem(item.id, { status: 'done' })
+          }
+        } catch {
+          updateItem(item.id, { status: 'error', error: 'Network error' })
         }
+      }
+    }
+
+    // Process link items synchronously (they hit external URLs, no AI wait)
+    for (const item of linkItems) {
+      updateItem(item.id, { status: 'analyzing' })
+      try {
+        const res = await fetch('/api/upload-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: item.url, title: item.title, area: item.area, directReportId: directReportId || null, reportDate: reportDate || null }),
+        })
         const data = await res.json() as { error?: string; report?: { id: string }; seriesCandidate?: SeriesCandidate }
         if (!res.ok) updateItem(item.id, { status: 'error', error: data.error ?? 'Failed' })
         else {
@@ -222,6 +247,9 @@ export default function UploadTab() {
                   {item.status === 'done' && item.reportId && (
                     <a href={`/reports/${item.reportId}`} className="text-xs text-green-600 hover:underline mt-0.5 inline-block">View report →</a>
                   )}
+                  {item.status === 'done' && !item.reportId && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">Queued — analysis running in background</p>
+                  )}
                 </div>
                 {item.status === 'pending' && (
                   <div className="shrink-0 relative">
@@ -296,24 +324,29 @@ export default function UploadTab() {
 
       <button type="submit" disabled={queue.length === 0 || !allHaveArea || submitting || pendingCount === 0}
         className="w-full bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-        {submitting ? <><Loader2 size={15} className="animate-spin" />Processing {processingIndex} of {processingTotal}…</>
-        : allDone ? <><CheckCircle size={15} />{doneCount} report{doneCount !== 1 ? 's' : ''} added{errorCount > 0 && ` · ${errorCount} failed`}</>
+        {submitting ? <><Loader2 size={15} className="animate-spin" />Sending {processingIndex} of {processingTotal}…</>
+        : allDone ? <><CheckCircle size={15} />{doneCount} queued for analysis{errorCount > 0 && ` · ${errorCount} failed`}</>
         : !allHaveArea && pendingCount > 0 ? <>Select an area for all files to continue</>
-        : <><Upload size={15} />Upload & analyse {pendingCount > 0 ? `${pendingCount} report${pendingCount !== 1 ? 's' : ''}` : ''}</>}
+        : <><Upload size={15} />Upload {pendingCount > 0 ? `${pendingCount} file${pendingCount !== 1 ? 's' : ''}` : ''}</>}
       </button>
 
       {allDone && doneCount > 0 && (
-        <div className="flex gap-2">
-          <button type="button" onClick={() => router.push('/')}
-            className="flex-1 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
-            Go to overview
-          </button>
-          {lastDoneId && (
-            <button type="button" onClick={() => router.push(`/reports/${lastDoneId}`)}
+        <div className="space-y-2">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 text-center">
+            Analysis is running in the background — you can navigate freely. Progress shows in the top bar.
+          </p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => router.push('/')}
               className="flex-1 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
-              View last report
+              Go to overview
             </button>
-          )}
+            {lastDoneId && (
+              <button type="button" onClick={() => router.push(`/reports/${lastDoneId}`)}
+                className="flex-1 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                View last report
+              </button>
+            )}
+          </div>
         </div>
       )}
 

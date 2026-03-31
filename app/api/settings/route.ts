@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { encrypt, decrypt } from '@/lib/encryption'
 import { requireAuth } from '@/lib/api-auth'
+import { loadAiSettings } from '@/lib/settings'
 
 // Keys that contain sensitive credentials — never returned in plaintext
 const SENSITIVE_KEYS = new Set([
@@ -72,6 +73,8 @@ export async function POST(req: NextRequest) {
       update: { value: stored },
       create: { id: crypto.randomUUID(), key, value: stored },
     })
+    // Reload settings into process.env so AI providers pick up changes immediately
+    await loadAiSettings()
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error('settings POST error:', e)
