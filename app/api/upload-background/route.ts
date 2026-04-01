@@ -6,8 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
-import { extractContent, getFileType, IMAGE_TYPES, getMimeType } from '@/lib/parsers'
-import { describeImage } from '@/lib/ai'
+import { extractContent, getFileType, IMAGE_TYPES } from '@/lib/parsers'
 import { saveReportFile } from '@/lib/reports-folder'
 import { kickWorker } from '@/lib/upload-queue'
 import { join } from 'path'
@@ -52,17 +51,14 @@ export async function POST(req: NextRequest) {
     let displayContent: string | null = null
 
     if (isImage) {
-      // For images, do vision analysis synchronously (much faster than full analysis)
-      const mimeType = getMimeType(fileType)
-      try {
-        rawContent = await describeImage(buffer, mimeType, extractText)
-      } catch {
-        rawContent = `[Image: ${file.name}]`
-      }
-      // Extract EXIF/metadata and embed in displayContent after the image path
+      // Vision analysis is deferred to the background worker so the upload response
+      // is fast and model-swapping time doesn't block the HTTP request.
+      rawContent = `[Image: ${file.name}]`
       const imagePath = `image:${join(area, savedFileName)}`
-      const meta = await extractImageMetadata(buffer, file.name)
-      displayContent = meta ? `${imagePath}\n${JSON.stringify(meta)}` : imagePath
+      const meta = await extractImageMetadata(buffer, file.name, file.size) ?? {}
+      // Store OCR flag inside metadata so the worker can read it without a schema change
+      if (extractText) meta['_ocr'] = 'true'
+      displayContent = `${imagePath}\n${JSON.stringify(meta)}`
     } else {
       try {
         const parsed = await extractContent(buffer, fileType)

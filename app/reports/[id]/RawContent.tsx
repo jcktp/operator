@@ -231,11 +231,11 @@ export default function RawContent({
           alt="Uploaded image"
           className="w-full rounded-lg border border-gray-200 dark:border-zinc-700 object-contain max-h-[600px]"
         />
-        {exifData && Object.keys(exifData).length > 0 && (
+        {exifData && Object.keys(exifData).filter(k => !k.startsWith('_')).length > 0 && (
           <div className="space-y-1.5">
             <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Image Metadata</p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-              {Object.entries(exifData).map(([k, v]) => (
+              {Object.entries(exifData).filter(([k]) => !k.startsWith('_')).map(([k, v]) => (
                 <div key={k} className="flex gap-2 text-xs">
                   <span className="text-gray-400 dark:text-zinc-500 shrink-0 capitalize">{k.replace(/_/g, ' ')}:</span>
                   <span className="text-gray-700 dark:text-zinc-200 truncate">{v}</span>

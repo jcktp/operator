@@ -3,7 +3,8 @@
 
 export async function extractImageMetadata(
   buffer: Buffer,
-  fileName: string
+  fileName: string,
+  fileSizeBytes?: number
 ): Promise<Record<string, string> | null> {
   const result: Record<string, string> = {}
 
@@ -14,7 +15,8 @@ export async function extractImageMetadata(
       exif: true,
       gps: true,
       icc: false,
-      iptc: false,
+      iptc: true,
+      xmp: true,
       jfif: false,
       ihdr: true,
     }).catch(() => null)
@@ -59,9 +61,14 @@ export async function extractImageMetadata(
     // exifr not available or parse failed — fall back to basic info only
   }
 
-  // Always include format + size from file name
+  // Always include format + file size
   const ext = fileName.split('.').pop()?.toUpperCase()
   if (ext) result['Format'] = ext
+  if (fileSizeBytes != null && fileSizeBytes > 0) {
+    result['File size'] = fileSizeBytes >= 1_048_576
+      ? `${(fileSizeBytes / 1_048_576).toFixed(1)} MB`
+      : `${Math.round(fileSizeBytes / 1024)} KB`
+  }
 
   return Object.keys(result).length > 0 ? result : null
 }

@@ -4,21 +4,59 @@
  * by a single module-level worker, preventing parallel Ollama overload.
  */
 
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { prisma } from './db'
+import { loadAiSettings } from './settings'
 import { analyzeReport, compareReports, checkResolvedFlags, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist, generateAreaBriefing } from './ai'
 import { getModeConfig } from './mode'
+import { describeImage } from './ai-vision'
+import { getMimeType } from './parsers'
+import { getReportsRoot } from './reports-folder'
 
 // ── Global worker state ──────────────────────────────────────────────────────
 let _workerRunning = false
 
 // ── Process a single job item ─────────────────────────────────────────────────
 async function processItem(itemId: string): Promise<void> {
-  const item = await prisma.uploadJobItem.findUnique({ where: { id: itemId } })
+  let item = await prisma.uploadJobItem.findUnique({ where: { id: itemId } })
   if (!item) return
 
   await prisma.uploadJobItem.update({ where: { id: itemId }, data: { status: 'processing' } })
 
   try {
+    // Reload AI settings so provider/model env vars are current
+    await loadAiSettings()
+
+    // ── Vision analysis for image items ──────────────────────────────────────
+    // describeImage is called here (not in the HTTP route) so model-swap latency
+    // doesn't block the upload response.
+    if (item.displayContent?.startsWith('image:') && item.rawContent.startsWith('[Image') && item.savedFilePath) {
+      let extractText = false
+      try {
+        const metaStr = item.displayContent.split('\n').slice(1).join('\n')
+        if (metaStr) {
+          const meta = JSON.parse(metaStr) as Record<string, string>
+          extractText = meta['_ocr'] === 'true'
+        }
+      } catch { /* no metadata */ }
+
+      try {
+        const fullPath = join(getReportsRoot(), item.savedFilePath)
+        const buffer = readFileSync(fullPath)
+        const mimeType = getMimeType(item.fileType.toLowerCase())
+        const description = await describeImage(buffer, mimeType, extractText)
+        // Update rawContent in DB so UI reflects the result immediately
+        await prisma.uploadJobItem.update({
+          where: { id: itemId },
+          data: { rawContent: description },
+        })
+        item = { ...item, rawContent: description }
+      } catch (e) {
+        console.error('[upload-queue] Vision analysis failed:', e)
+      }
+    }
+
     const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
     const appMode = modeRow?.value ?? 'executive'
 
@@ -181,7 +219,7 @@ async function processItem(itemId: string): Promise<void> {
         where: { area: item.area },
         select: { summary: true, metrics: true, insights: true, createdAt: true },
         orderBy: { createdAt: 'desc' }, take: 20,
-      }).then(reports => generateAreaBriefing(item.area, appMode, reports)).catch(() => {})
+      }).then(reports => generateAreaBriefing(item!.area, appMode, reports)).catch(() => {})
     }
 
     await prisma.uploadJobItem.update({

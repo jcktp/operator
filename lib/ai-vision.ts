@@ -88,8 +88,8 @@ export async function describeImage(buffer: Buffer, mimeType: string, extractTex
       return data.candidates?.[0]?.content.parts[0]?.text ?? '[Image stored]'
     }
   } catch (e) {
-    console.warn('Image description failed:', e)
+    console.error('[ai-vision] describeImage failed:', e)
   }
 
-  return '[Image stored — no vision-capable model available. For Ollama, pull a vision model (e.g. ollama pull llava) and set OLLAMA_VISION_MODEL=llava]'
+  return '[Image stored — vision analysis failed or no vision-capable model available. For Ollama, run: ollama pull moondream]'
 }
