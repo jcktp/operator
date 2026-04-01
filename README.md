@@ -31,16 +31,19 @@ Upload documents. Get structured AI analysis. Everything runs on your machine.
 
 ## What it does
 
-Operator is a private intelligence workspace. Upload documents and get structured AI analysis — summaries, key metrics, risk flags, entity extraction, timelines, and period-over-period comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
+Operator is a private intelligence workspace. Upload documents and images to get structured AI analysis — summaries, key metrics, risk flags, entity extraction, timelines, and period-over-period comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
 
 | Feature | Description |
 |---|---|
 | **Document analysis** | AI extracts summaries, metrics, risks, opportunities, and follow-up questions from every upload — with mode-specific framing per domain |
+| **Image uploads** | Upload photos and screenshots — AI describes the image, extracts text (OCR), and reads EXIF metadata (date, camera, GPS, focal length, exposure, aperture, ISO) automatically |
+| **Background uploads** | Files are parsed immediately and queued for AI analysis so you can navigate away — no waiting |
 | **Re-analysis** | Re-run AI analysis on any document without re-uploading — useful after switching models or AI providers |
-| **Library** | Every document stored with full history; compare versions side by side |
+| **Library** | Every document stored with full history; dedicated Photos tab for image uploads with thumbnail gallery and full-screen lightbox |
 | **Dashboard** | Cross-area overview with AI-generated health signals across all documents |
 | **Metrics board** | KPI board aggregating every metric extracted across all documents, grouped by area with source attribution |
 | **Dispatch** | AI chat with 3 mode-specific personas; has access to all your document context, supports web search, and remembers facts across conversations |
+| **Inspector sidebar** | Click any entity or map pin to open a panel showing its source documents, connected entities, and analyst notes — without leaving the page |
 | **Entities page** | Four-tab hub for entity management, timeline, interactive story map, and AI-assisted storyline builder (Journalism & Legal modes) |
 | **Browser** | In-app web browser with reader and live modes, bookmark management, and one-click save to journal or dispatch |
 | **Pulse** | Feed aggregator for RSS, Reddit, YouTube, Bluesky, and Mastodon — with keyword monitoring and auto-refresh |
@@ -84,7 +87,7 @@ Features are enabled per mode based on what makes sense for that domain.
 **Entities page** (Journalism & Legal) includes four tabs:
 - **Entities** — named persons, organisations, locations, dates, and financial figures with cross-document linking
 - **Timeline** — interactive chronological timeline (TimelineJS) built from all documents in the mode
-- **Story Map** — geocoded interactive map of all location entities extracted across documents
+- **Story Map** — geocoded interactive map of all location entities extracted across documents; click a pin to see what happened there
 - **Storyline** — AI-assisted narrative arc builder: select source documents, generate a story brief with timeline events and verifiable claims, track claim readiness to publication
 
 ---
@@ -96,8 +99,10 @@ Features are enabled per mode based on what makes sense for that domain.
 | **macOS, Linux, or Windows (WSL)** | Native Windows supported with some manual steps |
 | **Node.js 18+** | Installed automatically by `start.sh` if missing (macOS/Linux) |
 | **Ollama** | Installed automatically by `start.sh` if missing; required for local AI |
-| **~5 GB free disk space** | For the default model (`qwen3:4b`) |
+| **~5 GB free disk space** | For the default text model (`phi4-mini`, ~2.5 GB) and vision model (`moondream`, ~1.7 GB) |
 | **8 GB RAM minimum** | 16 GB recommended for comfortable local inference |
+
+Ollama swaps models in and out on demand — the text and vision models never run simultaneously, so peak RAM usage is the larger of the two (~2.5 GB for phi4-mini).
 
 Cloud AI providers (Anthropic, OpenAI, Google Gemini, Groq, xAI, Perplexity, Mistral) are optional — use any of them instead of or alongside Ollama.
 
@@ -143,8 +148,9 @@ The script handles everything on first run:
 6. Installs npm dependencies
 7. Sets up and migrates the SQLite database
 8. Starts the Ollama server
-9. Pulls the default AI model (`qwen3:4b`) — **takes a few minutes the first time**
-10. Starts the app on `http://localhost:3000` and opens it in your browser
+9. Pulls the default text model (`phi4-mini`) — **takes a few minutes the first time**
+10. Pulls the vision model (`moondream`) for image analysis — **also takes a few minutes the first time**
+11. Starts the app on `http://localhost:3000` and opens it in your browser
 
 ```
 Operator — starting up
@@ -153,7 +159,8 @@ Operator — starting up
 ▶ Ollama found
 ▶ Dependencies already installed
 ▶ Database ready
-▶ Model: qwen3:4b — already available
+▶ Model: phi4-mini — already available
+▶ Vision model (moondream) already available
 ▶ Ready!
 
 Operator is running at http://localhost:3000
@@ -191,10 +198,13 @@ Ollama runs entirely on your machine. No data is sent anywhere.
 
 | | Default |
 |---|---|
-| Model | `qwen3:4b` |
+| Text model | `phi4-mini` (~2.5 GB) |
+| Vision model | `moondream` (~1.7 GB) — auto-pulled; used for image uploads |
 | Host | `http://localhost:11434` |
 
-Switch to any other Ollama model (e.g. `llama3.1:8b`, `gemma3:4b`, `mistral`) in **Settings → AI**. The model downloads automatically.
+Switch to any other Ollama model (e.g. `llama3.1:8b`, `gemma3:4b`, `mistral`) in **Settings → AI**. The model downloads automatically and the previous model is removed to save space.
+
+When switching from Ollama to a cloud provider, Settings will offer to remove the local models to free up disk space — this is optional, and Ollama itself stays installed.
 
 ### Cloud providers
 
@@ -246,12 +256,12 @@ operator/
 │   ├── api/               # Backend API routes (AI, documents, settings, etc.)
 │   ├── browser/           # In-app web browser (reader + live modes, bookmarks)
 │   ├── directs/           # Contact management (direct reports, sources, team members)
-│   ├── dispatch/          # AI chat panel
+│   ├── dispatch/          # AI chat panel (full-page and floating widget)
 │   ├── entities/          # Investigation Hub (entities, timeline, story map, storyline)
 │   │   ├── tabs/          # Hub tab components (TimelineJS, OpenLayers map, Storyline)
 │   │   └── storyline/     # Storyline editor, claims tracker, report picker
 │   ├── journal/           # Private notes
-│   ├── library/           # Document browser
+│   ├── library/           # Document browser (including Photos tab for image uploads)
 │   ├── metrics/           # KPI board
 │   ├── one-pager/         # AI executive brief with PDF export
 │   ├── pulse/             # Feed aggregator
@@ -260,9 +270,14 @@ operator/
 │   ├── timeline/          # Standalone chronological event view
 │   └── upload/            # File upload
 ├── components/            # Shared React components
+│   ├── InspectorContext.tsx  # Inspector sidebar global state
+│   ├── InspectorSidebar.tsx  # Entity/location inspector panel
+│   └── FloatingDispatch.tsx  # Floating dispatch chat widget
 ├── lib/                   # Core logic
 │   ├── ai/                # Analysis functions (analyze, catch-up, knowledge injection)
 │   ├── ai-providers.ts    # Provider implementations (Ollama, Anthropic, OpenAI, etc.)
+│   ├── image-metadata.ts  # EXIF metadata extraction from image uploads
+│   ├── upload-queue.ts    # Background upload job worker
 │   ├── personas/          # Per-mode AI persona definitions (one file per mode)
 │   ├── map/               # OpenLayers story map initialisation
 │   └── mode.ts            # App mode configurations and feature flags
@@ -285,11 +300,12 @@ operator/
 |---|---|
 | Framework | Next.js 16 (App Router, Turbopack) |
 | Database | SQLite via Prisma 7 + `better-sqlite3` adapter |
-| Local AI | Ollama |
+| Local AI | Ollama (`phi4-mini` text, `moondream` vision) |
 | Styling | Tailwind CSS v4 |
 | Rich text | Tiptap |
 | Maps | OpenLayers |
 | Timeline | TimelineJS3 |
+| EXIF extraction | exifr |
 | Tunnel | Cloudflare Quick Tunnel (`cloudflared`) |
 | Auth | PBKDF2 password hashing, HTTP-only session cookies |
 
