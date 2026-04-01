@@ -339,19 +339,18 @@ prisma.setting.findUnique({ where: { key: 'ollama_model' } })
     step "Model $MODEL ready"
   fi
 
-  # Optional vision model — only pull if OLLAMA_VISION_MODEL is explicitly set in .env.local
-  VISION_MODEL=""
+  # Vision model — use OLLAMA_VISION_MODEL from .env.local if set, otherwise default to moondream
+  VISION_MODEL="moondream"
   if [ -f ".env.local" ]; then
-    VISION_MODEL=$(grep -E '^OLLAMA_VISION_MODEL=' .env.local | head -1 | sed 's/OLLAMA_VISION_MODEL=//;s/"//g;s/'"'"'//g' || true)
+    VISION_MODEL_OVERRIDE=$(grep -E '^OLLAMA_VISION_MODEL=' .env.local | head -1 | sed 's/OLLAMA_VISION_MODEL=//;s/"//g;s/'"'"'//g' || true)
+    [ -n "$VISION_MODEL_OVERRIDE" ] && VISION_MODEL="$VISION_MODEL_OVERRIDE"
   fi
-  if [ -n "$VISION_MODEL" ]; then
-    if ollama list 2>/dev/null | grep -q "^${VISION_MODEL}"; then
-      step "Vision model ($VISION_MODEL) already available"
-    else
-      step "Pulling vision model $VISION_MODEL (for image analysis)…"
-      set_status "Downloading vision model…" "$VISION_MODEL — needed for image uploads"
-      ollama pull "$VISION_MODEL" || warn "Could not pull vision model $VISION_MODEL — image analysis will be skipped"
-    fi
+  if ollama list 2>/dev/null | grep -q "^${VISION_MODEL}"; then
+    step "Vision model ($VISION_MODEL) already available"
+  else
+    step "Pulling vision model $VISION_MODEL (~1.7 GB — for image uploads, only happens once)…"
+    set_status "Downloading vision model…" "$VISION_MODEL — needed for image uploads"
+    ollama pull "$VISION_MODEL" || warn "Could not pull vision model $VISION_MODEL — image analysis will be skipped"
   fi
 fi
 

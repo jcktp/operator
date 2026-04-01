@@ -92,7 +92,8 @@ async function processItem(itemId: string): Promise<void> {
         rawContent: item.rawContent,
         displayContent: item.displayContent,
         // For image uploads, imagePath = the relative path stored in displayContent after 'image:'
-        imagePath: item.displayContent?.startsWith('image:') ? item.displayContent.slice('image:'.length) : null,
+        // displayContent format: 'image:area/file.ext\n{exif json}' — take only the first line
+        imagePath: item.displayContent?.startsWith('image:') ? item.displayContent.slice('image:'.length).split('\n')[0] : null,
         filePath: item.savedFilePath,
         area: item.area,
         directReportId: item.directReportId || null,

@@ -50,6 +50,7 @@ export function useSettingsState() {
   const [newArea, setNewArea] = useState('')
   const [autoLockMinutes, setAutoLockMinutes] = useState(0)
   const [airGapMode, setAirGapMode] = useState(false)
+  const [removeOllamaModels, setRemoveOllamaModels] = useState(false)
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then((data: { settings?: Record<string, string> }) => {
@@ -150,11 +151,23 @@ export function useSettingsState() {
     if (needsPull) {
       try {
         await pullModel(selectedModel)
-        if (modelChanged && savedModel) await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedModel }) }).catch(() => {})
+        // Only remove previous text model when switching between Ollama models (not when switching to cloud)
+        if (modelChanged && !switchingToOllama && savedModel) {
+          await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedModel }) }).catch(() => {})
+        }
       } catch (err) {
         setPull(p => ({ ...p, active: true, error: String(err), status: 'Failed' }))
         setSaving(false); return
       }
+    }
+
+    // If switching from Ollama to cloud and user opted to remove local models, remove them
+    const switchingToCloud = savedProvider === 'ollama' && aiProvider !== 'ollama'
+    if (switchingToCloud && removeOllamaModels) {
+      const modelsToRemove = [savedModel, 'moondream'].filter(Boolean)
+      await Promise.all(
+        modelsToRemove.map(m => fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: m }) }).catch(() => {}))
+      )
     }
 
     await Promise.all([
@@ -194,6 +207,7 @@ export function useSettingsState() {
     setSavedProvider(aiProvider)
     setSavedMode(appMode)
     setMode(appMode)
+    setRemoveOllamaModels(false)
 
     if (bskyIdentifier.trim() && bskyAppPassword.trim()) {
       try {
@@ -259,6 +273,8 @@ export function useSettingsState() {
     saving, saved, pull, setPull,
     // Computed
     selectedModel, modelChanged, switchingToOllama, needsPull,
+    // Ollama → cloud model removal
+    removeOllamaModels, setRemoveOllamaModels,
     // Actions
     handleSave, testProvider,
     CLOUD_PROVIDERS,

@@ -14,7 +14,7 @@ export async function GET(
   // imagePath may be null for reports created before it was tracked —
   // fall back to extracting the path from displayContent ('image:area/filename')
   const imagePath = report?.imagePath
-    ?? (report?.displayContent?.startsWith('image:') ? report.displayContent.slice('image:'.length) : null)
+    ?? (report?.displayContent?.startsWith('image:') ? report.displayContent.slice('image:'.length).split('\n')[0] : null)
   if (!imagePath) {
     return new NextResponse('Not found', { status: 404 })
   }

@@ -339,6 +339,24 @@ export default function SettingsPage() {
           />
         )}
 
+        {/* Remove local models checkbox — only shown when switching from Ollama to a cloud provider */}
+        {tab === 'ai' && s.savedProvider === 'ollama' && s.aiProvider !== 'ollama' && (
+          <label className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={s.removeOllamaModels}
+              onChange={e => s.setRemoveOllamaModels(e.target.checked)}
+              className="mt-0.5 shrink-0 accent-amber-600"
+            />
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Remove local Ollama models to free storage</p>
+              <p className="text-xs text-amber-600 dark:text-amber-300 mt-0.5">
+                Removes <strong>{s.savedModel}</strong> and <strong>moondream</strong> from Ollama after saving. Ollama itself stays installed — you can always re-pull models later if you switch back.
+              </p>
+            </div>
+          </label>
+        )}
+
         {(tab === 'profile' || tab === 'ai') && (
           <button type="button" onClick={s.handleSave} disabled={s.saving}
             className="w-full bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">

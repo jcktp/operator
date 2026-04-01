@@ -11,6 +11,7 @@ import { describeImage } from '@/lib/ai'
 import { saveReportFile } from '@/lib/reports-folder'
 import { kickWorker } from '@/lib/upload-queue'
 import { join } from 'path'
+import { extractImageMetadata } from '@/lib/image-metadata'
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,10 +56,13 @@ export async function POST(req: NextRequest) {
       const mimeType = getMimeType(fileType)
       try {
         rawContent = await describeImage(buffer, mimeType, extractText)
-        displayContent = `image:${join(area, savedFileName)}`
       } catch {
         rawContent = `[Image: ${file.name}]`
       }
+      // Extract EXIF/metadata and embed in displayContent after the image path
+      const imagePath = `image:${join(area, savedFileName)}`
+      const meta = await extractImageMetadata(buffer, file.name)
+      displayContent = meta ? `${imagePath}\n${JSON.stringify(meta)}` : imagePath
     } else {
       try {
         const parsed = await extractContent(buffer, fileType)

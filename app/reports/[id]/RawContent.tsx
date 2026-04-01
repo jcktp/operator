@@ -214,20 +214,46 @@ export default function RawContent({
   const isPdf = fileType === 'pdf'
   const isImage = displayContent?.startsWith('image:') ?? false
 
-  // Image: show the image + AI description, no raw/formatted toggle needed
+  // Image: show the image + AI description/OCR text, no raw/formatted toggle needed
   if (isImage) {
+    const isPlaceholder = content.startsWith('[Image')
+    // Parse optional EXIF metadata embedded in displayContent after a newline
+    const dcLines = displayContent?.split('\n') ?? []
+    let exifData: Record<string, string> | null = null
+    if (dcLines.length > 1) {
+      try { exifData = JSON.parse(dcLines.slice(1).join('\n')) } catch { /* no metadata */ }
+    }
+
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         <img
           src={`/api/reports/${reportId}/image`}
           alt="Uploaded image"
           className="w-full rounded-lg border border-gray-200 dark:border-zinc-700 object-contain max-h-[600px]"
         />
-        {content && (
+        {exifData && Object.keys(exifData).length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Image Metadata</p>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+              {Object.entries(exifData).map(([k, v]) => (
+                <div key={k} className="flex gap-2 text-xs">
+                  <span className="text-gray-400 dark:text-zinc-500 shrink-0 capitalize">{k.replace(/_/g, ' ')}:</span>
+                  <span className="text-gray-700 dark:text-zinc-200 truncate">{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {!isPlaceholder && content && (
           <div className="space-y-1">
             <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">AI Description</p>
             <TextDisplay content={content} />
           </div>
+        )}
+        {isPlaceholder && (
+          <p className="text-xs text-gray-400 dark:text-zinc-500 italic">
+            No AI description — pull a vision model (e.g. <code className="font-mono">ollama pull moondream</code>) and re-upload.
+          </p>
         )}
       </div>
     )
