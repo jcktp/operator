@@ -230,13 +230,24 @@ Limits: max 5 passages, 5 figures, 5 entitiesAdded, 5 entitiesRemoved, 3 possibl
     const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
     const json = extractJsonFromText(text)
     const parsed = JSON.parse(json) as Partial<JournalismComparison>
+    const toStringArray = (v: unknown): string[] =>
+      Array.isArray(v) ? (v as unknown[]).filter((x): x is string => typeof x === 'string') : []
+    const toPassages = (v: unknown): JournalismPassage[] =>
+      Array.isArray(v)
+        ? (v as unknown[]).filter(
+            (x): x is JournalismPassage =>
+              x !== null && typeof x === 'object' &&
+              typeof (x as Record<string, unknown>).text === 'string' &&
+              typeof (x as Record<string, unknown>).appearsIn === 'string'
+          )
+        : []
     return {
       headline: typeof parsed.headline === 'string' ? parsed.headline : '',
-      passages: Array.isArray(parsed.passages) ? parsed.passages : [],
+      passages: toPassages(parsed.passages),
       figures: Array.isArray(parsed.figures) ? parsed.figures : [],
-      entitiesAdded: Array.isArray(parsed.entitiesAdded) ? parsed.entitiesAdded : [],
-      entitiesRemoved: Array.isArray(parsed.entitiesRemoved) ? parsed.entitiesRemoved : [],
-      possibleRedactions: Array.isArray(parsed.possibleRedactions) ? parsed.possibleRedactions : [],
+      entitiesAdded: toStringArray(parsed.entitiesAdded),
+      entitiesRemoved: toStringArray(parsed.entitiesRemoved),
+      possibleRedactions: toStringArray(parsed.possibleRedactions),
     }
   } catch (e) {
     console.error('compareDocumentsJournalism failed:', e)

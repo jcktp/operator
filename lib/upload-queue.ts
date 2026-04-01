@@ -39,12 +39,17 @@ async function processItem(itemId: string): Promise<void> {
       orderBy: { createdAt: 'desc' },
     })
 
+    // Skip AI analysis if rawContent is just a fallback placeholder (no vision model available)
+    const isImagePlaceholder = item.displayContent?.startsWith('image:') && item.rawContent.startsWith('[')
+
     // AI analysis
     let analysis = null
-    try {
-      analysis = await analyzeReport(item.rawContent, item.title, item.area, directName, appMode)
-    } catch (e) {
-      console.error('[upload-queue] AI analysis failed:', e)
+    if (!isImagePlaceholder) {
+      try {
+        analysis = await analyzeReport(item.rawContent, item.title, item.area, directName, appMode)
+      } catch (e) {
+        console.error('[upload-queue] AI analysis failed:', e)
+      }
     }
 
     // Comparison + resolved flags in parallel
@@ -52,29 +57,31 @@ async function processItem(itemId: string): Promise<void> {
     let resolvedFlagsJson: string | null = null
 
     type PrevInsight = { type: string; text: string }
-    await Promise.all([
-      (async () => {
-        if (!previousReport || !analysis || !previousReport.summary || !previousReport.metrics) return
-        try {
-          comparison = await compareReports(
-            previousReport.summary, previousReport.metrics,
-            analysis.summary, JSON.stringify(analysis.metrics),
-            item.area, appMode
-          )
-        } catch (e) { console.error('[upload-queue] Comparison failed:', e) }
-      })(),
-      (async () => {
-        if (!previousReport?.insights || !analysis) return
-        try {
-          const prevInsights: PrevInsight[] = JSON.parse(previousReport.insights)
-          const prevFlags = prevInsights.filter(i => i.type === 'risk' || i.type === 'anomaly')
-          if (prevFlags.length > 0) {
-            const resolved = await checkResolvedFlags(prevFlags, item.rawContent, analysis.insights)
-            if (resolved.length > 0) resolvedFlagsJson = JSON.stringify(resolved)
-          }
-        } catch (e) { console.error('[upload-queue] Resolved flags failed:', e) }
-      })(),
-    ])
+    if (!isImagePlaceholder) {
+      await Promise.all([
+        (async () => {
+          if (!previousReport || !analysis || !previousReport.summary || !previousReport.metrics) return
+          try {
+            comparison = await compareReports(
+              previousReport.summary, previousReport.metrics,
+              analysis.summary, JSON.stringify(analysis.metrics),
+              item.area, appMode
+            )
+          } catch (e) { console.error('[upload-queue] Comparison failed:', e) }
+        })(),
+        (async () => {
+          if (!previousReport?.insights || !analysis) return
+          try {
+            const prevInsights: PrevInsight[] = JSON.parse(previousReport.insights)
+            const prevFlags = prevInsights.filter(i => i.type === 'risk' || i.type === 'anomaly')
+            if (prevFlags.length > 0) {
+              const resolved = await checkResolvedFlags(prevFlags, item.rawContent, analysis.insights)
+              if (resolved.length > 0) resolvedFlagsJson = JSON.stringify(resolved)
+            }
+          } catch (e) { console.error('[upload-queue] Resolved flags failed:', e) }
+        })(),
+      ])
+    }
 
     const report = await prisma.report.create({
       data: {
@@ -84,6 +91,8 @@ async function processItem(itemId: string): Promise<void> {
         fileSize: item.fileSizeBytes,
         rawContent: item.rawContent,
         displayContent: item.displayContent,
+        // For image uploads, imagePath = the relative path stored in displayContent after 'image:'
+        imagePath: item.displayContent?.startsWith('image:') ? item.displayContent.slice('image:'.length) : null,
         filePath: item.savedFilePath,
         area: item.area,
         directReportId: item.directReportId || null,
@@ -99,8 +108,9 @@ async function processItem(itemId: string): Promise<void> {
     })
 
     // Mode-specific: entities, timeline, redactions, verification, journalism comparison
+    // Skip all of these for image placeholders — no real text content to analyse
     const modeFeatures = getModeConfig(appMode).features
-    if (modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification || modeFeatures.documentComparison) {
+    if (!isImagePlaceholder && (modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification || modeFeatures.documentComparison)) {
       let entitiesResult: Awaited<ReturnType<typeof extractEntities>> = []
       let eventsResult: Awaited<ReturnType<typeof extractTimeline>> = []
       let redactionsJson: string | null = null

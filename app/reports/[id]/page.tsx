@@ -65,6 +65,14 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const { entities: showEntities, timeline: showTimeline, redactions: showRedactions, verification: showVerification, documentComparison: showDocComparison, showReportMetrics } = modeConfig.features
   const labels = getReportLabels(modeConfig.id)
 
+  // Cross-module jump hrefs — resolved per mode so they never point to a non-existent route
+  const entitiesHref = showEntities ? '/entities?tab=entities' : null
+  const timelineHref: string | null = (() => {
+    if (!showTimeline) return null
+    if (showEntities) return '/entities?tab=timeline'
+    return modeConfig.features.extraNavItems.find(i => i.href === '/timeline')?.href ?? null
+  })()
+
   // Optional features data
   const [entities, timelineEvents, journalismRow] = (showEntities || showTimeline || showRedactions || showVerification || showDocComparison)
     ? await Promise.all([
@@ -438,6 +446,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             context: e.context,
           }))}
           crossLinks={crossLinks}
+          area={report.area}
+          timelineHref={timelineHref}
         />
       )}
 

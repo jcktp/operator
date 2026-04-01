@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Users } from 'lucide-react'
+import { useInspector } from '@/components/InspectorContext'
 
 export interface EntityItem {
   id: string
@@ -41,11 +42,16 @@ const FILTER_OPTIONS = ['all', 'person', 'organisation', 'location', 'date', 'fi
 export default function EntitiesSection({
   entities,
   crossLinks,
+  area,
+  timelineHref,
 }: {
   entities: EntityItem[]
   crossLinks: CrossDocLink[]
+  area?: string
+  timelineHref?: string | null
 }) {
   const [filter, setFilter] = useState<typeof FILTER_OPTIONS[number]>('all')
+  const { setSelected } = useInspector()
 
   const filtered = filter === 'all' ? entities : entities.filter(e => e.type === filter)
   const crossLinkMap = new Map(crossLinks.map(c => [c.name, c]))
@@ -86,11 +92,15 @@ export default function EntitiesSection({
         ))}
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-sm divide-y divide-gray-100 dark:divide-zinc-800">
         {filtered.map((entity) => {
           const cross = crossLinkMap.get(entity.name)
           return (
-            <div key={entity.id} className="flex items-start gap-3 px-4 py-3">
+            <div
+              key={entity.id}
+              className="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+              onClick={() => setSelected({ type: 'entity', name: entity.name, entityType: entity.type })}
+            >
               <span className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border mt-0.5 ${ENTITY_COLORS[entity.type] ?? 'bg-gray-50 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 border-gray-200 dark:border-zinc-700'}`}>
                 {ENTITY_LABELS[entity.type] ?? entity.type}
               </span>
@@ -119,6 +129,31 @@ export default function EntitiesSection({
             </div>
           )
         })}
+      </div>
+
+      {/* Cross-module jump links */}
+      <div className="flex items-center gap-3 mt-3 pt-2 border-t border-gray-100 dark:border-zinc-800">
+        <span className="text-[10px] text-gray-400 dark:text-zinc-500 font-medium">Jump to:</span>
+        <Link
+          href={`/entities?tab=entities${area ? `&area=${encodeURIComponent(area)}` : ''}`}
+          className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+        >
+          All Entities →
+        </Link>
+        {timelineHref && (
+          <Link
+            href={timelineHref}
+            className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+          >
+            Timeline →
+          </Link>
+        )}
+        <Link
+          href="/entities?tab=story-map"
+          className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+        >
+          Story Map →
+        </Link>
       </div>
     </section>
   )

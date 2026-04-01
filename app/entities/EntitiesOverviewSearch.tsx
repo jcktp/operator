@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search, X, ChevronDown, ChevronRight, ChevronLeft, GitFork } from 'lucide-react'
+import { useInspector } from '@/components/InspectorContext'
 const PAGE_SIZE = 25
 import { formatRelativeDate } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
+import FocusEntity from './tabs/FocusEntity'
 
 interface EntityEntry {
   name: string
@@ -19,14 +21,17 @@ export default function EntitiesOverviewSearch({
   entities,
   entityColors,
   entityLabels,
+  focus,
 }: {
   entities: EntityEntry[]
   entityColors: Record<string, string>
   entityLabels: Record<string, string>
+  focus?: string
 }) {
   const [query, setQuery] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [page, setPage] = useState(1)
+  const { setSelected } = useInspector()
 
   const q = query.trim().toLowerCase()
   const filtered = q
@@ -77,14 +82,17 @@ export default function EntitiesOverviewSearch({
         <p className="text-xs text-gray-400 dark:text-zinc-500 mb-3">Showing page {safePage} of {totalPages}</p>
       )}
 
+      {focus && <FocusEntity name={focus} />}
+
       <div className="space-y-2">
         {pageItems.map(entity => {
           const key = `${entity.type}::${entity.name}`
           const isExpanded = expanded.has(key)
+          const rowId = `entity-${entity.name.replace(/\s+/g, '-').toLowerCase()}`
           return (
-            <div key={key} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl overflow-hidden">
+            <div key={key} id={rowId} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl overflow-hidden shadow-sm">
               <button
-                onClick={() => toggleExpand(key)}
+                onClick={() => { toggleExpand(key); setSelected({ type: 'entity', name: entity.name, entityType: entity.type }) }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
               >
                 <span className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${entityColors[entity.type] ?? 'bg-gray-50 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 border-gray-200 dark:border-zinc-700'}`}>

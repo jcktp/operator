@@ -4,16 +4,18 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio, Globe } from '@/components/icons'
-import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, type LucideIcon } from 'lucide-react'
+import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, Layers } from 'lucide-react'
+import type React from 'react'
 
-const EXTRA_NAV_ICONS: Record<string, LucideIcon> = {
+type AnyIcon = React.ComponentType<{ size?: number; className?: string }>
+const EXTRA_NAV_ICONS: Record<string, AnyIcon> = {
   Network,
   Users: UsersIcon,
   BarChart2: BarChart2Icon,
   Clock,
 }
 import { useShutdown } from '@/components/ShutdownProvider'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import WalkieTalkie from '@/components/WalkieTalkie'
 import { playShutdownBeep } from '@/lib/beep'
 import { useMode } from '@/components/ModeContext'
@@ -21,10 +23,17 @@ import { useTheme } from '@/components/ThemeProvider'
 import StatusIndicator from '@/components/StatusIndicator'
 import UploadNotification from '@/components/UploadNotification'
 import SearchModal from '@/components/SearchModal'
+import NavDropdown, { type NavGroupItem } from '@/components/NavDropdown'
+import ActiveAreaBadge from '@/components/ActiveAreaBadge'
 import { Moon, Sun, ShieldOff } from 'lucide-react'
 
 // Kept for any imports that reference it; top nav has no sidebar
 export const SIDEBAR_W = 0
+
+const NAV_LINK_CLASS =
+  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors shrink-0 text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800'
+const NAV_ACTIVE_CLASS =
+  'bg-gray-100 text-gray-900 dark:bg-zinc-800 dark:text-zinc-50'
 
 export default function Nav() {
   const pathname = usePathname()
@@ -34,6 +43,8 @@ export default function Nav() {
   const config = useMode()
   const { theme, toggle: toggleTheme } = useTheme()
   const [powerMenuOpen, setPowerMenuOpen] = useState(false)
+  const [openGroup, setOpenGroup] = useState<string | null>(null)
+  const [activeArea, setActiveArea] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const chirpRef = useRef<HTMLAudioElement | null>(null)
   useEffect(() => { chirpRef.current = new Audio('/sounds/chirp.mp3') }, [])
@@ -66,18 +77,37 @@ export default function Nav() {
       .catch(() => {})
   }, [])
 
-  const links = [
-    { href: '/', label: 'Overview', icon: LayoutDashboard },
-    { href: '/dashboard', label: 'Situation Report', icon: BarChart2 },
+  // ── NAV GROUP CONSTRUCTION ────────────────────────────────────────
+  const toggleGroup = (id: string) => setOpenGroup(prev => prev === id ? null : id)
+  const closeGroups = () => setOpenGroup(null)
+
+  // GROUP A: Intake — ingest points
+  const intakeItems: NavGroupItem[] = [
     { href: '/upload', label: config.navDocuments, icon: Upload },
-    { href: '/library', label: config.navLibrary, icon: Library },
-    ...config.features.extraNavItems.map(item => ({ href: item.href, label: item.label, icon: EXTRA_NAV_ICONS[item.icon] ?? Network })),
-    { href: '/directs', label: config.navPeople, icon: Users },
-    { href: '/journal', label: config.navJournal, icon: BookOpen },
     { href: '/pulse', label: 'Pulse', icon: Radio },
     ...(!airGapped ? [{ href: '/browser', label: 'Browser', icon: Globe }] : []),
-    { href: '/dispatch', label: 'Dispatch', icon: MessageSquare },
-    { href: '/settings', label: 'Settings', icon: Settings },
+  ]
+
+  // GROUP B: Analysis — library + mode-specific extraNavItems + people
+  const analysisItems: NavGroupItem[] = [
+    {
+      href: '/library',
+      label: config.navLibrary,
+      icon: Library,
+      hasNotifDot: !!newReport,
+      onClick: dismissNotif,
+    },
+    ...config.features.extraNavItems.map(item => ({
+      href: item.href,
+      label: item.label,
+      icon: EXTRA_NAV_ICONS[item.icon] ?? Network,
+    })),
+    { href: '/directs', label: config.navPeople, icon: Users },
+  ]
+
+  // GROUP C: Synthesis — creation and output tools
+  const synthesisItems: NavGroupItem[] = [
+    { href: '/journal', label: config.navJournal, icon: BookOpen },
   ]
 
   useEffect(() => {
@@ -128,7 +158,7 @@ export default function Nav() {
     }
   }, [])
 
-  const dismissNotif = () => {
+  function dismissNotif() {
     if (notifTimerRef.current) clearTimeout(notifTimerRef.current)
     setNotifShowing(false)
     setTimeout(() => setNewReport(null), 200)
@@ -195,30 +225,84 @@ export default function Nav() {
         </Link>
 
         {/* Nav links */}
-        <nav className="flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto">
-          {links.map(({ href, label, icon: Icon }) => {
-            const isActive = pathname === href || (href !== '/' && pathname.startsWith(href))
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={href === '/library' ? dismissNotif : undefined}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors shrink-0',
-                  isActive
-                    ? 'bg-gray-100 text-gray-900 dark:bg-zinc-800 dark:text-zinc-50'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800'
-                )}
-              >
-                <Icon size={13} className="shrink-0" />
-                {label}
-                {href === '/library' && newReport && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                )}
-              </Link>
-            )
-          })}
+        <nav className="flex items-center gap-0.5 flex-1 min-w-0">
+          {/* Standalone: Overview */}
+          <Link
+            href="/"
+            className={cn(NAV_LINK_CLASS, pathname === '/' && NAV_ACTIVE_CLASS)}
+          >
+            <LayoutDashboard size={13} className="shrink-0" />
+            Overview
+          </Link>
+
+          {/* Standalone: Situation Report */}
+          <Link
+            href="/dashboard"
+            className={cn(NAV_LINK_CLASS, (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) && NAV_ACTIVE_CLASS)}
+          >
+            <BarChart2 size={13} className="shrink-0" />
+            Situation Report
+          </Link>
+
+          {/* GROUP A: Intake */}
+          <NavDropdown
+            id="intake"
+            label="Intake"
+            icon={Inbox}
+            items={intakeItems}
+            isOpen={openGroup === 'intake'}
+            onToggle={toggleGroup}
+            onClose={closeGroups}
+            activeArea={activeArea}
+          />
+
+          {/* GROUP B: Analysis */}
+          <NavDropdown
+            id="analysis"
+            label="Analysis"
+            icon={BarChart2Icon}
+            items={analysisItems}
+            isOpen={openGroup === 'analysis'}
+            onToggle={toggleGroup}
+            onClose={closeGroups}
+            activeArea={activeArea}
+          />
+
+          {/* GROUP C: Synthesis */}
+          <NavDropdown
+            id="synthesis"
+            label="Synthesis"
+            icon={Layers}
+            items={synthesisItems}
+            isOpen={openGroup === 'synthesis'}
+            onToggle={toggleGroup}
+            onClose={closeGroups}
+            activeArea={activeArea}
+          />
+
+          {/* Standalone: Dispatch */}
+          <Link
+            href="/dispatch"
+            className={cn(NAV_LINK_CLASS, pathname.startsWith('/dispatch') && NAV_ACTIVE_CLASS)}
+          >
+            <MessageSquare size={13} className="shrink-0" />
+            Dispatch
+          </Link>
+
+          {/* Standalone: Settings */}
+          <Link
+            href="/settings"
+            className={cn(NAV_LINK_CLASS, pathname.startsWith('/settings') && NAV_ACTIVE_CLASS)}
+          >
+            <Settings size={13} className="shrink-0" />
+            Settings
+          </Link>
         </nav>
+
+        {/* Active area badge — persists across pages when ?area= was set */}
+        <Suspense fallback={null}>
+          <ActiveAreaBadge onAreaChange={setActiveArea} />
+        </Suspense>
 
         {/* Right controls */}
         <div className="flex items-center gap-1.5 shrink-0">

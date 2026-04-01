@@ -1,10 +1,14 @@
 // ── Image description (vision) ───────────────────────────────────────────────
 import { getProvider } from './ai-providers'
 import { getSecret } from './settings'
+import { Ollama } from 'ollama'
 
 const VISION_PROMPT = 'Describe this image in detail. Include any visible text, numbers, people (without identifying them), objects, and context that would be useful for research or reporting purposes.'
 
-export async function describeImage(buffer: Buffer, mimeType: string): Promise<string> {
+const OCR_PROMPT = 'Extract all readable text from this image exactly as it appears. Preserve formatting, line breaks, and structure as closely as possible. Output only the extracted text with no commentary or explanation.'
+
+export async function describeImage(buffer: Buffer, mimeType: string, extractText = false): Promise<string> {
+  const prompt = extractText ? OCR_PROMPT : VISION_PROMPT
   const provider = getProvider()
   const b64 = buffer.toString('base64')
 
@@ -20,7 +24,7 @@ export async function describeImage(buffer: Buffer, mimeType: string): Promise<s
           model, max_tokens: 1024,
           messages: [{ role: 'user', content: [
             { type: 'image', source: { type: 'base64', media_type: mimeType, data: b64 } },
-            { type: 'text', text: VISION_PROMPT },
+            { type: 'text', text: prompt },
           ] }],
         }),
       })
@@ -40,13 +44,28 @@ export async function describeImage(buffer: Buffer, mimeType: string): Promise<s
           model,
           messages: [{ role: 'user', content: [
             { type: 'image_url', image_url: { url: `data:${mimeType};base64,${b64}` } },
-            { type: 'text', text: VISION_PROMPT },
+            { type: 'text', text: prompt },
           ] }],
         }),
       })
       const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message: string } }
       if (!res.ok) throw new Error(data.error?.message)
       return data.choices?.[0]?.message.content ?? '[Image stored]'
+    }
+
+    if (provider === 'ollama') {
+      // Use a vision-capable Ollama model (default: llava).
+      // Set OLLAMA_VISION_MODEL in your environment to use a different model (e.g. moondream, bakllava).
+      const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
+      // moondream is ~1.7 GB — much lighter than llava (~4.7 GB).
+      // Ollama swaps models on demand so phi4-mini and moondream don't run simultaneously.
+      const model = process.env.OLLAMA_VISION_MODEL ?? 'moondream'
+      const ollama = new Ollama({ host })
+      const res = await ollama.chat({
+        model,
+        messages: [{ role: 'user', content: prompt, images: [b64] }],
+      })
+      return res.message.content || '[Image stored]'
     }
 
     if (provider === 'google') {
@@ -60,7 +79,7 @@ export async function describeImage(buffer: Buffer, mimeType: string): Promise<s
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [
             { inline_data: { mime_type: mimeType, data: b64 } },
-            { text: VISION_PROMPT },
+            { text: prompt },
           ] }] }),
         }
       )
@@ -72,5 +91,5 @@ export async function describeImage(buffer: Buffer, mimeType: string): Promise<s
     console.warn('Image description failed:', e)
   }
 
-  return '[Image stored — switch to a cloud AI provider (Anthropic, OpenAI, or Google) to enable automatic image descriptions]'
+  return '[Image stored — no vision-capable model available. For Ollama, pull a vision model (e.g. ollama pull llava) and set OLLAMA_VISION_MODEL=llava]'
 }

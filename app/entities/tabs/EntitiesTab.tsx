@@ -2,11 +2,13 @@ import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import type { ModeConfig } from '@/lib/mode'
 import EntitiesOverviewSearch from '../EntitiesOverviewSearch'
+import EntitiesExportButton from './EntitiesExportButton'
 
 interface Props {
   selectedType?: string
   sort: string
   modeConfig: ModeConfig
+  focus?: string
 }
 
 const ENTITY_COLORS: Record<string, string> = {
@@ -27,7 +29,7 @@ const ENTITY_LABELS: Record<string, string> = {
 
 const TYPE_OPTIONS = ['person', 'organisation', 'location', 'date', 'financial']
 
-export default async function EntitiesTab({ selectedType, sort, modeConfig }: Props) {
+export default async function EntitiesTab({ selectedType, sort, modeConfig, focus }: Props) {
   const allEntities = await prisma.reportEntity.findMany({
     orderBy: { createdAt: 'desc' },
   })
@@ -152,6 +154,20 @@ export default async function EntitiesTab({ selectedType, sort, modeConfig }: Pr
               {s === 'frequency' ? 'Most frequent' : s === 'name' ? 'Name (A–Z)' : 'Most recent'}
             </Link>
           ))}
+          <div className="ml-auto">
+            <EntitiesExportButton entities={entityList.map(e => ({
+              name: e.name,
+              type: e.type,
+              count: e.count,
+              contexts: e.contexts,
+              reports: e.reports.map(r => ({
+                id: r!.id,
+                title: r!.title,
+                area: r!.area,
+                createdAt: r!.createdAt.toISOString(),
+              })),
+            }))} />
+          </div>
         </div>
 
         <EntitiesOverviewSearch
@@ -169,6 +185,7 @@ export default async function EntitiesTab({ selectedType, sort, modeConfig }: Pr
           }))}
           entityColors={ENTITY_COLORS}
           entityLabels={ENTITY_LABELS}
+          focus={focus}
         />
       </div>
     </div>

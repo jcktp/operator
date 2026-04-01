@@ -8,6 +8,7 @@ import TimelineTab from './tabs/TimelineTab'
 import StoryMapTab from './tabs/StoryMapTab'
 import StorylineTab from './tabs/StorylineTab'
 import OsintTab from './tabs/OsintTab'
+import InspectorSidebar from '@/components/InspectorSidebar'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,9 +23,9 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
 export default async function EntitiesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; type?: string; sort?: string }>
+  searchParams: Promise<{ tab?: string; type?: string; sort?: string; focus?: string }>
 }) {
-  const { tab = 'entities', type: selectedType, sort = 'frequency' } = await searchParams
+  const { tab = 'entities', type: selectedType, sort = 'frequency', focus } = await searchParams
 
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
   const modeConfig = getModeConfig(modeRow?.value)
@@ -43,6 +44,9 @@ export default async function EntitiesPage({
 
   const activeTab = tabs.find(t => t.id === tab)?.id ?? 'entities'
 
+  // Show Inspector sidebar on entity-interactive tabs
+  const showInspector = activeTab === 'entities' || activeTab === 'story-map'
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -55,18 +59,18 @@ export default async function EntitiesPage({
           Entities, timeline, map, and story tools across your {modeConfig.navLibrary.toLowerCase()}.
         </p>
 
-        {/* Tab nav */}
-        <div className="flex gap-1 mt-5 border-b border-gray-200 dark:border-zinc-700">
+        {/* Tab nav — pill style */}
+        <div className="flex gap-1 mt-5 flex-wrap">
           {tabs.map(t => {
             const isActive = t.id === activeTab
             return (
               <Link
                 key={t.id}
                 href={`/entities?tab=${t.id}`}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                   isActive
-                    ? 'border-gray-900 dark:border-zinc-100 text-gray-900 dark:text-zinc-50'
-                    : 'border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:border-gray-300 dark:hover:border-zinc-600'
+                    ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
+                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800'
                 }`}
               >
                 {TAB_ICONS[t.id]}
@@ -77,25 +81,29 @@ export default async function EntitiesPage({
         </div>
       </div>
 
-      {/* Tab content */}
-      {activeTab === 'entities' && (
-        <EntitiesTab selectedType={selectedType} sort={sort} modeConfig={modeConfig} />
-      )}
-
-      {activeTab === 'timeline' && modeConfig.features.timeline && (
-        <TimelineTab modeConfig={modeConfig} />
-      )}
-
-      {activeTab === 'story-map' && (
-        <StoryMapTab />
-      )}
-
-      {activeTab === 'storyline' && (
-        <StorylineTab />
-      )}
-
-      {activeTab === 'resources' && modeConfig.features.investigationTemplate && (
-        <OsintTab />
+      {/* Tab content — with optional Inspector sidebar */}
+      {showInspector ? (
+        <div className="flex gap-6 items-start">
+          <div className="flex-1 min-w-0">
+            {activeTab === 'entities' && (
+              <EntitiesTab selectedType={selectedType} sort={sort} modeConfig={modeConfig} focus={focus} />
+            )}
+            {activeTab === 'story-map' && <StoryMapTab />}
+          </div>
+          <aside className="w-72 shrink-0 sticky top-20 h-[calc(100vh-120px)] border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-sm overflow-hidden bg-white dark:bg-zinc-900">
+            <InspectorSidebar />
+          </aside>
+        </div>
+      ) : (
+        <>
+          {activeTab === 'timeline' && modeConfig.features.timeline && (
+            <TimelineTab modeConfig={modeConfig} />
+          )}
+          {activeTab === 'storyline' && <StorylineTab />}
+          {activeTab === 'resources' && modeConfig.features.investigationTemplate && (
+            <OsintTab />
+          )}
+        </>
       )}
     </div>
   )

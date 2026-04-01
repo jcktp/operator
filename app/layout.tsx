@@ -8,6 +8,7 @@ import { DispatchProvider } from '@/components/DispatchContext'
 import { ModeProvider } from '@/components/ModeContext'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import MainLayout from '@/components/MainLayout'
+import { InspectorProvider } from '@/components/InspectorContext'
 import { prisma } from '@/lib/db'
 
 const dmSans = DM_Sans({
@@ -57,18 +58,18 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={`${dmSans.variable} ${dmMono.variable} ${caveat.variable} h-full${isDark ? ' dark' : ''}`}>
-      <head>
+      <body className="min-h-full bg-background">
         {/* Inline script prevents flash-of-light on dark mode reload. Falls back to system preference if no explicit setting saved. */}
         <Script id="dark-mode-init" strategy="beforeInteractive">{`try{var s=localStorage.getItem('dark_mode');if(s==='true'||(s!=='false'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`}</Script>
-      </head>
-      <body className="min-h-full bg-background">
         <ThemeProvider initialTheme={isDark ? 'dark' : 'light'}>
           <ShutdownProvider>
             <DispatchProvider>
-              <ModeProvider initialMode={appMode}>
-                <Nav />
-                <MainLayout>{children}</MainLayout>
-              </ModeProvider>
+              <InspectorProvider>
+                <ModeProvider initialMode={appMode}>
+                  <Nav />
+                  <MainLayout>{children}</MainLayout>
+                </ModeProvider>
+              </InspectorProvider>
             </DispatchProvider>
           </ShutdownProvider>
         </ThemeProvider>

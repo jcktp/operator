@@ -152,7 +152,20 @@ if [ ! -f ".env.local" ]; then
   cat > .env.local <<EOF
 DATABASE_URL="file:$(pwd)/prisma/dev.db"
 
-# Optional: set API keys here as an alternative to the Settings page in the app.
+# ── AI provider ───────────────────────────────────────────────────────────────
+# Which AI backend to use. Options: ollama | anthropic | openai | google | groq | xai | perplexity | mistral
+# Can also be changed from the Settings page inside the app.
+# AI_PROVIDER="ollama"
+
+# ── Ollama (local, default) ───────────────────────────────────────────────────
+# OLLAMA_HOST="http://localhost:11434"
+# OLLAMA_MODEL="phi4-mini"          # text model — change in Settings or here
+# OLLAMA_VISION_MODEL="moondream"   # vision model for image uploads (run: ollama pull moondream)
+#                                   # moondream is ~1.7 GB; Ollama swaps it in/out on demand
+# OLLAMA_WEB_ACCESS="false"         # set to "true" to enable web search in Dispatch (requires BRAVE_SEARCH_KEY)
+
+# ── Cloud API keys ────────────────────────────────────────────────────────────
+# Optional: set here as an alternative to the Settings page in the app.
 # Keys entered in Settings are stored in the local database and take precedence.
 ANTHROPIC_API_KEY=""
 OPENAI_API_KEY=""
@@ -160,6 +173,20 @@ GOOGLE_API_KEY=""
 GROQ_API_KEY=""
 XAI_API_KEY=""
 PERPLEXITY_API_KEY=""
+# MISTRAL_API_KEY=""
+
+# ── Model overrides (cloud providers) ────────────────────────────────────────
+# ANTHROPIC_MODEL="claude-haiku-4-5-20251001"
+# OPENAI_MODEL="gpt-4o-mini"
+# GOOGLE_MODEL="gemini-2.5-flash"
+# MISTRAL_MODEL="mistral-small-latest"
+# GROQ_MODEL="llama-3.1-8b-instant"
+# XAI_MODEL="grok-2-latest"
+# PERPLEXITY_MODEL="sonar"
+
+# ── Optional features ─────────────────────────────────────────────────────────
+# BRAVE_SEARCH_KEY=""               # Brave Search API key for Dispatch web search
+# AIR_GAP_MODE="false"              # set to "true" to block all outbound network calls (Ollama only)
 EOF
   step ".env.local created"
 else
@@ -310,6 +337,21 @@ prisma.setting.findUnique({ where: { key: 'ollama_model' } })
     set_status "Downloading AI model…" "$MODEL — this only happens once"
     ollama pull "$MODEL" || error "Failed to pull model $MODEL"
     step "Model $MODEL ready"
+  fi
+
+  # Optional vision model — only pull if OLLAMA_VISION_MODEL is explicitly set in .env.local
+  VISION_MODEL=""
+  if [ -f ".env.local" ]; then
+    VISION_MODEL=$(grep -E '^OLLAMA_VISION_MODEL=' .env.local | head -1 | sed 's/OLLAMA_VISION_MODEL=//;s/"//g;s/'"'"'//g' || true)
+  fi
+  if [ -n "$VISION_MODEL" ]; then
+    if ollama list 2>/dev/null | grep -q "^${VISION_MODEL}"; then
+      step "Vision model ($VISION_MODEL) already available"
+    else
+      step "Pulling vision model $VISION_MODEL (for image analysis)…"
+      set_status "Downloading vision model…" "$VISION_MODEL — needed for image uploads"
+      ollama pull "$VISION_MODEL" || warn "Could not pull vision model $VISION_MODEL — image analysis will be skipped"
+    fi
   fi
 fi
 

@@ -16,12 +16,20 @@ export default function JournalismComparisonSection({
   comparison: JournalismComparisonData
   prevTitle?: string
 }) {
+  // Guard against malformed AI responses stored in DB: ensure string arrays contain only strings
+  const safePassages = comparison.passages.filter(
+    p => p && typeof p.text === 'string' && typeof p.appearsIn === 'string'
+  )
+  const safeEntitiesAdded = comparison.entitiesAdded.filter(e => typeof e === 'string')
+  const safeEntitiesRemoved = comparison.entitiesRemoved.filter(e => typeof e === 'string')
+  const safeRedactions = comparison.possibleRedactions.filter(r => typeof r === 'string')
+
   const hasContent =
-    comparison.passages.length > 0 ||
+    safePassages.length > 0 ||
     comparison.figures.length > 0 ||
-    comparison.entitiesAdded.length > 0 ||
-    comparison.entitiesRemoved.length > 0 ||
-    comparison.possibleRedactions.length > 0
+    safeEntitiesAdded.length > 0 ||
+    safeEntitiesRemoved.length > 0 ||
+    safeRedactions.length > 0
 
   if (!hasContent && !comparison.headline) return null
 
@@ -44,11 +52,11 @@ export default function JournalismComparisonSection({
         )}
 
         {/* Passages */}
-        {comparison.passages.length > 0 && (
+        {safePassages.length > 0 && (
           <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
             <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Claims & passages</p>
             <div className="space-y-2">
-              {comparison.passages.map((p, i) => (
+              {safePassages.map((p, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <span className={`shrink-0 mt-0.5 ${p.appearsIn === 'current' ? 'text-green-600' : 'text-red-500'}`}>
                     {p.appearsIn === 'current' ? <Plus size={12} /> : <Minus size={12} />}
@@ -88,13 +96,13 @@ export default function JournalismComparisonSection({
         )}
 
         {/* Entity changes */}
-        {(comparison.entitiesAdded.length > 0 || comparison.entitiesRemoved.length > 0) && (
+        {(safeEntitiesAdded.length > 0 || safeEntitiesRemoved.length > 0) && (
           <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex gap-6 flex-wrap">
-            {comparison.entitiesAdded.length > 0 && (
+            {safeEntitiesAdded.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">Named entities added</p>
                 <div className="flex flex-wrap gap-1">
-                  {comparison.entitiesAdded.map((e, i) => (
+                  {safeEntitiesAdded.map((e, i) => (
                     <span key={i} className="text-xs bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 px-2 py-0.5 rounded-full">
                       + {e}
                     </span>
@@ -102,11 +110,11 @@ export default function JournalismComparisonSection({
                 </div>
               </div>
             )}
-            {comparison.entitiesRemoved.length > 0 && (
+            {safeEntitiesRemoved.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">Named entities removed</p>
                 <div className="flex flex-wrap gap-1">
-                  {comparison.entitiesRemoved.map((e, i) => (
+                  {safeEntitiesRemoved.map((e, i) => (
                     <span key={i} className="text-xs bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-800 px-2 py-0.5 rounded-full">
                       − {e}
                     </span>
@@ -118,14 +126,14 @@ export default function JournalismComparisonSection({
         )}
 
         {/* Possible redactions */}
-        {comparison.possibleRedactions.length > 0 && (
+        {safeRedactions.length > 0 && (
           <div className="px-4 py-3">
             <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1">
               <EyeOff size={10} />
               Possible redactions
             </p>
             <div className="space-y-1.5">
-              {comparison.possibleRedactions.map((r, i) => (
+              {safeRedactions.map((r, i) => (
                 <p key={i} className="text-sm text-gray-600 dark:text-zinc-300 flex items-start gap-2">
                   <span className="shrink-0 text-red-400 mt-0.5">▪</span>
                   {r}

@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     const jobId = formData.get('jobId') as string | null      // group multiple files into one job
     const storyName = formData.get('storyName') as string | null
     const sortOrder = parseInt(formData.get('sortOrder') as string ?? '0', 10)
+    const extractText = formData.get('extractText') === 'true'
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
       // For images, do vision analysis synchronously (much faster than full analysis)
       const mimeType = getMimeType(fileType)
       try {
-        rawContent = await describeImage(buffer, mimeType)
+        rawContent = await describeImage(buffer, mimeType, extractText)
         displayContent = `image:${join(area, savedFileName)}`
       } catch {
         rawContent = `[Image: ${file.name}]`

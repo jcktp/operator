@@ -36,6 +36,7 @@ export default function UploadTab() {
   const [storyName, setStoryName] = useState('')
   const [linkInput, setLinkInput] = useState('')
   const [linkError, setLinkError] = useState('')
+  const [extractText, setExtractText] = useState(false)
 
   const loadDirects = useCallback(async () => {
     if (directsLoaded) return
@@ -123,6 +124,7 @@ export default function UploadTab() {
           if (storyName.trim()) formData.append('storyName', storyName.trim())
           if (jobId) formData.append('jobId', jobId)
           formData.append('sortOrder', String(idx - 1))
+          if (extractText && item.file?.type.startsWith('image/')) formData.append('extractText', 'true')
           const res = await fetch('/api/upload-background', { method: 'POST', body: formData })
           const data = await res.json() as { error?: string; jobId?: string; itemId?: string }
           if (!res.ok) {
@@ -329,6 +331,20 @@ export default function UploadTab() {
             className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 placeholder-gray-400 dark:placeholder-zinc-500" />
           <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Groups these documents together under a named project across the app</p>
         </div>
+        {queue.some(q => q.type === 'file' && q.file?.type.startsWith('image/')) && (
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={extractText}
+              onChange={e => setExtractText(e.target.checked)}
+              className="mt-0.5 accent-gray-900 dark:accent-zinc-100 w-3.5 h-3.5 shrink-0"
+            />
+            <div>
+              <span className="text-xs font-medium text-gray-700 dark:text-zinc-200">Extract text from image</span>
+              <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">Run OCR to pull readable text from screenshots, documents, or photos</p>
+            </div>
+          </label>
+        )}
       </div>
 
       <button type="submit" disabled={queue.length === 0 || !allHaveArea || submitting || pendingCount === 0}

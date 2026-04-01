@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Trash2, MessageSquare, Plus, AlertTriangle } from 'lucide-react'
 import { formatRelativeDate } from '@/lib/utils'
 import DispatchPanel from './DispatchPanel'
@@ -26,14 +25,12 @@ export default function DispatchPageClient({ chats: initial, context }: Props) {
   const [chats, setChats] = useState(initial)
   const [selectedChat, setSelectedChat] = useState<ChatSummary | null>(null)
   const [clearConfirm, setClearConfirm] = useState(false)
-  const router = useRouter()
 
   const deleteChat = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setChats(c => c.filter(x => x.id !== id))
     if (selectedChat?.id === id) setSelectedChat(null)
     await fetch(`/api/dispatch/${id}`, { method: 'DELETE' })
-    router.refresh()
   }
 
   const clearAll = async () => {
@@ -46,63 +43,52 @@ export default function DispatchPageClient({ chats: initial, context }: Props) {
     setChats([])
     setSelectedChat(null)
     setClearConfirm(false)
-    router.refresh()
   }
 
   const panelKey = selectedChat?.id ?? 'new'
 
   return (
-    <div className="flex gap-6 items-start">
-      {/* Left: chat list */}
-      <div className="w-72 shrink-0 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Saved chats</span>
-          <div className="flex items-center gap-1">
-            {chats.length > 0 && (
-              <button
-                onClick={clearAll}
-                className={`text-xs px-2 py-1 rounded-lg transition-colors ${
-                  clearConfirm
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {clearConfirm ? 'Confirm clear all' : 'Clear all'}
-              </button>
-            )}
-            <button
-              onClick={() => setSelectedChat(null)}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              title="New chat"
-            >
-              <Plus size={14} />
-            </button>
+    <div className="fixed top-14 left-0 right-0 bottom-0 z-10 flex bg-white dark:bg-zinc-900 overflow-hidden">
+      {/* Sidebar */}
+      <aside className="w-64 shrink-0 flex flex-col bg-gray-50 dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 h-full">
+        {/* Sidebar header */}
+        <div className="px-4 py-3.5 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <MessageSquare size={14} className="text-gray-500 dark:text-zinc-400" />
+            <span className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Dispatch</span>
           </div>
+          <button
+            onClick={() => setSelectedChat(null)}
+            title="New chat"
+            className="p-1.5 rounded-lg text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <Plus size={14} />
+          </button>
         </div>
 
-        {chats.length === 0 ? (
-          <div className="text-center py-10 text-xs text-gray-400">
-            <MessageSquare size={20} className="mx-auto mb-2 opacity-30" />
-            No saved chats yet
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {chats.map(chat => (
+        {/* Chat list */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+          {chats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-2 text-center px-4">
+              <MessageSquare size={20} className="text-gray-300 dark:text-zinc-600" />
+              <p className="text-xs text-gray-400 dark:text-zinc-500">No saved chats yet.<br />Start a conversation.</p>
+            </div>
+          ) : (
+            chats.map(chat => (
               <div
                 key={chat.id}
                 onClick={() => setSelectedChat(chat)}
-                className={`flex items-start gap-3 px-3 py-3 rounded-xl cursor-pointer group transition-colors ${
+                className={`flex items-start gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer group transition-colors ${
                   selectedChat?.id === chat.id
-                    ? 'bg-gray-900 text-white'
-                    : 'hover:bg-gray-100'
+                    ? 'bg-gray-900 dark:bg-zinc-100'
+                    : 'hover:bg-gray-200 dark:hover:bg-zinc-800'
                 }`}
               >
-                <MessageSquare size={13} className={`shrink-0 mt-0.5 ${selectedChat?.id === chat.id ? 'text-gray-400' : 'text-gray-400'}`} />
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-medium truncate ${selectedChat?.id === chat.id ? 'text-white' : 'text-gray-800'}`}>
+                  <p className={`text-xs font-medium truncate ${selectedChat?.id === chat.id ? 'text-white dark:text-zinc-900' : 'text-gray-800 dark:text-zinc-100'}`}>
                     {chat.title}
                   </p>
-                  <p className={`text-[10px] mt-0.5 ${selectedChat?.id === chat.id ? 'text-gray-400' : 'text-gray-400'}`}>
+                  <p className={`text-[10px] mt-0.5 truncate ${selectedChat?.id === chat.id ? 'text-gray-400 dark:text-zinc-500' : 'text-gray-400 dark:text-zinc-500'}`}>
                     {chat.messageCount} msgs · {formatRelativeDate(new Date(chat.updatedAt))}
                   </p>
                 </div>
@@ -110,23 +96,41 @@ export default function DispatchPageClient({ chats: initial, context }: Props) {
                   onClick={e => deleteChat(chat.id, e)}
                   className={`shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${
                     selectedChat?.id === chat.id
-                      ? 'text-gray-400 hover:text-red-400'
-                      : 'text-gray-300 hover:text-red-500'
+                      ? 'text-gray-400 dark:text-zinc-500 hover:text-red-400'
+                      : 'text-gray-300 dark:text-zinc-600 hover:text-red-500'
                   }`}
                 >
                   <Trash2 size={11} />
                 </button>
               </div>
-            ))}
+            ))
+          )}
+        </div>
+
+        {/* Clear all footer */}
+        {chats.length > 0 && (
+          <div className="p-3 border-t border-gray-200 dark:border-zinc-800 shrink-0">
+            <button
+              onClick={clearAll}
+              className={`w-full text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+                clearConfirm
+                  ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900'
+                  : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-800'
+              }`}
+            >
+              {clearConfirm && <AlertTriangle size={11} />}
+              {clearConfirm ? 'Confirm — clear all chats' : 'Clear all'}
+            </button>
           </div>
         )}
-      </div>
+      </aside>
 
-      {/* Right: dispatch panel */}
-      <div className="flex-1 min-w-0 h-[calc(100vh-210px)] min-h-[500px]">
+      {/* Chat panel */}
+      <div className="flex-1 min-w-0 h-full">
         <DispatchPanel
           key={panelKey}
           context={context}
+          fullPage
           initialChat={selectedChat ? {
             id: selectedChat.id,
             title: selectedChat.title,

@@ -28,6 +28,7 @@ export default async function StoryMapTab() {
         reportAreas: {},
         reportStoryNames: {},
         contexts: [],
+        contextsByReport: [],
       }
     }
     const g = grouped[e.name]
@@ -39,6 +40,15 @@ export default async function StoryMapTab() {
     }
     if (e.context && !g.contexts.includes(e.context)) {
       g.contexts.push(e.context)
+    }
+    // Build per-report context entries for the inspector (each unique context per report)
+    if (e.context && !g.contextsByReport.some(c => c.reportId === e.reportId && c.context === e.context)) {
+      g.contextsByReport.push({
+        reportId: e.reportId,
+        reportTitle: e.report.title,
+        area: e.report.area,
+        context: e.context,
+      })
     }
   }
 

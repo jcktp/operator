@@ -99,13 +99,5 @@ export default async function DispatchPage() {
     }
   })
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Dispatch</h1>
-        <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">AI conversations about your {modeConfig.documentLabelPlural.toLowerCase()} — auto-saved</p>
-      </div>
-      <DispatchPageClient chats={serialized} context={contextLines.join('\n')} />
-    </div>
-  )
+  return <DispatchPageClient chats={serialized} context={contextLines.join('\n')} />
 }

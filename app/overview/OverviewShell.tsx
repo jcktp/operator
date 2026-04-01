@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AreaBadge, InsightTypeBadge, StatusBadge } from '@/components/Badge'
-import { ArrowRight, Upload, AlertTriangle, HelpCircle, MessageSquare, CheckCircle2, FileStack, Loader2, X, Sparkles } from 'lucide-react'
+import { ArrowRight, Upload, AlertTriangle, HelpCircle, CheckCircle2, FileStack, Loader2, X, Sparkles } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { useDispatch } from '@/components/DispatchContext'
 import { useMode } from '@/components/ModeContext'
@@ -56,7 +56,7 @@ export interface OverviewData {
 // ── Shell ────────────────────────────────────────────────────────────────────
 
 export default function OverviewShell({ data, activeFrom, activeTo }: { data: OverviewData; activeFrom?: string; activeTo?: string }) {
-  const { open: dispatchOpen, setOpen: setDispatchOpen, setAiContext } = useDispatch()
+  const { setAiContext } = useDispatch()
   const mode = useMode()
   const labels = getReportLabels(mode.id)
   const { stats, areas, selectedArea, activeAreas, topInsights, topQuestions, resolvedFlagItems, recentReports, context, areaMetrics } = data
@@ -70,7 +70,6 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
     return q ? `/?${q}` : '/'
   }
 
-  const scrollYRef = useRef(0)
   const [catchMeUpOpen, setCatchMeUpOpen] = useState(false)
   const [catchMeUpLoading, setCatchMeUpLoading] = useState(false)
   const [catchMeUpText, setCatchMeUpText] = useState<string | null>(null)
@@ -123,18 +122,6 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
             <FileStack size={13} />
             One Pager
           </Link>
-          <button
-            onClick={() => { scrollYRef.current = window.scrollY; setDispatchOpen(!dispatchOpen); requestAnimationFrame(() => window.scrollTo(0, scrollYRef.current)) }}
-            className={cn(
-              'inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors',
-              dispatchOpen
-                ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-gray-900 dark:border-zinc-100'
-                : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-200 border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600 hover:text-gray-900 dark:hover:text-zinc-50'
-            )}
-          >
-            <MessageSquare size={13} />
-            Dispatch
-          </button>
           <Link
             href="/upload"
             className="inline-flex items-center gap-1.5 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors"

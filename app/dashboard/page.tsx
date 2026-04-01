@@ -11,7 +11,7 @@ import { StatCard, TrendIcon, HealthBar } from './DashboardCards'
 import DashboardFilters from './DashboardFilters'
 import DashboardCharts from './DashboardCharts'
 import ExportButton from './ExportButton'
-import JournalismBrief from './JournalismBrief'
+import IntelligenceBriefClient from './IntelligenceBriefClient'
 import type { AreaHealthDatum, TimelineDatum, InsightTypeDatum, MetricAreaDatum } from './DashboardCharts'
 import type { ExportRow } from './ExportButton'
 
@@ -70,15 +70,67 @@ export default async function DashboardPage({
   ])
   const modeConfig = getModeConfig(modeRow?.value)
 
-  // Journalism mode gets its own intelligence brief — skip the generic dashboard
+  // Fetch recent timeline events for modes that have the timeline feature
+  const recentEvents = modeConfig.features.timeline
+    ? await prisma.timelineEvent.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        include: { report: { select: { id: true, title: true, area: true } } },
+      })
+    : []
+
+  // Modes with entities get the Intelligence Brief — full-width 70/30 workspace
   if (modeConfig.features.entities) {
+    // Fetch Intelligence Brief data server-side
+    const rawEntities = await prisma.reportEntity.groupBy({
+      by: ['name', 'type'],
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 40,
+    })
+    const entityMap: Record<string, Array<{ name: string; count: number }>> = {}
+    for (const e of rawEntities) {
+      if (!entityMap[e.type]) entityMap[e.type] = []
+      if (entityMap[e.type].length < 6) entityMap[e.type].push({ name: e.name, count: e._count.id })
+    }
+    const entityGroups = Object.entries(entityMap)
+      .filter(([, items]) => items.length > 0)
+      .sort(([a], [b]) => {
+        const order = ['person', 'organisation', 'location', 'financial', 'date']
+        return (order.indexOf(a) ?? 99) - (order.indexOf(b) ?? 99)
+      })
+      .slice(0, 4)
+      .map(([type, entities]) => ({ type, entities }))
+
+    const briefEvents = await prisma.timelineEvent.findMany({
+      orderBy: [{ dateSortKey: 'desc' }, { createdAt: 'desc' }],
+      take: 12,
+      include: { report: { select: { id: true, title: true, area: true } } },
+    })
+
+    const stories = await prisma.story.findMany({ orderBy: { updatedAt: 'desc' }, take: 10 })
+    let unverifiedCount = 0
+    const storySummaries = stories.map(s => {
+      const claims = (JSON.parse(s.claimStatuses ?? '[]') as Array<{ status: string }>) ?? []
+      const unverified = claims.filter(c => c.status === 'unverified').length
+      unverifiedCount += unverified
+      return { id: s.id, title: s.title, unverified, updatedAt: s.updatedAt.toISOString() }
+    })
+
     return (
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Intelligence Brief</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Entities, timeline, and claims extracted from all documents</p>
         </div>
-        <JournalismBrief />
+        <IntelligenceBriefClient
+          entityGroups={entityGroups}
+          recentEvents={briefEvents.map(e => ({ id: e.id, dateText: e.dateText, event: e.event, report: e.report }))}
+          storySummaries={storySummaries}
+          totalEntities={rawEntities.length}
+          totalEvents={briefEvents.length}
+          unverifiedCount={unverifiedCount}
+        />
       </div>
     )
   }
@@ -369,7 +421,7 @@ export default async function DashboardPage({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {allFlags.slice(0, 6).map((f, i) => (
                   <Link key={i} href={`/reports/${f.reportId}`}
-                    className="group bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 hover:border-red-200 dark:hover:border-red-800 hover:shadow-sm transition-all flex flex-col gap-2">
+                    className="group bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl p-4 hover:border-red-200 dark:hover:border-red-800 hover:shadow-sm transition-all flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span className={cn(
                         'text-xs font-bold px-1.5 py-0.5 rounded',
@@ -397,7 +449,7 @@ export default async function DashboardPage({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {allQuestions.slice(0, 6).map((q, i) => (
                   <Link key={i} href={`/reports/${q.reportId}`}
-                    className="group bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-sm transition-all flex flex-col gap-2">
+                    className="group bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl p-4 hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-sm transition-all flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300">?</span>
                       <AreaBadge area={q.area} />
@@ -409,6 +461,34 @@ export default async function DashboardPage({
                     </span>
                   </Link>
                 ))}
+              </div>
+            </section>
+          )}
+
+          {recentEvents.length > 0 && (
+            <section>
+              <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Clock size={11} /> Recent Events
+              </h2>
+              <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-sm p-5">
+                <div className="relative border-l-2 border-gray-200 dark:border-zinc-800 ml-1">
+                  {recentEvents.map(e => (
+                    <div key={e.id} className="relative pl-6 pb-4 last:pb-0">
+                      <span className="absolute left-[-5px] top-[6px] w-2.5 h-2.5 rounded-full border-2 bg-white dark:bg-zinc-900 border-gray-400 dark:border-zinc-500" />
+                      <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                        <span className="text-[11px] font-mono text-gray-400 dark:text-zinc-500">{e.dateText}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400">{e.report.area}</span>
+                      </div>
+                      <p className="text-sm text-gray-800 dark:text-zinc-200 leading-snug">{e.event}</p>
+                      <Link
+                        href={`/reports/${e.report.id}`}
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-0.5 block"
+                      >
+                        {e.report.title}
+                      </Link>
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
           )}

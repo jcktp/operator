@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { X, MapPin, Loader2, Pencil, Minus, Pentagon, Trash2 } from 'lucide-react'
-import type { LocationPin, DrawMode, DrawLayerHandle } from '@/lib/map/olMap'
+import { MapPin, Loader2 } from 'lucide-react'
+import type { LocationPin } from '@/lib/map/olMap'
+import { useInspector } from '@/components/InspectorContext'
 
 export interface RawLocation {
   name: string
@@ -11,6 +12,7 @@ export interface RawLocation {
   reportAreas: Record<string, string>
   reportStoryNames: Record<string, string>
   contexts: string[]
+  contextsByReport: Array<{ reportId: string; reportTitle: string; area: string; context: string }>
 }
 
 interface Props {
@@ -52,29 +54,72 @@ async function geocodeAll(
   return { pins, failed }
 }
 
+// localStorage-backed geocode cache to avoid re-hitting Nominatim on every render
+function readCache(): Record<string, { lat: number; lon: number }> {
+  if (typeof window === 'undefined') return {}
+  try { return JSON.parse(localStorage.getItem('geocode_cache_v1') ?? '{}') } catch { return {} }
+}
+function writeCache(cache: Record<string, { lat: number; lon: number }>) {
+  try { localStorage.setItem('geocode_cache_v1', JSON.stringify(cache)) } catch {}
+}
+
 export default function StoryMapClient({ locations, storyNames }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const destroyRef = useRef<(() => void) | null>(null)
+  const geocodedKeyRef = useRef<string>('')
   const [allPins, setAllPins] = useState<LocationPin[]>([])
   const [pins, setPins] = useState<LocationPin[]>([])
   const [failedLocations, setFailedLocations] = useState<string[]>([])
   const [geocoding, setGeocoding] = useState(false)
   const [geocodedCount, setGeocodedCount] = useState(0)
   const [mapReady, setMapReady] = useState(false)
-  const [selectedPin, setSelectedPin] = useState<LocationPin | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activeLayer, setActiveLayer] = useState<'osm' | 'satellite' | 'topo'>('osm')
   const [activeStory, setActiveStory] = useState<string | null>(null)
-  const [drawMode, setDrawMode] = useState<DrawMode | null>(null)
-  const drawRef = useRef<DrawLayerHandle | null>(null)
+  const { setSelected } = useInspector()
 
-  // Geocode all locations once
+  // Geocode all locations — but only when the set of names actually changes.
+  // Results are cached in localStorage to avoid re-hitting Nominatim on every page visit.
   useEffect(() => {
     if (locations.length === 0) return
+    const key = locations.map(l => l.name).sort().join('|')
+    if (key === geocodedKeyRef.current) return
+    geocodedKeyRef.current = key
+
+    const cache = readCache()
+    const uncached = locations.filter(l => !(l.name in cache))
+
+    const buildPins = (coordMap: Record<string, { lat: number; lon: number }>) =>
+      locations
+        .filter(l => l.name in coordMap)
+        .map(l => ({ ...l, ...coordMap[l.name] }))
+
+    // If everything is cached, skip network calls entirely
+    if (uncached.length === 0) {
+      const p = buildPins(cache)
+      setAllPins(p)
+      setPins(p)
+      setFailedLocations(locations.filter(l => !(l.name in cache)).map(l => l.name))
+      return
+    }
+
     setGeocoding(true)
     setGeocodedCount(0)
-    geocodeAll(locations, n => setGeocodedCount(n))
-      .then(({ pins: p, failed }) => { setAllPins(p); setPins(p); setFailedLocations(failed); setGeocoding(false) })
+    geocodeAll(uncached, n => setGeocodedCount(n))
+      .then(({ pins: newPins, failed }) => {
+        const updatedCache = { ...cache }
+        for (const pin of newPins) updatedCache[pin.name] = { lat: pin.lat, lon: pin.lon }
+        writeCache(updatedCache)
+        const p = buildPins(updatedCache)
+        const allFailed = [
+          ...locations.filter(l => !(l.name in updatedCache)).map(l => l.name),
+          ...failed,
+        ]
+        setAllPins(p)
+        setPins(p)
+        setFailedLocations(allFailed)
+        setGeocoding(false)
+      })
       .catch(e => { setError(String(e)); setGeocoding(false) })
   }, [locations])
 
@@ -93,19 +138,23 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
   const initMap = useCallback(async (pinsToShow: LocationPin[], layer: 'osm' | 'satellite' | 'topo') => {
     if (!mapRef.current || pinsToShow.length === 0) { setMapReady(true); return }
     destroyRef.current?.()
-    drawRef.current?.destroy()
     const { initStoryMap } = await import('@/lib/map/olMap')
-    const result = await initStoryMap(mapRef.current, pinsToShow, pin => setSelectedPin(pin), layer)
+    const result = await initStoryMap(mapRef.current, pinsToShow, pin => setSelected({
+      type: 'location',
+      name: pin.name,
+      reportIds: pin.reportIds,
+      reportTitles: pin.reportTitles,
+      contextsByReport: pin.contextsByReport,
+    }), layer)
     destroyRef.current = result.destroy
-    drawRef.current = result.drawLayer
     setMapReady(true)
-  }, [])
+  }, [setSelected])
 
   useEffect(() => {
     if (!geocoding) {
       initMap(pins, activeLayer).catch(e => setError(String(e)))
     }
-    return () => { destroyRef.current?.(); destroyRef.current = null; drawRef.current = null }
+    return () => { destroyRef.current?.(); destroyRef.current = null }
   }, [geocoding, pins, activeLayer, initMap])
 
   if (locations.length === 0) {
@@ -197,9 +246,7 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
         </div>
       )}
 
-      <div className="flex gap-4 items-start">
-        {/* Map */}
-        <div className="flex-1 min-w-0 relative">
+      <div className="flex-1 min-w-0 relative">
           {error && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-zinc-800 rounded-xl z-10">
               <p className="text-sm text-red-500 px-4 text-center">{error}</p>
@@ -213,40 +260,6 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
               </div>
             </div>
           )}
-          {/* Draw toolbar — floating top-right inside map */}
-          {mapReady && pins.length > 0 && (
-            <div className="absolute top-3 right-3 z-20 flex flex-col gap-1">
-              {([
-                { mode: 'Point' as DrawMode, icon: <MapPin size={13} />, label: 'Point' },
-                { mode: 'LineString' as DrawMode, icon: <Minus size={13} />, label: 'Line' },
-                { mode: 'Polygon' as DrawMode, icon: <Pentagon size={13} />, label: 'Area' },
-              ]).map(({ mode, icon, label }) => (
-                <button
-                  key={mode}
-                  title={label}
-                  onClick={() => {
-                    const next = drawMode === mode ? null : mode
-                    setDrawMode(next)
-                    drawRef.current?.setMode(next)
-                  }}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium shadow transition-colors ${
-                    drawMode === mode
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700 hover:border-orange-300 dark:hover:border-orange-700'
-                  }`}
-                >
-                  {icon} {label}
-                </button>
-              ))}
-              <button
-                title="Clear drawings"
-                onClick={() => { drawRef.current?.clear(); setDrawMode(null); drawRef.current?.setMode(null) }}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700 hover:border-red-300 dark:hover:border-red-700 hover:text-red-500 shadow transition-colors"
-              >
-                <Trash2 size={13} /> Clear
-              </button>
-            </div>
-          )}
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol/ol.css" />
           <div
             ref={mapRef}
@@ -256,86 +269,6 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
           <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1 text-right">
             Map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline">OpenStreetMap</a> contributors · Geocoding by Nominatim
           </p>
-        </div>
-
-        {/* Side panel */}
-        {selectedPin ? (
-          <aside className="w-64 shrink-0 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-zinc-50 flex items-center gap-1.5">
-                  <MapPin size={12} className="text-indigo-500" />
-                  {selectedPin.name}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">
-                  {selectedPin.reportIds.length} document{selectedPin.reportIds.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedPin(null)}
-                className="p-1 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 rounded"
-              >
-                <X size={13} />
-              </button>
-            </div>
-
-            {selectedPin.contexts.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wide mb-1.5">Context</p>
-                <div className="space-y-1.5">
-                  {selectedPin.contexts.slice(0, 3).map((ctx, i) => (
-                    <p key={i} className="text-xs text-gray-600 dark:text-zinc-300 italic leading-relaxed">
-                      &ldquo;{ctx}&rdquo;
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wide mb-1.5">Documents</p>
-              <div className="space-y-1">
-                {selectedPin.reportIds.map(id => (
-                  <a
-                    key={id}
-                    href={`/reports/${id}`}
-                    className="block text-xs text-gray-700 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline truncate"
-                  >
-                    {selectedPin.reportTitles[id] ?? id}
-                  </a>
-                ))}
-              </div>
-            </div>
-          </aside>
-        ) : (
-          <aside className="w-64 shrink-0">
-            <div className="space-y-1">
-              {locations.slice(0, 15).map(loc => {
-                const hasPin = pins.some(p => p.name === loc.name)
-                return (
-                  <button
-                    key={loc.name}
-                    onClick={() => {
-                      const pin = pins.find(p => p.name === loc.name)
-                      if (pin) setSelectedPin(pin)
-                    }}
-                    disabled={!hasPin}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${hasPin ? 'hover:bg-gray-50 dark:hover:bg-zinc-800' : 'opacity-50 cursor-not-allowed'}`}
-                  >
-                    <MapPin size={11} className={hasPin ? 'text-indigo-400 shrink-0' : 'text-gray-300 dark:text-zinc-600 shrink-0'} />
-                    <span className="text-xs text-gray-700 dark:text-zinc-300 truncate flex-1">{loc.name}</span>
-                    <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0">{loc.reportIds.length}</span>
-                  </button>
-                )
-              })}
-              {locations.length > 15 && (
-                <p className="text-xs text-gray-400 dark:text-zinc-500 text-center pt-1">
-                  +{locations.length - 15} more on map
-                </p>
-              )}
-            </div>
-          </aside>
-        )}
       </div>
     </div>
   )

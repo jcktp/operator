@@ -340,6 +340,37 @@ async function chatGoogleStream(
 
 // ── Ollama streaming ────────────────────────────────────────────────────────
 
+// Extract save_to_journal args from conversation history when the model hallucinated
+// the tool call as text instead of actually calling it.
+function extractSaveArgs(messages: Message[]): Record<string, string> | null {
+  const lastUser = [...messages].reverse().find(m => m.role === 'user')
+  if (!lastUser) return null
+
+  // Try to pull an explicit title from phrases like "save as X", "titled X", "called X"
+  const titleMatch = lastUser.content.match(
+    /(?:save(?:\s+(?:a\s+)?note)?(?:\s+(?:titled?|as|called?))?|titled?|called?)\s+["']?([A-Z][^"'\n]{2,80}?)["']?(?:\s*[.,]|\s*$)/i
+  )
+
+  // Use the last assistant message body as the note content (it has the actual analysis)
+  const lastAI = [...messages].reverse().find(m => m.role === 'assistant')
+  const bodyText = lastAI?.content || lastUser.content
+  const content = bodyText
+    .split(/\n\n+/)
+    .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+    .join('')
+
+  const title = titleMatch?.[1]?.trim()
+    || lastUser.content.replace(/^.*?(?:save|add|create).*?(?:about|on|for|called?)\s+/i, '').slice(0, 60).trim()
+    || 'Note'
+
+  return { title, content, folder: 'General' }
+}
+
+// Detect when a small model narrates the tool call instead of making it
+function isHallucinatedToolCall(content: string): boolean {
+  return /\[function:\s*save_to_journal\]|according to.*save_to_journal|save_to_journal.*cannot|cannot.*save_to_journal/i.test(content)
+}
+
 async function chatOllamaStream(
   messages: Message[],
   systemPrompt: string,
@@ -350,7 +381,8 @@ async function chatOllamaStream(
   const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
   const model = process.env.OLLAMA_MODEL ?? 'phi4-mini'
   const ollama = new Ollama({ host })
-  const tools = availableTools(hasNoteSaveIntent(messages))
+  const journalIntent = hasNoteSaveIntent(messages)
+  const tools = availableTools(journalIntent)
   const ollamaTools = tools.map(t => ({
     type: 'function' as const,
     function: { name: t.name, description: t.description, parameters: t.parameters },
@@ -359,8 +391,14 @@ async function chatOllamaStream(
 
   try {
     for (let i = 0; i < 5; i++) {
-      // Stream the call; tool_calls only appear in the final done chunk.
-      // When the model uses tools its content is empty, so emit() is a no-op.
+      // When journal save intent is present, buffer first — small models like
+      // phi4-mini sometimes narrate the function call as text instead of calling
+      // it. We detect that after the full response and handle it before emitting.
+      const buffer: string[] = []
+      const streamEmit = journalIntent
+        ? (chunk: string) => { buffer.push(chunk) }
+        : emit
+
       const stream = await ollama.chat({
         model, messages: msgs, tools: ollamaTools,
         stream: true, options: { temperature },
@@ -371,10 +409,28 @@ async function chatOllamaStream(
       for await (const chunk of stream) {
         if (chunk.message.content) {
           accContent += chunk.message.content
-          emit(chunk.message.content)
+          streamEmit(chunk.message.content)
         }
         if (chunk.done) finalToolCalls = chunk.message.tool_calls
       }
+
+      // Detect hallucinated tool call: model narrated the function instead of calling it.
+      // Extract title + content from the conversation and actually execute the save.
+      if (journalIntent && !finalToolCalls?.length && accContent && isHallucinatedToolCall(accContent)) {
+        const saveArgs = extractSaveArgs(messages)
+        if (saveArgs) {
+          onToolCall?.('save_to_journal', saveArgs)
+          const result = await executeTool('save_to_journal', saveArgs)
+          emit(result.startsWith('Note saved') ? `✓ ${result}` : result)
+        } else {
+          // Can't extract args — tell the user what happened
+          emit('I wasn\'t able to save the note automatically. Please rephrase your request as: "Save a note titled [title] with this content: [content]"')
+        }
+        return
+      }
+
+      // Flush buffer for normal buffered responses
+      if (buffer.length) buffer.forEach(c => emit(c))
 
       if (finalToolCalls?.length) {
         msgs.push({ role: 'assistant', content: accContent })

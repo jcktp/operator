@@ -16,6 +16,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!report.rawContent || report.rawContent.trim().length < 10) {
     return NextResponse.json({ error: 'Report has no readable content to analyse' }, { status: 422 })
   }
+  if (report.rawContent.startsWith('[Image')) {
+    return NextResponse.json({ error: 'Image reports cannot be re-analysed — re-upload with a vision-capable model to extract content first' }, { status: 422 })
+  }
 
   let directName: string | undefined
   if (report.directReportId) {

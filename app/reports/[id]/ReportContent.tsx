@@ -1,11 +1,11 @@
 'use client'
 
-import { useDispatch } from '@/components/DispatchContext'
+import { useInspector } from '@/components/InspectorContext'
 
 export default function ReportContent({ children }: { children: React.ReactNode }) {
-  const { open } = useDispatch()
+  const { open: inspectorOpen } = useInspector()
   return (
-    <div className={open ? 'space-y-8 max-w-full' : 'space-y-8 max-w-3xl'}>
+    <div className={inspectorOpen ? 'space-y-8 max-w-full' : 'space-y-8 max-w-3xl'}>
       {children}
     </div>
   )

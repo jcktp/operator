@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useDispatch } from './DispatchContext'
-import DispatchPanel from '@/app/dispatch/DispatchPanel'
+import FloatingDispatch from './FloatingDispatch'
 import IdleGuard from './IdleGuard'
+import { useState } from 'react'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { open, setOpen, aiContext, pendingMessage, setPendingMessage } = useDispatch()
+  const { setOpen, setPendingMessage } = useDispatch()
   const pathname = usePathname()
   const [autoLockMinutes, setAutoLockMinutes] = useState(0)
   const chirpRef = useRef<HTMLAudioElement | null>(null)
@@ -24,13 +25,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       .catch(() => {})
   }, [])
 
-  // Close the side dispatch panel when navigating away from overview/report pages
+  // Close dispatch when navigating away from overview/report pages
   useEffect(() => {
-    if (open && pathname !== '/' && !pathname.startsWith('/reports/')) {
+    if (pathname !== '/' && !pathname.startsWith('/reports/')) {
       setOpen(false)
       setPendingMessage('')
     }
-  }, [pathname, open, setOpen, setPendingMessage])
+  }, [pathname, setOpen, setPendingMessage])
 
   if (pathname.startsWith('/request/') || pathname === '/login' || pathname === '/starting') {
     return <>{children}</>
@@ -44,24 +45,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1 min-w-0 overflow-hidden">
           {children}
         </main>
-      </div>
-    )
-  }
-
-  if (open) {
-    return (
-      <div className="flex pt-14 min-h-screen">
-        <IdleGuard autoLockMinutes={autoLockMinutes} />
-        <main className="flex-1 min-w-0 py-8 px-6 sm:px-8 overflow-y-auto">
-          {children}
-        </main>
-        <aside className="w-1/4 shrink-0 sticky top-14 h-[calc(100vh-56px)] py-4 pr-4 border-l border-gray-200 dark:border-zinc-800">
-          <DispatchPanel
-            context={aiContext}
-            onClose={() => { setOpen(false); setPendingMessage('') }}
-            initialMessage={pendingMessage || undefined}
-          />
-        </aside>
       </div>
     )
   }
@@ -91,6 +74,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </a>
         </footer>
       </main>
+      <FloatingDispatch />
     </>
   )
 }

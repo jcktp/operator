@@ -10,24 +10,17 @@ export interface LocationPin {
   reportTitles: Record<string, string>
   reportAreas: Record<string, string>
   contexts: string[]
+  contextsByReport: Array<{ reportId: string; reportTitle: string; area: string; context: string }>
 }
 
 type MapLayer = 'osm' | 'satellite' | 'topo'
-
-export type DrawMode = 'Point' | 'LineString' | 'Polygon'
-
-export interface DrawLayerHandle {
-  setMode: (mode: DrawMode | null) => void
-  clear: () => void
-  destroy: () => void
-}
 
 export async function initStoryMap(
   container: HTMLElement,
   pins: LocationPin[],
   onPinClick: (pin: LocationPin) => void,
   layer: MapLayer = 'osm'
-): Promise<{ destroy: () => void; drawLayer: DrawLayerHandle }> {
+): Promise<{ destroy: () => void }> {
   const { Map, View } = await import('ol')
   const { Tile: TileLayer, Vector: VectorLayer } = await import('ol/layer')
   const { OSM, XYZ, Vector: VectorSource } = await import('ol/source')
@@ -35,7 +28,6 @@ export async function initStoryMap(
   const Feature = (await import('ol/Feature')).default
   const Point = (await import('ol/geom/Point')).default
   const { Style, Fill, Stroke, Circle: CircleStyle, Text: TextStyle } = await import('ol/style')
-  const { Draw } = await import('ol/interaction')
 
   // Build features
   const features = pins.map(pin => {
@@ -121,46 +113,8 @@ export async function initStoryMap(
     }
   })
 
-  // Draw layer (in-memory, not persisted)
-  const drawSource = new VectorSource({ wrapX: false })
-  const drawLayer = new VectorLayer({
-    source: drawSource,
-    style: new Style({
-      fill: new Fill({ color: 'rgba(249, 115, 22, 0.15)' }),
-      stroke: new Stroke({ color: 'rgba(249, 115, 22, 0.9)', width: 2.5 }),
-      image: new CircleStyle({
-        radius: 6,
-        fill: new Fill({ color: 'rgba(249, 115, 22, 0.85)' }),
-        stroke: new Stroke({ color: '#fff', width: 1.5 }),
-      }),
-    }),
-    zIndex: 10,
-  })
-  map.addLayer(drawLayer)
-
-  let activeDrawInteraction: InstanceType<typeof Draw> | null = null
-  const removeDrawInteraction = () => {
-    if (activeDrawInteraction) { map.removeInteraction(activeDrawInteraction); activeDrawInteraction = null }
-    // Reset cursor
-    map.getTargetElement().style.cursor = ''
-  }
-
-  const drawLayerHandle: DrawLayerHandle = {
-    setMode(mode: DrawMode | null) {
-      removeDrawInteraction()
-      if (!mode) return
-      const draw = new Draw({ source: drawSource, type: mode })
-      map.addInteraction(draw)
-      activeDrawInteraction = draw
-      map.getTargetElement().style.cursor = 'crosshair'
-    },
-    clear() { drawSource.clear() },
-    destroy() { removeDrawInteraction(); map.removeLayer(drawLayer) },
-  }
-
   return {
-    destroy: () => { drawLayerHandle.destroy(); map.setTarget(undefined) },
-    drawLayer: drawLayerHandle,
+    destroy: () => { map.setTarget(undefined) },
   }
 }
 

@@ -35,10 +35,14 @@ export default function LibrarySearch({
   reports,
   showEntities = false,
   showRedactions = false,
+  entitiesHref = null,
+  timelineHref = null,
 }: {
   reports: Report[]
   showEntities?: boolean
   showRedactions?: boolean
+  entitiesHref?: string | null
+  timelineHref?: string | null
 }) {
   const modeConfig = useMode()
   const [query, setQuery] = useState('')
@@ -207,6 +211,28 @@ export default function LibrarySearch({
 
                 {report.summary && (
                   <p className="text-sm text-gray-600 dark:text-zinc-300 mt-2 line-clamp-2 leading-relaxed">{report.summary}</p>
+                )}
+
+                {/* Cross-module jump links — only shown when analysis routes exist for this mode */}
+                {(entitiesHref || timelineHref) && (
+                  <div className="flex items-center gap-3 mt-1.5">
+                    {entitiesHref && (
+                      <Link
+                        href={entitiesHref}
+                        className="text-[10px] text-gray-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium"
+                      >
+                        Entities →
+                      </Link>
+                    )}
+                    {timelineHref && (
+                      <Link
+                        href={timelineHref}
+                        className="text-[10px] text-gray-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium"
+                      >
+                        Timeline →
+                      </Link>
+                    )}
+                  </div>
                 )}
 
                 {metrics.length > 0 && (

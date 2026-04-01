@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
-import { formatRelativeDate, AREA_COLORS } from '@/lib/utils'
+import { formatRelativeDate } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
-import { FileText } from 'lucide-react'
+import { FileText, Image as ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import LibraryClearButton from './LibraryClearButton'
 import LibrarySearch from './LibrarySearch'
+import PhotosGallery from './PhotosGallery'
 import { getModeConfig } from '@/lib/mode'
 import SourceProtectionBanner from '@/components/SourceProtectionBanner'
 
@@ -14,9 +15,10 @@ export const dynamic = 'force-dynamic'
 export default async function LibraryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ area?: string }>
+  searchParams: Promise<{ area?: string; tab?: string }>
 }) {
-  const { area: selectedArea } = await searchParams
+  const { area: selectedArea, tab } = await searchParams
+  const showPhotos = tab === 'photos'
 
   const [allReports, directs, modeRow] = await Promise.all([
     prisma.report.findMany({
@@ -27,7 +29,15 @@ export default async function LibraryPage({
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
   const modeConfig = getModeConfig(modeRow?.value)
-  const { entities: showEntities, redactions: showRedactions } = modeConfig.features
+  const { entities: showEntities, redactions: showRedactions, timeline: showTimeline } = modeConfig.features
+
+  // Cross-module jump hrefs — resolved per mode to avoid linking to non-existent routes
+  const entitiesHref = showEntities ? '/entities?tab=entities' : null
+  const timelineHref: string | null = (() => {
+    if (!showTimeline) return null
+    if (showEntities) return '/entities?tab=timeline'
+    return modeConfig.features.extraNavItems.find(i => i.href === '/timeline')?.href ?? null
+  })()
 
   // Optional: fetch entity names and redaction flags per report
   let entityNamesByReport: Record<string, string[]> = {}
@@ -66,6 +76,20 @@ export default async function LibraryPage({
 
   const usedAreas = Object.keys(areaStats).sort()
 
+  // All image reports (displayContent starts with 'image:')
+  const allImages = allReports.filter(r => r.displayContent?.startsWith('image:'))
+  const imageCount = allImages.length
+  // Apply area filter to photos when an area is selected
+  const photoReports = (selectedArea ? allImages.filter(r => r.area === selectedArea) : allImages)
+    .map(r => ({
+      id: r.id,
+      title: r.title,
+      area: r.area,
+      rawContent: r.rawContent ?? '',
+      createdAt: r.createdAt,
+      storyName: r.storyName ?? null,
+    }))
+
   return (
     <div className="space-y-6">
       <SourceProtectionBanner />
@@ -92,26 +116,27 @@ export default async function LibraryPage({
         </div>
       ) : (
         <div className="flex gap-6 items-start">
-          {/* Sidebar — area filter */}
+          {/* Sidebar — area filter + Photos tab */}
           <aside className="w-44 shrink-0 space-y-1 sticky top-24">
+            {/* Documents section */}
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500 px-3 pb-1">Documents</p>
             <Link
               href="/library"
               className={cn(
                 'flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors',
-                !selectedArea
+                !selectedArea && !showPhotos
                   ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
                   : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
               )}
             >
               <span>All areas</span>
-              <span className={cn('text-xs', !selectedArea ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>
+              <span className={cn('text-xs', !selectedArea && !showPhotos ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>
                 {allReports.length}
               </span>
             </Link>
 
             {usedAreas.map(area => {
-              const color = AREA_COLORS[area] ?? 'bg-gray-50 text-gray-700 border-gray-200'
-              const isActive = selectedArea === area
+              const isActive = selectedArea === area && !showPhotos
               return (
                 <Link
                   key={area}
@@ -130,6 +155,53 @@ export default async function LibraryPage({
                 </Link>
               )
             })}
+
+            {/* Photos section — only shown when there are images */}
+            {imageCount > 0 && (
+              <>
+                <div className="pt-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500 px-3 pb-1">Photos</p>
+                </div>
+                <Link
+                  href={`/library?tab=photos${selectedArea ? `&area=${encodeURIComponent(selectedArea)}` : ''}`}
+                  className={cn(
+                    'flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors',
+                    showPhotos && !selectedArea
+                      ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
+                      : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                  )}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <ImageIcon size={12} />
+                    All photos
+                  </span>
+                  <span className={cn('text-xs', showPhotos && !selectedArea ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>
+                    {imageCount}
+                  </span>
+                </Link>
+                {usedAreas.filter(a => allImages.some(r => r.area === a)).map(area => {
+                  const areaImageCount = allImages.filter(r => r.area === area).length
+                  const isActive = showPhotos && selectedArea === area
+                  return (
+                    <Link
+                      key={`photo-${area}`}
+                      href={`/library?tab=photos&area=${encodeURIComponent(area)}`}
+                      className={cn(
+                        'flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors',
+                        isActive
+                          ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
+                          : 'text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                      )}
+                    >
+                      <span className="truncate">{area}</span>
+                      <span className={cn('text-xs shrink-0', isActive ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>
+                        {areaImageCount}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </>
+            )}
           </aside>
 
           {/* Main content */}
@@ -138,20 +210,29 @@ export default async function LibraryPage({
               <div className="flex items-center gap-3 mb-4">
                 <AreaBadge area={selectedArea} />
                 <span className="text-sm text-gray-500 dark:text-zinc-400">
-                  {areaStats[selectedArea]?.count} {areaStats[selectedArea]?.count !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}
-                  {' · '}last {formatRelativeDate(areaStats[selectedArea]?.latest)}
+                  {showPhotos
+                    ? `${photoReports.length} photo${photoReports.length !== 1 ? 's' : ''}`
+                    : `${areaStats[selectedArea]?.count} ${areaStats[selectedArea]?.count !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}`
+                  }
+                  {!showPhotos && <>{' · '}last {formatRelativeDate(areaStats[selectedArea]?.latest)}</>}
                 </span>
               </div>
             )}
-            <LibrarySearch
-              reports={reports.map(r => ({
-                ...r,
-                ...(showEntities ? { entityNames: entityNamesByReport[r.id] ?? [] } : {}),
-                ...(showRedactions ? { hasRedactions: redactedReportIds.has(r.id) } : {}),
-              }))}
-              showEntities={showEntities}
-              showRedactions={showRedactions}
-            />
+            {showPhotos ? (
+              <PhotosGallery photos={photoReports} />
+            ) : (
+              <LibrarySearch
+                reports={reports.map(r => ({
+                  ...r,
+                  ...(showEntities ? { entityNames: entityNamesByReport[r.id] ?? [] } : {}),
+                  ...(showRedactions ? { hasRedactions: redactedReportIds.has(r.id) } : {}),
+                }))}
+                showEntities={showEntities}
+                showRedactions={showRedactions}
+                entitiesHref={entitiesHref}
+                timelineHref={timelineHref}
+              />
+            )}
           </div>
         </div>
       )}

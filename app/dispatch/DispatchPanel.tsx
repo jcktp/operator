@@ -16,9 +16,10 @@ interface Props {
   onClose?: () => void
   initialChat?: { id: string; title: string; messages: Array<{ role: 'user' | 'assistant'; content: string; attachmentName?: string }> }
   initialMessage?: string
+  fullPage?: boolean
 }
 
-export default function DispatchPanel({ context, currentUrl, onClose, initialChat, initialMessage }: Props) {
+export default function DispatchPanel({ context, currentUrl, onClose, initialChat, initialMessage, fullPage }: Props) {
   const modeConfig = useMode()
   const c = useChatLogic({ context, modeId: modeConfig.id, initialChat, initialMessage })
   const personaList = Object.values(c.personaMap)
@@ -42,7 +43,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
   }, [currentUrl])
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl overflow-hidden shadow-sm">
+    <div className={cn('h-full flex flex-col bg-white dark:bg-zinc-900 overflow-hidden', !fullPage && 'border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-sm')}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800 shrink-0">
         <div className="flex items-center gap-2">
@@ -149,7 +150,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
           )}
 
           {c.messages.map((m, i) => (
-            <div key={i} className={cn('flex flex-col', m.role === 'user' ? 'items-end' : 'items-start')}>
+            <div key={`${m.role}-${i}-${m.content.slice(0, 20)}`} className={cn('flex flex-col', m.role === 'user' ? 'items-end' : 'items-start')}>
               {m.attachmentName && (
                 <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-zinc-500 mb-0.5 px-1">
                   <Paperclip size={9} />
