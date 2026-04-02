@@ -31,8 +31,8 @@ async function processItem(itemId: string): Promise<void> {
     // ── Vision analysis for image items ──────────────────────────────────────
     // describeImage is called here (not in the HTTP route) so model-swap latency
     // doesn't block the upload response.
+    let extractText = false
     if (item.displayContent?.startsWith('image:') && item.rawContent.startsWith('[Image') && item.savedFilePath) {
-      let extractText = false
       try {
         const metaStr = item.displayContent.split('\n').slice(1).join('\n')
         if (metaStr) {
@@ -77,8 +77,8 @@ async function processItem(itemId: string): Promise<void> {
       orderBy: { createdAt: 'desc' },
     })
 
-    // Skip AI analysis if rawContent is just a fallback placeholder (no vision model available)
-    const isImagePlaceholder = item.displayContent?.startsWith('image:') && item.rawContent.startsWith('[')
+    // Skip AI analysis for photos (vision description only) — only analyse OCR'd text from document images
+    const isImagePlaceholder = item.displayContent?.startsWith('image:') && (!extractText || item.rawContent.startsWith('['))
 
     // AI analysis
     let analysis = null
@@ -137,6 +137,7 @@ async function processItem(itemId: string): Promise<void> {
         directReportId: item.directReportId || null,
         reportDate: item.reportDate ? new Date(item.reportDate) : null,
         storyName: item.storyName || null,
+        projectId: item.projectId || null,
         summary: analysis?.summary?.trim() || null,
         metrics: analysis?.metrics ? JSON.stringify(analysis.metrics) : null,
         insights: analysis?.insights ? JSON.stringify(analysis.insights) : null,
@@ -289,9 +290,12 @@ async function runWorker(): Promise<void> {
       })
 
       if (remaining === 0) {
+        const doneCount = await prisma.uploadJobItem.count({
+          where: { jobId: item.jobId, status: 'done' },
+        })
         await prisma.uploadJob.update({
           where: { id: item.jobId },
-          data: { status: hasErrors > 0 && job.processed < job.total ? 'error' : 'done' },
+          data: { status: hasErrors > 0 && doneCount === 0 ? 'error' : 'done' },
         })
       }
     }

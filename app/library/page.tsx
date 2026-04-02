@@ -20,15 +20,21 @@ export default async function LibraryPage({
   const { area: selectedArea, tab } = await searchParams
   const showPhotos = tab === 'photos'
 
-  const [allReports, directs, modeRow] = await Promise.all([
+  const [modeRow, currentProjectSetting] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
+  ])
+  const modeConfig = getModeConfig(modeRow?.value)
+  const currentProjectId = currentProjectSetting?.value || null
+
+  const [allReports, directs] = await Promise.all([
     prisma.report.findMany({
+      where: currentProjectId ? { projectId: currentProjectId } : undefined,
       orderBy: { createdAt: 'desc' },
       include: { directReport: true },
     }),
     prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
-    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
-  const modeConfig = getModeConfig(modeRow?.value)
   const { entities: showEntities, redactions: showRedactions, timeline: showTimeline } = modeConfig.features
 
   // Cross-module jump hrefs — resolved per mode to avoid linking to non-existent routes

@@ -22,6 +22,9 @@ export function useSettingsState() {
   const [ollamaModel, setOllamaModel] = useState('phi4-mini')
   const [savedModel, setSavedModel] = useState('phi4-mini')
   const [customModel, setCustomModel] = useState('')
+  const [ollamaVisionModel, setOllamaVisionModel] = useState('llava-phi3')
+  const [savedVisionModel, setSavedVisionModel] = useState('llava-phi3')
+  const [customVisionModel, setCustomVisionModel] = useState('')
   const [ceoName, setCeoName] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [userRole, setUserRole] = useState('')
@@ -58,6 +61,8 @@ export function useSettingsState() {
       setOllamaHost(s.ollama_host ?? 'http://localhost:11434')
       setOllamaModel(s.ollama_model ?? 'phi4-mini')
       setSavedModel(s.ollama_model ?? 'phi4-mini')
+      setOllamaVisionModel(s.ollama_vision_model ?? 'llava-phi3')
+      setSavedVisionModel(s.ollama_vision_model ?? 'llava-phi3')
       setCeoName(s.ceo_name ?? '')
       setCompanyName(s.company_name ?? '')
       setUserRole(s.user_role ?? '')
@@ -140,10 +145,14 @@ export function useSettingsState() {
         .catch(reject)
     })
 
+  const MULTIMODAL_PATTERNS = ['llava', 'minicpm-v', 'bakllava', 'moondream', 'qwen2-vl', 'qwen-vl', 'cogvlm', 'internvl', 'phi3-vision', 'phi-3-vision', 'llava-phi3']
+  const isMultimodalModel = (name: string) => MULTIMODAL_PATTERNS.some(p => name.toLowerCase().includes(p))
+
   const selectedModel = customModel.trim() || ollamaModel
   const modelChanged = aiProvider === 'ollama' && selectedModel !== savedModel
   const switchingToOllama = aiProvider === 'ollama' && savedProvider !== 'ollama'
   const needsPull = modelChanged || switchingToOllama
+  const effectiveVisionModel = isMultimodalModel(selectedModel) ? selectedModel : (customVisionModel.trim() || ollamaVisionModel)
 
   const handleSave = async () => {
     setSaving(true)
@@ -164,7 +173,7 @@ export function useSettingsState() {
     // If switching from Ollama to cloud and user opted to remove local models, remove them
     const switchingToCloud = savedProvider === 'ollama' && aiProvider !== 'ollama'
     if (switchingToCloud && removeOllamaModels) {
-      const modelsToRemove = [savedModel, 'moondream'].filter(Boolean)
+      const modelsToRemove = [...new Set([savedModel, savedVisionModel].filter(Boolean))]
       await Promise.all(
         modelsToRemove.map(m => fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: m }) }).catch(() => {}))
       )
@@ -174,6 +183,7 @@ export function useSettingsState() {
       saveSetting('app_mode', appMode),
       saveSetting('ollama_host', ollamaHost),
       saveSetting('ollama_model', selectedModel),
+      saveSetting('ollama_vision_model', effectiveVisionModel),
       saveSetting('ollama_web_access', webAccess ? 'true' : 'false'),
       saveSetting('ceo_name', ceoName),
       saveSetting('company_name', companyName),
@@ -204,6 +214,7 @@ export function useSettingsState() {
     localStorage.setItem('sound_enabled', soundEnabled ? 'true' : 'false')
 
     setSavedModel(selectedModel)
+    setSavedVisionModel(effectiveVisionModel)
     setSavedProvider(aiProvider)
     setSavedMode(appMode)
     setMode(appMode)
@@ -271,6 +282,10 @@ export function useSettingsState() {
     backupPath,
     // Save state
     saving, saved, pull, setPull,
+    // Ollama vision model
+    ollamaVisionModel, setOllamaVisionModel,
+    savedVisionModel,
+    customVisionModel, setCustomVisionModel,
     // Computed
     selectedModel, modelChanged, switchingToOllama, needsPull,
     // Ollama → cloud model removal

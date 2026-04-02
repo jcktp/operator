@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, FileText, Image as ImageIcon, X, Loader2, CheckCircle, AlertCircle, Globe, ChevronDown, Plus, GitMerge } from 'lucide-react'
 import { type QueuedItem, type DirectReport, LINK_LABELS, detectLinkType, guessArea, fileId } from './uploadTypes'
 import { useMode } from '@/components/ModeContext'
+import SelectField from '@/components/SelectField'
 
 interface SeriesCandidate {
   count: number
@@ -33,7 +34,9 @@ export default function UploadTab() {
   const [seriesCandidate, setSeriesCandidate] = useState<SeriesCandidate | null>(null)
   const [seriesLinked, setSeriesLinked] = useState(false)
   const [seriesLinking, setSeriesLinking] = useState(false)
-  const [storyName, setStoryName] = useState('')
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([])
+  const [projectsLoaded, setProjectsLoaded] = useState(false)
   const [linkInput, setLinkInput] = useState('')
   const [linkError, setLinkError] = useState('')
   const [extractText, setExtractText] = useState(false)
@@ -45,6 +48,18 @@ export default function UploadTab() {
     setDirects(data.directs ?? [])
     setDirectsLoaded(true)
   }, [directsLoaded])
+
+  const loadProjects = useCallback(async () => {
+    if (projectsLoaded) return
+    const res = await fetch('/api/projects')
+    const data = await res.json() as { projects?: Array<{ id: string; name: string; status: string }>; currentProjectId?: string | null }
+    const list = (data.projects ?? []).filter(p => p.status === 'in_progress')
+    setProjects(list)
+    if (data.currentProjectId) setSelectedProjectId(data.currentProjectId)
+    setProjectsLoaded(true)
+  }, [projectsLoaded])
+
+  useEffect(() => { loadProjects() }, [loadProjects])
 
   const addFiles = (files: FileList | File[]) => {
     const newItems: QueuedItem[] = Array.from(files).map(f => ({
@@ -121,7 +136,7 @@ export default function UploadTab() {
           formData.append('area', item.area)
           if (directReportId) formData.append('directReportId', directReportId)
           if (reportDate) formData.append('reportDate', reportDate)
-          if (storyName.trim()) formData.append('storyName', storyName.trim())
+          if (selectedProjectId) formData.append('projectId', selectedProjectId)
           if (jobId) formData.append('jobId', jobId)
           formData.append('sortOrder', String(idx - 1))
           if (extractText && item.file?.type.startsWith('image/')) formData.append('extractText', 'true')
@@ -146,7 +161,7 @@ export default function UploadTab() {
         const res = await fetch('/api/upload-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: item.url, title: item.title, area: item.area, directReportId: directReportId || null, reportDate: reportDate || null, storyName: storyName.trim() || null }),
+          body: JSON.stringify({ url: item.url, title: item.title, area: item.area, directReportId: directReportId || null, reportDate: reportDate || null, projectId: selectedProjectId || null }),
         })
         const data = await res.json() as { error?: string; report?: { id: string }; seriesCandidate?: SeriesCandidate }
         if (!res.ok) updateItem(item.id, { status: 'error', error: data.error ?? 'Failed' })
@@ -325,11 +340,16 @@ export default function UploadTab() {
             className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-zinc-200 mb-1.5">Story / project name <span className="text-gray-400 dark:text-zinc-500 font-normal">(optional)</span></label>
-          <input type="text" value={storyName} onChange={e => setStoryName(e.target.value)}
-            placeholder="e.g. Operation Greenfield, Q2 Investigation…"
-            className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 placeholder-gray-400 dark:placeholder-zinc-500" />
-          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Groups these documents together under a named project across the app</p>
+          <label className="block text-xs font-medium text-gray-700 dark:text-zinc-200 mb-1.5">{modeConfig.projectLabel} <span className="text-gray-400 dark:text-zinc-500 font-normal">(optional)</span></label>
+          <SelectField
+            value={selectedProjectId}
+            onChange={setSelectedProjectId}
+            placeholder={`No ${modeConfig.projectLabel.toLowerCase()}`}
+            options={[
+              { value: '', label: `No ${modeConfig.projectLabel.toLowerCase()}` },
+              ...projects.map(p => ({ value: p.id, label: p.name })),
+            ]}
+          />
         </div>
         {queue.some(q => q.type === 'file' && q.file?.type.startsWith('image/')) && (
           <label className="flex items-start gap-2.5 cursor-pointer select-none">

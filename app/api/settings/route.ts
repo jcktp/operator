@@ -28,6 +28,8 @@ const ALLOWED_KEYS = new Set([
   'sound_enabled', 'custom_areas', 'auto_lock_minutes', 'air_gap_mode', 'dark_mode',
   'backup_path', 'last_backup',
   'onboarding_complete',
+  'current_project_id',
+  'ollama_vision_model',
 ])
 
 export async function GET(req: NextRequest) {

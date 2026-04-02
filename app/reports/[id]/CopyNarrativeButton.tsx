@@ -81,7 +81,7 @@ export default function CopyNarrativeButton({ title, area, directName, reportDat
     <button
       onClick={handleCopy}
       title="Copy narrative"
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-xs font-medium text-gray-600 dark:text-zinc-300 hover:border-gray-300 dark:hover:border-zinc-600 hover:text-gray-900 dark:hover:text-zinc-50 transition-colors"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-xs font-medium text-gray-600 dark:text-zinc-300 hover:border-gray-400 dark:hover:border-zinc-500 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors"
     >
       {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
       {copied ? 'Copied!' : 'Copy narrative'}

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Search, X, ArrowRight, GitCompare, Clock, EyeOff, CheckSquare, Square, Layers, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Search, X, ArrowRight, GitCompare, Clock, EyeOff, CheckSquare, Square, Layers, ChevronLeft, ChevronRight, Trash2, Loader2 } from 'lucide-react'
 
 const PAGE_SIZE = 25
 import { cn, formatRelativeDate, formatDate, AREA_COLORS, parseJsonSafe, parseMetrics } from '@/lib/utils'
@@ -45,11 +46,13 @@ export default function LibrarySearch({
   timelineHref?: string | null
 }) {
   const modeConfig = useMode()
+  const router = useRouter()
   const [query, setQuery] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [timelineOpen, setTimelineOpen] = useState(false)
   const [redactionFilter, setRedactionFilter] = useState(false)
   const [page, setPage] = useState(1)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => { setPage(1) }, [query, redactionFilter])
 
@@ -74,6 +77,15 @@ export default function LibrarySearch({
       else next.add(id)
       return next
     })
+  }
+
+  const deleteSelected = async () => {
+    if (!window.confirm(`Delete ${selectedIds.size} document${selectedIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return
+    setDeleting(true)
+    await Promise.all([...selectedIds].map(id => fetch(`/api/reports/${id}`, { method: 'DELETE' })))
+    setSelectedIds(new Set())
+    setDeleting(false)
+    router.refresh()
   }
 
   const list = filtered ?? reports
@@ -127,15 +139,25 @@ export default function LibrarySearch({
         </p>
       )}
 
-      {showEntities && selectedIds.size > 0 && (
+      {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 mb-3 px-3 py-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm">
           <span className="flex-1 text-xs">{selectedIds.size} document{selectedIds.size !== 1 ? 's' : ''} selected</span>
+          {showEntities && (
+            <button
+              onClick={() => setTimelineOpen(true)}
+              className="flex items-center gap-1.5 text-xs bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-50 px-2.5 py-1 rounded-md font-medium hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <Layers size={12} />
+              Combined timeline
+            </button>
+          )}
           <button
-            onClick={() => setTimelineOpen(true)}
-            className="flex items-center gap-1.5 text-xs bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-50 px-2.5 py-1 rounded-md font-medium hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            onClick={deleteSelected}
+            disabled={deleting}
+            className="flex items-center gap-1.5 text-xs bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded-md font-medium disabled:opacity-50 transition-colors"
           >
-            <Layers size={12} />
-            Combined timeline
+            {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+            Delete selected
           </button>
           <button onClick={() => setSelectedIds(new Set())} className="text-gray-400 dark:text-zinc-600 hover:text-white dark:hover:text-zinc-900">
             <X size={14} />
@@ -160,18 +182,16 @@ export default function LibrarySearch({
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      {showEntities && (
-                        <button
-                          onClick={() => toggleSelect(report.id)}
-                          className="shrink-0 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors"
-                          title="Select for combined timeline"
-                        >
-                          {isSelected
-                            ? <CheckSquare size={14} className="text-gray-900 dark:text-zinc-50" />
-                            : <Square size={14} />
-                          }
-                        </button>
-                      )}
+                      <button
+                        onClick={() => toggleSelect(report.id)}
+                        className="shrink-0 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors"
+                        title="Select"
+                      >
+                        {isSelected
+                          ? <CheckSquare size={14} className="text-gray-900 dark:text-zinc-50" />
+                          : <Square size={14} />
+                        }
+                      </button>
                       <AreaBadge area={report.area} />
                       <Link
                         href={`/reports/${report.id}`}

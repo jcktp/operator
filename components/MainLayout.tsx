@@ -49,6 +49,21 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     )
   }
 
+  const isReportPage = /^\/reports\/[^/]+/.test(pathname)
+
+  // Report pages: full-height fixed layout, no page scroll — panes scroll internally
+  if (isReportPage) {
+    return (
+      <>
+        <IdleGuard autoLockMinutes={autoLockMinutes} />
+        <main className="pt-20 h-screen overflow-hidden px-6 sm:px-8 max-w-[1600px] mx-auto flex flex-col">
+          {children}
+        </main>
+        <FloatingDispatch />
+      </>
+    )
+  }
+
   return (
     <>
       <IdleGuard autoLockMinutes={autoLockMinutes} />

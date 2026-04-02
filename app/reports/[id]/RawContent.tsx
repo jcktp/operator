@@ -166,7 +166,7 @@ function TextDisplay({ content }: { content: string }) {
   }
   flushPara()
 
-  return <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-1">{nodes}</div>
+  return <div className="space-y-1.5 pr-1">{nodes}</div>
 }
 
 // ── PDF preview ─────────────────────────────────────────────────────────────
@@ -216,7 +216,8 @@ export default function RawContent({
 
   // Image: show the image + AI description/OCR text, no raw/formatted toggle needed
   if (isImage) {
-    const isPlaceholder = content.startsWith('[Image')
+    const isError = content.startsWith('[Image analysis failed:')
+    const isPlaceholder = content.startsWith('[Image') && !isError
     // Parse optional EXIF metadata embedded in displayContent after a newline
     const dcLines = displayContent?.split('\n') ?? []
     let exifData: Record<string, string> | null = null
@@ -253,6 +254,11 @@ export default function RawContent({
         {isPlaceholder && (
           <p className="text-xs text-gray-400 dark:text-zinc-500 italic">
             No AI description — pull a vision model (e.g. <code className="font-mono">ollama pull moondream</code>) and re-upload.
+          </p>
+        )}
+        {isError && (
+          <p className="text-xs text-red-500 dark:text-red-400 italic">
+            Vision analysis failed: {content.replace('[Image analysis failed: ', '').replace(/\. For Ollama.*$/, '')}
           </p>
         )}
       </div>

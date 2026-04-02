@@ -45,6 +45,9 @@ export interface ModeConfig {
   documentLabelPlural: string
   collectionLabel: string
   collectionLabelPlural: string
+  // Project workspace terminology
+  projectLabel: string
+  projectLabelPlural: string
   // Nav labels
   navPeople: string
   navDocuments: string
@@ -100,6 +103,8 @@ export const MODES: Record<AppMode, ModeConfig> = {
     documentLabelPlural: 'Reports',
     collectionLabel: 'Area',
     collectionLabelPlural: 'Areas',
+    projectLabel: 'Project',
+    projectLabelPlural: 'Projects',
     navPeople: 'Directs',
     navDocuments: 'Add Report',
     navLibrary: 'Library',
@@ -135,9 +140,11 @@ export const MODES: Record<AppMode, ModeConfig> = {
     documentLabelPlural: 'Notes',
     collectionLabel: 'Beat',
     collectionLabelPlural: 'Beats',
+    projectLabel: 'Story',
+    projectLabelPlural: 'Stories',
     navPeople: 'Sources',
     navDocuments: 'Add Documents',
-    navLibrary: 'Story Archive',
+    navLibrary: 'Library',
     navJournal: 'Notebook',
     uploadTitle: 'Add Document or Photo',
     uploadDescription: 'Upload documents, photos, or source materials to your story archive.',
@@ -177,9 +184,11 @@ export const MODES: Record<AppMode, ModeConfig> = {
     documentLabelPlural: 'Updates',
     collectionLabel: 'Team',
     collectionLabelPlural: 'Teams',
+    projectLabel: 'Project',
+    projectLabelPlural: 'Projects',
     navPeople: 'Team',
     navDocuments: 'Add Update',
-    navLibrary: 'Updates',
+    navLibrary: 'Library',
     navJournal: 'Journal',
     uploadTitle: 'Add Team Update',
     uploadDescription: 'Upload status updates, retrospectives, sprint notes, or team documents.',
@@ -212,9 +221,11 @@ export const MODES: Record<AppMode, ModeConfig> = {
     documentLabelPlural: 'Interviews',
     collectionLabel: 'Project',
     collectionLabelPlural: 'Projects',
+    projectLabel: 'Study',
+    projectLabelPlural: 'Studies',
     navPeople: 'Respondents',
     navDocuments: 'Add Interview',
-    navLibrary: 'Research Archive',
+    navLibrary: 'Library',
     navJournal: 'Research Notes',
     uploadTitle: 'Add Interview or Data',
     uploadDescription: 'Upload interview transcripts, survey responses, or research documents to identify themes and patterns.',
@@ -248,9 +259,11 @@ export const MODES: Record<AppMode, ModeConfig> = {
     documentLabelPlural: 'Case Files',
     collectionLabel: 'Matter',
     collectionLabelPlural: 'Matters',
+    projectLabel: 'Matter',
+    projectLabelPlural: 'Matters',
     navPeople: 'Clients',
     navDocuments: 'Add Case File',
-    navLibrary: 'Case Archive',
+    navLibrary: 'Library',
     navJournal: 'Case Notes',
     uploadTitle: 'Add Case File',
     uploadDescription: 'Upload case documents, evidence, court filings, or correspondence.',
@@ -287,6 +300,8 @@ export const MODES: Record<AppMode, ModeConfig> = {
     documentLabelPlural: 'Reports',
     collectionLabel: 'Area',
     collectionLabelPlural: 'Areas',
+    projectLabel: 'Programme',
+    projectLabelPlural: 'Programmes',
     navPeople: 'Employees',
     navDocuments: 'Add Report',
     navLibrary: 'Library',

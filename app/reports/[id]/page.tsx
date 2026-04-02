@@ -6,7 +6,7 @@ import type { Metric, Insight, Question } from '@/lib/utils'
 import { getModeConfig } from '@/lib/mode'
 import { getReportLabels } from '@/lib/mode-labels'
 import { AreaBadge, InsightTypeBadge, StatusBadge } from '@/components/Badge'
-import { ArrowLeft, FileText, Calendar, User, HelpCircle, TrendingUp, AlertTriangle, GitCompare, Clock } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, Calendar, User, HelpCircle, TrendingUp, AlertTriangle, GitCompare, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import DeleteReportButton from './DeleteButton'
 import DispatchReportButton from './DispatchReportButton'
 import ReportContent from './ReportContent'
@@ -52,15 +52,31 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   if (!report) notFound()
 
   // Fetch history for this area (most recent 6, excluding current)
-  const history = await prisma.report.findMany({
-    where: { area: report.area, id: { not: id } },
-    orderBy: { createdAt: 'desc' },
-    take: 6,
-    select: { id: true, title: true, createdAt: true, summary: true, comparison: true },
-  })
+  const [modeRow, projectSetting] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
+  ])
+  const currentProjectId = projectSetting?.value || null
+  const projectFilter = currentProjectId ? { projectId: currentProjectId } : {}
 
-  // Mode config
-  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const [history, prevReport, nextReport] = await Promise.all([
+    prisma.report.findMany({
+      where: { ...projectFilter, area: report.area, id: { not: id } },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+      select: { id: true, title: true, createdAt: true, summary: true, comparison: true },
+    }),
+    prisma.report.findFirst({
+      where: { ...projectFilter, createdAt: { lt: report.createdAt } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, title: true, area: true },
+    }),
+    prisma.report.findFirst({
+      where: { ...projectFilter, createdAt: { gt: report.createdAt } },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, title: true, area: true },
+    }),
+  ])
   const modeConfig = getModeConfig(modeRow?.value)
   const { entities: showEntities, timeline: showTimeline, redactions: showRedactions, verification: showVerification, documentComparison: showDocComparison, showReportMetrics } = modeConfig.features
   const labels = getReportLabels(modeConfig.id)
@@ -85,7 +101,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       ])
     : [[], [], null]
 
-  // Cross-document entity linking: find other reports mentioning the same entity names
+  // Cross-document entity linking
   type CrossDocResult = { name: string; type: string; reportIds: string[]; reportTitles: Record<string, string> }
   const crossLinks: CrossDocResult[] = []
   if (showEntities && entities.length > 0) {
@@ -117,7 +133,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       }))
     } catch (err) {
       console.error('Cross-link lookup failed:', err)
-      // Non-fatal — page still renders without cross-links
     }
   }
 
@@ -126,7 +141,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const journalismComparison = journalismRow ? parseJsonSafe<JournalismComparisonData | null>(journalismRow.journalismComparison, null) : null
   const verificationChecklist = journalismRow ? parseJsonSafe<VerificationItem[]>(journalismRow.verificationChecklist, []) : []
 
-  // Title of the previous report (for journalism comparison label)
   const prevReportTitle = history[0]?.title
 
   const metrics    = parseJsonSafe<Record<string, unknown>[]>(report.metrics, [])
@@ -140,13 +154,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const otherQuestions = questions.filter(q => q.priority !== 'high')
 
   const directionIcon: Record<string, string> = {
-    improved: '↑',
-    declined: '↓',
-    unchanged: '→',
-    new: '+',
-    removed: '–',
+    improved: '↑', declined: '↓', unchanged: '→', new: '+', removed: '–',
   }
-
   const directionColor: Record<string, string> = {
     improved: 'text-green-600',
     declined: 'text-red-600',
@@ -155,7 +164,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     removed: 'text-gray-400 dark:text-zinc-500',
   }
 
-  // Period-over-period helpers
   const periodLabel = (() => {
     if (history.length === 0 || !comparison) return null
     const prev = new Date(history[0].createdAt)
@@ -167,12 +175,10 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     return 'YoY'
   })()
 
-  // Build lookup: metric label → comparison change
   const changesByMetric = new Map(
     (comparison?.changes ?? []).filter(c => c.metric).map(c => [c.metric.toLowerCase(), c])
   )
 
-  // Calculate percentage point delta for % values
   function ppDelta(prev?: string, curr?: string): string | null {
     if (!prev || !curr) return null
     if (!prev.includes('%') || !curr.includes('%')) return null
@@ -183,17 +189,16 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     return (d > 0 ? '+' : '') + d + 'pp'
   }
 
-  return (
-    <ReportContent>
-      {/* Back */}
-      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors">
-        <ArrowLeft size={14} />
-        Overview
-      </Link>
-
-      {/* Header */}
+  // ── Header ────────────────────────────────────────────────────────────────
+  const header = (
+    <>
+      {/* Top row: back + action buttons */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
+          <Link href="/library" className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 transition-colors mb-3">
+            <ArrowLeft size={14} />
+            Library
+          </Link>
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <AreaBadge area={report.area} />
             <span className="text-xs text-gray-400 dark:text-zinc-500">{formatRelativeDate(report.createdAt)}</span>
@@ -202,8 +207,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             )}
           </div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">{report.title}</h1>
-
-          <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 dark:text-zinc-500 flex-wrap">
+          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-zinc-400 flex-wrap">
             <span className="flex items-center gap-1">
               <FileText size={11} />
               {report.fileName} · {formatFileSize(report.fileSize)}
@@ -259,6 +263,56 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
+      {/* Navigation row: prev / next */}
+      {(prevReport || nextReport) && (
+        <div className="flex items-center justify-between gap-4 pt-1 border-t border-gray-100 dark:border-zinc-800">
+          <div className="flex-1 min-w-0">
+            {prevReport ? (
+              <Link
+                href={`/reports/${prevReport.id}`}
+                className="group inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-50 transition-colors max-w-xs"
+              >
+                <ChevronLeft size={13} className="shrink-0 text-gray-400 dark:text-zinc-500 group-hover:text-gray-700 dark:group-hover:text-zinc-300" />
+                <span className="truncate">{prevReport.title}</span>
+                {prevReport.area !== report.area && (
+                  <span className="shrink-0 text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500">{prevReport.area}</span>
+                )}
+              </Link>
+            ) : <span />}
+          </div>
+          <div className="flex-1 min-w-0 flex justify-end">
+            {nextReport ? (
+              <Link
+                href={`/reports/${nextReport.id}`}
+                className="group inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-50 transition-colors max-w-xs"
+              >
+                {nextReport.area !== report.area && (
+                  <span className="shrink-0 text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500">{nextReport.area}</span>
+                )}
+                <span className="truncate">{nextReport.title}</span>
+                <ChevronRight size={13} className="shrink-0 text-gray-400 dark:text-zinc-500 group-hover:text-gray-700 dark:group-hover:text-zinc-300" />
+              </Link>
+            ) : <span />}
+          </div>
+        </div>
+      )}
+    </>
+  )
+
+  // ── Document pane (left) ──────────────────────────────────────────────────
+  const docSlot = (
+    <RawContent
+      content={report.rawContent}
+      displayContent={report.displayContent ?? undefined}
+      fileType={report.fileType}
+      reportId={report.id}
+      hasFile={!!report.filePath}
+    />
+  )
+
+  // ── Analysis pane (right) ─────────────────────────────────────────────────
+  const analysisSlot = (
+    <>
       {/* Summary */}
       {report.summary && (
         <section className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5">
@@ -274,7 +328,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         storyName={report.storyName ?? null}
       />
 
-      {/* What changed — comparison with previous */}
+      {/* What changed */}
       {showReportMetrics && comparison && (
         <section>
           <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
@@ -287,7 +341,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                 <p className="text-sm font-medium text-gray-800 dark:text-zinc-100">{comparison.headline}</p>
               </div>
             )}
-
             {comparison.changes.length > 0 && (
               <div className="divide-y divide-gray-100 dark:divide-zinc-800">
                 {comparison.changes.map((change, i) => (
@@ -316,7 +369,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                 ))}
               </div>
             )}
-
             {(comparison.newTopics.length > 0 || comparison.removedTopics.length > 0) && (
               <div className="px-4 py-3 border-t border-gray-100 dark:border-zinc-800 flex gap-6 flex-wrap">
                 {comparison.newTopics.length > 0 && (
@@ -486,8 +538,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </h2>
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
             {history.map(prev => {
-              let prevComparison: Comparison | null = null
-              prevComparison = parseJsonSafe<Comparison | null>(prev.comparison, null)
+              const prevComparison = parseJsonSafe<Comparison | null>(prev.comparison, null)
               return (
                 <Link
                   key={prev.id}
@@ -510,27 +561,14 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </div>
         </section>
       )}
+    </>
+  )
 
-      {/* Raw content */}
-      <section>
-        <details className="group" open={['xlsx', 'xls', 'csv', 'docx', 'doc', 'pdf'].includes(report.fileType) || undefined}>
-          <summary className="cursor-pointer text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 list-none hover:text-gray-600 dark:hover:text-zinc-300 transition-colors">
-            <FileText size={11} />
-            {labels.content}
-            <span className="ml-1 text-gray-300 dark:text-zinc-600 group-open:hidden">▸</span>
-            <span className="ml-1 text-gray-300 dark:text-zinc-600 hidden group-open:inline">▾</span>
-          </summary>
-          <div className="mt-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4">
-            <RawContent
-              content={report.rawContent}
-              displayContent={report.displayContent ?? undefined}
-              fileType={report.fileType}
-              reportId={report.id}
-              hasFile={!!report.filePath}
-            />
-          </div>
-        </details>
-      </section>
-    </ReportContent>
+  return (
+    <ReportContent
+      header={header}
+      docSlot={docSlot}
+      analysisSlot={analysisSlot}
+    />
   )
 }

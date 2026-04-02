@@ -14,6 +14,7 @@ import { MODE_LIST, getModeConfig } from '@/lib/mode'
 import SettingsRemoteTab from './SettingsRemoteTab'
 import SettingsBackupTab from './SettingsBackupTab'
 import SettingsPulseTab from './SettingsPulseTab'
+import SelectField from '@/components/SelectField'
 import SettingsKnowledgeTab from './SettingsKnowledgeTab'
 import ModeIcon from './ModeIcons'
 import { useSettingsState } from './useSettingsState'
@@ -234,18 +235,19 @@ export default function SettingsPage() {
                   <p className="text-sm text-gray-700 dark:text-zinc-200">Auto-lock</p>
                   <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">Lock after inactivity and require password</p>
                 </div>
-                <select
-                  value={s.autoLockMinutes}
-                  onChange={e => s.setAutoLockMinutes(parseInt(e.target.value))}
-                  className="text-sm border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400"
-                >
-                  <option value={0}>Never</option>
-                  <option value={5}>5 min</option>
-                  <option value={10}>10 min</option>
-                  <option value={15}>15 min</option>
-                  <option value={30}>30 min</option>
-                  <option value={60}>1 hour</option>
-                </select>
+                <SelectField
+                  value={String(s.autoLockMinutes)}
+                  onChange={v => s.setAutoLockMinutes(parseInt(v))}
+                  className="w-32"
+                  options={[
+                    { value: '0', label: 'Never' },
+                    { value: '5', label: '5 min' },
+                    { value: '10', label: '10 min' },
+                    { value: '15', label: '15 min' },
+                    { value: '30', label: '30 min' },
+                    { value: '60', label: '1 hour' },
+                  ]}
+                />
               </div>
 
               <div className="flex items-center justify-between">
@@ -310,6 +312,9 @@ export default function SettingsPage() {
                   modelChanged={s.modelChanged} selectedModel={s.selectedModel}
                   switchingToOllama={s.switchingToOllama}
                   webAccess={s.webAccess} setWebAccess={s.setWebAccess}
+                  ollamaVisionModel={s.ollamaVisionModel} setOllamaVisionModel={s.setOllamaVisionModel}
+                  customVisionModel={s.customVisionModel} setCustomVisionModel={s.setCustomVisionModel}
+                  savedVisionModel={s.savedVisionModel}
                 />
               </div>
             )}
@@ -351,7 +356,7 @@ export default function SettingsPage() {
             <div>
               <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Remove local Ollama models to free storage</p>
               <p className="text-xs text-amber-600 dark:text-amber-300 mt-0.5">
-                Removes <strong>{s.savedModel}</strong> and <strong>moondream</strong> from Ollama after saving. Ollama itself stays installed — you can always re-pull models later if you switch back.
+                Removes <strong>{s.savedModel}</strong>{s.savedVisionModel && s.savedVisionModel !== s.savedModel ? <> and <strong>{s.savedVisionModel}</strong></> : null} from Ollama after saving. Ollama itself stays installed — you can always re-pull models later if you switch back.
               </p>
             </div>
           </label>

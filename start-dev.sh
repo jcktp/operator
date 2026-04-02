@@ -123,6 +123,32 @@ if ! command -v ollama &>/dev/null; then
 fi
 step "Ollama found"
 
+# ── 3b. Tesseract OCR (for image text extraction) ────────────────────────────
+if ! command -v tesseract &>/dev/null; then
+  step "Tesseract OCR not found — installing..."
+  case "$PLATFORM" in
+    macOS)
+      brew install tesseract || warn "Could not install Tesseract — image text extraction will fall back to vision model"
+      ;;
+    Linux)
+      if command -v apt-get &>/dev/null; then
+        sudo apt-get install -y tesseract-ocr >/dev/null 2>&1 || warn "Could not install Tesseract"
+      elif command -v dnf &>/dev/null; then
+        sudo dnf install -y tesseract >/dev/null 2>&1 || warn "Could not install Tesseract"
+      elif command -v pacman &>/dev/null; then
+        sudo pacman -Sy --noconfirm tesseract tesseract-data-eng >/dev/null 2>&1 || warn "Could not install Tesseract"
+      else
+        warn "Tesseract not available — image text extraction will fall back to vision model"
+      fi
+      ;;
+    *)
+      warn "Tesseract not available on this platform — image text extraction will fall back to vision model"
+      ;;
+  esac
+else
+  step "Tesseract OCR found"
+fi
+
 # ── 4. cloudflared (optional — installed/updated in background, non-blocking) ─
 update_tools_bg() {
   case "$PLATFORM" in
@@ -162,7 +188,7 @@ DATABASE_URL="file:$(pwd)/prisma/dev.db"
 # ── Ollama (local, default) ───────────────────────────────────────────────────
 # OLLAMA_HOST="http://localhost:11434"
 # OLLAMA_MODEL="phi4-mini"          # text model — change in Settings or here
-# OLLAMA_VISION_MODEL="moondream"   # vision model for image uploads (run: ollama pull moondream)
+# OLLAMA_VISION_MODEL="moondream:1.8b-v2-q4_K_M"   # vision model for image uploads
 #                                   # moondream is ~1.7 GB; Ollama swaps it in/out on demand
 # OLLAMA_WEB_ACCESS="false"         # set to "true" to enable web search in Dispatch (requires BRAVE_SEARCH_KEY)
 
@@ -338,7 +364,7 @@ prisma.setting.findUnique({ where: { key: 'ollama_model' } })
   fi
 
   # Vision model — use OLLAMA_VISION_MODEL from .env.local if set, otherwise default to moondream
-  VISION_MODEL="moondream"
+  VISION_MODEL="llava-phi3"
   if [ -f ".env.local" ]; then
     VISION_MODEL_OVERRIDE=$(grep -E '^OLLAMA_VISION_MODEL=' .env.local | head -1 | sed 's/OLLAMA_VISION_MODEL=//;s/"//g;s/'"'"'//g' || true)
     [ -n "$VISION_MODEL_OVERRIDE" ] && VISION_MODEL="$VISION_MODEL_OVERRIDE"

@@ -1,6 +1,6 @@
 import { homedir } from 'os'
 import { join } from 'path'
-import { mkdirSync, writeFileSync } from 'fs'
+import { mkdirSync, writeFileSync, unlinkSync } from 'fs'
 
 export function getReportsRoot(): string {
   return join(homedir(), 'Documents', 'Operator Reports')
@@ -8,6 +8,12 @@ export function getReportsRoot(): string {
 
 export function getAreaFolder(area: string): string {
   return join(getReportsRoot(), area)
+}
+
+export function deleteReportFile(relativePath: string): void {
+  try {
+    unlinkSync(join(getReportsRoot(), relativePath))
+  } catch { /* file already gone — ignore */ }
 }
 
 export function saveReportFile(buffer: Buffer, fileName: string, area: string): string {

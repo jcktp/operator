@@ -8,13 +8,17 @@ import MetricsClient from './MetricsClient'
 export const dynamic = 'force-dynamic'
 
 export default async function MetricsPage() {
-  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const [modeRow, projectSetting] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
+  ])
   const modeConfig = getModeConfig(modeRow?.value)
+  const currentProjectId = projectSetting?.value || null
 
   if (!modeConfig.features.metricsBoard) notFound()
 
   const reports = await prisma.report.findMany({
-    where: { metrics: { not: null } },
+    where: { metrics: { not: null }, ...(currentProjectId ? { projectId: currentProjectId } : {}) },
     orderBy: { createdAt: 'desc' },
     select: { id: true, title: true, area: true, reportDate: true, createdAt: true, metrics: true,
       directReport: { select: { name: true } } },

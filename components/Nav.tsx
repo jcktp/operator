@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio, Globe } from '@/components/icons'
-import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, Layers } from 'lucide-react'
+import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, Layers, FolderOpen } from 'lucide-react'
 import type React from 'react'
 
 type AnyIcon = React.ComponentType<{ size?: number; className?: string }>
@@ -25,6 +25,7 @@ import UploadNotification from '@/components/UploadNotification'
 import SearchModal from '@/components/SearchModal'
 import NavDropdown, { type NavGroupItem } from '@/components/NavDropdown'
 import ActiveAreaBadge from '@/components/ActiveAreaBadge'
+import ProjectSwitcher from '@/components/ProjectSwitcher'
 import { Moon, Sun, ShieldOff } from 'lucide-react'
 
 // Kept for any imports that reference it; top nav has no sidebar
@@ -289,6 +290,15 @@ export default function Nav() {
             Dispatch
           </Link>
 
+          {/* Standalone: Projects */}
+          <Link
+            href="/projects"
+            className={cn(NAV_LINK_CLASS, pathname.startsWith('/projects') && NAV_ACTIVE_CLASS)}
+          >
+            <FolderOpen size={13} className="shrink-0" />
+            Projects
+          </Link>
+
           {/* Standalone: Settings */}
           <Link
             href="/settings"
@@ -320,6 +330,7 @@ export default function Nav() {
             <span className="text-[10px] text-gray-300 dark:text-zinc-600 font-mono">⌘K</span>
           </button>
 
+          <ProjectSwitcher />
           <UploadNotification />
           <StatusIndicator />
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { logAction } from '@/lib/audit'
 import { generateAreaBriefing } from '@/lib/ai'
+import { deleteReportFile } from '@/lib/reports-folder'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -25,8 +26,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const report = await prisma.report.findUnique({ where: { id }, select: { title: true, area: true } })
+  const report = await prisma.report.findUnique({ where: { id }, select: { title: true, area: true, filePath: true, imagePath: true } })
   await prisma.report.delete({ where: { id } })
+  // Remove upload job items for this report (frees rawContent storage), then prune empty jobs
+  await prisma.uploadJobItem.deleteMany({ where: { reportId: id } })
+  await prisma.uploadJob.deleteMany({ where: { items: { none: {} } } })
+  // Delete files from disk
+  if (report?.filePath) deleteReportFile(report.filePath)
+  if (report?.imagePath) deleteReportFile(report.imagePath)
   void logAction('report:delete', report ? `${report.title} (${report.area})` : id)
 
   if (report) {

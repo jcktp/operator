@@ -91,7 +91,7 @@ export default function ExportAnalysisPDFButton({ title, area, directName, repor
     <button
       onClick={handleExport}
       title="Export analysis as PDF"
-      className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-zinc-50 hover:border-gray-300 dark:hover:border-zinc-600 transition-colors"
+      className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-zinc-100 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors"
     >
       <FileDown size={13} />
       Export PDF

@@ -4,6 +4,7 @@ import { decrypt } from './encryption'
 const KEY_MAP: Record<string, string> = {
   ollama_host:            'OLLAMA_HOST',
   ollama_model:           'OLLAMA_MODEL',
+  ollama_vision_model:    'OLLAMA_VISION_MODEL',
   ollama_web_access:      'OLLAMA_WEB_ACCESS',
   air_gap_mode:           'AIR_GAP_MODE',
   ai_provider:            'AI_PROVIDER',

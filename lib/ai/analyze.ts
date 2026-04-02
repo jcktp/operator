@@ -95,7 +95,7 @@ async function analyzeChunk(
   totalChunks: number,
 ): Promise<ChunkResult> {
   const prompt = `Excerpt ${chunkIndex} of ${totalChunks} from "${reportTitle}" (${area}).
-Extract only facts visible in this text — never infer or calculate.
+Extract only facts visible in this text — never infer or calculate. Always respond in English regardless of the document language.
 
 ${chunk}
 
@@ -214,6 +214,7 @@ Area: ${area}${from}
 ${modeConfig.analysisFraming}
 
 STRICT RULES:
+- Always respond in English, regardless of the language the document is written in. Translate all extracted content into English.
 - Only surface numbers and facts that appear verbatim in the document. Never calculate, infer, or estimate figures.
 - Do not invent metrics, trends, or observations not explicitly stated.
 - If a value is not present, omit it rather than guessing.
@@ -237,7 +238,7 @@ Return ONLY valid JSON with this exact structure:
 
 Limits: max 10 metrics, 5 insights, 4 questions. Use only data from the document.`
 
-  const ollamaPrompt = `${knowledgePrefix}Analyze this ${modeConfig.documentLabel.toLowerCase()}. Extract only facts that appear in the text — never calculate or invent numbers.
+  const ollamaPrompt = `${knowledgePrefix}Analyze this ${modeConfig.documentLabel.toLowerCase()}. Extract only facts that appear in the text — never calculate or invent numbers. Always respond in English regardless of the document language — translate all content into English.
 
 ${modeConfig.analysisFraming}
 

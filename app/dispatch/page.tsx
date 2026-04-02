@@ -8,20 +8,24 @@ import DispatchPageClient from './DispatchPageClient'
 export const dynamic = 'force-dynamic'
 
 export default async function DispatchPage() {
-  const [chats, reports, providerRow, modeRow] = await Promise.all([
+  const [chats, providerRow, modeRow, projectSetting] = await Promise.all([
     prisma.dispatchChat.findMany({ orderBy: { updatedAt: 'desc' } }),
-    prisma.report.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-      select: {
-        id: true, title: true, area: true, reportDate: true, createdAt: true, rawContent: true,
-        summary: true, metrics: true, insights: true, questions: true,
-        directReport: { select: { name: true } },
-      },
-    }),
     prisma.setting.findUnique({ where: { key: 'ai_provider' } }),
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
   ])
+  const currentProjectId = projectSetting?.value || null
+
+  const reports = await prisma.report.findMany({
+    where: currentProjectId ? { projectId: currentProjectId } : undefined,
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+    select: {
+      id: true, title: true, area: true, reportDate: true, createdAt: true, rawContent: true,
+      summary: true, metrics: true, insights: true, questions: true,
+      directReport: { select: { name: true } },
+    },
+  })
   const modeConfig = getModeConfig(modeRow?.value)
 
   // Cloud models have large context windows; Ollama is much more constrained

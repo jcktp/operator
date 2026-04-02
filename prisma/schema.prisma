@@ -42,6 +42,21 @@ model ReportSeries {
   reports   Report[]
 }
 
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  area        String    @default("")
+  startDate   DateTime?
+  status      String    @default("in_progress") // in_progress | completed
+  description String?   @default("")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  reports     Report[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
 model Report {
   id             String        @id @default(uuid())
   title          String
@@ -60,8 +75,10 @@ model Report {
   resolvedFlags  String?
   imagePath      String?
   filePath       String?  // relative path within getReportsRoot(), set for uploaded (non-image) files
-  storyName      String?  // optional story grouping label (all modes)
+  storyName      String?  // kept for backwards compat; projectId is the canonical grouping
   userNotes      String?  // analyst notes visible on the report page
+  projectId      String?
+  project        Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   isLongitudinal Boolean       @default(false)
   seriesId       String?
   series         ReportSeries? @relation(fields: [seriesId], references: [id])
@@ -75,6 +92,7 @@ model Report {
   journalism     ReportJournalism?
 
   @@index([area])
+  @@index([projectId])
   @@index([directReportId])
   @@index([createdAt])
   @@index([area, directReportId])
@@ -284,6 +302,7 @@ model UploadJobItem {
   directReportId String?
   reportDate     String?   // ISO date string
   storyName      String?
+  projectId      String?
   savedFilePath  String?   // relative path within reports folder
   status         String    @default("queued")  // queued|processing|done|error
   reportId       String?

@@ -17,7 +17,7 @@ export async function extractEntities(
   area: string
 ): Promise<NamedEntity[]> {
   const truncated = content.slice(0, maxContentLength())
-  const prompt = `Extract all named entities from this document. Record each entity's type and exact name as it appears.
+  const prompt = `Extract all named entities from this document. Record each entity's type and exact name as it appears. Always respond in English — translate names and context from any source language.
 
 Document: ${title} (${area})
 
@@ -27,18 +27,22 @@ ${truncated}
 Return ONLY valid JSON:
 {
   "entities": [
-    {"type": "person|organisation|location|date|financial", "name": "exact name from document", "context": "optional: title, role, or brief context if stated"}
+    {"type": "person|organisation|location|date|financial", "name": "exact name from document (translated to English if needed)", "context": "required for locations: 1-2 sentences describing what happened at or in connection with this place in the document. For other types: title, role, or brief context if stated."}
   ]
 }
 
 Types:
 - person: full names of individuals, including titles or roles if mentioned alongside the name
 - organisation: companies, government bodies, NGOs, agencies, institutions
-- location: countries, cities, addresses, named places
+- location: countries, cities, regions, addresses, named places. IMPORTANT: if a city or place appears inside an organisation name or address (e.g. "Ministry of Infrastructure, The Hague" or "EU Office Brussels"), extract the city/place as a separate location entity in addition to the organisation
 - date: specific dates, time periods, or date references (e.g. "Q3 2023", "15 March 2024")
 - financial: monetary amounts, financial figures (e.g. "$4.2 million", "€500k")
 
-Limits: max 30 entities. Only include entities explicitly named in the document. Do not infer.`
+Rules:
+- For location entities, the context field is REQUIRED and must describe what event, meeting, incident, or activity took place at or near this location according to the document. Do not just name the country or say "city in X".
+- Extract embedded locations from organisation names, addresses, and meeting venues as standalone location entities
+- Max 50 entities total
+- Only include entities explicitly named in the document — do not infer`
 
   try {
     const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
@@ -68,7 +72,7 @@ export async function extractTimeline(
   title: string
 ): Promise<JournalismTimelineEvent[]> {
   const truncated = content.slice(0, maxContentLength())
-  const prompt = `Extract all dated events and chronological references from this document.
+  const prompt = `Extract all dated events and chronological references from this document. Always respond in English — translate content from any source language.
 
 Document: ${title}
 
@@ -115,7 +119,7 @@ export async function detectRedactions(
   title: string
 ): Promise<RedactionEntry[]> {
   const truncated = content.slice(0, maxContentLength())
-  const prompt = `Examine this document for signs of redaction or deliberately withheld information.
+  const prompt = `Examine this document for signs of redaction or deliberately withheld information. Always respond in English — translate content from any source language.
 
 Document: ${title}
 
@@ -194,7 +198,7 @@ export async function compareDocumentsJournalism(
   const prevTrunc = prevContent.slice(0, maxLen)
   const currTrunc = currContent.slice(0, maxLen)
 
-  const prompt = `You are a journalist comparing two versions of a document. Identify what changed between them.
+  const prompt = `You are a journalist comparing two versions of a document. Identify what changed between them. Always respond in English — translate content from any source language.
 
 PREVIOUS DOCUMENT: ${prevTitle}
 ${prevTrunc}
@@ -271,7 +275,7 @@ export async function generateVerificationChecklist(
 ): Promise<VerificationItem[]> {
   const truncated = content.slice(0, maxContentLength())
 
-  const prompt = `You are a verification editor reviewing a document before publication. Your task is to identify key claims that require verification.
+  const prompt = `You are a verification editor reviewing a document before publication. Your task is to identify key claims that require verification. Always respond in English — translate content from any source language.
 
 DOCUMENT TITLE: ${title}
 AREA: ${area}

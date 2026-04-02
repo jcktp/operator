@@ -42,7 +42,14 @@ export default function UploadNotification() {
   const [cancelling, setCancelling] = useState<Set<string>>(new Set())
 
   const hasActive = jobs.some(j => j.status === 'queued' || j.status === 'processing')
-  const visibleJobs = jobs.filter(j => !dismissed.has(j.id))
+  // Strip deleted items from each job before rendering
+  const visibleJobs = jobs
+    .filter(j => !dismissed.has(j.id))
+    .map(j => ({ ...j, items: j.items.filter(i => i.status !== 'deleted') }))
+    .filter(j => {
+      if (j.status === 'queued' || j.status === 'processing') return true
+      return j.items.some(i => i.status === 'done' || i.status === 'error')
+    })
 
   // Load persisted dismissed IDs after hydration (localStorage not available on server)
   useEffect(() => {
@@ -82,6 +89,16 @@ export default function UploadNotification() {
     setExpanded(false)
   }
 
+  // Auto-dismiss completed jobs 5 seconds after they finish
+  useEffect(() => {
+    if (visibleJobs.length === 0) return
+    const allDone = visibleJobs.every(j => j.status === 'done' || j.status === 'error')
+    if (!allDone) return
+    const timer = setTimeout(dismissAll, 5000)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleJobs.map(j => j.status).join(',')])
+
   const cancel = async (jobId: string) => {
     setCancelling(prev => new Set([...prev, jobId]))
     await fetch(`/api/upload-jobs/${jobId}/cancel`, { method: 'POST' }).catch(() => {})
@@ -106,7 +123,8 @@ export default function UploadNotification() {
       ? `Analysing ${totalProcessed + 1} of ${totalItems}…`
       : 'Analysing…'
     : doneJobs.length > 0
-      ? `${doneJobs.reduce((s, j) => s + j.processed, 0)} document${doneJobs.reduce((s, j) => s + j.processed, 0) !== 1 ? 's' : ''} ready`
+      ? (() => { const n = doneJobs.reduce((s, j) => s + j.items.filter(i => i.status === 'done').length, 0); return `${n} document${n !== 1 ? 's' : ''} ready` })()
+
       : `${errorJobs.length} failed`
 
   return (
@@ -163,7 +181,8 @@ export default function UploadNotification() {
                       {inProgress
                         ? `Analysing ${job.processed + (currentItem ? 1 : 0)} of ${job.total}…`
                         : job.status === 'done'
-                          ? `${job.processed} document${job.processed !== 1 ? 's' : ''} complete`
+                          ? (() => { const n = doneItems.length; return `${n} document${n !== 1 ? 's' : ''} complete` })()
+
                           : `${errorItems.length} failed`
                       }
                     </span>

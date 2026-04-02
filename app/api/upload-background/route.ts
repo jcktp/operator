@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     const reportDate = formData.get('reportDate') as string | null
     const jobId = formData.get('jobId') as string | null      // group multiple files into one job
     const storyName = formData.get('storyName') as string | null
+    const projectId = formData.get('projectId') as string | null
     const sortOrder = parseInt(formData.get('sortOrder') as string ?? '0', 10)
     const extractText = formData.get('extractText') === 'true'
 
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest) {
         directReportId: directReportId || null,
         reportDate: reportDate || null,
         storyName: storyName || null,
+        projectId: projectId || null,
         savedFilePath,
         status: 'queued',
         sortOrder,

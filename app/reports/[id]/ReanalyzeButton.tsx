@@ -33,7 +33,7 @@ export default function ReanalyzeButton({ reportId }: { reportId: string }) {
         onClick={handleClick}
         disabled={loading}
         title="Re-run AI analysis"
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-zinc-700 rounded-lg text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:border-gray-300 dark:hover:border-zinc-600 disabled:opacity-40 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-zinc-100 hover:border-gray-400 dark:hover:border-zinc-500 disabled:opacity-40 transition-colors"
       >
         {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
         Re-analyse

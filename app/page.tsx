@@ -68,9 +68,40 @@ export default async function OverviewPage({
   const fromDate = filterFrom ? new Date(filterFrom) : null
   const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
 
-  const [reports, directs, modeRow] = await Promise.all([
+  // Fetch project context first so the report query can filter at DB level
+  const [modeRow, currentProjectSetting, projectCount] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
+    prisma.project.count(),
+  ])
+  const modeConfig = getModeConfig(modeRow?.value)
+  const currentProjectId = currentProjectSetting?.value || null
+
+  // First-run: no projects yet → prompt to create one
+  if (projectCount === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-950 rounded-2xl flex items-center justify-center mb-4">
+          <FileText size={22} className="text-indigo-400" />
+        </div>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-zinc-50 mb-2">
+          Start by creating a {modeConfig.projectLabel.toLowerCase()}
+        </h1>
+        <p className="text-gray-500 dark:text-zinc-400 text-sm max-w-sm mb-6">
+          Organise your documents under a {modeConfig.projectLabel.toLowerCase()} to keep everything focused and easy to navigate.
+        </p>
+        <Link href="/projects"
+          className="inline-flex items-center gap-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors">
+          <Upload size={15} />Create first {modeConfig.projectLabel.toLowerCase()}
+        </Link>
+      </div>
+    )
+  }
+
+  const [reports_final, directs, activeProject] = await Promise.all([
     prisma.report.findMany({
       where: {
+        ...(currentProjectId ? { projectId: currentProjectId } : {}),
         ...(fromDate || toDate ? {
           createdAt: {
             ...(fromDate ? { gte: fromDate } : {}),
@@ -82,17 +113,20 @@ export default async function OverviewPage({
       include: { directReport: true },
     }),
     prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
-    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    currentProjectId
+      ? prisma.project.findUnique({ where: { id: currentProjectId }, select: { name: true } })
+      : Promise.resolve(null),
   ])
-  const modeConfig = getModeConfig(modeRow?.value)
 
-  if (reports.length === 0) {
+  if (reports_final.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center mb-4">
           <FileText size={20} className="text-gray-400 dark:text-zinc-500" />
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-zinc-50 mb-2">{modeConfig.emptyStateTitle}</h1>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-zinc-50 mb-2">
+          {activeProject ? `No documents in "${activeProject.name}" yet` : modeConfig.emptyStateTitle}
+        </h1>
         <p className="text-gray-500 dark:text-zinc-400 text-sm max-w-sm mb-6">{modeConfig.emptyStateBody}</p>
         <Link href="/upload"
           className="inline-flex items-center gap-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors">
@@ -105,8 +139,8 @@ export default async function OverviewPage({
   // ── One Pager tab ───────────────────────────────────────────────────────────
   if (tab === 'one-pager') {
     // Group reports into weekly buckets by Monday of their createdAt week
-    const bucketMap: Map<number, typeof reports> = new Map()
-    for (const r of reports) {
+    const bucketMap: Map<number, typeof reports_final> = new Map()
+    for (const r of reports_final) {
       const key = weekStart(r.createdAt)
       if (!bucketMap.has(key)) bucketMap.set(key, [])
       bucketMap.get(key)!.push(r)
@@ -148,17 +182,17 @@ export default async function OverviewPage({
 
   // Area counts for sidebar (from full date-filtered set)
   const areaCounts: Record<string, number> = {}
-  for (const r of reports) areaCounts[r.area] = (areaCounts[r.area] ?? 0) + 1
+  for (const r of reports_final) areaCounts[r.area] = (areaCounts[r.area] ?? 0) + 1
   const sidebarAreas = Object.keys(areaCounts).sort().map(name => ({ name, count: areaCounts[name] }))
 
-  const recent = (selectedArea ? reports.filter(r => r.area === selectedArea) : reports).slice(0, 30)
+  const recent = (selectedArea ? reports_final.filter(r => r.area === selectedArea) : reports_final).slice(0, 30)
 
   // Most recent report per area (all areas view) OR up to 6 recent reports (single area view)
-  let activeAreas: typeof reports
+  let activeAreas: typeof reports_final
   if (selectedArea) {
     activeAreas = recent.slice(0, 6)
   } else {
-    const areaMap: Record<string, typeof reports[0]> = {}
+    const areaMap: Record<string, typeof reports_final[0]> = {}
     for (const r of recent) {
       if (!areaMap[r.area]) areaMap[r.area] = r
     }
@@ -188,7 +222,7 @@ export default async function OverviewPage({
 
   const labels = getReportLabels(modeConfig.id)
   const contextLines: string[] = [
-    `${modeConfig.label} overview — ${reports.length} ${modeConfig.documentLabelPlural.toLowerCase()} across ${activeAreas.length} ${modeConfig.collectionLabelPlural.toLowerCase()}.`,
+    `${modeConfig.label} overview — ${reports_final.length} ${modeConfig.documentLabelPlural.toLowerCase()} across ${activeAreas.length} ${modeConfig.collectionLabelPlural.toLowerCase()}.`,
     '',
     `${modeConfig.collectionLabelPlural.toUpperCase()}:`,
     ...activeAreas.map(r => {
@@ -207,7 +241,7 @@ export default async function OverviewPage({
 
   // ── Metric time-series per area ─────────────────────────────────────────────
   // Group all recent reports by area, sorted oldest→newest
-  const byArea: Record<string, typeof reports> = {}
+  const byArea: Record<string, typeof reports_final> = {}
   for (const r of [...recent].reverse()) {
     if (!byArea[r.area]) byArea[r.area] = []
     byArea[r.area].push(r)
@@ -238,7 +272,7 @@ export default async function OverviewPage({
 
   const data: OverviewData = {
     stats: {
-      totalReports: reports.length,
+      totalReports: reports_final.length,
       areasCount: selectedArea ? 1 : activeAreas.length,
       directsCount: directs.length,
     },

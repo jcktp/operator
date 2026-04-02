@@ -50,9 +50,16 @@ export default async function DashboardPage({
   const fromDate = filterFrom ? new Date(filterFrom) : null
   const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
 
-  const [allReports, directs, modeRow] = await Promise.all([
+  const [modeRow, projectSetting] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
+  ])
+  const currentProjectId = projectSetting?.value || null
+
+  const [allReports, directs] = await Promise.all([
     prisma.report.findMany({
       where: {
+        ...(currentProjectId ? { projectId: currentProjectId } : {}),
         ...(filterArea ? { area: filterArea } : {}),
         ...(filterDirect ? { directReportId: filterDirect } : {}),
         ...(fromDate || toDate ? {
@@ -66,7 +73,6 @@ export default async function DashboardPage({
       include: { directReport: true },
     }),
     prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
-    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
   const modeConfig = getModeConfig(modeRow?.value)
 
@@ -136,6 +142,7 @@ export default async function DashboardPage({
   }
 
   const allAreas = await prisma.report.findMany({
+    where: currentProjectId ? { projectId: currentProjectId } : undefined,
     select: { area: true }, distinct: ['area'], orderBy: { area: 'asc' },
   })
 

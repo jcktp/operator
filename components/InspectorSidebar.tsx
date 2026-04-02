@@ -137,6 +137,7 @@ function LocationView({ item }: { item: Extract<InspectorItem, { type: 'location
 
         {!hasContexts && (
           <div className="space-y-1">
+            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mb-2 italic">Re-analyse the document to extract location context.</p>
             {item.reportIds.map(id => (
               <Link
                 key={id}

@@ -17,13 +17,17 @@ function safe<T>(s: string | null | undefined, fb: T): T {
 }
 
 export default async function OnePagerPage() {
-  const [reports, modeRow] = await Promise.all([
-    prisma.report.findMany({
-      orderBy: [{ area: 'asc' }, { createdAt: 'desc' }],
-      include: { directReport: true },
-    }),
+  const [modeRow, projectSetting] = await Promise.all([
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
   ])
+  const currentProjectId = projectSetting?.value || null
+
+  const reports = await prisma.report.findMany({
+    where: currentProjectId ? { projectId: currentProjectId } : undefined,
+    orderBy: [{ area: 'asc' }, { createdAt: 'desc' }],
+    include: { directReport: true },
+  })
   const modeConfig = getModeConfig(modeRow?.value)
 
   if (reports.length === 0) {

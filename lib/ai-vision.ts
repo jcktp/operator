@@ -1,11 +1,10 @@
 // ── Image description (vision) ───────────────────────────────────────────────
 import { getProvider } from './ai-providers'
 import { getSecret } from './settings'
-import { Ollama } from 'ollama'
 
-const VISION_PROMPT = 'Describe this image in detail. Include any visible text, numbers, people (without identifying them), objects, and context that would be useful for research or reporting purposes.'
+const VISION_PROMPT = 'Describe only what you can clearly see in this image. Include visible text (quote it exactly, do not paraphrase or invent), people (without identifying them), objects, and context. If you cannot read text clearly, say so — do not guess or make up content.'
 
-const OCR_PROMPT = 'Extract all readable text from this image exactly as it appears. Preserve formatting, line breaks, and structure as closely as possible. Output only the extracted text with no commentary or explanation.'
+const OCR_PROMPT = 'Read and transcribe the text visible in this image exactly as it appears. Only include text you can clearly see — do not guess, infer, or fill in words you cannot read. Preserve line breaks and structure. Output only the transcribed text with no commentary.'
 
 export async function describeImage(buffer: Buffer, mimeType: string, extractText = false): Promise<string> {
   const prompt = extractText ? OCR_PROMPT : VISION_PROMPT
@@ -54,18 +53,65 @@ export async function describeImage(buffer: Buffer, mimeType: string, extractTex
     }
 
     if (provider === 'ollama') {
-      // Use a vision-capable Ollama model (default: llava).
-      // Set OLLAMA_VISION_MODEL in your environment to use a different model (e.g. moondream, bakllava).
+      // OCR path: use system tesseract binary — accurate, no downloads, no hallucination
+      if (extractText) {
+        const { execFile } = await import('child_process')
+        const { promisify } = await import('util')
+        const { writeFileSync, readFileSync, unlinkSync } = await import('fs')
+        const { tmpdir } = await import('os')
+        const { join } = await import('path')
+        const exec = promisify(execFile)
+
+        const ext = mimeType === 'image/png' ? 'png' : 'jpg'
+        const tmpIn = join(tmpdir(), `ocr-in-${Date.now()}.${ext}`)
+        const tmpOut = join(tmpdir(), `ocr-out-${Date.now()}`)
+        writeFileSync(tmpIn, buffer)
+        try {
+          await exec('tesseract', [tmpIn, tmpOut, '-l', 'eng'], { timeout: 30_000 })
+          const text = readFileSync(`${tmpOut}.txt`, 'utf8')
+          return text.trim() || '[No text found in image]'
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e)
+          console.error('[ai-vision] tesseract failed:', msg)
+          // Fall through to vision model with OCR prompt
+        } finally {
+          try { unlinkSync(tmpIn) } catch { /* ignore */ }
+          try { unlinkSync(`${tmpOut}.txt`) } catch { /* ignore */ }
+        }
+      }
+
+      // Vision description path: use llava-phi3 via Ollama REST API
       const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
-      // moondream is ~1.7 GB — much lighter than llava (~4.7 GB).
-      // Ollama swaps models on demand so phi4-mini and moondream don't run simultaneously.
-      const model = process.env.OLLAMA_VISION_MODEL ?? 'moondream'
-      const ollama = new Ollama({ host })
-      const res = await ollama.chat({
-        model,
-        messages: [{ role: 'user', content: prompt, images: [b64] }],
+      const model = process.env.OLLAMA_VISION_MODEL ?? 'llava-phi3'
+      // Race against a 3-minute timeout so a hung model-load never blocks the worker.
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Vision timed out after 180s')), 180_000)
+      )
+      const fetchCall = fetch(`${host}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: prompt, images: [b64] }],
+          stream: true,
+        }),
+      }).then(async r => {
+        if (!r.ok) throw new Error(`Ollama HTTP ${r.status}: ${await r.text()}`)
+        const text = await r.text()
+        let full = ''
+        for (const line of text.split('\n')) {
+          const t = line.trim()
+          if (!t) continue
+          try {
+            const obj = JSON.parse(t) as { message?: { content?: string }; error?: string }
+            if (obj.error) throw new Error(obj.error)
+            if (obj.message?.content) full += obj.message.content
+          } catch { /* skip malformed lines */ }
+        }
+        return full
       })
-      return res.message.content || '[Image stored]'
+      const description = (await Promise.race([fetchCall, timeout])).trim()
+      return description || '[Image stored — vision model returned empty response]'
     }
 
     if (provider === 'google') {
@@ -88,8 +134,10 @@ export async function describeImage(buffer: Buffer, mimeType: string, extractTex
       return data.candidates?.[0]?.content.parts[0]?.text ?? '[Image stored]'
     }
   } catch (e) {
-    console.error('[ai-vision] describeImage failed:', e)
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[ai-vision] describeImage failed:', msg)
+    return `[Image analysis failed: ${msg}]`
   }
 
-  return '[Image stored — vision analysis failed or no vision-capable model available. For Ollama, run: ollama pull moondream]'
+  return '[Image stored — vision analysis not available for this provider]'
 }

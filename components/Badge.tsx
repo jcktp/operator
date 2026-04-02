@@ -1,4 +1,4 @@
-import { cn, AREA_COLORS } from '@/lib/utils'
+import { cn, getAreaColor } from '@/lib/utils'
 
 interface BadgeProps {
   label: string
@@ -7,7 +7,7 @@ interface BadgeProps {
 }
 
 export function AreaBadge({ area, className }: { area: string; className?: string }) {
-  const color = AREA_COLORS[area] ?? 'bg-gray-50 text-gray-700 border-gray-200'
+  const color = getAreaColor(area)
   return (
     <span
       className={cn(
