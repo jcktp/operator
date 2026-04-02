@@ -144,7 +144,7 @@ Ollama runs entirely on your machine. Nothing is sent anywhere.
 | | Default |
 |---|---|
 | Text model | `phi4-mini` (~2.5 GB) |
-| Vision model | `moondream` (~1.7 GB) — auto-pulled for image uploads |
+| Vision model | `llava-phi3` (~1.7 GB) — pulled on first run for image uploads |
 | Host | `http://localhost:11434` |
 
 Switch to any Ollama model in **Settings → AI** — it downloads automatically.

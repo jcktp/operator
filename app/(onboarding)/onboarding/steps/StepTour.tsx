@@ -1,4 +1,4 @@
-import { Upload, MessageSquare, BookOpen, Globe, Rss, Network, Clock, BarChart2, BookMarked } from 'lucide-react'
+import { Upload, MessageSquare, BookOpen, Globe, Rss, Network, Clock, BarChart2, BookMarked, FolderOpen } from 'lucide-react'
 import type { ModeConfig } from '@/lib/mode'
 
 interface Props {
@@ -14,7 +14,8 @@ export default function StepTour({ modeConfig, onNext, onBack }: Props) {
   const f = c.features
 
   const universal: Card[] = [
-    { icon: <Upload size={17} className="text-indigo-500" />,      title: c.navLibrary,    desc: `Upload ${c.documentLabelPlural.toLowerCase()} and get automatic AI summaries, flags, and insights.` },
+    { icon: <FolderOpen size={17} className="text-indigo-500" />,   title: 'Projects',     desc: 'Organise work into named projects. All documents, analysis, and dispatch are scoped to the active project.' },
+    { icon: <Upload size={17} className="text-indigo-400" />,       title: c.navLibrary,   desc: `Upload ${c.documentLabelPlural.toLowerCase()} and get automatic AI summaries, flags, and insights.` },
     { icon: <MessageSquare size={17} className="text-violet-500" />, title: 'Dispatch',    desc: `AI assistant. Ask anything about your ${c.documentLabelPlural.toLowerCase()}, get cross-references, draft outputs.` },
     { icon: <BookOpen size={17} className="text-amber-500" />,      title: c.navJournal,   desc: 'Private notes with AI rewrite and catch-me-up. Organised by folder.' },
     { icon: <Globe size={17} className="text-sky-500" />,           title: 'Browser',      desc: 'In-app browser with Reader mode. Import articles directly to your Library.' },

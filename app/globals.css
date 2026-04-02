@@ -28,6 +28,19 @@
   --color-muted: var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Brand blue — overrides Tailwind's indigo palette */
+  --color-indigo-50:  #eef0fa;
+  --color-indigo-100: #d4d8f1;
+  --color-indigo-200: #a9b0e3;
+  --color-indigo-300: #7e88d5;
+  --color-indigo-400: #6771cc;
+  --color-indigo-500: #5C66B3;
+  --color-indigo-600: #4c55a0;
+  --color-indigo-700: #3d4482;
+  --color-indigo-800: #2d3361;
+  --color-indigo-900: #1d2141;
+  --color-indigo-950: #111426;
 }
 
 body {
