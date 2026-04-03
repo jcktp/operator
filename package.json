@@ -1,7 +1,14 @@
 {
   "name": "operator",
   "version": "0.1.0",
-  "private": true,
+  "description": "Local-first AI workspace for documents, investigations, and team intelligence",
+  "author": "Jorick Polderman",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jcktp/operator.git"
+  },
+  "license": "SEE LICENSE IN license.md",
+  "private": false,
   "scripts": {
     "dev": "next dev",
     "build": "next build",

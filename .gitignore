@@ -49,11 +49,28 @@ next-env.d.ts
 
 /app/generated/prisma
 
-# database
+# database — all SQLite variants and WAL/SHM sidecar files
 prisma/dev.db
 prisma/dev.db-journal
+prisma/dev.db-wal
+prisma/dev.db-shm
 dev.db
 dev.db-journal
+dev.db-wal
+dev.db-shm
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
 
 # local encryption key — never commit this
 prisma/.operator_key
+
+# TLS / certificate files
+*.key
+*.crt
+*.p12
+*.pfx
+
+# cloudflared binary (downloaded at runtime by start.sh)
+cloudflared
