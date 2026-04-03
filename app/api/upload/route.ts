@@ -7,6 +7,7 @@ import { saveReportFile } from '@/lib/reports-folder'
 import { logAction } from '@/lib/audit'
 import { join } from 'path'
 import { getModeConfig } from '@/lib/mode'
+import { scanFile } from '@/lib/file-scan'
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +25,10 @@ export async function POST(req: NextRequest) {
     const fileType = getFileType(file.name)
     const buffer = Buffer.from(await file.arrayBuffer())
     const isImage = IMAGE_TYPES.has(fileType.toLowerCase())
+
+    // Scan before saving or processing anything
+    const scan = scanFile(buffer, file.name)
+    if (!scan.safe) return NextResponse.json({ error: `File rejected: ${scan.reason}` }, { status: 422 })
 
     // Save original file to ~/Documents/Operator Reports/{area}/
     let savedFileName = file.name

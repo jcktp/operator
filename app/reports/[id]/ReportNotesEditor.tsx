@@ -5,28 +5,83 @@ import { Loader2, Save, StickyNote } from 'lucide-react'
 
 interface Props {
   reportId: string
+  reportTitle: string
   initialNotes: string | null
   storyName: string | null
+  currentProjectId?: string | null
+  currentProjectName?: string | null
 }
 
-export default function ReportNotesEditor({ reportId, initialNotes, storyName }: Props) {
+export default function ReportNotesEditor({ reportId, reportTitle, initialNotes, storyName, currentProjectId, currentProjectName }: Props) {
   const [notes, setNotes] = useState(initialNotes ?? '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // Track journal entry ID in localStorage so repeated saves update the same entry
+  const storageKey = `report-note-entry-${reportId}`
+  const [journalEntryId, setJournalEntryId] = useState<string | null>(() => {
+    try { return localStorage.getItem(storageKey) } catch { return null }
+  })
 
   const handleSave = useCallback(async () => {
     if (saving) return
     setSaving(true)
     setSaved(false)
+
+    // Save analyst notes to the report record
     await fetch(`/api/reports/${reportId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userNotes: notes }),
     })
+
+    // Also upsert a journal entry in the project folder
+    if (notes.trim()) {
+      const folder = currentProjectName ?? 'General'
+      const entryTitle = `Notes: ${reportTitle}`
+      const content = `<p>${notes.trim().replace(/\n/g, '<br/>')}</p>`
+      try {
+        const res = await fetch('/api/journal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: journalEntryId ?? undefined,
+            title: entryTitle,
+            folder,
+            content,
+            projectId: currentProjectId ?? null,
+          }),
+        })
+        if (res.ok) {
+          const data = await res.json() as { entry?: { id: string } }
+          if (data.entry?.id && !journalEntryId) {
+            setJournalEntryId(data.entry.id)
+            try { localStorage.setItem(storageKey, data.entry.id) } catch {}
+          }
+        } else if (journalEntryId) {
+          // Stale localStorage ID — clear it and retry as a fresh create
+          setJournalEntryId(null)
+          try { localStorage.removeItem(storageKey) } catch {}
+          const retry = await fetch('/api/journal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: entryTitle, folder, content, projectId: currentProjectId ?? null }),
+          })
+          if (retry.ok) {
+            const data = await retry.json() as { entry?: { id: string } }
+            if (data.entry?.id) {
+              setJournalEntryId(data.entry.id)
+              try { localStorage.setItem(storageKey, data.entry.id) } catch {}
+            }
+          }
+        }
+      } catch { /* non-blocking — report save already succeeded */ }
+    }
+
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
-  }, [reportId, notes, saving])
+  }, [reportId, reportTitle, notes, saving, journalEntryId, storageKey, currentProjectId, currentProjectName])
 
   return (
     <section className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-5">

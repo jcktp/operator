@@ -1,6 +1,10 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useInspector } from '@/components/InspectorContext'
+import { useDispatch } from '@/components/DispatchContext'
+
+const DispatchPanel = dynamic(() => import('@/app/dispatch/DispatchPanel'), { ssr: false })
 
 const SCROLL_MASK = {
   WebkitMaskImage: 'linear-gradient(to bottom, transparent 0px, black 28px)',
@@ -11,12 +15,20 @@ export default function ReportContent({
   header,
   docSlot,
   analysisSlot,
+  currentProjectId,
+  currentProjectName,
 }: {
   header: React.ReactNode
   docSlot: React.ReactNode
   analysisSlot: React.ReactNode
+  currentProjectId?: string | null
+  currentProjectName?: string | null
 }) {
   const { open: inspectorOpen } = useInspector()
+  const { open: dispatchOpen, setOpen: setDispatchOpen, aiContext, pendingMessage, setPendingMessage } = useDispatch()
+
+  const closeDispatch = () => { setDispatchOpen(false); setPendingMessage('') }
+
   return (
     <div className={`flex flex-col h-full ${inspectorOpen ? 'max-w-full' : 'max-w-[1600px]'}`}>
       {/* Header — always visible */}
@@ -26,7 +38,7 @@ export default function ReportContent({
 
       {/* Split panes — fill remaining viewport height */}
       <div className="flex-1 min-h-0 flex gap-6 pb-4">
-        {/* Left pane: document preview */}
+        {/* Left pane: document preview — unchanged width */}
         <div
           className="w-5/12 shrink-0 overflow-y-auto rounded-xl"
           style={SCROLL_MASK}
@@ -36,14 +48,32 @@ export default function ReportContent({
           </div>
         </div>
 
-        {/* Right pane: AI analysis */}
-        <div
-          className="flex-1 min-w-0 overflow-y-auto"
-          style={SCROLL_MASK}
-        >
-          <div className="space-y-6 pt-2 pb-8">
-            {analysisSlot}
+        {/* Right side: analysis + optional dispatch panel side by side */}
+        <div className="flex-1 min-w-0 flex gap-4">
+          {/* Analysis pane — scrolls independently, narrows when dispatch is open */}
+          <div
+            className="flex-1 min-w-0 overflow-y-auto"
+            style={SCROLL_MASK}
+          >
+            <div className="space-y-6 pt-2 pb-8">
+              {analysisSlot}
+            </div>
           </div>
+
+          {/* Dispatch panel — opens to the right of analysis */}
+          {dispatchOpen && (
+            <div className="w-72 shrink-0 flex flex-col overflow-hidden">
+              <DispatchPanel
+                key={aiContext}
+                context={aiContext}
+                onClose={closeDispatch}
+                initialMessage={pendingMessage || undefined}
+                currentProjectId={currentProjectId ?? null}
+                currentProjectName={currentProjectName ?? null}
+                compact
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

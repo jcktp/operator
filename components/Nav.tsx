@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio, Globe } from '@/components/icons'
-import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, Layers, FolderOpen } from 'lucide-react'
+import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen } from 'lucide-react'
 import type React from 'react'
 
 type AnyIcon = React.ComponentType<{ size?: number; className?: string }>
@@ -99,10 +99,6 @@ export default function Nav() {
     { href: '/directs', label: config.navPeople, icon: Users },
   ]
 
-  // GROUP C: Synthesis — creation and output tools
-  const synthesisItems: NavGroupItem[] = [
-    { href: '/journal', label: config.navJournal, icon: BookOpen },
-  ]
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -200,17 +196,14 @@ export default function Nav() {
             activeArea={activeArea}
           />
 
-          {/* GROUP C: Synthesis */}
-          <NavDropdown
-            id="synthesis"
-            label="Synthesis"
-            icon={Layers}
-            items={synthesisItems}
-            isOpen={openGroup === 'synthesis'}
-            onToggle={toggleGroup}
-            onClose={closeGroups}
-            activeArea={activeArea}
-          />
+          {/* Direct: Journal / Notebook */}
+          <Link
+            href="/journal"
+            className={cn(NAV_LINK_CLASS, pathname.startsWith('/journal') && NAV_ACTIVE_CLASS)}
+          >
+            <BookOpen size={13} className="shrink-0" />
+            {config.navJournal}
+          </Link>
 
           {/* Standalone: Dispatch */}
           <Link

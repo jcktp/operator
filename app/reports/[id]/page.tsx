@@ -59,6 +59,11 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const currentProjectId = projectSetting?.value || null
   const projectFilter = currentProjectId ? { projectId: currentProjectId } : {}
 
+  const currentProject = currentProjectId
+    ? await prisma.project.findUnique({ where: { id: currentProjectId }, select: { name: true } })
+    : null
+  const currentProjectName = currentProject?.name ?? null
+
   const [history, prevReport, nextReport] = await Promise.all([
     prisma.report.findMany({
       where: { ...projectFilter, area: report.area, id: { not: id } },
@@ -324,8 +329,11 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       {/* Analyst notes */}
       <ReportNotesEditor
         reportId={report.id}
+        reportTitle={report.title}
         initialNotes={report.userNotes ?? null}
         storyName={report.storyName ?? null}
+        currentProjectId={currentProjectId}
+        currentProjectName={currentProjectName}
       />
 
       {/* What changed */}
@@ -569,6 +577,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       header={header}
       docSlot={docSlot}
       analysisSlot={analysisSlot}
+      currentProjectId={currentProjectId}
+      currentProjectName={currentProjectName}
     />
   )
 }

@@ -7,7 +7,7 @@ import { renderMarkdown } from './MarkdownRenderer'
 import { useMode } from '@/components/ModeContext'
 import { getSuggestions } from './dispatchSuggestions'
 import DispatchHistoryView, { type ChatSummary } from './DispatchHistoryView'
-import { downloadCode } from './dispatchUtils'
+import { downloadCode, markdownToHtml } from './dispatchUtils'
 import { useChatLogic } from './useChatLogic'
 
 interface Props {
@@ -17,11 +17,12 @@ interface Props {
   initialChat?: { id: string; title: string; messages: Array<{ role: 'user' | 'assistant'; content: string; attachmentName?: string }> }
   initialMessage?: string
   fullPage?: boolean
+  compact?: boolean
   currentProjectId?: string | null
   currentProjectName?: string | null
 }
 
-export default function DispatchPanel({ context, currentUrl, onClose, initialChat, initialMessage, fullPage, currentProjectId, currentProjectName }: Props) {
+export default function DispatchPanel({ context, currentUrl, onClose, initialChat, initialMessage, fullPage, compact, currentProjectId, currentProjectName }: Props) {
   const modeConfig = useMode()
   const c = useChatLogic({ context, modeId: modeConfig.id, initialChat, initialMessage })
   const personaList = Object.values(c.personaMap)
@@ -29,12 +30,10 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
   const [savedNoteIdx, setSavedNoteIdx] = useState<number | null>(null)
 
   const saveMessageAsNote = async (content: string, idx: number) => {
-    // Convert markdown-ish content to simple HTML paragraphs
-    const html = content
-      .split(/\n\n+/)
-      .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
-      .join('')
-    const title = content.replace(/[#*`_]/g, '').slice(0, 60).trim() || 'Note from Dispatch'
+    const html = markdownToHtml(content)
+    const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    const snippet = content.replace(/[#*`_\-]/g, '').replace(/\s+/g, ' ').slice(0, 50).trim()
+    const title = `${date} — ${snippet || 'Note from Dispatch'}`
     const folder = currentProjectName ?? 'General'
     await fetch('/api/journal', {
       method: 'POST',
@@ -272,58 +271,107 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
 
         {/* Input bar */}
         <div className="border-t border-gray-100 dark:border-zinc-800 p-3 shrink-0">
-          <div className="flex gap-2 items-end">
-            <input ref={c.fileRef} type="file"
-              accept=".txt,.md,.csv,.xlsx,.xls,.pdf,.pptx,.docx,.doc"
-              className="hidden"
-              onChange={c.handleFileAttach}
-            />
-            <button
-              onClick={() => c.fileRef.current?.click()}
-              disabled={c.attachLoading}
-              title="Attach file (CSV, Excel, PDF, TXT…)"
-              className="shrink-0 p-2 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-40"
-            >
-              {c.attachLoading ? <Loader2 size={14} className="animate-spin" /> : <Paperclip size={14} />}
-            </button>
-            <button
-              onClick={() => c.setShowUrlInput(v => !v)}
-              title="Fetch a web page"
-              className={cn('shrink-0 p-2 rounded-xl transition-colors', c.showUrlInput ? 'bg-gray-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800')}
-            >
-              <Link2 size={14} />
-            </button>
-            <div className="relative">
-              <button
-                onClick={c.toggleWebAccess}
-                title={c.isApiProvider ? 'Online — API providers always require internet' : c.webAccess ? 'Online access on — click to disable' : 'Online access off — click to enable'}
-                className={cn('shrink-0 p-2 rounded-xl transition-colors', c.webAccess ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-950' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-500 dark:hover:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800')}
-              >
-                {c.webAccess || c.isApiProvider ? <Globe size={14} /> : <GlobeLock size={14} />}
-              </button>
-              {c.apiLockNotice && (
-                <div className="absolute bottom-full right-0 mb-2 w-56 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] rounded-lg px-3 py-2 shadow-lg z-50 leading-snug">
-                  Always on for API providers. Enable air-gap mode in Settings to disconnect.
-                  <div className="absolute bottom-0 right-3 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900 dark:border-t-zinc-100" />
+          <input ref={c.fileRef} type="file"
+            accept=".txt,.md,.csv,.xlsx,.xls,.pdf,.pptx,.docx,.doc"
+            className="hidden"
+            onChange={c.handleFileAttach}
+          />
+          {compact ? (
+            /* Compact layout: textarea + send in one row, action icons below */
+            <>
+              <div className="flex gap-2 items-end">
+                <textarea
+                  ref={c.inputRef}
+                  value={c.input}
+                  onChange={e => c.setInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); c.send() } }}
+                  placeholder="Ask anything…"
+                  rows={1}
+                  className="flex-1 resize-none bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 placeholder-gray-400 dark:placeholder-zinc-500 max-h-28 overflow-y-auto"
+                  style={{ fieldSizing: 'content' } as React.CSSProperties}
+                />
+                <button onClick={c.send} disabled={(!c.input.trim() && !c.pendingAttachment) || c.loading}
+                  className="shrink-0 p-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-40">
+                  <Send size={14} />
+                </button>
+              </div>
+              <div className="flex items-center gap-0.5 mt-1.5">
+                <button onClick={() => c.fileRef.current?.click()} disabled={c.attachLoading} title="Attach file"
+                  className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-40">
+                  {c.attachLoading ? <Loader2 size={12} className="animate-spin" /> : <Paperclip size={12} />}
+                </button>
+                <button onClick={() => c.setShowUrlInput(v => !v)} title="Fetch a web page"
+                  className={cn('p-1.5 rounded-lg transition-colors', c.showUrlInput ? 'bg-gray-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800')}>
+                  <Link2 size={12} />
+                </button>
+                <div className="relative">
+                  <button onClick={c.toggleWebAccess}
+                    title={c.isApiProvider ? 'Online — API providers always require internet' : c.webAccess ? 'Online access on' : 'Online access off'}
+                    className={cn('p-1.5 rounded-lg transition-colors', c.webAccess ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-950' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-500 dark:hover:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800')}>
+                    {c.webAccess || c.isApiProvider ? <Globe size={12} /> : <GlobeLock size={12} />}
+                  </button>
+                  {c.apiLockNotice && (
+                    <div className="absolute bottom-full left-0 mb-2 w-52 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] rounded-lg px-3 py-2 shadow-lg z-50 leading-snug">
+                      Always on for API providers.
+                      <div className="absolute bottom-0 left-3 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900 dark:border-t-zinc-100" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <textarea
-              ref={c.inputRef}
-              value={c.input}
-              onChange={e => c.setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); c.send() } }}
-              placeholder="Ask anything…"
-              rows={1}
-              className="flex-1 resize-none border border-gray-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 placeholder-gray-400 dark:placeholder-zinc-500 max-h-32 overflow-y-auto dark:bg-zinc-800"
-              style={{ fieldSizing: 'content' } as React.CSSProperties}
-            />
-            <button onClick={c.send} disabled={(!c.input.trim() && !c.pendingAttachment) || c.loading}
-              className="shrink-0 p-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-40">
-              <Send size={14} />
-            </button>
-          </div>
-          <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1.5 text-center">Enter to send · Shift+Enter for new line</p>
+                <span className="ml-auto text-[10px] text-gray-300 dark:text-zinc-600">⏎ send</span>
+              </div>
+            </>
+          ) : (
+            /* Full layout: icons left of textarea */
+            <>
+              <div className="flex gap-2 items-end">
+                <button
+                  onClick={() => c.fileRef.current?.click()}
+                  disabled={c.attachLoading}
+                  title="Attach file (CSV, Excel, PDF, TXT…)"
+                  className="shrink-0 p-2 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-40"
+                >
+                  {c.attachLoading ? <Loader2 size={14} className="animate-spin" /> : <Paperclip size={14} />}
+                </button>
+                <button
+                  onClick={() => c.setShowUrlInput(v => !v)}
+                  title="Fetch a web page"
+                  className={cn('shrink-0 p-2 rounded-xl transition-colors', c.showUrlInput ? 'bg-gray-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800')}
+                >
+                  <Link2 size={14} />
+                </button>
+                <div className="relative">
+                  <button
+                    onClick={c.toggleWebAccess}
+                    title={c.isApiProvider ? 'Online — API providers always require internet' : c.webAccess ? 'Online access on — click to disable' : 'Online access off — click to enable'}
+                    className={cn('shrink-0 p-2 rounded-xl transition-colors', c.webAccess ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-950' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-500 dark:hover:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800')}
+                  >
+                    {c.webAccess || c.isApiProvider ? <Globe size={14} /> : <GlobeLock size={14} />}
+                  </button>
+                  {c.apiLockNotice && (
+                    <div className="absolute bottom-full right-0 mb-2 w-56 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] rounded-lg px-3 py-2 shadow-lg z-50 leading-snug">
+                      Always on for API providers. Enable air-gap mode in Settings to disconnect.
+                      <div className="absolute bottom-0 right-3 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900 dark:border-t-zinc-100" />
+                    </div>
+                  )}
+                </div>
+                <textarea
+                  ref={c.inputRef}
+                  value={c.input}
+                  onChange={e => c.setInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); c.send() } }}
+                  placeholder="Ask anything…"
+                  rows={1}
+                  className="flex-1 resize-none border border-gray-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 placeholder-gray-400 dark:placeholder-zinc-500 max-h-32 overflow-y-auto dark:bg-zinc-800"
+                  style={{ fieldSizing: 'content' } as React.CSSProperties}
+                />
+                <button onClick={c.send} disabled={(!c.input.trim() && !c.pendingAttachment) || c.loading}
+                  className="shrink-0 p-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-40">
+                  <Send size={14} />
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1.5 text-center">Enter to send · Shift+Enter for new line</p>
+            </>
+          )}
         </div>
       </>}
     </div>
