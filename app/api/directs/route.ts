@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireAuth } from '@/lib/api-auth'
 
 export async function GET() {
   try {
@@ -20,7 +21,9 @@ export async function GET() {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const authError = await requireAuth(req)
+  if (authError) return authError
   try {
     await prisma.directReport.deleteMany()
     return NextResponse.json({ success: true })
@@ -40,13 +43,9 @@ export async function POST(req: NextRequest) {
     }
 
     const direct = await prisma.directReport.create({
-      data: { name, title, email: email || null, area },
+      data: { name, title, email: email || null, phone: phone || null, area },
     })
-    // Set phone via raw SQL — Prisma client may not include this field until server restart
-    if (phone) {
-      await prisma.$executeRawUnsafe('UPDATE "DirectReport" SET "phone" = ? WHERE "id" = ?', phone, direct.id)
-    }
-    return NextResponse.json({ direct: { ...direct, phone: phone || null } })
+    return NextResponse.json({ direct })
   } catch (e) {
     console.error('directs POST error:', e)
     return NextResponse.json({ error: 'Failed to create team member' }, { status: 500 })

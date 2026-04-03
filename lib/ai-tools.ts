@@ -95,6 +95,53 @@ export function availableTools(includeJournal = true): ToolDef[] {
   return tools
 }
 
+// ── Hallucination detection helpers ─────────────────────────────────────────
+
+/**
+ * Detect when a small model narrates a web tool call instead of executing it.
+ * Returns the tool name detected, or null.
+ */
+export function detectHallucinatedWebTool(content: string): 'get_weather' | 'search_web' | 'fetch_url' | null {
+  // Look for tool name in brackets, in JSON schema fragments, or in "according to X" narration
+  if (/\[get_weather\]|\bget_weather\b.*temperature|"name":\s*"get_weather"/i.test(content)) return 'get_weather'
+  if (/\[search_web\]|\bsearch_web\b.*results|"name":\s*"search_web"/i.test(content)) return 'search_web'
+  if (/\[fetch_url\]|\bfetch_url\b.*content|"name":\s*"fetch_url"/i.test(content)) return 'fetch_url'
+  return null
+}
+
+// Words that are never real location names (model often hallucinates these as location args)
+const NON_LOCATION = /^(today|now|here|current|my location|your location|local|unknown|null|undefined|weather)$/i
+
+/**
+ * Extract a location from a weather query.
+ * Also checks the model's hallucinated tool-call JSON (if provided) for a location arg.
+ * Returns empty string if no real location found.
+ */
+export function extractWeatherLocation(
+  messages: Array<{ role: string; content: string }>,
+  hallucinatedContent?: string,
+): string {
+  // 1. Try to extract from the model's own hallucinated tool args — most reliable when present
+  if (hallucinatedContent) {
+    const argsMatch = hallucinatedContent.match(/"location"\s*:\s*"([^"]+)"/i)
+    if (argsMatch) {
+      const loc = argsMatch[1].trim()
+      if (!NON_LOCATION.test(loc) && loc.length > 1) return loc
+    }
+  }
+
+  const lastUser = [...messages].reverse().find(m => m.role === 'user')
+  if (!lastUser) return ''
+  const c = lastUser.content
+  // "weather in London", "weather for Amsterdam", "weather at Tokyo"
+  const inMatch = c.match(/weather\s+(?:in|for|at)\s+([A-Za-z][A-Za-z\s,]+?)(?:\?|$|\s+today|\s+tomorrow|\s+this)/i)
+  if (inMatch) return inMatch[1].trim()
+  // "London weather", "Amsterdam's weather"
+  const cityFirst = c.match(/^([A-Za-z][A-Za-z\s,]+?)'?s?\s+weather/i)
+  if (cityFirst) return cityFirst[1].trim()
+  return ''
+}
+
 // ── Module-level note-save tracker ───────────────────────────────────────────
 // Safe for single-user app — reset before each chatWithTools call
 let _noteSaved: { title: string; folder: string } | null = null

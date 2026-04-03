@@ -12,7 +12,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, area, message, directReportId, expiresInDays } = await req.json()
+    const { title, area, message, directReportId, projectId, expiresInDays } = await req.json()
 
     if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
     if (!area)  return NextResponse.json({ error: 'Area is required' }, { status: 400 })
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
         area,
         message: message || null,
         directReportId: directReportId || null,
+        projectId: projectId || null,
         expiresAt,
       },
       include: { directReport: true },

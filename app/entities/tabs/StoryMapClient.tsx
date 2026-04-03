@@ -2,7 +2,7 @@
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { MapPin, Loader2 } from 'lucide-react'
+import { MapPin, Loader2, RotateCcw } from 'lucide-react'
 import type { LocationPin, MapLayer } from '@/lib/map/mlMap'
 import { useInspector } from '@/components/InspectorContext'
 
@@ -23,12 +23,10 @@ interface Props {
 
 async function geocode(name: string): Promise<{ lat: number; lon: number } | null> {
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1`
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } })
+    const res = await fetch(`/api/geocode?name=${encodeURIComponent(name)}`)
     if (!res.ok) return null
-    const data = await res.json() as Array<{ lat: string; lon: string }>
-    if (!data.length) return null
-    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) }
+    const data = await res.json() as { result: { lat: number; lon: number } | null }
+    return data.result ?? null
   } catch {
     return null
   }
@@ -80,6 +78,15 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const destroyRef = useRef<(() => void) | null>(null)
   const geocodedKeyRef = useRef<string>('')
+
+  const clearGeoCache = () => {
+    try { localStorage.removeItem('geocode_cache_v1') } catch {}
+    geocodedKeyRef.current = ''
+    setAllPins([])
+    setPins([])
+    setFailedLocations([])
+    setMapReady(false)
+  }
   const [allPins, setAllPins] = useState<LocationPin[]>([])
   const [pins, setPins] = useState<LocationPin[]>([])
   const [failedLocations, setFailedLocations] = useState<string[]>([])
@@ -225,20 +232,30 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
           <p className="text-xs text-gray-400 dark:text-zinc-500">
             {pins.length} of {locations.length} location{locations.length !== 1 ? 's' : ''} plotted · Click a pin for details
           </p>
-          <div className="flex gap-1">
-            {(['osm', 'satellite', 'topo'] as const).map(l => (
-              <button
-                key={l}
-                onClick={() => setActiveLayer(l)}
-                className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${
-                  activeLayer === l
-                    ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-gray-900 dark:border-zinc-100'
-                    : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500'
-                }`}
-              >
-                {l === 'osm' ? 'Standard' : l === 'satellite' ? 'Satellite' : 'Topo'}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={clearGeoCache}
+              title="Clear location cache and re-geocode all pins"
+              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:border-gray-400 dark:hover:border-zinc-500 bg-white dark:bg-zinc-900 transition-colors"
+            >
+              <RotateCcw size={10} />
+              Reset cache
+            </button>
+            <div className="flex gap-1">
+              {(['osm', 'satellite', 'topo'] as const).map(l => (
+                <button
+                  key={l}
+                  onClick={() => setActiveLayer(l)}
+                  className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${
+                    activeLayer === l
+                      ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-gray-900 dark:border-zinc-100'
+                      : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500'
+                  }`}
+                >
+                  {l === 'osm' ? 'Standard' : l === 'satellite' ? 'Satellite' : 'Topo'}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

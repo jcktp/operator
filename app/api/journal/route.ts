@@ -10,14 +10,15 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { id, title, folder, content } = await req.json()
+    const { id, title, folder, content, projectId } = await req.json()
 
     if (id) {
       // Update existing
-      const update: Record<string, string> = {}
+      const update: Record<string, unknown> = {}
       if (title !== undefined) update.title = title
       if (folder !== undefined) update.folder = folder
       if (content !== undefined) update.content = content
+      if (projectId !== undefined) update.projectId = projectId ?? null
       const entry = await prisma.journalEntry.update({
         where: { id },
         data: update,
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
         folder: folder ?? 'General',
         content: content ?? '',
         weekStart: null,
+        projectId: projectId ?? null,
       },
     })
     return NextResponse.json({ entry })

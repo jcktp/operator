@@ -1,5 +1,5 @@
 import { Ollama } from 'ollama'
-import { availableTools, hasNoteSaveIntent, executeTool, getNoteSaved, resetNoteSaved } from './ai-tools'
+import { availableTools, hasNoteSaveIntent, executeTool, getNoteSaved, resetNoteSaved, extractWeatherLocation } from './ai-tools'
 import { getSecret } from './settings'
 
 // ── Provider types ──────────────────────────────────────────────────────────
@@ -371,6 +371,84 @@ function isHallucinatedToolCall(content: string): boolean {
   return /\[function:\s*save_to_journal\]|according to.*save_to_journal|save_to_journal.*cannot|cannot.*save_to_journal/i.test(content)
 }
 
+/**
+ * Preemptive web tool execution for Ollama.
+ *
+ * Small models (phi4-mini etc.) can't reliably call tools via the API — they
+ * either hallucinate fake results or refuse ("I don't have internet access").
+ * Instead of passing tool definitions to the model, we detect intent ourselves,
+ * run the real tool, and return the result so the caller can inject it as context.
+ *
+ * Returns the tool result string if a tool was executed, null if no web intent
+ * was detected (caller falls through to normal chat).
+ */
+async function preemptiveWebTool(
+  messages: Message[],
+  onToolCall?: (name: string, input: Record<string, string>) => void,
+): Promise<string | null> {
+  const lastUser = [...messages].reverse().find(m => m.role === 'user')
+  if (!lastUser) return null
+  const q = lastUser.content.trim()
+
+  // Weather intent
+  if (/\bweather\b|\btemperature\b|\bforecast\b/i.test(q)) {
+    const location = extractWeatherLocation(messages)
+    if (!location) return null // No location — let model ask for clarification
+    onToolCall?.('get_weather', { location })
+    return await executeTool('get_weather', { location }).catch(() => null)
+  }
+
+  // Explicit URL → fetch it
+  const urlMatch = q.match(/https?:\/\/[^\s]+/)
+  if (urlMatch) {
+    const url = urlMatch[0]
+    onToolCall?.('fetch_url', { url })
+    return await executeTool('fetch_url', { url }).catch(() => null)
+  }
+
+  // News / current-events / search intent
+  // Positive signals: asking for real-time info, news, facts that require web
+  // Negative signals: asking about documents/reports already uploaded
+  const isSearchIntent =
+    /\b(news|current events|what(?:'s| is) (?:happening|going on)|what happened|latest|what.*today|right now|this week|search for|look up|find me|tell me about.*latest|according to the news|in the world|going on in|update[sd]? on)\b/i.test(q) &&
+    !/\b(document|report|analysis|this file|attached|uploaded)\b/i.test(q)
+
+  if (isSearchIntent) {
+    const query = buildSearchQuery(q)
+    onToolCall?.('search_web', { query })
+    const result = await executeTool('search_web', { query }).catch(() => null)
+    // If DuckDuckGo returned nothing useful, don't inject empty context —
+    // return null so the model answers from training rather than saying "no data".
+    if (!result || /^No results found/i.test(result)) return null
+    return result
+  }
+
+  return null
+}
+
+/**
+ * Convert a conversational query into a better search string.
+ * "what is going on in iran" → "iran latest news"
+ * "what's happening in france" → "france latest news"
+ * "what is going on in the world" → "world news today"
+ */
+function buildSearchQuery(q: string): string {
+  // "what is going on / happening in X" → "X latest news"
+  const geoMatch = q.match(/(?:going on|happening|news|updates?)\s+(?:in|about|with|for|around)\s+([A-Za-z][A-Za-z\s,'-]+?)(?:\?|$|\s+(?:right now|today|currently|now))/i)
+  if (geoMatch) return `${geoMatch[1].trim()} latest news`
+
+  // "what is going on in the world" / "world news"
+  if (/in the world|world(?:wide)?|globally|around the world/i.test(q)) return 'world news today'
+
+  // "latest news about X" / "updates on X"
+  const aboutMatch = q.match(/(?:news|updates?|latest)\s+(?:about|on|regarding)\s+([A-Za-z][A-Za-z\s,'-]+?)(?:\?|$)/i)
+  if (aboutMatch) return `${aboutMatch[1].trim()} news`
+
+  // Generic: strip question words, append "news" if not present
+  const stripped = q.replace(/^(?:what(?:'s| is|'s)|tell me|can you|please|find|search for)\s+/i, '').slice(0, 120)
+  return /\bnews\b/i.test(stripped) ? stripped : `${stripped} news today`
+}
+
 async function chatOllamaStream(
   messages: Message[],
   systemPrompt: string,
@@ -382,14 +460,52 @@ async function chatOllamaStream(
   const model = process.env.OLLAMA_MODEL ?? 'phi4-mini'
   const ollama = new Ollama({ host })
   const journalIntent = hasNoteSaveIntent(messages)
-  const tools = availableTools(journalIntent)
-  const ollamaTools = tools.map(t => ({
-    type: 'function' as const,
-    function: { name: t.name, description: t.description, parameters: t.parameters },
-  }))
-  const msgs = [{ role: 'system' as const, content: systemPrompt }, ...messages]
 
   try {
+    // ── PREEMPTIVE WEB TOOL EXECUTION ────────────────────────────────────────
+    // Run web tools before calling the model so small models never need to
+    // invoke them — real data is injected as context instead.
+    if (process.env.OLLAMA_WEB_ACCESS === 'true') {
+      // Weather query with no location → ask user directly (don't let the model say "I can't browse")
+      const lastUserContent = [...messages].reverse().find(m => m.role === 'user')?.content ?? ''
+      if (/\bweather\b|\btemperature\b|\bforecast\b/i.test(lastUserContent)) {
+        const location = extractWeatherLocation(messages)
+        if (!location) {
+          emit("Which city would you like the weather for? For example: \"What's the weather in Amsterdam?\"")
+          return
+        }
+      }
+
+      const webResult = await preemptiveWebTool(messages, onToolCall)
+      if (webResult !== null) {
+        const enriched =
+          systemPrompt +
+          `\n\n[LIVE DATA — fetched now]:\n${webResult}\n\nUse the live data above to answer directly and accurately. Do not say you lack internet access or that you cannot retrieve real-time information.`
+        const stream = await ollama.chat({
+          model,
+          messages: [{ role: 'system' as const, content: enriched }, ...messages],
+          stream: true,
+          options: { temperature },
+        })
+        for await (const chunk of stream) {
+          if (chunk.message.content) emit(chunk.message.content)
+        }
+        return
+      }
+    }
+
+    // ── JOURNAL SAVE / GENERAL CHAT ──────────────────────────────────────────
+    // For Ollama we only pass the journal tool — web tools are handled
+    // preemptively above and should never be passed to small models.
+    const tools = availableTools(journalIntent).filter(
+      t => !['get_weather', 'search_web', 'fetch_url'].includes(t.name)
+    )
+    const ollamaTools = tools.map(t => ({
+      type: 'function' as const,
+      function: { name: t.name, description: t.description, parameters: t.parameters },
+    }))
+    const msgs = [{ role: 'system' as const, content: systemPrompt }, ...messages]
+
     for (let i = 0; i < 5; i++) {
       // When journal save intent is present, buffer first — small models like
       // phi4-mini sometimes narrate the function call as text instead of calling
@@ -423,7 +539,6 @@ async function chatOllamaStream(
           const result = await executeTool('save_to_journal', saveArgs)
           emit(result.startsWith('Note saved') ? `✓ ${result}` : result)
         } else {
-          // Can't extract args — tell the user what happened
           emit('I wasn\'t able to save the note automatically. Please rephrase your request as: "Save a note titled [title] with this content: [content]"')
         }
         return
@@ -453,6 +568,7 @@ async function chatOllamaStream(
     }
   } catch {
     // Fallback to non-streaming
+    const msgs = [{ role: 'system' as const, content: systemPrompt }, ...messages]
     const fallback = await ollama.chat({ model, messages: msgs, options: { temperature } })
     emit(fallback.message.content)
   }

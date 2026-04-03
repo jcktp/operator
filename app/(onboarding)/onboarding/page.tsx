@@ -6,10 +6,11 @@ import { getModeConfig } from '@/lib/mode'
 import StepWelcome from './steps/StepWelcome'
 import StepMode from './steps/StepMode'
 import StepContext from './steps/StepContext'
+import StepModels from './steps/StepModels'
 import StepTour from './steps/StepTour'
 import StepReady from './steps/StepReady'
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 6
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -73,8 +74,9 @@ export default function OnboardingPage() {
         {step === 0 && <StepWelcome userName={userName} onNext={next} />}
         {step === 1 && <StepMode modeConfig={modeConfig} onNext={next} onBack={back} />}
         {step === 2 && <StepContext modeConfig={modeConfig} onNext={next} onBack={back} />}
-        {step === 3 && <StepTour modeConfig={modeConfig} onNext={next} onBack={back} />}
-        {step === 4 && <StepReady modeConfig={modeConfig} onComplete={complete} onUpload={() => completeTo('/upload')} />}
+        {step === 3 && <StepModels onNext={next} onBack={back} onSkip={next} />}
+        {step === 4 && <StepTour modeConfig={modeConfig} onNext={next} onBack={back} />}
+        {step === 5 && <StepReady modeConfig={modeConfig} onComplete={complete} onUpload={() => completeTo('/upload')} />}
       </div>
     </div>
   )

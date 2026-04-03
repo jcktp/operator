@@ -70,13 +70,21 @@ export async function POST(
     // Save to reports folder
     try { saveReportFile(buffer, fileName, request.area) } catch {}
 
-    // Resolve directReportId
+    // Resolve directReportId — or auto-create contact from submitter name
     let resolvedDirectId = request.directReportId || null
     if (!resolvedDirectId && submitterName) {
       const allDirects = await prisma.directReport.findMany({ select: { id: true, name: true } })
       const lower = submitterName.toLowerCase()
       const matched = allDirects.find((d: { id: string; name: string }) => d.name.toLowerCase() === lower)
-      if (matched) resolvedDirectId = matched.id
+      if (matched) {
+        resolvedDirectId = matched.id
+      } else {
+        // Auto-add submitter to the directory
+        const newContact = await prisma.directReport.create({
+          data: { name: submitterName, title: 'Submitter', area: request.area },
+        })
+        resolvedDirectId = newContact.id
+      }
     }
     const directReportName = request.directReport?.name ?? submitterName ?? undefined
 
@@ -91,6 +99,7 @@ export async function POST(
         displayContent,
         area: request.area,
         directReportId: resolvedDirectId,
+        projectId: request.projectId || null,
         reportDate,
         summary: null,
         metrics: null,

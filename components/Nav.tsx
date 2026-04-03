@@ -51,11 +51,6 @@ export default function Nav() {
   useEffect(() => { chirpRef.current = new Audio('/sounds/chirp.mp3') }, [])
   const playChirp = () => { const a = chirpRef.current; if (!a) return; a.currentTime = 0; a.volume = 0.4; a.play().catch(() => {}) }
   const powerMenuRef = useRef<HTMLDivElement>(null)
-  const [newReport, setNewReport] = useState<{ name: string } | null>(null)
-  const [notifShowing, setNotifShowing] = useState(false)
-  const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastReportIdRef = useRef<string | null>(null)
-  const lastReportCreatedAtRef = useRef<string | null>(null)
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -95,8 +90,6 @@ export default function Nav() {
       href: '/library',
       label: config.navLibrary,
       icon: Library,
-      hasNotifDot: !!newReport,
-      onClick: dismissNotif,
     },
     ...config.features.extraNavItems.map(item => ({
       href: item.href,
@@ -122,48 +115,6 @@ export default function Nav() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await fetch('/api/reports?limit=1')
-        const data = await res.json()
-        const latest = data.reports?.[0]
-        if (!latest) return
-        if (lastReportIdRef.current === null) {
-          lastReportIdRef.current = latest.id
-          lastReportCreatedAtRef.current = latest.createdAt
-          return
-        }
-        const isNewer = lastReportCreatedAtRef.current
-          ? new Date(latest.createdAt) > new Date(lastReportCreatedAtRef.current)
-          : latest.id !== lastReportIdRef.current
-        if (isNewer) {
-          lastReportIdRef.current = latest.id
-          lastReportCreatedAtRef.current = latest.createdAt
-          if (!latest.directReport) return
-          setNewReport({ name: latest.directReport.name })
-          setNotifShowing(true)
-          if (notifTimerRef.current) clearTimeout(notifTimerRef.current)
-          notifTimerRef.current = setTimeout(() => {
-            setNotifShowing(false)
-            setTimeout(() => setNewReport(null), 200)
-          }, 6000)
-        }
-      } catch {}
-    }
-    check()
-    const interval = setInterval(check, 30_000)
-    return () => {
-      clearInterval(interval)
-      if (notifTimerRef.current) clearTimeout(notifTimerRef.current)
-    }
-  }, [])
-
-  function dismissNotif() {
-    if (notifTimerRef.current) clearTimeout(notifTimerRef.current)
-    setNotifShowing(false)
-    setTimeout(() => setNewReport(null), 200)
-  }
 
   const handleLogout = async () => {
     setPowerMenuOpen(false)
@@ -191,26 +142,6 @@ export default function Nav() {
 
   return (
     <>
-      {/* New report toast */}
-      {newReport && (
-        <div
-          className={cn(
-            'fixed z-40 transition-all duration-200',
-            notifShowing ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1 pointer-events-none'
-          )}
-          style={{ top: 60, left: 8 }}
-        >
-          <Link
-            href="/library"
-            onClick={dismissNotif}
-            className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg shadow-md px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 whitespace-nowrap dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-            Report received from <span className="font-medium ml-1">{newReport.name}</span>
-          </Link>
-        </div>
-      )}
-
       {/* ── TOP NAV BAR ─────────────────────────────────────────────────── */}
       <header className="fixed top-0 inset-x-0 h-14 z-50 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 flex items-center px-4 gap-3">
 
@@ -296,7 +227,7 @@ export default function Nav() {
             className={cn(NAV_LINK_CLASS, pathname.startsWith('/projects') && NAV_ACTIVE_CLASS)}
           >
             <FolderOpen size={13} className="shrink-0" />
-            Projects
+            {config.projectLabelPlural}
           </Link>
 
           {/* Standalone: Settings */}

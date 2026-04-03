@@ -70,6 +70,7 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
         const newProject = { ...data.project, reportCount: 0 }
         setProjects(ps => [newProject, ...ps])
         setCurrentProjectId(data.project.id)
+        window.dispatchEvent(new Event('project:changed'))
       }
       closeForm()
       router.refresh()
@@ -96,6 +97,7 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
       body: JSON.stringify({ key: 'current_project_id', value: id }),
     })
     setCurrentProjectId(id)
+    window.dispatchEvent(new Event('project:changed'))
     router.refresh()
   }
 

@@ -15,6 +15,9 @@ export default async function DispatchPage() {
     prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
   ])
   const currentProjectId = projectSetting?.value || null
+  const currentProject = currentProjectId
+    ? await prisma.project.findUnique({ where: { id: currentProjectId }, select: { id: true, name: true } })
+    : null
 
   const reports = await prisma.report.findMany({
     where: currentProjectId ? { projectId: currentProjectId } : undefined,
@@ -103,5 +106,12 @@ export default async function DispatchPage() {
     }
   })
 
-  return <DispatchPageClient chats={serialized} context={contextLines.join('\n')} />
+  return (
+    <DispatchPageClient
+      chats={serialized}
+      context={contextLines.join('\n')}
+      currentProjectId={currentProject?.id ?? null}
+      currentProjectName={currentProject?.name ?? null}
+    />
+  )
 }

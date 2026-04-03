@@ -41,7 +41,7 @@ Operator is a private intelligence workspace. Upload documents and images to get
 | **Library** | Every document stored with full history; dedicated Photos tab for image uploads with thumbnail gallery and lightbox |
 | **Dashboard** | Cross-area overview with AI-generated health signals across all documents |
 | **Metrics board** | KPI board aggregating every metric extracted across all documents, grouped by area |
-| **Dispatch** | AI chat with mode-specific personas; has full document context, supports web search, and remembers facts across conversations |
+| **Dispatch** | AI chat with mode-specific personas; has full document context, remembers facts across conversations, and supports web search when enabled in Settings |
 | **Inspector sidebar** | Click any entity or map pin to open a panel showing source documents and connected entities — without leaving the page |
 | **Entities page** | Four-tab hub: entity management, timeline, interactive story map, and AI-assisted storyline builder (Journalism & Legal) |
 | **Browser** | In-app web browser with reader and live modes, bookmark management, and one-click save to journal or dispatch |

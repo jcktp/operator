@@ -27,7 +27,7 @@ export default function ProjectSwitcher() {
   const [loaded, setLoaded] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  const fetchProjects = () => {
     fetch('/api/projects')
       .then(r => r.json())
       .then((d: ApiResponse) => {
@@ -36,6 +36,12 @@ export default function ProjectSwitcher() {
         setLoaded(true)
       })
       .catch(() => setLoaded(true))
+  }
+
+  useEffect(() => {
+    fetchProjects()
+    window.addEventListener('project:changed', fetchProjects)
+    return () => window.removeEventListener('project:changed', fetchProjects)
   }, [])
 
   useEffect(() => {

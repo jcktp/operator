@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { X, Send, MessageSquare, Paperclip, Link2, Loader2, Globe, GlobeLock, Clock, Plus, BookOpen } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { X, Send, MessageSquare, Paperclip, Link2, Loader2, Globe, GlobeLock, Clock, Plus, BookOpen, BookmarkPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { renderMarkdown } from './MarkdownRenderer'
 import { useMode } from '@/components/ModeContext'
@@ -17,13 +17,33 @@ interface Props {
   initialChat?: { id: string; title: string; messages: Array<{ role: 'user' | 'assistant'; content: string; attachmentName?: string }> }
   initialMessage?: string
   fullPage?: boolean
+  currentProjectId?: string | null
+  currentProjectName?: string | null
 }
 
-export default function DispatchPanel({ context, currentUrl, onClose, initialChat, initialMessage, fullPage }: Props) {
+export default function DispatchPanel({ context, currentUrl, onClose, initialChat, initialMessage, fullPage, currentProjectId, currentProjectName }: Props) {
   const modeConfig = useMode()
   const c = useChatLogic({ context, modeId: modeConfig.id, initialChat, initialMessage })
   const personaList = Object.values(c.personaMap)
   const activePersona = c.personaMap[c.persona]
+  const [savedNoteIdx, setSavedNoteIdx] = useState<number | null>(null)
+
+  const saveMessageAsNote = async (content: string, idx: number) => {
+    // Convert markdown-ish content to simple HTML paragraphs
+    const html = content
+      .split(/\n\n+/)
+      .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+      .join('')
+    const title = content.replace(/[#*`_]/g, '').slice(0, 60).trim() || 'Note from Dispatch'
+    const folder = currentProjectName ?? 'General'
+    await fetch('/api/journal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, folder, content: html, projectId: currentProjectId ?? null }),
+    })
+    setSavedNoteIdx(idx)
+    setTimeout(() => setSavedNoteIdx(null), 3000)
+  }
 
   useEffect(() => {
     c.bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -165,6 +185,24 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
               )}>
                 {m.role === 'assistant' ? renderMarkdown(m.content, downloadCode) : m.content}
               </div>
+              {m.role === 'assistant' && !c.loading && (
+                <div className="mt-1 flex items-center gap-1">
+                  {savedNoteIdx === i ? (
+                    <span className="text-[10px] text-green-500 px-1">
+                      Saved to {currentProjectName ?? modeConfig.navJournal}
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => saveMessageAsNote(m.content, i)}
+                      title={`Save to ${currentProjectName ? `${currentProjectName} folder` : modeConfig.navJournal}`}
+                      className="flex items-center gap-1 text-[10px] text-gray-300 dark:text-zinc-600 hover:text-gray-500 dark:hover:text-zinc-400 transition-colors px-1 py-0.5 rounded"
+                    >
+                      <BookmarkPlus size={11} />
+                      Save as note
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
 
@@ -255,13 +293,21 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
             >
               <Link2 size={14} />
             </button>
-            <button
-              onClick={c.toggleWebAccess}
-              title={c.webAccess ? 'Online access on — click to disable' : 'Online access off — click to enable'}
-              className={cn('shrink-0 p-2 rounded-xl transition-colors', c.webAccess ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-950' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-500 dark:hover:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800')}
-            >
-              {c.webAccess ? <Globe size={14} /> : <GlobeLock size={14} />}
-            </button>
+            <div className="relative">
+              <button
+                onClick={c.toggleWebAccess}
+                title={c.isApiProvider ? 'Online — API providers always require internet' : c.webAccess ? 'Online access on — click to disable' : 'Online access off — click to enable'}
+                className={cn('shrink-0 p-2 rounded-xl transition-colors', c.webAccess ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-950' : 'text-gray-300 dark:text-zinc-600 hover:text-gray-500 dark:hover:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800')}
+              >
+                {c.webAccess || c.isApiProvider ? <Globe size={14} /> : <GlobeLock size={14} />}
+              </button>
+              {c.apiLockNotice && (
+                <div className="absolute bottom-full right-0 mb-2 w-56 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] rounded-lg px-3 py-2 shadow-lg z-50 leading-snug">
+                  Always on for API providers. Enable air-gap mode in Settings to disconnect.
+                  <div className="absolute bottom-0 right-3 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900 dark:border-t-zinc-100" />
+                </div>
+              )}
+            </div>
             <textarea
               ref={c.inputRef}
               value={c.input}

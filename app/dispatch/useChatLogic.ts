@@ -33,6 +33,8 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
   const [fetchingUrl, setFetchingUrl] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
   const [webAccess, setWebAccess] = useState(false)
+  const [isApiProvider, setIsApiProvider] = useState(false)
+  const [apiLockNotice, setApiLockNotice] = useState(false)
   const [persona, setPersona] = useState<PersonaId>('dispatch')
   const [userMemory, setUserMemory] = useState('')
   const [view, setView] = useState<'chat' | 'history'>('chat')
@@ -56,12 +58,22 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
   }
 
   const syncSettings = () => {
-    setWebAccess(settings.ollama_web_access === 'true')
+    const provider = settings.ai_provider ?? 'ollama'
+    const apiProvider = provider !== 'ollama'
+    setIsApiProvider(apiProvider)
+    // API providers are always online — force web access on
+    setWebAccess(apiProvider ? true : settings.ollama_web_access === 'true')
     setUserName(settings.ceo_name ?? '')
     setUserRole(settings.user_role ?? '')
   }
 
   const toggleWebAccess = async () => {
+    if (isApiProvider) {
+      // Can't disable for API providers — show brief notice
+      setApiLockNotice(true)
+      setTimeout(() => setApiLockNotice(false), 3000)
+      return
+    }
     const next = !webAccess
     setWebAccess(next)
     await saveSetting('ollama_web_access', next ? 'true' : 'false')
@@ -270,7 +282,7 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
     pendingAttachment, setPendingAttachment,
     attachLoading, urlInput, setUrlInput, fetchingUrl,
     showUrlInput, setShowUrlInput,
-    webAccess, persona, setPersona, userMemory, setUserMemory,
+    webAccess, isApiProvider, apiLockNotice, persona, setPersona, userMemory, setUserMemory,
     view, setView, history, historyLoading,
     userName, userRole, savedNoteTitle, searching,
     // Refs

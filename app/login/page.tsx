@@ -98,8 +98,8 @@ export default function LoginPage() {
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (screen === 'loading') {
     return (
-      <div className="fixed inset-0 z-[200] bg-[#fafafa] flex items-center justify-center">
-        <Loader2 size={20} className="animate-spin text-gray-300" />
+      <div className="fixed inset-0 z-[200] bg-[#fafafa] dark:bg-zinc-950 flex items-center justify-center">
+        <Loader2 size={20} className="animate-spin text-gray-300 dark:text-zinc-600" />
       </div>
     )
   }
@@ -123,13 +123,13 @@ export default function LoginPage() {
 
   // ── Shared card wrapper ──────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-[200] bg-[#fafafa] flex items-center justify-center px-4 overflow-y-auto py-8">
+    <div className="fixed inset-0 z-[200] bg-[#fafafa] dark:bg-zinc-950 flex items-center justify-center px-4 overflow-y-auto py-8">
       <div className="w-full max-w-sm my-auto">
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-2">
           <WalkieTalkie />
-          <span className="text-2xl text-gray-900" style={{ fontFamily: 'var(--font-caveat)', fontWeight: 700 }}>
+          <span className="text-2xl text-gray-900 dark:text-zinc-50" style={{ fontFamily: 'var(--font-caveat)', fontWeight: 700 }}>
             operator
           </span>
         </div>
@@ -138,8 +138,8 @@ export default function LoginPage() {
         {screen === 'mode-pick' && (
           <div className="space-y-5">
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">How will you use Operator?</h1>
-              <p className="text-sm text-gray-500 mt-0.5">This tailors the app to your workflow.</p>
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-zinc-50">How will you use Operator?</h1>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">This tailors the app to your workflow.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -150,8 +150,8 @@ export default function LoginPage() {
                   onClick={() => setSelectedMode(m.id)}
                   className={`text-left p-3 rounded-xl border-2 transition-all ${
                     selectedMode === m.id
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300'
+                      ? 'border-gray-900 bg-gray-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
+                      : 'border-gray-200 bg-white text-gray-900 hover:border-gray-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500'
                   }`}
                 >
                   <div className="text-xl mb-1.5">{m.icon}</div>
@@ -177,8 +177,8 @@ export default function LoginPage() {
         {screen === 'setup' && (
           <form onSubmit={handleSetup} className="space-y-5">
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">Set up Operator</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Create your account to get started.</p>
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-zinc-50">Set up Operator</h1>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Create your account to get started.</p>
             </div>
 
             {/* Warning */}
@@ -193,26 +193,26 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Your name <span className="text-red-400">*</span></label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Your name <span className="text-red-400">*</span></label>
                 <input
                   type="text" value={name} onChange={e => setName(e.target.value)} required
                   placeholder="Alex Chen"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Your role <span className="text-gray-400 font-normal">(optional)</span></label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Your role <span className="text-gray-400 font-normal">(optional)</span></label>
                 <input
                   type="text" value={role} onChange={e => setRole(e.target.value)}
                   placeholder="e.g. CEO, Journalist, Team Lead"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400"
                 />
                 <p className="text-[11px] text-gray-400 mt-1">The AI will tailor responses to your role.</p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Password <span className="text-red-400">*</span></label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Password <span className="text-red-400">*</span></label>
                 <div className="relative">
                   <input
                     ref={passwordRef}
@@ -222,18 +222,18 @@ export default function LoginPage() {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                   <button type="button" onClick={() => setShowPass(v => !v)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300">
                     {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Confirm password <span className="text-red-400">*</span></label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Confirm password <span className="text-red-400">*</span></label>
                 <input
                   type={showPass ? 'text' : 'password'}
                   value={confirm} onChange={e => setConfirm(e.target.value)} required
                   placeholder="Repeat password"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400"
                 />
               </div>
             </div>
@@ -257,8 +257,8 @@ export default function LoginPage() {
         {screen === 'login' && (
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">Welcome back</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Enter your password to continue.</p>
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-zinc-50">Welcome back</h1>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Enter your password to continue.</p>
             </div>
 
             {attemptsLeft < 3 && (
@@ -273,8 +273,8 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Password</label>
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4">
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Password</label>
               <div className="relative">
                 <input
                   ref={passwordRef}
@@ -284,7 +284,7 @@ export default function LoginPage() {
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
                 />
                 <button type="button" onClick={() => setShowPass(v => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300">
                   {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>

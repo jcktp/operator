@@ -43,7 +43,12 @@ export default function SettingsRemoteTab() {
             <span className="text-xs text-gray-700 dark:text-zinc-200 font-mono truncate flex-1">{tunnelUrl}</span>
             <button
               type="button"
-              onClick={() => { navigator.clipboard.writeText(tunnelUrl!); setTunnelCopied(true); setTimeout(() => setTunnelCopied(false), 2000) }}
+              onClick={async () => {
+                try { await navigator.clipboard.writeText(tunnelUrl!) } catch {
+                  const el = document.createElement('textarea'); el.value = tunnelUrl!; el.style.position = 'fixed'; el.style.opacity = '0'; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el)
+                }
+                setTunnelCopied(true); setTimeout(() => setTunnelCopied(false), 2000)
+              }}
               className="shrink-0 text-gray-400 hover:text-gray-600"
             >
               {tunnelCopied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}

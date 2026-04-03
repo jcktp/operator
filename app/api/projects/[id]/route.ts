@@ -1,9 +1,13 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { deleteReportFile } from '@/lib/reports-folder'
+import { requireAuth } from '@/lib/api-auth'
 
 export const dynamic = 'force-dynamic'
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authError = await requireAuth(req)
+  if (authError) return authError
   const { id } = await params
   const body = await req.json() as {
     name?: string
@@ -22,10 +26,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       ...(body.description !== undefined ? { description: body.description } : {}),
     },
   })
-  return Response.json({ project })
+  return NextResponse.json({ project })
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authError = await requireAuth(req)
+  if (authError) return authError
   const { id } = await params
 
   // Fetch all reports in this project so we can clean up files

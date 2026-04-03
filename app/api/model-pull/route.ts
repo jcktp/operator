@@ -36,6 +36,14 @@ export async function POST(req: NextRequest) {
           for (const line of lines) {
             try {
               const data = JSON.parse(line)
+              if (data.error) {
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ error: data.error })}\n\n`)
+                )
+                reader.cancel()
+                controller.close()
+                return
+              }
               let progress = 0
               if (data.total && data.completed) {
                 progress = Math.round((data.completed / data.total) * 100)

@@ -39,6 +39,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   await loadAiSettings()
 
+  if (process.env.AIR_GAP_MODE === 'true') {
+    return NextResponse.json({ error: 'Air-gap mode is enabled — external feeds are blocked.' }, { status: 403 })
+  }
+
   const feed = await prisma.pulseFeed.findUnique({ where: { id } })
   if (!feed) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 

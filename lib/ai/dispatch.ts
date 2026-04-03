@@ -15,7 +15,9 @@ export async function dispatchChat(
 ): Promise<ChatResult> {
   const personas = getPersonasForMode(mode ?? process.env.APP_MODE)
   const persona = personas[personaId]
-  const hasSearch = process.env.OLLAMA_WEB_ACCESS === 'true'
+  const webEnabled = process.env.OLLAMA_WEB_ACCESS === 'true'
+  const dispatchProvider = process.env.AI_PROVIDER ?? 'ollama'
+  const hasSearch: boolean | 'preemptive' = !webEnabled ? false : dispatchProvider === 'ollama' ? 'preemptive' : true
   const systemPrompt = persona.buildSystemPrompt(context, userMemory, hasSearch)
   return chatWithTools(messages, systemPrompt, persona.temperature)
 }
@@ -30,7 +32,11 @@ export function dispatchChatStream(
   const resolvedMode = mode ?? process.env.APP_MODE ?? 'executive'
   const personas = getPersonasForMode(resolvedMode)
   const persona = personas[personaId]
-  const hasSearch = process.env.OLLAMA_WEB_ACCESS === 'true'
+  const webEnabled = process.env.OLLAMA_WEB_ACCESS === 'true'
+  const provider = process.env.AI_PROVIDER ?? 'ollama'
+  // For Ollama we execute web tools preemptively — tell the model about [LIVE DATA] blocks
+  // instead of claiming it has callable tools (which confuses small models).
+  const hasSearch: boolean | 'preemptive' = !webEnabled ? false : provider === 'ollama' ? 'preemptive' : true
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {

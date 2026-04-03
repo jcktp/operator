@@ -10,17 +10,24 @@ interface JournalEntry {
   title: string
   folder: string
   content: string
+  projectId: string | null
   updatedAt: string
+}
+
+interface Project {
+  id: string
+  name: string
 }
 
 interface Props {
   entries: JournalEntry[]
+  projects?: Project[]
 }
 
 const DEFAULT_FOLDER = 'General'
 const INVESTIGATION_SUBFOLDERS = ['Sources', 'Timeline', 'Claims', 'Documents', 'Notes']
 
-export default function JournalShell({ entries: initial }: Props) {
+export default function JournalShell({ entries: initial, projects = [] }: Props) {
   const modeConfig = useMode()
   const { investigationTemplate: isInvestigationMode } = modeConfig.features
   const [entries, setEntries] = useState(initial)
@@ -52,7 +59,12 @@ export default function JournalShell({ entries: initial }: Props) {
     )
   }, [entries, search])
 
-  const folders = [...new Set([DEFAULT_FOLDER, ...entries.map(e => e.folder)])].sort()
+  // Project folder names — shown even when empty
+  const projectFolderNames = projects.map(p => p.name)
+  // projectByFolderName: look up projectId by folder name
+  const projectByFolderName = Object.fromEntries(projects.map(p => [p.name, p.id]))
+
+  const folders = [...new Set([DEFAULT_FOLDER, ...projectFolderNames, ...entries.map(e => e.folder)])].sort()
   const visibleFolders = search.trim()
     ? [...new Set(filteredEntries.map(e => e.folder))].sort()
     : folders
@@ -70,10 +82,11 @@ export default function JournalShell({ entries: initial }: Props) {
   const createNote = async (folder?: string) => {
     const title = newTitle.trim() || 'Untitled'
     const targetFolder = folder ?? newNoteFolder ?? DEFAULT_FOLDER
+    const projectId = projectByFolderName[targetFolder] ?? null
     const res = await fetch('/api/journal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, folder: targetFolder, content: '' }),
+      body: JSON.stringify({ title, folder: targetFolder, content: '', projectId }),
     })
     if (!res.ok) return
     const data = await res.json()
@@ -82,6 +95,7 @@ export default function JournalShell({ entries: initial }: Props) {
       title: data.entry.title,
       folder: data.entry.folder,
       content: '',
+      projectId: data.entry.projectId ?? null,
       updatedAt: data.entry.updatedAt,
     }
     setEntries(prev => [entry, ...prev])
@@ -96,11 +110,12 @@ export default function JournalShell({ entries: initial }: Props) {
     const folder = newFolderName.trim()
     if (!folder) return
     setNewFolderName('')
+    const projectId = projectByFolderName[folder] ?? null
     // Create folder by making a first note in it
     const res = await fetch('/api/journal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: 'Untitled', folder, content: '' }),
+      body: JSON.stringify({ title: 'Untitled', folder, content: '', projectId }),
     })
     if (!res.ok) return
     const data = await res.json()
@@ -109,6 +124,7 @@ export default function JournalShell({ entries: initial }: Props) {
       title: data.entry.title,
       folder: data.entry.folder,
       content: '',
+      projectId: data.entry.projectId ?? null,
       updatedAt: data.entry.updatedAt,
     }
     setEntries(prev => [entry, ...prev])
@@ -121,13 +137,14 @@ export default function JournalShell({ entries: initial }: Props) {
   const createInvestigationTemplate = async (baseName: string) => {
     setCreatingTemplate(true)
     setInvestigationPrompt(null)
+    const projectId = projectByFolderName[baseName] ?? null
     const newEntries: JournalEntry[] = []
     for (const sub of INVESTIGATION_SUBFOLDERS) {
       const folderName = `${baseName} · ${sub}`
       const res = await fetch('/api/journal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Notes', folder: folderName, content: '' }),
+        body: JSON.stringify({ title: 'Notes', folder: folderName, content: '', projectId }),
       })
       if (!res.ok) continue
       const data = await res.json()
@@ -136,6 +153,7 @@ export default function JournalShell({ entries: initial }: Props) {
         title: data.entry.title,
         folder: data.entry.folder,
         content: '',
+        projectId: data.entry.projectId ?? null,
         updatedAt: data.entry.updatedAt,
       })
     }
@@ -256,7 +274,7 @@ export default function JournalShell({ entries: initial }: Props) {
                   {isExpanded
                     ? <ChevronDown size={11} className="text-gray-400 dark:text-zinc-500 shrink-0" />
                     : <ChevronRight size={11} className="text-gray-400 dark:text-zinc-500 shrink-0" />}
-                  <FolderOpen size={12} className="text-amber-400 shrink-0" />
+                  <FolderOpen size={12} className={projectByFolderName[folder] ? 'text-indigo-400 shrink-0' : 'text-amber-400 shrink-0'} />
                   <span className="text-xs font-medium text-gray-700 dark:text-zinc-200 truncate flex-1">{folder}</span>
                   <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0 ml-1">{folderEntries.length}</span>
                 </button>

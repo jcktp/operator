@@ -17,6 +17,13 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
+    // Strip placeholder / unnamed entities that the AI occasionally produces
+    const isPlaceholder = (name: string) => {
+      const n = name.trim().toLowerCase()
+      return n === '' || n.startsWith('[') || n === 'unnamed' || n === 'unknown' || n === 'n/a'
+    }
+    const filtered = entities.filter(e => !isPlaceholder(e.name))
+
     // Group by name to compute appearance counts
     const grouped: Record<string, {
       name: string
@@ -26,7 +33,7 @@ export async function GET(req: NextRequest) {
       count: number
     }> = {}
 
-    for (const e of entities) {
+    for (const e of filtered) {
       const key = `${e.type}::${e.name}`
       if (!grouped[key]) {
         grouped[key] = { name: e.name, type: e.type, context: e.context, reportIds: [], count: 0 }
@@ -38,7 +45,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch report titles for cross-linking
-    const allReportIds = [...new Set(entities.map(e => e.reportId))]
+    const allReportIds = [...new Set(filtered.map(e => e.reportId))]
     const reports = await prisma.report.findMany({
       where: { id: { in: allReportIds } },
       select: { id: true, title: true, area: true, createdAt: true },

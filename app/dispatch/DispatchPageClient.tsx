@@ -19,9 +19,11 @@ interface ChatSummary {
 interface Props {
   chats: ChatSummary[]
   context: string
+  currentProjectId?: string | null
+  currentProjectName?: string | null
 }
 
-export default function DispatchPageClient({ chats: initial, context }: Props) {
+export default function DispatchPageClient({ chats: initial, context, currentProjectId, currentProjectName }: Props) {
   const [chats, setChats] = useState(initial)
   const [selectedChat, setSelectedChat] = useState<ChatSummary | null>(null)
   const [clearConfirm, setClearConfirm] = useState(false)
@@ -131,6 +133,8 @@ export default function DispatchPageClient({ chats: initial, context }: Props) {
           key={panelKey}
           context={context}
           fullPage
+          currentProjectId={currentProjectId ?? null}
+          currentProjectName={currentProjectName ?? null}
           initialChat={selectedChat ? {
             id: selectedChat.id,
             title: selectedChat.title,

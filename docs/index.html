@@ -7,23 +7,43 @@
   <meta name="description" content="Upload documents. Get structured AI analysis. Everything runs on your machine — no cloud required." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* Light mode (default) — matches the app's light theme */
     :root {
-      --bg:           #09090b;
-      --surface:      #18181b;
-      --surface2:     #27272a;
-      --border:       #27272a;
-      --border-mid:   #3f3f46;
-      --text:         #fafafa;
-      --text-muted:   #a1a1aa;
-      --text-dim:     #52525b;
+      --bg:           #fafafa;
+      --surface:      #ffffff;
+      --surface2:     #f4f4f5;
+      --border:       #e4e4e7;
+      --border-mid:   #d4d4d8;
+      --text:         #09090b;
+      --text-muted:   #71717a;
+      --text-dim:     #a1a1aa;
       --brand:        #5C66B3;
       --brand-light:  #7e88d5;
-      --brand-dim:    #1d2141;
+      --brand-dim:    #eef0fb;
       --green:        #22c55e;
+    }
+
+    /* Dark mode — matches the app's dark theme */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:           #09090b;
+        --surface:      #18181b;
+        --surface2:     #27272a;
+        --border:       #27272a;
+        --border-mid:   #3f3f46;
+        --text:         #fafafa;
+        --text-muted:   #a1a1aa;
+        --text-dim:     #52525b;
+        --brand:        #5C66B3;
+        --brand-light:  #7e88d5;
+        --brand-dim:    #1d2141;
+        --green:        #22c55e;
+      }
     }
 
     html { scroll-behavior: smooth; }
@@ -31,7 +51,7 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Geist', system-ui, -apple-system, sans-serif;
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
       font-size: 15px;
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
@@ -53,7 +73,7 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       height: 56px;
-      background: rgba(9, 9, 11, 0.88);
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
@@ -98,7 +118,7 @@
       gap: 6px;
       padding: 8px 16px;
       border-radius: 8px;
-      font-family: 'Geist', system-ui, sans-serif;
+      font-family: 'DM Sans', system-ui, sans-serif;
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
@@ -108,10 +128,10 @@
 
     .btn-primary {
       background: var(--text);
-      color: #09090b;
+      color: var(--bg);
     }
 
-    .btn-primary:hover { background: #e4e4e7; }
+    .btn-primary:hover { opacity: 0.85; }
 
     .btn-outline {
       background: transparent;

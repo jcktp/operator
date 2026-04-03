@@ -48,12 +48,12 @@ export default function StartingPage() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-zinc-950 flex flex-col items-center justify-center px-6">
       <div className="flex flex-col items-center gap-6 max-w-sm w-full text-center">
 
         {/* Logo */}
         <div className="relative">
-          <div className="w-20 h-20 rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+          <div className="w-20 h-20 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-sm flex items-center justify-center">
             <WalkieTalkie />
           </div>
           {/* Pulse ring */}
@@ -63,32 +63,32 @@ export default function StartingPage() {
         {/* Title */}
         <div>
           <h1
-            className="text-3xl text-gray-900"
+            className="text-3xl text-gray-900 dark:text-zinc-50"
             style={{ fontFamily: 'var(--font-caveat)', fontWeight: 700 }}
           >
             operator
           </h1>
-          <p className="text-sm text-gray-400 mt-1">Getting everything ready</p>
+          <p className="text-sm text-gray-400 dark:text-zinc-500 mt-1">Getting everything ready</p>
         </div>
 
         {/* Current step */}
-        <div className="w-full bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-          <p className="text-sm font-medium text-gray-700">
+        <div className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-5 py-4 shadow-sm">
+          <p className="text-sm font-medium text-gray-700 dark:text-zinc-200">
             {status.step}{!status.ready && dots}
           </p>
           {status.detail && (
-            <p className="text-xs text-gray-400 mt-1">{status.detail}</p>
+            <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">{status.detail}</p>
           )}
         </div>
 
         {/* Progress bar — indeterminate */}
         {!status.ready && (
-          <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-gray-800 rounded-full animate-[loading_1.5s_ease-in-out_infinite]" />
+          <div className="w-full h-1 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full bg-gray-800 dark:bg-zinc-400 rounded-full animate-[loading_1.5s_ease-in-out_infinite]" />
           </div>
         )}
 
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-400 dark:text-zinc-500">
           This only takes a moment on repeat runs.
           <br />
           The first run may take a few minutes while the AI model downloads.

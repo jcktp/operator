@@ -5,9 +5,14 @@ import JournalShell from './JournalShell'
 export const dynamic = 'force-dynamic'
 
 export default async function JournalPage() {
-  const [entries, modeRow] = await Promise.all([
+  const [entries, modeRow, projects] = await Promise.all([
     prisma.journalEntry.findMany({ orderBy: { updatedAt: 'desc' } }),
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    prisma.project.findMany({
+      where: { status: 'in_progress' },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true },
+    }),
   ])
   const modeConfig = getModeConfig(modeRow?.value)
 
@@ -16,6 +21,7 @@ export default async function JournalPage() {
     title: e.title,
     folder: e.folder,
     content: e.content,
+    projectId: e.projectId ?? null,
     updatedAt: e.updatedAt.toISOString(),
   }))
 
@@ -27,7 +33,7 @@ export default async function JournalPage() {
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">{modeConfig.navJournal}</h1>
         <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">{description}</p>
       </div>
-      <JournalShell entries={serialized} />
+      <JournalShell entries={serialized} projects={projects} />
     </div>
   )
 }
