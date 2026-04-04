@@ -46,12 +46,28 @@ export const MODEL_CAPS_REGISTRY: Record<string, ModelCaps> = {
   'moondream':        { vision: true,  audio: false, contextWindow:   2_048, sizeGB: 1.7 },
   'minicpm-v':        { vision: true,  audio: false, contextWindow:   8_192, sizeGB: 5.5 },
   'qwen2-vl:7b':      { vision: true,  audio: false, contextWindow:  32_768, sizeGB: 4.4 },
+  'qwen3.5:0.6b':     { vision: false, audio: false, contextWindow:  32_768, sizeGB: 0.5 },
+  'qwen3.5:1.7b':     { vision: false, audio: false, contextWindow:  32_768, sizeGB: 1.2 },
+  'qwen3.5:4b':       { vision: false, audio: false, contextWindow:  32_768, sizeGB: 2.6 },
+  'qwen3.5:8b':       { vision: false, audio: false, contextWindow:  32_768, sizeGB: 5.2 },
+  'smollm2:135m':     { vision: false, audio: false, contextWindow:   8_192, sizeGB: 0.3 },
+  'smollm2:360m':     { vision: false, audio: false, contextWindow:   8_192, sizeGB: 0.4 },
+  'smollm2:1.7b':     { vision: false, audio: false, contextWindow:   8_192, sizeGB: 1.1 },
   // ── Audio + Vision ─────────────────────────────────────────────────────────
-  'gemma4:e2b':       { vision: true,  audio: true,  contextWindow: 131_072, sizeGB: 7.2 },
-  'gemma4:e4b':       { vision: true,  audio: true,  contextWindow: 131_072, sizeGB: 9.6 },
+  'gemma4:e2b':         { vision: true,  audio: true,  contextWindow: 131_072, sizeGB: 7.2 },
+  'gemma4:e4b':         { vision: true,  audio: true,  contextWindow: 131_072, sizeGB: 9.6 },
   // Larger gemma4 — vision but no audio encoder
-  'gemma4:12b':       { vision: true,  audio: false, contextWindow: 131_072, sizeGB: 7.9 },
-  'gemma4:27b':       { vision: true,  audio: false, contextWindow: 131_072, sizeGB: 17.1 },
+  'gemma4:26b':         { vision: true,  audio: false, contextWindow: 262_144, sizeGB: 18.0 },
+  'gemma4:31b':         { vision: true,  audio: false, contextWindow: 262_144, sizeGB: 20.0 },
+  // phi4-multimodal — text + vision + audio, ~8.5 GB
+  'phi4-multimodal':    { vision: true,  audio: true,  contextWindow:  16_384, sizeGB: 8.5 },
+  // ── Audio-only (transcription) ─────────────────────────────────────────────
+  // Whisper — pure speech-to-text, no text generation
+  'whisper':            { vision: false, audio: true,  contextWindow: 0, sizeGB: 1.5 },
+  'whisper:small':      { vision: false, audio: true,  contextWindow: 0, sizeGB: 0.6 },
+  'whisper:medium':     { vision: false, audio: true,  contextWindow: 0, sizeGB: 1.5 },
+  'whisper:large':      { vision: false, audio: true,  contextWindow: 0, sizeGB: 3.1 },
+  'whisper:large-v3':   { vision: false, audio: true,  contextWindow: 0, sizeGB: 3.1 },
 }
 
 /**

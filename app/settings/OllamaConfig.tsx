@@ -7,8 +7,9 @@ import type { ModelSetupMode } from './useSettingsState'
 import { getModelCapsClient, modelRamWarning, formatContextWindow } from '@/lib/model-caps-shared'
 
 const ALL_IN_ONE_MODELS = [
-  { id: 'gemma4:e2b', label: 'Gemma 4 E2B', note: '7.2 GB · text + vision + audio · slow on 16 GB machines' },
-  { id: 'gemma4:e4b', label: 'Gemma 4 E4B', note: '9.6 GB · text + vision + audio · requires 16 GB+ RAM' },
+  { id: 'gemma4:e2b',       label: 'Gemma 4 E2B',        note: '7.2 GB · text + vision + audio · slow on 16 GB machines' },
+  { id: 'gemma4:e4b',       label: 'Gemma 4 E4B',        note: '9.6 GB · text + vision + audio · requires 16 GB+ RAM' },
+  { id: 'phi4-multimodal',  label: 'Phi 4 Multimodal',   note: '~8.5 GB · text + vision + audio · Microsoft, generally faster than gemma4' },
 ]
 
 const VISION_MODELS = [
@@ -20,8 +21,11 @@ const VISION_MODELS = [
 ]
 
 const AUDIO_MODELS = [
-  { id: 'gemma4:e2b', label: 'Gemma 4 E2B', note: '7.2 GB · loads only for audio tasks' },
-  { id: 'gemma4:e4b', label: 'Gemma 4 E4B', note: '9.6 GB · higher quality transcription' },
+  { id: 'whisper:small',     label: 'Whisper Small',      note: '0.6 GB · lightest · transcription only, no text generation' },
+  { id: 'whisper:medium',    label: 'Whisper Medium',     note: '1.5 GB · better accuracy · transcription only' },
+  { id: 'gemma4:e2b',        label: 'Gemma 4 E2B',        note: '7.2 GB · full multimodal · also handles vision + text' },
+  { id: 'gemma4:e4b',        label: 'Gemma 4 E4B',        note: '9.6 GB · higher quality · also handles vision + text' },
+  { id: 'phi4-multimodal',   label: 'Phi 4 Multimodal',   note: '~8.5 GB · full multimodal · text + vision + audio from Microsoft' },
 ]
 
 // Text-only models for use in split modes
@@ -157,6 +161,7 @@ export default function OllamaConfig({
   const [ollamaVersion, setOllamaVersion] = useState<string | null>(null)
   const [suggestedTextModels, setSuggestedTextModels] = useState(TEXT_MODELS)
   const [refreshing, setRefreshing] = useState(false)
+  const [modelSource, setModelSource] = useState<'live' | 'fallback' | null>(null)
   const [systemRamGb, setSystemRamGb] = useState<number | null>(null)
 
   useEffect(() => {
@@ -189,8 +194,14 @@ export default function OllamaConfig({
     setRefreshing(true)
     try {
       const res = await fetch('/api/models-refresh')
-      const data = await res.json() as { models?: typeof TEXT_MODELS }
-      if (data.models) setSuggestedTextModels(data.models.filter(m => !getModelCapsClient(m.id).vision))
+      const data = await res.json() as { models?: typeof TEXT_MODELS; source?: 'live' | 'fallback' }
+      if (data.models) {
+        setSuggestedTextModels(data.models.filter(m => {
+          const caps = getModelCapsClient(m.id)
+          return !caps.vision && !caps.audio
+        }))
+      }
+      if (data.source) setModelSource(data.source)
     } catch {}
     setRefreshing(false)
   }
@@ -290,10 +301,14 @@ export default function OllamaConfig({
                   <span className="ml-2 text-gray-400 dark:text-zinc-500 font-normal">active: <code className="font-mono">{savedModel}</code></span>
                 )}
               </label>
-              <button type="button" onClick={refreshModels} disabled={refreshing}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                <RefreshCw size={11} className={refreshing ? 'animate-spin' : ''} /> Refresh list
-              </button>
+              <div className="flex items-center gap-2">
+                {modelSource === 'live' && <span className="text-[10px] text-green-500">● live</span>}
+                {modelSource === 'fallback' && <span className="text-[10px] text-amber-500">● cached</span>}
+                <button type="button" onClick={refreshModels} disabled={refreshing}
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                  <RefreshCw size={11} className={refreshing ? 'animate-spin' : ''} /> Refresh list
+                </button>
+              </div>
             </div>
             <p className="text-xs text-gray-400 dark:text-zinc-500 mb-2">Used for all text tasks. Vision and audio handled by dedicated models below.</p>
             <ModelRadioList
