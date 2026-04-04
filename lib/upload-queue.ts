@@ -25,7 +25,9 @@ async function processItem(itemId: string): Promise<void> {
   const setStep = (step: string) =>
     prisma.uploadJobItem.update({ where: { id: itemId }, data: { step } }).catch(() => {})
 
-  await prisma.uploadJobItem.update({ where: { id: itemId }, data: { status: 'processing', step: 'Starting…' } })
+  // Mark as processing — step update is best-effort so a missing column never kills the job
+  await prisma.uploadJobItem.update({ where: { id: itemId }, data: { status: 'processing' } })
+  setStep('Starting…')
 
   try {
     // Reload AI settings so provider/model env vars are current
