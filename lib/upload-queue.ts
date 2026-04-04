@@ -161,6 +161,10 @@ async function processItem(itemId: string): Promise<void> {
       ])
     }
 
+    // Check if cancelled while AI was running — don't save the report
+    const freshStatus = await prisma.uploadJobItem.findUnique({ where: { id: itemId }, select: { status: true } })
+    if (freshStatus?.status === 'error') return
+
     const report = await prisma.report.create({
       data: {
         title: item.title,
