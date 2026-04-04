@@ -53,7 +53,10 @@ export async function fetchOllamaContextWindow(host: string, modelId: string): P
  */
 export function maxCharsForModel(modelId: string): number {
   const caps = getModelCapsClient(modelId)
-  return Math.max(Math.min(Math.floor(caps.contextWindow * 4 * 0.70), 80_000), 4_000)
+  // Cap at 20K chars for local inference — large-context models (gemma4, llama3.2) can
+  // technically handle 80K+ chars but local CPU/unified-memory inference is slow at that
+  // size. 20K chars (~4-5K words) covers most real-world documents in a single pass.
+  return Math.max(Math.min(Math.floor(caps.contextWindow * 4 * 0.70), 20_000), 4_000)
 }
 
 // ── RAM checks ───────────────────────────────────────────────────────────────

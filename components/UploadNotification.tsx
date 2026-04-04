@@ -184,13 +184,11 @@ export default function UploadNotification() {
   const totalProcessed = activeJobs.reduce((sum, j) => sum + j.processed, 0)
   const totalItems = activeJobs.reduce((sum, j) => sum + j.total, 0)
 
-  // Compact pill in nav — one line, with current step if available
-  const activeItem = activeJobs.flatMap(j => j.items).find(i => i.status === 'processing')
-  const activeStep = activeItem?.step ?? null
+  // Compact pill in nav — count only, no step details (those live in the dropdown)
   const statusText = activeJobs.length > 0
     ? totalItems > 1
-      ? `Analysing ${totalProcessed + 1} of ${totalItems}${activeStep ? ` · ${activeStep}` : '…'}`
-      : activeStep ?? 'Analysing…'
+      ? `Analysing ${totalProcessed + 1} of ${totalItems}…`
+      : 'Analysing…'
     : doneJobs.length > 0
       ? (() => { const n = doneJobs.reduce((s, j) => s + j.items.filter(i => i.status === 'done').length, 0); return `${n} document${n !== 1 ? 's' : ''} ready` })()
     : errorJobs.length > 0

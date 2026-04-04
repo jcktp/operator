@@ -101,11 +101,12 @@ async function processItem(itemId: string): Promise<void> {
       if (direct) directName = direct.name
     }
 
-    // Find most recent prior report for same area/direct
+    // Find most recent prior report for same area/direct — scoped to project if one is set
     const previousReport = await prisma.report.findFirst({
       where: {
         area: item.area,
         ...(item.directReportId ? { directReportId: item.directReportId } : {}),
+        ...(item.projectId ? { projectId: item.projectId } : {}),
         summary: { not: null },
         metrics: { not: null },
       },
