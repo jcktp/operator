@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
 // GET /api/storyline — list all stories
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const stories = await prisma.story.findMany({
     orderBy: { updatedAt: 'desc' },
     include: { evidence: { orderBy: { createdAt: 'asc' } } },
@@ -12,6 +15,8 @@ export async function GET() {
 
 // POST /api/storyline — create a story
 export async function POST(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const body = await req.json() as { title: string; reportIds: string[]; description?: string; status?: string }
   if (!body.title?.trim()) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 })

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
 export interface GraphNode {
@@ -21,6 +22,8 @@ export interface GraphData {
 }
 
 export async function GET(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const name = req.nextUrl.searchParams.get('name') ?? ''
   if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
 

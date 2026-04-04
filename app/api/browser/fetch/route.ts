@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -113,6 +114,8 @@ const BROWSER_HEADERS = {
 }
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   if (process.env.AIR_GAP_MODE === 'true') {
     return NextResponse.json({ error: 'Air-gap mode is enabled — the browser is blocked.' }, { status: 403 })
   }

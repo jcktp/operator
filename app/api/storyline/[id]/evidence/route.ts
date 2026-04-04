@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
 // POST /api/storyline/[id]/evidence — add an evidence item
@@ -6,6 +7,8 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id: storyId } = await params
   const body = await req.json() as {
     url: string

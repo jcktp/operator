@@ -85,9 +85,9 @@ model Report {
   project        Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   isLongitudinal Boolean       @default(false)
   seriesId       String?
-  series         ReportSeries? @relation(fields: [seriesId], references: [id])
+  series         ReportSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   directReportId String?
-  directReport   DirectReport? @relation(fields: [directReportId], references: [id])
+  directReport   DirectReport? @relation(fields: [directReportId], references: [id], onDelete: SetNull)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   // Journalism back-relations

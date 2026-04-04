@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { analyzeReport } from '@/lib/ai'
 import { loadAiSettings } from '@/lib/settings'
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const { title, text, area, reportDate } = await req.json()
 

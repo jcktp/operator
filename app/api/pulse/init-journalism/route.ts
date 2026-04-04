@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
 const JOURNALISM_DEFAULTS = [
@@ -11,7 +12,9 @@ const JOURNALISM_DEFAULTS = [
 ]
 
 // POST — idempotent: only creates defaults if no feeds exist yet
-export async function POST() {
+export async function POST(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const count = await prisma.pulseFeed.count()
   if (count > 0) {
     return NextResponse.json({ ok: true, created: 0 })

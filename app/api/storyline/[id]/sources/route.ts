@@ -1,11 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
 // GET /api/storyline/[id]/sources
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const sources = await prisma.storySource.findMany({
     where: { storyId: id },
@@ -20,6 +23,8 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const { directReportId, tags, notes } = await req.json() as {
     directReportId: string

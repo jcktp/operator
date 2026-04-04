@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
 // POST /api/reports/[id]/series
 // Body: { seriesId?: string, seriesName?: string, area: string }
 // Creates a series if needed, then links this report (and sibling reports) to it.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const body = await req.json() as { seriesId?: string; seriesName?: string; area: string; directReportId?: string }
 

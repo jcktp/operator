@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
 import { generateCatchMeUp } from '@/lib/ai'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     await loadAiSettings()
     const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { getModeConfig } from '@/lib/mode'
 import { chat } from '@/lib/ai-providers'
@@ -12,6 +13,8 @@ interface GeneratedBrief {
 }
 
 export async function POST(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const body = await req.json() as { reportIds: string[] }
   if (!body.reportIds?.length) {
     return NextResponse.json({ error: 'reportIds required' }, { status: 400 })

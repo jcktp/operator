@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getReportsRoot } from '@/lib/reports-folder'
 import { readFileSync } from 'fs'
-import { join, extname } from 'path'
+import { join, resolve } from 'path'
+import { requireAuth } from '@/lib/api-auth'
 
 const MIME: Record<string, string> = {
   pdf:  'application/pdf',
@@ -16,9 +17,12 @@ const MIME: Record<string, string> = {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
+
   const { id } = await params
   const report = await prisma.report.findUnique({ where: { id }, select: { filePath: true, fileType: true, fileName: true } })
   if (!report?.filePath) {
@@ -26,7 +30,12 @@ export async function GET(
   }
 
   try {
-    const fullPath = join(getReportsRoot(), report.filePath)
+    const root = getReportsRoot()
+    const fullPath = resolve(join(root, report.filePath))
+    // Guard against path traversal
+    if (!fullPath.startsWith(resolve(root) + '/') && fullPath !== resolve(root)) {
+      return new NextResponse('Forbidden', { status: 403 })
+    }
     const buffer = readFileSync(fullPath)
     const ext = report.fileType.toLowerCase()
     const contentType = MIME[ext] ?? 'application/octet-stream'

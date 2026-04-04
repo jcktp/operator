@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { isCloudflaredInstalled, isTunnelRunning, getTunnelUrl, startTunnel, stopTunnel, getLocalNetworkUrl } from '@/lib/tunnel'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   return NextResponse.json({
     installed: isCloudflaredInstalled(),
     running: isTunnelRunning(),
@@ -11,6 +14,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const body = await req.json() as { action?: string }
 
   if (body.action === 'start') {

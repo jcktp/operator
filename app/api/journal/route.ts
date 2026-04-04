@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const entries = await prisma.journalEntry.findMany({
     orderBy: { updatedAt: 'desc' },
   })
@@ -9,6 +12,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const { id, title, folder, content, projectId } = await req.json()
 
@@ -44,6 +49,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await req.json()
   await prisma.journalEntry.delete({ where: { id } })
   return NextResponse.json({ ok: true })

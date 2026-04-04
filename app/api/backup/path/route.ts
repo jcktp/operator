@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { readFileSync, existsSync, mkdirSync, copyFileSync, cpSync } from 'fs'
 import { resolve, join } from 'path'
@@ -6,6 +7,8 @@ import { getReportsRoot } from '@/lib/reports-folder'
 
 // POST: copy DB + reports folder to the configured backup path
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const { path: backupPath } = await req.json() as { path?: string }
     if (!backupPath?.trim()) {

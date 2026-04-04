@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { randomBytes } from 'crypto'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const requests = await prisma.reportRequest.findMany({
     orderBy: { createdAt: 'desc' },
     include: { directReport: true },
@@ -11,6 +14,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const { title, area, message, directReportId, projectId, expiresInDays } = await req.json()
 

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
 import { analyzeReport, extractEntities, extractTimeline } from '@/lib/ai'
 import { getModeConfig } from '@/lib/mode'
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
 
   const report = await prisma.report.findUnique({

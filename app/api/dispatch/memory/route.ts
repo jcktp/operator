@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const row = await prisma.setting.findUnique({ where: { key: 'user_memory' } })
     return NextResponse.json({ memory: row?.value ?? '' })
@@ -12,6 +15,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const body = await req.json() as { memory?: string; fact?: string }
     if ('fact' in body && typeof body.fact === 'string') {
@@ -43,6 +48,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const { fact } = await req.json() as { fact?: string }
     if (!fact?.trim()) {

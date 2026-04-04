@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { parseJsonSafe } from '@/lib/utils'
 
@@ -13,6 +14,8 @@ function snippet(text: string, q: string, maxLen = 120): string {
 }
 
 export async function GET(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
   if (q.length < 2) return NextResponse.json({ reports: [], journal: [] })

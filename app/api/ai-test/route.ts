@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 
 type Provider = 'anthropic' | 'openai' | 'groq' | 'google' | 'xai' | 'perplexity' | 'mistral'
 
@@ -157,6 +158,8 @@ async function testPerplexity(key: string, model: string) {
 // ── Route ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const { provider, key: rawKey } = await req.json() as { provider: Provider; key: string }
     const key = rawKey?.trim() ?? ''

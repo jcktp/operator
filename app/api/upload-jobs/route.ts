@@ -4,11 +4,14 @@
  * Also acts as a worker watchdog — if queued items exist but no worker is running,
  * kicks the worker so a crashed worker self-heals on the next notification poll.
  */
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { kickWorker } from '@/lib/upload-queue'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000)  // 2 hours ago
 
   const jobs = await prisma.uploadJob.findMany({

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { generateAreaBriefing } from '@/lib/ai'
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { area } = await req.json() as { area?: string }
   if (!area?.trim()) return NextResponse.json({ error: 'area required' }, { status: 400 })
 

@@ -3,9 +3,12 @@
  * Returns non-location entities grouped by report, for the map inspector panel.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const ids = req.nextUrl.searchParams.get('reportIds')
   if (!ids) return NextResponse.json({ results: [] })
 

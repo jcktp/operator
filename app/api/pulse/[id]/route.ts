@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { fetchFeedItems } from '@/lib/pulse'
 import { loadAiSettings } from '@/lib/settings'
 
 // PUT /api/pulse/[id] — edit feed name / url / type
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const body = await req.json() as { name?: string; url?: string; type?: string; enabled?: boolean }
   const feed = await prisma.pulseFeed.update({
@@ -21,7 +24,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // DELETE /api/pulse/[id]
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   await prisma.pulseFeed.delete({ where: { id } })
   return NextResponse.json({ ok: true })
@@ -29,6 +34,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
 // POST /api/pulse/[id] — refresh feed, or clear items with { action: 'clear' }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
 
   const body = await req.json().catch(() => ({})) as { action?: string }

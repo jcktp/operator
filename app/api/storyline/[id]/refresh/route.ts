@@ -7,7 +7,8 @@
  * Body: { type: 'entities' | 'timeline' | 'all' }
  * Returns: { entitiesRefreshed: number, eventsRefreshed: number }
  */
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { extractEntities, extractTimeline } from '@/lib/ai'
 import { loadAiSettings } from '@/lib/settings'
@@ -16,6 +17,8 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const { type = 'all' } = await req.json().catch(() => ({})) as { type?: string }
 

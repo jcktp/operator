@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 
 // Curated list of small, quality models — checked periodically
 // These are models from ollama.com/library that run well locally on consumer hardware
@@ -19,6 +20,8 @@ const CURATED_MODELS = [
   { id: 'smollm2:1.7b',     label: 'SmolLM2 1.7B',      note: 'Tiny but surprisingly capable',         tags: ['fast'] },
 ]
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   return NextResponse.json({ models: CURATED_MODELS, updatedAt: new Date().toISOString() })
 }

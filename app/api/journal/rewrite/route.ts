@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { chat } from '@/lib/ai-providers'
 import { loadAiSettings } from '@/lib/settings'
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const { text } = await req.json() as { text?: string }
     if (!text?.trim()) return NextResponse.json({ error: 'text is required' }, { status: 400 })

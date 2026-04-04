@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, chmodSync, existsSync } from 'fs'
 import { join } from 'path'
 
 const KEY_FILE = join(process.cwd(), 'prisma', '.operator_key')
@@ -14,6 +14,7 @@ function getKey(): Buffer {
   }
   const key = randomBytes(32)
   writeFileSync(KEY_FILE, key.toString('hex'), 'utf8')
+  try { chmodSync(KEY_FILE, 0o600) } catch { /* non-POSIX fs — ignore */ }
   _key = key
   return key
 }

@@ -1,5 +1,10 @@
-import { pbkdf2Sync, randomBytes } from 'crypto'
+import { pbkdf2Sync, randomBytes, createHash } from 'crypto'
 import { prisma } from './db'
+
+/** Hash a session token for storage — SHA-256 is sufficient since tokens are already high-entropy random bytes. */
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
+}
 
 export const SESSION_COOKIE = 'op_session'
 export const MAX_ATTEMPTS = 3
@@ -34,7 +39,10 @@ export async function getFailedAttempts(): Promise<number> {
 export async function isValidSession(token: string | undefined): Promise<boolean> {
   if (!token) return false
   const row = await prisma.setting.findUnique({ where: { key: 'auth_session_token' } })
-  return !!row?.value && row.value === token
+  if (!row?.value) return false
+  // Compare hashed token (new sessions store the hash)
+  // Also accept raw match for any existing session created before this change
+  return row.value === hashToken(token) || row.value === token
 }
 
 async function upsert(key: string, value: string) {
@@ -47,9 +55,9 @@ async function upsert(key: string, value: string) {
 
 export async function createSession(): Promise<string> {
   const token = generateToken()
-  await upsert('auth_session_token', token)
+  await upsert('auth_session_token', hashToken(token))  // store hash, not raw token
   await upsert('auth_failed_attempts', '0')
-  return token
+  return token  // return raw token for the cookie
 }
 
 export async function setupAuth(name: string, role: string, password: string, mode?: string): Promise<string> {
@@ -57,7 +65,7 @@ export async function setupAuth(name: string, role: string, password: string, mo
   const token = generateToken()
   await Promise.all([
     upsert('auth_password_hash', hash),
-    upsert('auth_session_token', token),
+    upsert('auth_session_token', hashToken(token)),
     upsert('auth_failed_attempts', '0'),
     upsert('auth_setup_complete', 'true'),
     name ? upsert('ceo_name', name) : Promise.resolve(),

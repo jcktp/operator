@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
 // PATCH /api/storyline/[id] — update title, narrative, events, claimStatuses, reportIds
@@ -6,6 +7,8 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const body = await req.json() as {
     title?: string
@@ -35,9 +38,11 @@ export async function PATCH(
 
 // DELETE /api/storyline/[id]
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   await prisma.story.delete({ where: { id } })
   return NextResponse.json({ ok: true })

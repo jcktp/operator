@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { analyzeReport, compareReports, checkResolvedFlags } from '@/lib/ai'
 import { loadAiSettings } from '@/lib/settings'
@@ -61,6 +62,8 @@ async function fetchGoogleContent(url: string): Promise<{ text: string; displayC
 // ── Title fetch (GET /api/upload-link?url=...) ───────────────────────────────
 
 export async function GET(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const url = req.nextUrl.searchParams.get('url') ?? ''
   if (!url) return NextResponse.json({ title: '' })
   try {
@@ -86,6 +89,8 @@ export async function GET(req: NextRequest) {
 // ── Route ────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const { url, title, area, directReportId, reportDate, storyName, projectId } = await req.json()
 

@@ -1,29 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireAuth } from '@/lib/api-auth'
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   await prisma.directReport.delete({ where: { id } })
   return NextResponse.json({ success: true })
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const body = await req.json()
   const { name, title, email, phone, area, notes } = body
+  // All fields are in the Prisma schema — use the safe typed update, no raw SQL needed
   const direct = await prisma.directReport.update({
     where: { id },
-    data: { name, title, email, area },
+    data: {
+      name,
+      title,
+      email,
+      area,
+      ...(phone !== undefined ? { phone: phone || null } : {}),
+      ...(notes !== undefined ? { notes: notes || null } : {}),
+    },
   })
-  const extraUpdates: string[] = []
-  const extraParams: (string | null)[] = []
-  if (phone !== undefined) { extraUpdates.push('"phone" = ?'); extraParams.push(phone || null) }
-  if (notes !== undefined) { extraUpdates.push('"notes" = ?'); extraParams.push(notes || null) }
-  if (extraUpdates.length > 0) {
-    await prisma.$executeRawUnsafe(
-      `UPDATE "DirectReport" SET ${extraUpdates.join(', ')} WHERE "id" = ?`,
-      ...extraParams, id
-    )
-  }
-  return NextResponse.json({ direct: { ...direct, phone: phone ?? null, notes: notes ?? null } })
+  return NextResponse.json({ direct })
 }

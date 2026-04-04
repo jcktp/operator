@@ -1,10 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 import { prisma } from '@/lib/db'
 
 // Exports the raw SQLite database file — a complete backup that can restore everything
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const dbUrl = process.env.DATABASE_URL ?? ''
     const dbPath = dbUrl.replace(/^file:/, '')

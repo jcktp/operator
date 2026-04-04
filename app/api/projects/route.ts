@@ -1,9 +1,13 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireAuth } from '@/lib/api-auth'
 import { loadAiSettings } from '@/lib/settings'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   await loadAiSettings()
   const [projects, currentSetting] = await Promise.all([
     prisma.project.findMany({
@@ -16,6 +20,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const body = await req.json() as {
     name: string
     area?: string

@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { generateDashboardInsights } from '@/lib/ai'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   // Apply saved Ollama settings
   const allSettings = await prisma.setting.findMany()
   let appMode = 'executive'

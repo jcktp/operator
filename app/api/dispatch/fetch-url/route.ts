@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 
 const MAX_CHARS = 8000
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { url } = await req.json()
   if (!url || typeof url !== 'string') {
     return NextResponse.json({ error: 'Missing url' }, { status: 400 })

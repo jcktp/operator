@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { logAction } from '@/lib/audit'
 import { generateAreaBriefing } from '@/lib/ai'
 import { deleteReportFile } from '@/lib/reports-folder'
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const report = await prisma.report.findUnique({
     where: { id },
@@ -15,6 +18,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const body = await req.json() as { userNotes?: string; storyName?: string }
   const data: Record<string, unknown> = {}
@@ -24,7 +29,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json({ report })
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const { id } = await params
   const report = await prisma.report.findUnique({ where: { id }, select: { title: true, area: true, filePath: true, imagePath: true } })
   await prisma.report.delete({ where: { id } })

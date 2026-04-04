@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { fetchFeedItems } from '@/lib/pulse'
 import { loadAiSettings } from '@/lib/settings'
 
 // GET /api/pulse — list all feeds with latest items
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   const feeds = await prisma.pulseFeed.findMany({
     orderBy: { createdAt: 'asc' },
     include: {
@@ -19,6 +22,8 @@ export async function GET() {
 
 // POST /api/pulse — create feed + fetch initial items
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   await loadAiSettings()
   if (process.env.AIR_GAP_MODE === 'true') {
     return NextResponse.json({ error: 'Air-gap mode is enabled — external feeds are blocked.' }, { status: 403 })

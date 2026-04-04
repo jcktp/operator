@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     // Determine DB path from DATABASE_URL
     const dbUrl = process.env.DATABASE_URL ?? ''

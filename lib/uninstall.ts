@@ -1,4 +1,4 @@
-import { execSync, spawn } from 'child_process'
+import { execFileSync, spawn } from 'child_process'
 import { rmSync, existsSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
@@ -17,7 +17,8 @@ export async function triggerUninstall(): Promise<void> {
     const rows = await prisma.setting.findMany()
     const s = Object.fromEntries(rows.map(r => [r.key, r.value]))
     if ((!s.ai_provider || s.ai_provider === 'ollama') && s.ollama_model) {
-      execSync(`ollama rm ${s.ollama_model}`, { timeout: 15_000, stdio: 'pipe' })
+      // Use execFileSync to avoid shell injection — model name is passed as an argument, not interpolated
+      execFileSync('ollama', ['rm', s.ollama_model], { timeout: 15_000, stdio: 'pipe' })
     }
   } catch {}
 

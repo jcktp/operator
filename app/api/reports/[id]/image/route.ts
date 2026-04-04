@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getReportsRoot } from '@/lib/reports-folder'
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { join, resolve } from 'path'
 import { getMimeType } from '@/lib/parsers'
+import { requireAuth } from '@/lib/api-auth'
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
+
   const { id } = await params
   const report = await prisma.report.findUnique({ where: { id } })
   // imagePath may be null for reports created before it was tracked —
@@ -20,7 +24,12 @@ export async function GET(
   }
 
   try {
-    const fullPath = join(getReportsRoot(), imagePath)
+    const root = getReportsRoot()
+    const fullPath = resolve(join(root, imagePath))
+    // Guard against path traversal — resolved path must stay inside the reports root
+    if (!fullPath.startsWith(resolve(root) + '/') && fullPath !== resolve(root)) {
+      return new NextResponse('Forbidden', { status: 403 })
+    }
     const buffer = readFileSync(fullPath)
     const ext = (report?.fileType ?? 'png').toLowerCase()
     const contentType = getMimeType(ext)

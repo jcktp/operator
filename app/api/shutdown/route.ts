@@ -1,7 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 
-export async function POST() {
+export async function POST(req: Request) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   // Invalidate the session token so the user must log in again on next startup
   try {
     await prisma.setting.updateMany({

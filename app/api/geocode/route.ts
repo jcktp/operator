@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { loadAiSettings } from '@/lib/settings'
 
 export async function GET(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   await loadAiSettings()
 
   if (process.env.AIR_GAP_MODE === 'true') {

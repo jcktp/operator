@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
 import { extractContent, getFileType, IMAGE_TYPES, AUDIO_TYPES, getMimeType, getAudioMimeType } from '@/lib/parsers'
@@ -11,6 +12,8 @@ import { scanFile } from '@/lib/file-scan'
 import { canTranscribeAudio, audioUnavailableReason } from '@/lib/model-capabilities'
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
