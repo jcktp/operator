@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSetMode } from '@/components/ModeContext'
 import { getModeConfig, type AppMode } from '@/lib/mode'
+import { getModelCapsClient } from '@/lib/model-caps-shared'
 import { CLOUD_PROVIDERS, type AIProvider, type CloudProviderId, type PullState, type TestState } from './settingsTypes'
+
+export type ModelSetupMode = 'all-in-one' | 'text-vision' | 'full-split'
 
 async function saveSetting(key: string, value: string) {
   await fetch('/api/settings', {
@@ -27,6 +30,7 @@ export function useSettingsState() {
   const [customVisionModel, setCustomVisionModel] = useState('')
   const [ollamaAudioModel, setOllamaAudioModel] = useState('')
   const [savedAudioModel, setSavedAudioModel] = useState('')
+  const [modelSetupMode, setModelSetupMode] = useState<ModelSetupMode>('text-vision')
   const [ceoName, setCeoName] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [userRole, setUserRole] = useState('')
@@ -67,6 +71,15 @@ export function useSettingsState() {
       setSavedVisionModel(s.ollama_vision_model ?? 'llava-phi3')
       setOllamaAudioModel(s.ollama_audio_model ?? '')
       setSavedAudioModel(s.ollama_audio_model ?? '')
+      // Derive setup mode from saved settings
+      const primaryCaps = getModelCapsClient(s.ollama_model ?? 'phi4-mini')
+      if (primaryCaps.vision) {
+        setModelSetupMode('all-in-one')
+      } else if (s.ollama_audio_model) {
+        setModelSetupMode('full-split')
+      } else {
+        setModelSetupMode('text-vision')
+      }
       setCeoName(s.ceo_name ?? '')
       setCompanyName(s.company_name ?? '')
       setUserRole(s.user_role ?? '')
@@ -156,7 +169,11 @@ export function useSettingsState() {
   const modelChanged = aiProvider === 'ollama' && selectedModel !== savedModel
   const switchingToOllama = aiProvider === 'ollama' && savedProvider !== 'ollama'
   const needsPull = modelChanged || switchingToOllama
-  const effectiveVisionModel = isMultimodalModel(selectedModel) ? selectedModel : (customVisionModel.trim() || ollamaVisionModel)
+  // In all-in-one mode the primary model handles vision; in split modes use the dedicated vision model
+  const effectiveVisionModel = modelSetupMode === 'all-in-one'
+    ? selectedModel
+    : (customVisionModel.trim() || ollamaVisionModel)
+  const visionModelChanged = aiProvider === 'ollama' && effectiveVisionModel !== savedVisionModel
 
   const handleSave = async () => {
     setSaving(true)
@@ -174,10 +191,21 @@ export function useSettingsState() {
       }
     }
 
+    // Pull vision model if it changed and it's a dedicated model (not the same as primary)
+    if (aiProvider === 'ollama' && visionModelChanged && modelSetupMode !== 'all-in-one' && effectiveVisionModel !== selectedModel) {
+      try {
+        await pullModel(effectiveVisionModel)
+      } catch { /* non-critical — vision model pull failed, continue */ }
+    }
+    // Remove old vision model if it changed and it was a dedicated model (not same as old primary)
+    if (aiProvider === 'ollama' && visionModelChanged && savedVisionModel && savedVisionModel !== savedModel) {
+      await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedVisionModel }) }).catch(() => {})
+    }
+
     // If switching from Ollama to cloud and user opted to remove local models, remove them
     const switchingToCloud = savedProvider === 'ollama' && aiProvider !== 'ollama'
     if (switchingToCloud && removeOllamaModels) {
-      const modelsToRemove = [...new Set([savedModel, savedVisionModel].filter(Boolean))]
+      const modelsToRemove = [...new Set([savedModel, savedVisionModel, savedAudioModel].filter(Boolean))]
       await Promise.all(
         modelsToRemove.map(m => fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: m }) }).catch(() => {}))
       )
@@ -297,6 +325,9 @@ export function useSettingsState() {
     savedAudioModel,
     // Computed
     selectedModel, modelChanged, switchingToOllama, needsPull,
+    effectiveVisionModel, visionModelChanged,
+    // Model setup mode (all-in-one / text-vision / full-split)
+    modelSetupMode, setModelSetupMode,
     // Ollama → cloud model removal
     removeOllamaModels, setRemoveOllamaModels,
     // Actions

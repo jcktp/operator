@@ -9,6 +9,7 @@ interface JobItem {
   title: string
   area: string
   status: string
+  step: string | null
   reportId: string | null
   error: string | null
 }
@@ -183,11 +184,13 @@ export default function UploadNotification() {
   const totalProcessed = activeJobs.reduce((sum, j) => sum + j.processed, 0)
   const totalItems = activeJobs.reduce((sum, j) => sum + j.total, 0)
 
-  // Compact pill in nav — one line
+  // Compact pill in nav — one line, with current step if available
+  const activeItem = activeJobs.flatMap(j => j.items).find(i => i.status === 'processing')
+  const activeStep = activeItem?.step ?? null
   const statusText = activeJobs.length > 0
     ? totalItems > 1
-      ? `Analysing ${totalProcessed + 1} of ${totalItems}…`
-      : 'Analysing…'
+      ? `Analysing ${totalProcessed + 1} of ${totalItems}${activeStep ? ` · ${activeStep}` : '…'}`
+      : activeStep ?? 'Analysing…'
     : doneJobs.length > 0
       ? (() => { const n = doneJobs.reduce((s, j) => s + j.items.filter(i => i.status === 'done').length, 0); return `${n} document${n !== 1 ? 's' : ''} ready` })()
     : errorJobs.length > 0
@@ -326,12 +329,17 @@ export default function UploadNotification() {
                             ? <Loader2 size={10} className="animate-spin text-blue-500 shrink-0" />
                             : <FileText size={10} className="text-gray-300 dark:text-zinc-600 shrink-0" />
                       }
-                      <span className={`text-[11px] truncate flex-1 ${
+                      <span className={`text-[11px] flex-1 min-w-0 ${
                         item.status === 'done' ? 'text-gray-600 dark:text-zinc-300' :
                         item.status === 'error' ? 'text-red-600 dark:text-red-400' :
                         item.status === 'processing' ? 'text-blue-600 dark:text-blue-400 font-medium' :
                         'text-gray-400 dark:text-zinc-500'
-                      }`}>{item.title}</span>
+                      }`}>
+                        <span className="truncate block">{item.title}</span>
+                        {item.status === 'processing' && item.step && (
+                          <span className="text-[10px] text-blue-400 dark:text-blue-500 font-normal">{item.step}</span>
+                        )}
+                      </span>
                       {item.status === 'done' && item.reportId && (
                         <Link
                           href={`/reports/${item.reportId}`}

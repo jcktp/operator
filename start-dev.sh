@@ -120,8 +120,32 @@ if ! command -v ollama &>/dev/null; then
       ;;
   esac
   step "Ollama installed"
+else
+  # Ollama is present — attempt an upgrade so models requiring newer versions work.
+  OLLAMA_CURRENT="$(ollama --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo 'unknown')"
+  step "Ollama found (v${OLLAMA_CURRENT}) — checking for updates..."
+  case "$PLATFORM" in
+    macOS)
+      if brew list --cask ollama &>/dev/null 2>&1; then
+        brew upgrade --cask ollama 2>/dev/null && step "Ollama updated (cask) to $(ollama --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo 'latest')" \
+          || step "Ollama already up to date"
+      elif brew list ollama &>/dev/null 2>&1; then
+        brew upgrade ollama 2>/dev/null && step "Ollama updated to $(ollama --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo 'latest')" \
+          || step "Ollama already up to date"
+      else
+        warn "Ollama not managed by Homebrew — update manually at ollama.com/download if you get version errors"
+      fi
+      ;;
+    Linux)
+      curl -fsSL https://ollama.com/install.sh | sh >/dev/null 2>&1 \
+        && step "Ollama updated" \
+        || step "Ollama already up to date"
+      ;;
+    *)
+      step "Ollama up to date check skipped on this platform"
+      ;;
+  esac
 fi
-step "Ollama found"
 
 # ── 3b. Tesseract OCR (for image text extraction) ────────────────────────────
 if ! command -v tesseract &>/dev/null; then
@@ -149,14 +173,13 @@ else
   step "Tesseract OCR found"
 fi
 
-# ── 4. cloudflared (optional — installed/updated in background, non-blocking) ─
+# ── 4. cloudflared + supporting tools (updated in background, non-blocking) ────
+# Note: Ollama is already upgraded synchronously in step 3 — not repeated here.
 update_tools_bg() {
   case "$PLATFORM" in
     macOS)
-      brew upgrade ollama cloudflared >/dev/null 2>&1 || true ;;
+      brew upgrade cloudflared tesseract >/dev/null 2>&1 || true ;;
     Linux)
-      # Re-running the Ollama install script also updates it when a newer version exists
-      curl -fsSL https://ollama.com/install.sh | sh >/dev/null 2>&1 || true
       # Update cloudflared binary
       ARCH="$(uname -m)"
       case "$ARCH" in x86_64) CF_ARCH="amd64" ;; aarch64|arm64) CF_ARCH="arm64" ;; *) CF_ARCH="amd64" ;; esac
@@ -170,7 +193,7 @@ if command -v cloudflared &>/dev/null; then
   step "cloudflared ready"
   update_tools_bg &
 else
-  warn "cloudflared not found — installing in background (also updating Ollama)..."
+  warn "cloudflared not found — installing in background..."
   update_tools_bg &
 fi
 

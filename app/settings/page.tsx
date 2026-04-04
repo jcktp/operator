@@ -311,12 +311,15 @@ export default function SettingsPage() {
                   savedModel={s.savedModel} savedProvider={s.savedProvider}
                   modelChanged={s.modelChanged} selectedModel={s.selectedModel}
                   switchingToOllama={s.switchingToOllama}
+                  effectiveVisionModel={s.effectiveVisionModel}
+                  visionModelChanged={s.visionModelChanged}
                   webAccess={s.webAccess} setWebAccess={s.setWebAccess}
                   ollamaVisionModel={s.ollamaVisionModel} setOllamaVisionModel={s.setOllamaVisionModel}
                   customVisionModel={s.customVisionModel} setCustomVisionModel={s.setCustomVisionModel}
                   savedVisionModel={s.savedVisionModel}
                   ollamaAudioModel={s.ollamaAudioModel} setOllamaAudioModel={s.setOllamaAudioModel}
                   savedAudioModel={s.savedAudioModel}
+                  modelSetupMode={s.modelSetupMode} setModelSetupMode={s.setModelSetupMode}
                 />
               </div>
             )}

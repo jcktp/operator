@@ -18,7 +18,7 @@ export async function GET() {
     },
     include: {
       items: {
-        select: { id: true, title: true, area: true, status: true, reportId: true, error: true, sortOrder: true },
+        select: { id: true, title: true, area: true, status: true, step: true, reportId: true, error: true, sortOrder: true },
         orderBy: { sortOrder: 'asc' },
       },
     },

@@ -313,6 +313,7 @@ model UploadJobItem {
   projectId      String?
   savedFilePath  String?   // relative path within reports folder
   status         String    @default("queued")  // queued|processing|done|error
+  step           String?   // current processing step label shown to user
   reportId       String?
   error          String?
   sortOrder      Int       @default(0)

@@ -242,20 +242,24 @@ export async function POST(req: NextRequest) {
 
       await Promise.all([
         (async () => {
+          if (!modeFeatures.entities) return
           try { entitiesResult = await extractEntities(rawContent, title, area) }
           catch (e) { console.error('Entity extraction failed:', e) }
         })(),
         (async () => {
+          if (!modeFeatures.timeline) return
           try { eventsResult = await extractTimeline(rawContent, title) }
           catch (e) { console.error('Timeline extraction failed:', e) }
         })(),
         (async () => {
+          if (!modeFeatures.redactions) return
           try {
             const redactions = await detectRedactions(rawContent, title)
             if (redactions.length > 0) redactionsJson = JSON.stringify(redactions)
           } catch (e) { console.error('Redaction detection failed:', e) }
         })(),
         (async () => {
+          if (!modeFeatures.documentComparison) return
           if (!previousReport?.rawContent || previousReport.rawContent.trim().length <= 10) return
           try {
             const jComp = await compareDocumentsJournalism(
@@ -265,6 +269,7 @@ export async function POST(req: NextRequest) {
           } catch (e) { console.error('Journalism comparison failed:', e) }
         })(),
         (async () => {
+          if (!modeFeatures.verification) return
           try {
             const checklist = await generateVerificationChecklist(rawContent, title, area)
             if (checklist.length > 0) verificationChecklistJson = JSON.stringify(checklist)

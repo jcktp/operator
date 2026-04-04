@@ -99,6 +99,7 @@ export async function GET() {
   let aiStatus: Level = 'ok'
   let aiLabel = 'Unknown'
   let aiDetail = ''
+  let ollamaVersion: string | null = null
 
   try {
     const provider = s.ai_provider ?? 'ollama'
@@ -109,15 +110,22 @@ export async function GET() {
       const model = s.ollama_model ?? 'phi4-mini'
       aiLabel = model
       try {
-        const res = await fetch(`${host}/api/tags`, { signal: AbortSignal.timeout(3000) })
-        if (res.ok) {
-          const data = await res.json() as { models?: Array<{ name: string }> }
+        const [tagsRes, versionRes] = await Promise.all([
+          fetch(`${host}/api/tags`, { signal: AbortSignal.timeout(3000) }),
+          fetch(`${host}/api/version`, { signal: AbortSignal.timeout(3000) }).catch(() => null),
+        ])
+        if (tagsRes.ok) {
+          const data = await tagsRes.json() as { models?: Array<{ name: string }> }
           const count = data.models?.length ?? 0
           aiStatus = 'ok'
           aiDetail = `${count} model${count !== 1 ? 's' : ''} available`
         } else {
           aiStatus = 'error'
-          aiDetail = `HTTP ${res.status}`
+          aiDetail = `HTTP ${tagsRes.status}`
+        }
+        if (versionRes?.ok) {
+          const vd = await versionRes.json() as { version?: string }
+          if (vd.version) ollamaVersion = vd.version
         }
       } catch {
         aiStatus = 'error'
@@ -136,7 +144,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: worst(aiStatus, memStatus, cpuStatus, storageStatus, machineStatus),
-    ai:      { status: aiStatus, label: aiLabel, detail: aiDetail },
+    ai:      { status: aiStatus, label: aiLabel, detail: aiDetail, ollamaVersion },
     memory:  { rss, heap, status: memStatus, systemRamMb, warnMb, errorMb },
     cpu:     { load: Math.round(load1 * 10) / 10, loadPct, status: cpuStatus, cores: coreCount },
     storage: { totalMb, totalGb: Math.round(totalGb * 10) / 10, status: storageStatus, thresholdGb },

@@ -22,7 +22,10 @@ async function processItem(itemId: string): Promise<void> {
   let item = await prisma.uploadJobItem.findUnique({ where: { id: itemId } })
   if (!item) return
 
-  await prisma.uploadJobItem.update({ where: { id: itemId }, data: { status: 'processing' } })
+  const setStep = (step: string) =>
+    prisma.uploadJobItem.update({ where: { id: itemId }, data: { step } }).catch(() => {})
+
+  await prisma.uploadJobItem.update({ where: { id: itemId }, data: { status: 'processing', step: 'Starting…' } })
 
   try {
     // Reload AI settings so provider/model env vars are current
@@ -30,6 +33,7 @@ async function processItem(itemId: string): Promise<void> {
 
     // ── Audio transcription ───────────────────────────────────────────────────
     if (item.displayContent?.startsWith('audio:') && item.rawContent.startsWith('[Audio') && item.savedFilePath) {
+      await setStep('Transcribing audio…')
       try {
         // displayContent format: 'audio:area/file.ext\naudio/mpeg'
         const lines = item.displayContent.split('\n')
@@ -61,6 +65,7 @@ async function processItem(itemId: string): Promise<void> {
     // doesn't block the upload response.
     let extractText = false
     if (item.displayContent?.startsWith('image:') && item.rawContent.startsWith('[Image') && item.savedFilePath) {
+      await setStep('Describing image…')
       try {
         const metaStr = item.displayContent.split('\n').slice(1).join('\n')
         if (metaStr) {
@@ -113,6 +118,7 @@ async function processItem(itemId: string): Promise<void> {
     // AI analysis
     let analysis = null
     if (!isImagePlaceholder && !isFailedAudio) {
+      await setStep('Analysing document…')
       try {
         analysis = await analyzeReport(item.rawContent, item.title, item.area, directName, appMode)
       } catch (e) {
@@ -126,6 +132,7 @@ async function processItem(itemId: string): Promise<void> {
 
     type PrevInsight = { type: string; text: string }
     if (!isImagePlaceholder && !isFailedAudio) {
+      if (previousReport) await setStep('Comparing with previous report…')
       await Promise.all([
         (async () => {
           if (!previousReport || !analysis || !previousReport.summary || !previousReport.metrics) return
@@ -181,6 +188,7 @@ async function processItem(itemId: string): Promise<void> {
     // Skip all of these for image placeholders — no real text content to analyse
     const modeFeatures = getModeConfig(appMode).features
     if (!isImagePlaceholder && !isFailedAudio && (modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification || modeFeatures.documentComparison)) {
+      await setStep('Extracting insights…')
       let entitiesResult: Awaited<ReturnType<typeof extractEntities>> = []
       let eventsResult: Awaited<ReturnType<typeof extractTimeline>> = []
       let redactionsJson: string | null = null
@@ -189,20 +197,24 @@ async function processItem(itemId: string): Promise<void> {
 
       await Promise.all([
         (async () => {
+          if (!modeFeatures.entities) return
           try { entitiesResult = await extractEntities(item.rawContent, item.title, item.area) }
           catch (e) { console.error('[upload-queue] Entity extraction failed:', e) }
         })(),
         (async () => {
+          if (!modeFeatures.timeline) return
           try { eventsResult = await extractTimeline(item.rawContent, item.title) }
           catch (e) { console.error('[upload-queue] Timeline extraction failed:', e) }
         })(),
         (async () => {
+          if (!modeFeatures.redactions) return
           try {
             const redactions = await detectRedactions(item.rawContent, item.title)
             if (redactions.length > 0) redactionsJson = JSON.stringify(redactions)
           } catch (e) { console.error('[upload-queue] Redaction detection failed:', e) }
         })(),
         (async () => {
+          if (!modeFeatures.documentComparison) return
           if (!previousReport?.rawContent || previousReport.rawContent.trim().length <= 10) return
           try {
             const jComp = await compareDocumentsJournalism(
@@ -212,6 +224,7 @@ async function processItem(itemId: string): Promise<void> {
           } catch (e) { console.error('[upload-queue] Journalism comparison failed:', e) }
         })(),
         (async () => {
+          if (!modeFeatures.verification) return
           try {
             const checklist = await generateVerificationChecklist(item.rawContent, item.title, item.area)
             if (checklist.length > 0) verificationChecklistJson = JSON.stringify(checklist)
