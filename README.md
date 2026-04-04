@@ -30,20 +30,21 @@ Upload documents. Get structured AI analysis. Everything runs on your machine.
 
 ## What it does
 
-Operator is a private intelligence workspace. Upload documents and images to get structured AI analysis — summaries, metrics, risk flags, entity extraction, timelines, and period-over-period comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
+Operator is a private intelligence workspace. Upload documents, images, and audio to get structured AI analysis — summaries, metrics, risk flags, entity extraction, timelines, and period-over-period comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
 
 | Feature | Description |
 |---|---|
-| **Projects** | Organise work into named projects — all documents, analysis, and dispatch are scoped to the active project |
+| **Projects** | Organise work into named projects — documents, entities, timelines, story maps, and dispatch are all scoped to the active project |
 | **Document analysis** | AI extracts summaries, metrics, risks, opportunities, and follow-up questions from every upload — with mode-specific framing per domain |
 | **Image uploads** | Upload photos and screenshots — AI describes the image, extracts text (OCR), and reads EXIF metadata (date, camera, GPS, focal length, exposure, aperture, ISO) automatically |
+| **Audio uploads** | Upload MP3, WAV, M4A, and other audio files — transcribed automatically using a dedicated audio model; shows a warning if no audio-capable model is configured |
 | **Background uploads** | Files are parsed immediately and queued for AI analysis so you can navigate away — no waiting |
 | **Library** | Every document stored with full history; dedicated Photos tab for image uploads with thumbnail gallery and lightbox |
 | **Dashboard** | Cross-area overview with AI-generated health signals across all documents |
 | **Metrics board** | KPI board aggregating every metric extracted across all documents, grouped by area |
 | **Dispatch** | AI chat with mode-specific personas; has full document context, remembers facts across conversations, and supports web search when enabled in Settings |
-| **Inspector sidebar** | Click any entity or map pin to open a panel showing source documents and connected entities — without leaving the page |
-| **Entities page** | Four-tab hub: entity management, timeline, interactive story map, and AI-assisted storyline builder (Journalism & Legal) |
+| **Inspector sidebar** | Click any entity or map pin to open a panel showing the report summary, source documents, and connected entities — without leaving the page |
+| **Entities page** | Four-tab hub: entity management, timeline, interactive story map with zoom controls, and AI-assisted storyline builder (Journalism & Legal) — all filtered by active project |
 | **Browser** | In-app web browser with reader and live modes, bookmark management, and one-click save to journal or dispatch |
 | **Pulse** | Feed aggregator for RSS, Reddit, YouTube, Bluesky, and Mastodon — with keyword monitoring and auto-refresh |
 | **Journal** | Private note-taking with folder organisation and AI grammar correction |
@@ -90,7 +91,7 @@ Switch modes in **Settings** to adapt the interface, AI framing, and terminology
 | **macOS or Linux** | Windows supported via WSL |
 | **Node.js 18+** | Auto-installed by `start.sh` if missing |
 | **Ollama** | Auto-installed by `start.sh` if missing |
-| **~5 GB free disk** | For `phi4-mini` (~2.5 GB) and `moondream` (~1.7 GB) |
+| **~5 GB free disk** | For `phi4-mini` (~2.5 GB) and `llava-phi3` (~2.9 GB) |
 | **8 GB RAM** | 16 GB recommended for local inference |
 
 Cloud AI (Anthropic, OpenAI, Google Gemini, Groq, xAI, Perplexity, Mistral) is optional — use any provider instead of or alongside Ollama.
@@ -141,13 +142,32 @@ All settings can be changed later in **Settings**.
 
 Ollama runs entirely on your machine. Nothing is sent anywhere.
 
-| | Default |
-|---|---|
-| Text model | `phi4-mini` (~2.5 GB) |
-| Vision model | `llava-phi3` (~1.7 GB) — pulled on first run for image uploads |
-| Host | `http://localhost:11434` |
+Three model setup modes are available in **Settings → AI**:
 
-Switch to any Ollama model in **Settings → AI** — it downloads automatically.
+| Mode | Models | Best for |
+|---|---|---|
+| **Text + Vision** *(default)* | Small text model + dedicated vision model | Most users — low RAM, fast text |
+| **Full split** | Separate text, vision, and audio models | Handles all file types with minimal RAM per task |
+| **All-in-one** | Single model for text, vision, and audio | Simpler setup; requires more RAM |
+
+**Default models**
+
+| Role | Model | Size |
+|---|---|---|
+| Text | `phi4-mini` | ~2.5 GB |
+| Vision | `llava-phi3` | ~2.9 GB — loaded on demand for image uploads |
+| Audio | configured separately in Full split mode | — |
+
+**Audio-capable models** (Full split mode)
+
+| Model | Size | Notes |
+|---|---|---|
+| `whisper:small` | 0.6 GB | Transcription only — lightest option |
+| `whisper:medium` | 1.5 GB | Better accuracy, still lightweight |
+| `gemma4:e2b` | 7.2 GB | Full multimodal — text, vision, and audio |
+| `phi4-multimodal` | ~8.5 GB | Full multimodal — generally faster than gemma4 |
+
+The model list in Settings refreshes live from [ollama.com/search](https://ollama.com/search) and falls back to a curated list when offline.
 
 ### Cloud
 
@@ -175,8 +195,11 @@ Enable in **Settings → Remote** to get a public URL others can use to submit f
 
 | | |
 |---|---|
-| **Encryption at rest** | API keys encrypted with AES-256-GCM |
-| **Session auth** | Password-protected; signed HTTP-only cookies invalidated on shutdown |
+| **Encryption at rest** | API keys encrypted with AES-256-GCM; key file set to `0600` permissions |
+| **Session auth** | Password-protected; session tokens stored as SHA-256 hashes; HTTP-only cookies expire on browser close |
+| **All routes protected** | Every API endpoint requires a valid session — no unauthenticated access |
+| **Injection prevention** | Shell commands use `execFile` with argument arrays; no raw string interpolation |
+| **Path traversal guard** | File download routes validate paths against the reports root before serving |
 | **Local only** | Binds to `localhost`; nothing is reachable externally unless you enable the tunnel |
 | **No telemetry** | No analytics, no tracking, no external calls except to AI providers you've configured |
 
@@ -188,13 +211,13 @@ Enable in **Settings → Remote** to get a public URL others can use to submit f
 |---|---|
 | Framework | Next.js 16 (App Router, Turbopack) |
 | Database | SQLite via Prisma 7 + `better-sqlite3` |
-| Local AI | Ollama (`phi4-mini` text, `moondream` vision) |
+| Local AI | Ollama (`phi4-mini` text, `llava-phi3` vision) |
 | Styling | Tailwind CSS v4 |
 | Maps | OpenLayers + MapLibre GL |
 | Timeline | TimelineJS3 |
 | EXIF | exifr |
 | Tunnel | Cloudflare Quick Tunnel |
-| Auth | PBKDF2, HTTP-only session cookies |
+| Auth | SHA-256 session tokens, HTTP-only cookies, AES-256-GCM key storage |
 
 ---
 
