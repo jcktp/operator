@@ -1,10 +1,12 @@
 /**
  * GET /api/upload-jobs
  * Returns active and recently completed upload jobs for the notification component.
- * Only returns jobs from the last 2 hours to keep it lightweight.
+ * Also acts as a worker watchdog — if queued items exist but no worker is running,
+ * kicks the worker so a crashed worker self-heals on the next notification poll.
  */
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { kickWorker } from '@/lib/upload-queue'
 
 export async function GET() {
   const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000)  // 2 hours ago
@@ -25,6 +27,11 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
     take: 10,
   })
+
+  // Watchdog: if any queued items exist, make sure the worker is running.
+  // This self-heals a crashed worker without needing a server restart.
+  const hasQueued = jobs.some(j => j.items.some(i => i.status === 'queued'))
+  if (hasQueued) kickWorker()
 
   return NextResponse.json({ jobs })
 }
