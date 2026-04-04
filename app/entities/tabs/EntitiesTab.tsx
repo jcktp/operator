@@ -9,6 +9,7 @@ interface Props {
   sort: string
   modeConfig: ModeConfig
   focus?: string
+  projectId?: string | null
 }
 
 const ENTITY_COLORS: Record<string, string> = {
@@ -29,8 +30,9 @@ const ENTITY_LABELS: Record<string, string> = {
 
 const TYPE_OPTIONS = ['person', 'organisation', 'location', 'date', 'financial']
 
-export default async function EntitiesTab({ selectedType, sort, modeConfig, focus }: Props) {
+export default async function EntitiesTab({ selectedType, sort, modeConfig, focus, projectId }: Props) {
   const allEntities = await prisma.reportEntity.findMany({
+    where: projectId ? { report: { projectId } } : undefined,
     orderBy: { createdAt: 'desc' },
   })
 
@@ -57,7 +59,10 @@ export default async function EntitiesTab({ selectedType, sort, modeConfig, focu
 
   const allReportIds = [...new Set(allEntities.map(e => e.reportId))]
   const reports = await prisma.report.findMany({
-    where: { id: { in: allReportIds } },
+    where: {
+      id: { in: allReportIds },
+      ...(projectId ? { projectId } : {}),
+    },
     select: { id: true, title: true, area: true, createdAt: true },
   })
   const reportMap = Object.fromEntries(reports.map(r => [r.id, r]))

@@ -2,10 +2,13 @@ import { prisma } from '@/lib/db'
 import StoryMapTabClient from './StoryMapTabClient'
 import type { RawLocation } from './StoryMapClient'
 
-export default async function StoryMapTab() {
-  // Fetch all location entities grouped by name
+export default async function StoryMapTab({ projectId }: { projectId?: string | null }) {
+  // Fetch all location entities grouped by name, scoped to current project if set
   const locationEntities = await prisma.reportEntity.findMany({
-    where: { type: 'location' },
+    where: {
+      type: 'location',
+      ...(projectId ? { report: { projectId } } : {}),
+    },
     include: {
       report: { select: { id: true, title: true, area: true, storyName: true, summary: true } },
     },

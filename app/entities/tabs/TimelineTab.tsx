@@ -5,10 +5,12 @@ import TimelineTabClient from './TimelineTabClient'
 
 interface Props {
   modeConfig: ModeConfig
+  projectId?: string | null
 }
 
-export default async function TimelineTab({ modeConfig }: Props) {
+export default async function TimelineTab({ modeConfig, projectId }: Props) {
   const events = await prisma.timelineEvent.findMany({
+    where: projectId ? { report: { projectId } } : undefined,
     orderBy: [{ dateSortKey: 'asc' }, { createdAt: 'asc' }],
     include: {
       report: {

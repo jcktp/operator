@@ -27,9 +27,13 @@ export default async function EntitiesPage({
 }) {
   const { tab = 'entities', type: selectedType, sort = 'frequency', focus } = await searchParams
 
-  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const [modeRow, projectSetting] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+    prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
+  ])
   const modeConfig = getModeConfig(modeRow?.value)
   if (!modeConfig.features.entities) notFound()
+  const currentProjectId = projectSetting?.value || null
 
   const navItem = modeConfig.features.extraNavItems.find(i => i.href === '/entities')
   const pageTitle = navItem?.label ?? 'Investigation Hub'
@@ -86,9 +90,9 @@ export default async function EntitiesPage({
         <div className="flex gap-6 items-start">
           <div className="flex-1 min-w-0">
             {activeTab === 'entities' && (
-              <EntitiesTab selectedType={selectedType} sort={sort} modeConfig={modeConfig} focus={focus} />
+              <EntitiesTab selectedType={selectedType} sort={sort} modeConfig={modeConfig} focus={focus} projectId={currentProjectId} />
             )}
-            {activeTab === 'story-map' && <StoryMapTab />}
+            {activeTab === 'story-map' && <StoryMapTab projectId={currentProjectId} />}
           </div>
           <aside className="w-72 shrink-0 sticky top-20 h-[calc(100vh-120px)] border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-sm overflow-hidden bg-white dark:bg-zinc-900">
             <InspectorSidebar />
@@ -97,7 +101,7 @@ export default async function EntitiesPage({
       ) : (
         <>
           {activeTab === 'timeline' && modeConfig.features.timeline && (
-            <TimelineTab modeConfig={modeConfig} />
+            <TimelineTab modeConfig={modeConfig} projectId={currentProjectId} />
           )}
           {activeTab === 'storyline' && <StorylineTab />}
           {activeTab === 'resources' && modeConfig.features.investigationTemplate && (
