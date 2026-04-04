@@ -203,6 +203,7 @@ export default function UploadTab() {
         <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">
           PDF, Word, Excel, CSV, text
           {modeConfig.acceptedFileTypes.includes('.jpg') ? ', photos (JPG, PNG, WEBP)' : ''}
+          {', audio (MP3, WAV, M4A)'}
           {' '}— multiple files at once
         </p>
       </div>

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
-import { extractContent, getFileType, IMAGE_TYPES, getMimeType } from '@/lib/parsers'
-import { analyzeReport, compareReports, checkResolvedFlags, describeImage, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist, generateAreaBriefing } from '@/lib/ai'
+import { extractContent, getFileType, IMAGE_TYPES, AUDIO_TYPES, getMimeType, getAudioMimeType } from '@/lib/parsers'
+import { analyzeReport, compareReports, checkResolvedFlags, describeImage, transcribeAudio, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist, generateAreaBriefing } from '@/lib/ai'
 import { saveReportFile } from '@/lib/reports-folder'
 import { logAction } from '@/lib/audit'
 import { join } from 'path'
 import { getModeConfig } from '@/lib/mode'
 import { scanFile } from '@/lib/file-scan'
+import { canTranscribeAudio, audioUnavailableReason } from '@/lib/model-capabilities'
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,10 +26,18 @@ export async function POST(req: NextRequest) {
     const fileType = getFileType(file.name)
     const buffer = Buffer.from(await file.arrayBuffer())
     const isImage = IMAGE_TYPES.has(fileType.toLowerCase())
+    const isAudio = AUDIO_TYPES.has(fileType.toLowerCase())
 
     // Scan before saving or processing anything
     const scan = scanFile(buffer, file.name)
     if (!scan.safe) return NextResponse.json({ error: `File rejected: ${scan.reason}` }, { status: 422 })
+
+    await loadAiSettings()
+
+    // Pre-flight: reject audio uploads when no audio-capable model is configured
+    if (isAudio && !canTranscribeAudio()) {
+      return NextResponse.json({ error: audioUnavailableReason() }, { status: 422 })
+    }
 
     // Save original file to ~/Documents/Operator Reports/{area}/
     let savedFileName = file.name
@@ -41,7 +50,47 @@ export async function POST(req: NextRequest) {
       console.warn('Could not save to reports folder:', e)
     }
 
-    await loadAiSettings()
+    // Handle audio files — transcribe then analyse transcript
+    if (isAudio) {
+      const mimeType = getAudioMimeType(fileType)
+      const transcript = await transcribeAudio(buffer, mimeType, file.name)
+      if (!transcript || transcript.startsWith('[Audio transcription')) {
+        return NextResponse.json({ error: transcript || 'Audio transcription returned no text.' }, { status: 422 })
+      }
+
+      let directName: string | undefined
+      if (directReportId) {
+        const direct = await prisma.directReport.findUnique({ where: { id: directReportId } })
+        if (direct) directName = direct.name
+      }
+      const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+      const appMode = modeRow?.value ?? 'executive'
+
+      let analysis = null
+      try { analysis = await analyzeReport(transcript, title, area, directName, appMode) }
+      catch (e) { console.error('AI analysis failed on audio transcript:', e) }
+
+      const report = await prisma.report.create({
+        data: {
+          title,
+          fileName: file.name,
+          fileType,
+          fileSize: file.size,
+          rawContent: transcript,
+          area,
+          directReportId: directReportId || null,
+          reportDate: reportDate ? new Date(reportDate) : null,
+          summary: analysis?.summary?.trim() || null,
+          metrics: analysis?.metrics ? JSON.stringify(analysis.metrics) : null,
+          insights: analysis?.insights ? JSON.stringify(analysis.insights) : null,
+          questions: analysis?.questions ? JSON.stringify(analysis.questions) : null,
+          filePath: savedFilePath,
+        },
+        include: { directReport: true },
+      })
+      void logAction('report:upload', `${title} (${area}) [audio]`)
+      return NextResponse.json({ report, hasPrevious: false })
+    }
 
     // Handle images separately
     if (isImage) {

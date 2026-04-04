@@ -1,11 +1,13 @@
 export const DEFAULT_MODELS = [
-  { id: 'phi4-mini', label: 'Phi 4 Mini', note: 'Recommended — fast, high quality structured output' },
-  { id: 'qwen3:4b', label: 'Qwen3 4B', note: 'Strong instruction following and structured output' },
-  { id: 'llama3.2:3b', label: 'Llama 3.2 3B', note: 'Fast and lightweight' },
-  { id: 'llama3.2:1b', label: 'Llama 3.2 1B', note: 'Fastest, lightest' },
-  { id: 'qwen2.5:3b', label: 'Qwen 2.5 3B', note: 'Great at structured output' },
-  { id: 'gemma2:2b', label: 'Gemma 2 2B', note: 'Small and capable' },
-  { id: 'mistral:7b', label: 'Mistral 7B', note: 'Best quality, needs more RAM' },
+  { id: 'phi4-mini',   label: 'Phi 4 Mini',    note: 'Recommended — fast, high quality structured output · text only' },
+  { id: 'gemma4:e2b',  label: 'Gemma 4 E2B',   note: 'Text + vision + audio · 7.2 GB · 128K context · edge-optimised' },
+  { id: 'gemma4:e4b',  label: 'Gemma 4 E4B',   note: 'Text + vision + audio · 9.6 GB · 128K context · higher quality' },
+  { id: 'qwen3:4b',    label: 'Qwen3 4B',       note: 'Strong instruction following and structured output · text only' },
+  { id: 'llama3.2:3b', label: 'Llama 3.2 3B',  note: 'Fast and lightweight · 128K context · text only' },
+  { id: 'llama3.2:1b', label: 'Llama 3.2 1B',  note: 'Fastest, lightest · text only' },
+  { id: 'qwen2.5:3b',  label: 'Qwen 2.5 3B',   note: 'Great at structured output · text only' },
+  { id: 'gemma2:2b',   label: 'Gemma 2 2B',     note: 'Small and capable · text only' },
+  { id: 'mistral:7b',  label: 'Mistral 7B',     note: 'Best text quality, needs more RAM · text only' },
 ]
 
 export const CLOUD_PROVIDERS = [

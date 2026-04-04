@@ -1,6 +1,7 @@
-// ── Image description (vision) ───────────────────────────────────────────────
+// ── Image description (vision) + Audio transcription ─────────────────────────
 import { getProvider } from './ai-providers'
 import { getSecret } from './settings'
+import { routeVisionModel, routeAudioModel } from './model-capabilities'
 
 const VISION_PROMPT = 'Describe only what you can clearly see in this image. Include visible text (quote it exactly, do not paraphrase or invent), people (without identifying them), objects, and context. If you cannot read text clearly, say so — do not guess or make up content.'
 
@@ -80,9 +81,9 @@ export async function describeImage(buffer: Buffer, mimeType: string, extractTex
         }
       }
 
-      // Vision description path: use llava-phi3 via Ollama REST API
+      // Vision description path: use routed vision model via Ollama REST API
       const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
-      const model = process.env.OLLAMA_VISION_MODEL ?? 'llava-phi3'
+      const model = routeVisionModel()
       // Race against a 3-minute timeout so a hung model-load never blocks the worker.
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Vision timed out after 180s')), 180_000)
@@ -140,4 +141,105 @@ export async function describeImage(buffer: Buffer, mimeType: string, extractTex
   }
 
   return '[Image stored — vision analysis not available for this provider]'
+}
+
+// ── Audio transcription ───────────────────────────────────────────────────────
+
+const TRANSCRIPTION_PROMPT =
+  'Transcribe this audio exactly as spoken. Preserve speaker labels if multiple speakers are present. ' +
+  'Output only the transcript — no commentary, no timestamps unless there are significant pauses. ' +
+  'If the audio is inaudible or empty, say so briefly.'
+
+export async function transcribeAudio(buffer: Buffer, mimeType: string, fileName: string): Promise<string> {
+  const provider = getProvider()
+
+  try {
+    if (provider === 'openai') {
+      // OpenAI Whisper — multipart/form-data upload
+      const key = getSecret('OPENAI_API_KEY')
+      if (!key) throw new Error('OPENAI_API_KEY not set')
+      const ext = fileName.split('.').pop() ?? 'mp3'
+      const formData = new FormData()
+      const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer
+      formData.append('file', new Blob([ab], { type: mimeType }), `audio.${ext}`)
+      formData.append('model', 'whisper-1')
+      const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}` },
+        body: formData,
+      })
+      const data = await res.json() as { text?: string; error?: { message: string } }
+      if (!res.ok) throw new Error(data.error?.message)
+      return data.text?.trim() || '[Audio transcription returned empty]'
+    }
+
+    if (provider === 'google') {
+      // Gemini supports audio as inline_data in multimodal requests
+      const key = getSecret('GOOGLE_API_KEY')
+      if (!key) throw new Error('GOOGLE_API_KEY not set')
+      const model = process.env.GOOGLE_MODEL ?? 'gemini-2.5-flash'
+      const b64 = buffer.toString('base64')
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [
+            { inline_data: { mime_type: mimeType, data: b64 } },
+            { text: TRANSCRIPTION_PROMPT },
+          ] }] }),
+        }
+      )
+      const data = await res.json() as { candidates?: Array<{ content: { parts: Array<{ text: string }> } }>; error?: { message: string } }
+      if (!res.ok) throw new Error(data.error?.message)
+      return data.candidates?.[0]?.content.parts[0]?.text?.trim() ?? '[Audio stored — transcription empty]'
+    }
+
+    if (provider === 'ollama') {
+      const audioModel = routeAudioModel()
+      if (!audioModel) {
+        return '[Audio transcription requires a model that supports audio (e.g. gemma4:e2b). Set OLLAMA_AUDIO_MODEL or switch to a model with audio support in Settings.]'
+      }
+      const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
+      const b64 = buffer.toString('base64')
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Audio transcription timed out after 300s')), 300_000)
+      )
+      const fetchCall = fetch(`${host}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: audioModel,
+          messages: [{ role: 'user', content: TRANSCRIPTION_PROMPT, audio: [b64] }],
+          stream: true,
+        }),
+      }).then(async r => {
+        if (!r.ok) throw new Error(`Ollama HTTP ${r.status}: ${await r.text()}`)
+        let full = ''
+        for (const line of (await r.text()).split('\n')) {
+          const t = line.trim()
+          if (!t) continue
+          try {
+            const obj = JSON.parse(t) as { message?: { content?: string }; error?: string }
+            if (obj.error) throw new Error(obj.error)
+            if (obj.message?.content) full += obj.message.content
+          } catch { /* skip malformed lines */ }
+        }
+        return full
+      })
+      const transcript = (await Promise.race([fetchCall, timeout])).trim()
+      return transcript || '[Audio stored — transcription model returned empty response]'
+    }
+
+    // Anthropic does not have a native audio transcription API
+    if (provider === 'anthropic') {
+      return '[Audio transcription is not available with the Anthropic provider. Switch to Ollama (gemma4:e2b), OpenAI, or Google to transcribe audio files.]'
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[ai-vision] transcribeAudio failed:', msg)
+    return `[Audio transcription failed: ${msg}]`
+  }
+
+  return '[Audio stored — transcription not available for this provider]'
 }

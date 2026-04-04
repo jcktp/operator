@@ -315,6 +315,8 @@ export default function SettingsPage() {
                   ollamaVisionModel={s.ollamaVisionModel} setOllamaVisionModel={s.setOllamaVisionModel}
                   customVisionModel={s.customVisionModel} setCustomVisionModel={s.setCustomVisionModel}
                   savedVisionModel={s.savedVisionModel}
+                  ollamaAudioModel={s.ollamaAudioModel} setOllamaAudioModel={s.setOllamaAudioModel}
+                  savedAudioModel={s.savedAudioModel}
                 />
               </div>
             )}

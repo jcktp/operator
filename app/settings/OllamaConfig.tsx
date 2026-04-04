@@ -1,14 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CheckCircle, AlertCircle, Loader2, Circle, Download, RefreshCw, Globe, GlobeLock } from 'lucide-react'
 import { DEFAULT_MODELS } from './settingsTypes'
+import { getModelCapsClient, modelRamWarning, formatContextWindow } from '@/lib/model-caps-shared'
 
-const MULTIMODAL_PATTERNS = ['llava', 'minicpm-v', 'bakllava', 'moondream', 'qwen2-vl', 'qwen-vl', 'cogvlm', 'internvl', 'phi3-vision', 'phi-3-vision', 'llava-phi3']
+const MULTIMODAL_PATTERNS = ['llava', 'minicpm-v', 'bakllava', 'moondream', 'qwen2-vl', 'qwen-vl', 'cogvlm', 'internvl', 'phi3-vision', 'phi-3-vision', 'llava-phi3', 'gemma4']
 
 function isMultimodalModel(name: string): boolean {
   const lower = name.toLowerCase()
   return MULTIMODAL_PATTERNS.some(p => lower.includes(p))
+}
+
+function CapBadges({ modelId }: { modelId: string }) {
+  const caps = getModelCapsClient(modelId)
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      <span title="Text" className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 font-mono">T</span>
+      {caps.vision && <span title="Vision" className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-mono">V</span>}
+      {caps.audio  && <span title="Audio" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 font-mono">A</span>}
+      <span className="text-[10px] text-gray-400 dark:text-zinc-500">{formatContextWindow(caps.contextWindow)}</span>
+      {caps.sizeGB > 0 && <span className="text-[10px] text-gray-400 dark:text-zinc-500">{caps.sizeGB} GB</span>}
+    </div>
+  )
 }
 
 const VISION_MODELS = [
@@ -38,6 +52,9 @@ interface Props {
   customVisionModel: string
   setCustomVisionModel: (v: string) => void
   savedVisionModel: string
+  ollamaAudioModel: string
+  setOllamaAudioModel: (v: string) => void
+  savedAudioModel: string
 }
 
 export default function OllamaConfig({
@@ -50,11 +67,19 @@ export default function OllamaConfig({
   ollamaVisionModel, setOllamaVisionModel,
   customVisionModel, setCustomVisionModel,
   savedVisionModel,
+  ollamaAudioModel, setOllamaAudioModel, savedAudioModel,
 }: Props) {
   const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'ok' | 'error' | 'idle'>('idle')
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [suggestedModels, setSuggestedModels] = useState(DEFAULT_MODELS)
   const [refreshing, setRefreshing] = useState(false)
+  const [systemRamGb, setSystemRamGb] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/health').then(r => r.json()).then((d: { machine?: { ramGb: number } }) => {
+      if (d.machine?.ramGb) setSystemRamGb(d.machine.ramGb)
+    }).catch(() => {})
+  }, [])
 
   const checkOllama = async () => {
     setOllamaStatus('checking')
@@ -125,6 +150,7 @@ export default function OllamaConfig({
             const isPulled = availableModels.some(am => am.startsWith(m.id.split(':')[0]))
             const isSelected = ollamaModel === m.id && !customModel
             const isCurrent = m.id === savedModel && savedProvider === 'ollama'
+            const warn = systemRamGb ? modelRamWarning(m.id, systemRamGb) : null
             return (
               <label key={m.id} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-gray-900 dark:border-zinc-300 bg-gray-50 dark:bg-zinc-800' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-500'}`}>
                 <div className="mt-0.5 shrink-0">
@@ -139,7 +165,12 @@ export default function OllamaConfig({
                     <span className="text-sm font-medium text-gray-900 dark:text-zinc-50">{m.label}</span>
                     <code className="text-xs text-gray-400 dark:text-zinc-500 font-mono">{m.id}</code>
                   </div>
-                  <p className="text-xs text-gray-400 dark:text-zinc-500">{m.note}</p>
+                  <CapBadges modelId={m.id} />
+                  {isSelected && warn && (
+                    <p className={`text-[11px] mt-1 ${warn.level === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
+                      ⚠ {warn.message}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {isCurrent && <span className="text-xs text-blue-600 font-medium">active</span>}
@@ -176,57 +207,97 @@ export default function OllamaConfig({
         <code className="text-xs font-mono text-gray-700 dark:text-zinc-200">ollama pull {selectedModel}</code>
       </div>
 
-      {/* Vision model picker */}
-      {isMultimodalModel(selectedModel) ? (
-        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2.5 text-xs text-blue-700 dark:text-blue-300">
-          <strong>{selectedModel}</strong> handles both text and vision — no separate vision model needed.
-        </div>
-      ) : (
-      <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">
-          Vision model
-          {savedVisionModel && savedProvider === 'ollama' && (
-            <span className="ml-2 text-gray-400 dark:text-zinc-500 font-normal">current: <code className="font-mono">{savedVisionModel}</code></span>
-          )}
-        </label>
-        <p className="text-xs text-gray-400 dark:text-zinc-500 mb-2">Used for image uploads. Text extraction uses Tesseract (no model needed).</p>
-        <div className="space-y-1.5">
-          {VISION_MODELS.map(m => {
-            const isPulled = availableModels.some(am => am.startsWith(m.id.split(':')[0]))
-            const isSelected = ollamaVisionModel === m.id && !customVisionModel
-            const isCurrent = m.id === savedVisionModel && savedProvider === 'ollama'
-            return (
-              <label key={m.id} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-gray-900 dark:border-zinc-300 bg-gray-50 dark:bg-zinc-800' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-500'}`}>
-                <div className="mt-0.5 shrink-0">
-                  {isSelected
-                    ? <div className="w-3.5 h-3.5 rounded-full bg-gray-900 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-white" /></div>
-                    : <Circle size={14} className="text-gray-300" />}
+      {/* Vision + Audio model section */}
+      {(() => {
+        const primaryCaps = getModelCapsClient(selectedModel)
+        const primaryHandlesVision = primaryCaps.vision
+        const primaryHandlesAudio = primaryCaps.audio
+        return (
+          <>
+            {/* Vision model */}
+            {primaryHandlesVision ? (
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2.5 text-xs text-blue-700 dark:text-blue-300">
+                <strong>{selectedModel}</strong> handles text and vision — no separate vision model needed.
+                {primaryHandlesAudio && <span> It also supports audio transcription.</span>}
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">
+                  Vision model
+                  {savedVisionModel && savedProvider === 'ollama' && (
+                    <span className="ml-2 text-gray-400 dark:text-zinc-500 font-normal">current: <code className="font-mono">{savedVisionModel}</code></span>
+                  )}
+                </label>
+                <p className="text-xs text-gray-400 dark:text-zinc-500 mb-2">Used for image uploads. Text OCR uses Tesseract (no model needed). Models marked <span className="font-mono bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 px-1 rounded">A</span> also support audio.</p>
+                <div className="space-y-1.5">
+                  {VISION_MODELS.map(m => {
+                    const isPulled = availableModels.some(am => am.startsWith(m.id.split(':')[0]))
+                    const isSelected = ollamaVisionModel === m.id && !customVisionModel
+                    const isCurrent = m.id === savedVisionModel && savedProvider === 'ollama'
+                    const warn = systemRamGb ? modelRamWarning(m.id, systemRamGb) : null
+                    return (
+                      <label key={m.id} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-gray-900 dark:border-zinc-300 bg-gray-50 dark:bg-zinc-800' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-500'}`}>
+                        <div className="mt-0.5 shrink-0">
+                          {isSelected
+                            ? <div className="w-3.5 h-3.5 rounded-full bg-gray-900 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-white" /></div>
+                            : <Circle size={14} className="text-gray-300" />}
+                        </div>
+                        <input type="radio" name="vision-model" value={m.id} checked={isSelected}
+                          onChange={() => { setOllamaVisionModel(m.id); setCustomVisionModel('') }} className="sr-only" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-gray-900 dark:text-zinc-50">{m.label}</span>
+                            <code className="text-xs text-gray-400 dark:text-zinc-500 font-mono">{m.id}</code>
+                          </div>
+                          <CapBadges modelId={m.id} />
+                          {isSelected && warn && (
+                            <p className={`text-[11px] mt-1 ${warn.level === 'error' ? 'text-red-500' : 'text-amber-500'}`}>⚠ {warn.message}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isCurrent && <span className="text-xs text-blue-600 font-medium">active</span>}
+                          {isPulled && !isCurrent && <span className="text-xs text-green-600 font-medium">pulled</span>}
+                        </div>
+                      </label>
+                    )
+                  })}
                 </div>
-                <input type="radio" name="vision-model" value={m.id} checked={isSelected}
-                  onChange={() => { setOllamaVisionModel(m.id); setCustomVisionModel('') }} className="sr-only" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-gray-900 dark:text-zinc-50">{m.label}</span>
-                    <code className="text-xs text-gray-400 dark:text-zinc-500 font-mono">{m.id}</code>
-                  </div>
-                  <p className="text-xs text-gray-400 dark:text-zinc-500">{m.note}</p>
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">Or enter any vision model name</label>
+                  <input type="text" value={customVisionModel} onChange={e => setCustomVisionModel(e.target.value)}
+                    placeholder="e.g. gemma4:e2b"
+                    className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {isCurrent && <span className="text-xs text-blue-600 font-medium">active</span>}
-                  {isPulled && !isCurrent && <span className="text-xs text-green-600 font-medium">pulled</span>}
-                </div>
-              </label>
-            )
-          })}
-        </div>
-        <div className="mt-3">
-          <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">Or enter any vision model name</label>
-          <input type="text" value={customVisionModel} onChange={e => setCustomVisionModel(e.target.value)}
-            placeholder="e.g. llava:34b"
-            className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
-        </div>
-      </div>
-      )}
+              </div>
+            )}
+
+            {/* Audio model — only shown when neither primary nor vision model supports audio */}
+            {!primaryHandlesAudio && !getModelCapsClient(customVisionModel.trim() || ollamaVisionModel).audio && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1.5">
+                  Audio model <span className="font-normal text-gray-400 dark:text-zinc-500">(optional)</span>
+                  {savedAudioModel && savedProvider === 'ollama' && (
+                    <span className="ml-2 text-gray-400 dark:text-zinc-500 font-normal">current: <code className="font-mono">{savedAudioModel}</code></span>
+                  )}
+                </label>
+                <p className="text-xs text-gray-400 dark:text-zinc-500 mb-2">
+                  Required for audio file uploads. Your current model setup does not support audio.
+                  Set this to <code className="font-mono text-purple-600 dark:text-purple-400">gemma4:e2b</code> to enable audio transcription.
+                </p>
+                <input type="text" value={ollamaAudioModel} onChange={e => setOllamaAudioModel(e.target.value)}
+                  placeholder="e.g. gemma4:e2b"
+                  className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500" />
+                {ollamaAudioModel.trim() && systemRamGb && (() => {
+                  const warn = modelRamWarning(ollamaAudioModel.trim(), systemRamGb)
+                  return warn ? (
+                    <p className={`text-[11px] mt-1.5 ${warn.level === 'error' ? 'text-red-500' : 'text-amber-500'}`}>⚠ {warn.message}</p>
+                  ) : null
+                })()}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {/* Web access toggle */}
       <div className="flex items-center justify-between py-1">

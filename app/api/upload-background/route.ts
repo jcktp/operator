@@ -6,12 +6,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
-import { extractContent, getFileType, IMAGE_TYPES } from '@/lib/parsers'
+import { extractContent, getFileType, IMAGE_TYPES, AUDIO_TYPES, getAudioMimeType } from '@/lib/parsers'
 import { saveReportFile } from '@/lib/reports-folder'
 import { kickWorker } from '@/lib/upload-queue'
 import { join } from 'path'
 import { extractImageMetadata } from '@/lib/image-metadata'
 import { scanFile } from '@/lib/file-scan'
+import { canTranscribeAudio, audioUnavailableReason } from '@/lib/model-capabilities'
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,10 +37,16 @@ export async function POST(req: NextRequest) {
     const fileType = getFileType(file.name)
     const buffer = Buffer.from(await file.arrayBuffer())
     const isImage = IMAGE_TYPES.has(fileType.toLowerCase())
+    const isAudio = AUDIO_TYPES.has(fileType.toLowerCase())
 
     // Scan before saving or processing anything
     const scan = scanFile(buffer, file.name)
     if (!scan.safe) return NextResponse.json({ error: `File rejected: ${scan.reason}` }, { status: 422 })
+
+    // Pre-flight: reject audio uploads when no audio-capable model is configured
+    if (isAudio && !canTranscribeAudio()) {
+      return NextResponse.json({ error: audioUnavailableReason() }, { status: 422 })
+    }
 
     // Save file to disk (fast)
     let savedFileName = file.name
@@ -56,7 +63,12 @@ export async function POST(req: NextRequest) {
     let rawContent: string
     let displayContent: string | null = null
 
-    if (isImage) {
+    if (isAudio) {
+      // Audio transcription is deferred to the background worker.
+      // Store the mime type in displayContent so the worker can pass it to transcribeAudio.
+      rawContent = `[Audio: ${file.name}]`
+      displayContent = `audio:${join(area, savedFileName)}\n${getAudioMimeType(fileType)}`
+    } else if (isImage) {
       // Vision analysis is deferred to the background worker so the upload response
       // is fast and model-swapping time doesn't block the HTTP request.
       rawContent = `[Image: ${file.name}]`

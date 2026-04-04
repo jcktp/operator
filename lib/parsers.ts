@@ -8,6 +8,7 @@ export interface ParseResult {
 }
 
 export const IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic'])
+export const AUDIO_TYPES = new Set(['mp3', 'wav', 'm4a', 'ogg', 'webm', 'flac', 'aac', 'opus'])
 
 export function getMimeType(fileType: string): string {
   const t = fileType.toLowerCase()
@@ -17,6 +18,19 @@ export function getMimeType(fileType: string): string {
   if (t === 'gif') return 'image/gif'
   if (t === 'heic') return 'image/heic'
   return 'application/octet-stream'
+}
+
+export function getAudioMimeType(fileType: string): string {
+  const t = fileType.toLowerCase()
+  if (t === 'mp3') return 'audio/mpeg'
+  if (t === 'wav') return 'audio/wav'
+  if (t === 'm4a') return 'audio/mp4'
+  if (t === 'ogg') return 'audio/ogg'
+  if (t === 'webm') return 'audio/webm'
+  if (t === 'flac') return 'audio/flac'
+  if (t === 'aac') return 'audio/aac'
+  if (t === 'opus') return 'audio/ogg; codecs=opus'
+  return 'audio/mpeg'
 }
 
 export async function extractContent(buffer: Buffer, fileType: string): Promise<ParseResult> {

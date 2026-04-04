@@ -11,10 +11,13 @@ export function getProvider(): AIProvider {
 }
 
 export function maxContentLength(): number {
-  // Cloud models (Claude, GPT-4o, Gemini) have 128k–1M token windows —
-  // 100k chars is still well within that and covers ~75 pages of text.
-  // Ollama small models have ~4k–8k token windows; chunking handles the rest.
-  return getProvider() === 'ollama' ? 5000 : 100_000
+  // Cloud models (Claude, GPT-4o, Gemini) have 128k–1M token windows.
+  // Ollama: derive from the model's context window via model-capabilities.
+  if (getProvider() !== 'ollama') return 100_000
+  // Lazy import to avoid circular deps — model-capabilities doesn't import ai-providers
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { maxCharsForModel } = require('./model-capabilities') as typeof import('./model-capabilities')
+  return maxCharsForModel(process.env.OLLAMA_MODEL ?? 'phi4-mini')
 }
 
 // ── Message types ───────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { CheckCircle, AlertCircle, Loader2, Download, ChevronDown, ChevronUp } from 'lucide-react'
+import { getModelCapsClient, modelRamWarning, formatContextWindow } from '@/lib/model-caps-shared'
 
 interface Props {
   onNext: () => void
@@ -27,21 +28,24 @@ interface ModelStatus {
 
 // Curated model list
 const ALL_MODELS: ModelDef[] = [
-  { id: 'phi4-mini',    label: 'phi4-mini',    role: 'Text analysis & reports',  size: '2.5 GB', fallbacks: ['qwen3:4b', 'llama3.2:3b', 'gemma2:2b'] },
-  { id: 'llava',        label: 'llava',        role: 'Image & document vision',  size: '4.7 GB', fallbacks: ['llava-llama3', 'moondream'] },
-  { id: 'qwen3:4b',     label: 'qwen3:4b',     role: 'Text analysis (smaller)',  size: '2.6 GB' },
-  { id: 'llama3.2:3b',  label: 'llama3.2:3b',  role: 'Text analysis (fallback)', size: '2.0 GB' },
-  { id: 'gemma2:2b',    label: 'gemma2:2b',    role: 'Text analysis (fallback)', size: '1.6 GB' },
-  { id: 'llava-llama3', label: 'llava-llama3',  role: 'Vision (fallback)',        size: '4.7 GB' },
-  { id: 'moondream',    label: 'moondream',    role: 'Vision (lightweight)',      size: '1.8 GB' },
+  { id: 'phi4-mini',    label: 'phi4-mini',    role: 'Text analysis · fast, structured output', size: '2.5 GB', fallbacks: ['qwen3:4b', 'llama3.2:3b', 'gemma2:2b'] },
+  { id: 'gemma4:e2b',   label: 'gemma4:e2b',   role: 'Text + vision + audio · 128K context',    size: '7.2 GB', fallbacks: ['gemma4:e4b', 'llava-phi3'] },
+  { id: 'gemma4:e4b',   label: 'gemma4:e4b',   role: 'Text + vision + audio · higher quality',  size: '9.6 GB', fallbacks: ['gemma4:e2b'] },
+  { id: 'llava',        label: 'llava',        role: 'Image & document vision',                 size: '4.7 GB', fallbacks: ['llava-llama3', 'moondream'] },
+  { id: 'qwen3:4b',     label: 'qwen3:4b',     role: 'Text analysis',                           size: '2.6 GB' },
+  { id: 'llama3.2:3b',  label: 'llama3.2:3b',  role: 'Text analysis (fallback)',                size: '2.0 GB' },
+  { id: 'gemma2:2b',    label: 'gemma2:2b',    role: 'Text analysis (fallback)',                size: '1.6 GB' },
+  { id: 'llava-llama3', label: 'llava-llama3',  role: 'Vision (fallback)',                       size: '4.7 GB' },
+  { id: 'moondream',    label: 'moondream',    role: 'Vision (lightweight)',                    size: '1.8 GB' },
 ]
 
 const PRESETS = {
   recommended: ['phi4-mini', 'llava'],
+  multimodal:  ['gemma4:e2b'],          // single model — text + vision + audio
   textonly:    ['phi4-mini'],
 }
 
-type Preset = 'recommended' | 'textonly' | 'custom'
+type Preset = 'recommended' | 'multimodal' | 'textonly' | 'custom'
 
 function modelById(id: string): ModelDef {
   return ALL_MODELS.find(m => m.id === id) ?? { id, label: id, role: '', size: '?' }
@@ -52,6 +56,13 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
   const [installed, setInstalled] = useState<string[]>([])
   const [preset, setPreset] = useState<Preset>('recommended')
   const [selected, setSelected] = useState<string[]>(PRESETS.recommended)
+  const [systemRamGb, setSystemRamGb] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/health').then(r => r.json()).then((d: { machine?: { ramGb: number } }) => {
+      if (d.machine?.ramGb) setSystemRamGb(d.machine.ramGb)
+    }).catch(() => {})
+  }, [])
   const [statuses, setStatuses] = useState<Record<string, ModelStatus>>({})
   const [running, setRunning] = useState(false)
   const [allDone, setAllDone] = useState(false)
@@ -73,6 +84,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
   const setPresetChoice = (p: Preset) => {
     setPreset(p)
     if (p === 'recommended') setSelected(PRESETS.recommended)
+    else if (p === 'multimodal') setSelected(PRESETS.multimodal)
     else if (p === 'textonly') setSelected(PRESETS.textonly)
     setShowCustomPicker(p === 'custom')
   }
@@ -214,20 +226,25 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
 
       {/* Preset picker */}
       {!running && !allDone && (
-        <div className="grid grid-cols-3 gap-2">
-          {(['recommended', 'textonly', 'custom'] as Preset[]).map(p => (
+        <div className="grid grid-cols-2 gap-2">
+          {([
+            { id: 'recommended', label: 'Recommended',  sub: 'Text + vision · 7 GB' },
+            { id: 'multimodal',  label: 'All-in-one',   sub: 'Text + vision + audio · 7.2 GB' },
+            { id: 'textonly',    label: 'Text only',    sub: 'Lightest · 2.5 GB' },
+            { id: 'custom',      label: 'Custom',       sub: 'Pick your own' },
+          ] as { id: Preset; label: string; sub: string }[]).map(p => (
             <button
-              key={p}
-              onClick={() => setPresetChoice(p)}
+              key={p.id}
+              onClick={() => setPresetChoice(p.id)}
               className={`py-2.5 px-3 rounded-xl text-xs font-medium border transition-colors text-left ${
-                preset === p
+                preset === p.id
                   ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-gray-900 dark:border-zinc-100'
                   : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-200 border-gray-200 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500'
               }`}
             >
-              {p === 'recommended' ? 'Recommended' : p === 'textonly' ? 'Text only' : 'Custom'}
-              <div className={`text-[10px] mt-0.5 font-normal ${preset === p ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500'}`}>
-                {p === 'recommended' ? 'Text + vision' : p === 'textonly' ? 'Text analysis only' : 'Pick your own'}
+              {p.label}
+              <div className={`text-[10px] mt-0.5 font-normal ${preset === p.id ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500'}`}>
+                {p.sub}
               </div>
             </button>
           ))}
@@ -275,6 +292,8 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
           const st = statuses[id]
           const isInstalled = installed.includes(id)
           const fb = fallbackFor[id]
+          const caps = getModelCapsClient(id)
+          const ramWarn = systemRamGb ? modelRamWarning(id, systemRamGb) : null
 
           return (
             <div key={id} className="border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3">
@@ -285,9 +304,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
                     ? <AlertCircle size={14} className="text-red-500 shrink-0" />
                     : st?.state === 'downloading'
                       ? <Loader2 size={14} className="animate-spin text-blue-500 shrink-0" />
-                      : st?.state === 'pending'
-                        ? <Download size={14} className="text-gray-300 dark:text-zinc-600 shrink-0" />
-                        : <Download size={14} className="text-gray-300 dark:text-zinc-600 shrink-0" />
+                      : <Download size={14} className="text-gray-300 dark:text-zinc-600 shrink-0" />
                 }
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
@@ -305,7 +322,20 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
                        isInstalled ? 'Installed' : m.size}
                     </span>
                   </div>
-                  <p className="text-[11px] text-gray-400 dark:text-zinc-500">{m.role}</p>
+                  <p className="text-[11px] text-gray-400 dark:text-zinc-500 mb-1">{m.role}</p>
+                  {/* Capability badges */}
+                  <div className="flex items-center gap-1">
+                    <span title="Text" className="text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 font-mono">T</span>
+                    {caps.vision && <span title="Vision" className="text-[10px] px-1 py-0.5 rounded bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-mono">V</span>}
+                    {caps.audio  && <span title="Audio" className="text-[10px] px-1 py-0.5 rounded bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 font-mono">A</span>}
+                    <span className="text-[10px] text-gray-400 dark:text-zinc-500">{formatContextWindow(caps.contextWindow)}</span>
+                  </div>
+                  {/* RAM warning */}
+                  {ramWarn && (
+                    <p className={`text-[11px] mt-1 ${ramWarn.level === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
+                      ⚠ {ramWarn.message}
+                    </p>
+                  )}
                   {st?.state === 'downloading' && (
                     <div className="h-1 bg-gray-100 dark:bg-zinc-800 rounded-full mt-1.5 overflow-hidden">
                       <div

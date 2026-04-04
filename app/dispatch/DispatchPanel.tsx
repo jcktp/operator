@@ -272,7 +272,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
         {/* Input bar */}
         <div className="border-t border-gray-100 dark:border-zinc-800 p-3 shrink-0">
           <input ref={c.fileRef} type="file"
-            accept=".txt,.md,.csv,.xlsx,.xls,.pdf,.pptx,.docx,.doc"
+            accept=".txt,.md,.csv,.xlsx,.xls,.pdf,.pptx,.docx,.doc,.mp3,.wav,.m4a,.ogg,.webm,.flac"
             className="hidden"
             onChange={c.handleFileAttach}
           />

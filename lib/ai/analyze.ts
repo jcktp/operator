@@ -3,6 +3,7 @@ import type { Metric, Insight, Question } from '../utils'
 import { getModeConfig } from '../mode'
 import { chat, getProvider, maxContentLength } from '../ai-providers'
 import { loadKnowledgeForArea } from './knowledge'
+import { maxCharsForModel } from '../model-capabilities'
 
 export type { Metric, Insight, Question }
 
@@ -54,23 +55,31 @@ function isCloudProvider(): boolean {
 
 // ── Ollama chunked analysis ──────────────────────────────────────────────────
 
-const OLLAMA_CHUNK_SIZE = 4500
+// Chunk size is determined at call time from model capabilities so that
+// large-context models (gemma4:e2b, llama3.2) use bigger chunks while
+// small models (gemma2:2b) stay within their limits.
+function getChunkSize(): number {
+  return maxCharsForModel(process.env.OLLAMA_MODEL ?? 'phi4-mini')
+}
+
+const OLLAMA_CHUNK_SIZE = 4500   // kept for MAX_SYNTH calculation below
 const CHUNK_OVERLAP = 150
 
 function splitIntoChunks(content: string): string[] {
-  if (content.length <= OLLAMA_CHUNK_SIZE) return [content]
+  const chunkSize = getChunkSize()
+  if (content.length <= chunkSize) return [content]
   const chunks: string[] = []
   let pos = 0
   while (pos < content.length) {
-    let end = Math.min(pos + OLLAMA_CHUNK_SIZE, content.length)
+    let end = Math.min(pos + chunkSize, content.length)
     if (end < content.length) {
       const slice = content.slice(pos, end)
       const lastPara = slice.lastIndexOf('\n\n')
       const lastLine = slice.lastIndexOf('\n')
       const lastSentence = Math.max(slice.lastIndexOf('. '), slice.lastIndexOf('! '), slice.lastIndexOf('? '))
-      if (lastPara > OLLAMA_CHUNK_SIZE * 0.5) end = pos + lastPara + 2
-      else if (lastLine > OLLAMA_CHUNK_SIZE * 0.7) end = pos + lastLine + 1
-      else if (lastSentence > OLLAMA_CHUNK_SIZE * 0.5) end = pos + lastSentence + 2
+      if (lastPara > chunkSize * 0.5) end = pos + lastPara + 2
+      else if (lastLine > chunkSize * 0.7) end = pos + lastLine + 1
+      else if (lastSentence > chunkSize * 0.5) end = pos + lastSentence + 2
     }
     chunks.push(content.slice(pos, end))
     const next = end - CHUNK_OVERLAP

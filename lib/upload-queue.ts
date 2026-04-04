@@ -10,7 +10,7 @@ import { prisma } from './db'
 import { loadAiSettings } from './settings'
 import { analyzeReport, compareReports, checkResolvedFlags, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist, generateAreaBriefing } from './ai'
 import { getModeConfig } from './mode'
-import { describeImage } from './ai-vision'
+import { describeImage, transcribeAudio } from './ai-vision'
 import { getMimeType } from './parsers'
 import { getReportsRoot } from './reports-folder'
 
@@ -27,6 +27,34 @@ async function processItem(itemId: string): Promise<void> {
   try {
     // Reload AI settings so provider/model env vars are current
     await loadAiSettings()
+
+    // ── Audio transcription ───────────────────────────────────────────────────
+    if (item.displayContent?.startsWith('audio:') && item.rawContent.startsWith('[Audio') && item.savedFilePath) {
+      try {
+        // displayContent format: 'audio:area/file.ext\naudio/mpeg'
+        const lines = item.displayContent.split('\n')
+        const mimeType = lines[1]?.trim() || 'audio/mpeg'
+        const fullPath = join(getReportsRoot(), item.savedFilePath)
+        const buffer = readFileSync(fullPath)
+        const transcript = await transcribeAudio(buffer, mimeType, item.fileName)
+        if (transcript && !transcript.startsWith('[Audio transcription')) {
+          await prisma.uploadJobItem.update({
+            where: { id: itemId },
+            data: { rawContent: transcript },
+          })
+          item = { ...item, rawContent: transcript }
+        } else {
+          // Transcription failed — surface the error in the report rawContent
+          await prisma.uploadJobItem.update({
+            where: { id: itemId },
+            data: { rawContent: transcript || '[Audio transcription returned no text]' },
+          })
+          item = { ...item, rawContent: transcript || '[Audio transcription returned no text]' }
+        }
+      } catch (e) {
+        console.error('[upload-queue] Audio transcription failed:', e)
+      }
+    }
 
     // ── Vision analysis for image items ──────────────────────────────────────
     // describeImage is called here (not in the HTTP route) so model-swap latency
@@ -78,11 +106,13 @@ async function processItem(itemId: string): Promise<void> {
     })
 
     // Skip AI analysis for photos (vision description only) — only analyse OCR'd text from document images
+    // Also skip if audio transcription failed (rawContent still starts with '[Audio')
     const isImagePlaceholder = item.displayContent?.startsWith('image:') && (!extractText || item.rawContent.startsWith('['))
+    const isFailedAudio = item.displayContent?.startsWith('audio:') && item.rawContent.startsWith('[Audio')
 
     // AI analysis
     let analysis = null
-    if (!isImagePlaceholder) {
+    if (!isImagePlaceholder && !isFailedAudio) {
       try {
         analysis = await analyzeReport(item.rawContent, item.title, item.area, directName, appMode)
       } catch (e) {
@@ -95,7 +125,7 @@ async function processItem(itemId: string): Promise<void> {
     let resolvedFlagsJson: string | null = null
 
     type PrevInsight = { type: string; text: string }
-    if (!isImagePlaceholder) {
+    if (!isImagePlaceholder && !isFailedAudio) {
       await Promise.all([
         (async () => {
           if (!previousReport || !analysis || !previousReport.summary || !previousReport.metrics) return
@@ -128,9 +158,9 @@ async function processItem(itemId: string): Promise<void> {
         fileType: item.fileType,
         fileSize: item.fileSizeBytes,
         rawContent: item.rawContent,
-        displayContent: item.displayContent,
-        // For image uploads, imagePath = the relative path stored in displayContent after 'image:'
-        // displayContent format: 'image:area/file.ext\n{exif json}' — take only the first line
+        // Audio items: clear displayContent so the report page renders the transcript as text
+        displayContent: item.displayContent?.startsWith('audio:') ? null : item.displayContent,
+        // For image uploads, imagePath = relative path after 'image:' on the first line
         imagePath: item.displayContent?.startsWith('image:') ? item.displayContent.slice('image:'.length).split('\n')[0] : null,
         filePath: item.savedFilePath,
         area: item.area,
@@ -150,7 +180,7 @@ async function processItem(itemId: string): Promise<void> {
     // Mode-specific: entities, timeline, redactions, verification, journalism comparison
     // Skip all of these for image placeholders — no real text content to analyse
     const modeFeatures = getModeConfig(appMode).features
-    if (!isImagePlaceholder && (modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification || modeFeatures.documentComparison)) {
+    if (!isImagePlaceholder && !isFailedAudio && (modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification || modeFeatures.documentComparison)) {
       let entitiesResult: Awaited<ReturnType<typeof extractEntities>> = []
       let eventsResult: Awaited<ReturnType<typeof extractTimeline>> = []
       let redactionsJson: string | null = null

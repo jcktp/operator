@@ -3,7 +3,7 @@
 export type { AIProvider } from './ai-providers'
 
 // Re-export journalism and vision functions
-export { describeImage } from './ai-vision'
+export { describeImage, transcribeAudio } from './ai-vision'
 export {
   extractEntities, extractTimeline, detectRedactions,
   compareDocumentsJournalism, generateVerificationChecklist,

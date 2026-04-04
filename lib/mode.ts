@@ -90,6 +90,7 @@ const DEFAULT_FEATURES: ModeFeatures = {
 
 const BASE_FILE_TYPES = '.pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.md'
 const IMAGE_FILE_TYPES = '.jpg,.jpeg,.png,.webp,.heic,.gif'
+const AUDIO_FILE_TYPES = '.mp3,.wav,.m4a,.ogg,.webm,.flac,.aac,.opus'
 
 export const MODES: Record<AppMode, ModeConfig> = {
   executive: {
@@ -113,7 +114,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     uploadDescription: 'Upload reports from your team to get AI-powered insights across your business.',
     uploadAreaLabel: 'Business Area',
     defaultAreas: ['Finance', 'HR & People', 'Sales', 'Marketing', 'Operations', 'Product', 'Engineering', 'Legal', 'Customer Success', 'Recruitment', 'Strategy', 'Other'],
-    acceptedFileTypes: BASE_FILE_TYPES,
+    acceptedFileTypes: `${BASE_FILE_TYPES},${AUDIO_FILE_TYPES}`,
     defaultJournalFolders: ['Weekly Reflections', 'Ideas', 'Decisions', 'General'],
     emptyStateTitle: 'No reports yet',
     emptyStateBody: 'Upload your first report to get a unified view of your business.',
@@ -150,7 +151,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     uploadDescription: 'Upload documents, photos, or source materials to your story archive.',
     uploadAreaLabel: 'Beat / Story',
     defaultAreas: ['Politics', 'Crime', 'Business', 'Culture', 'Sport', 'Technology', 'International', 'Environment', 'Health', 'Education'],
-    acceptedFileTypes: `${BASE_FILE_TYPES},${IMAGE_FILE_TYPES}`,
+    acceptedFileTypes: `${BASE_FILE_TYPES},${IMAGE_FILE_TYPES},${AUDIO_FILE_TYPES}`,
     defaultJournalFolders: ['Current Story', 'Sources', 'Raw Notes', 'Background', 'Research'],
     emptyStateTitle: 'No stories yet',
     emptyStateBody: 'Add your first notes or photos to start building your story archive.',
@@ -194,7 +195,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     uploadDescription: 'Upload status updates, retrospectives, sprint notes, or team documents.',
     uploadAreaLabel: 'Team',
     defaultAreas: ['Engineering', 'Design', 'Product', 'QA', 'DevOps', 'Data', 'Marketing', 'Sales', 'Support'],
-    acceptedFileTypes: BASE_FILE_TYPES,
+    acceptedFileTypes: `${BASE_FILE_TYPES},${AUDIO_FILE_TYPES}`,
     defaultJournalFolders: ['Team Notes', 'Sprint Notes', 'Retrospectives', 'Ideas', 'General'],
     emptyStateTitle: 'No updates yet',
     emptyStateBody: 'Upload your first team update to track progress and surface blockers.',
@@ -231,7 +232,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     uploadDescription: 'Upload interview transcripts, survey responses, or research documents to identify themes and patterns.',
     uploadAreaLabel: 'Project',
     defaultAreas: ['Consumer Insights', 'Market Analysis', 'Competitor Research', 'Product Research', 'Brand Research', 'UX Research', 'Strategy', 'Pricing'],
-    acceptedFileTypes: BASE_FILE_TYPES,
+    acceptedFileTypes: `${BASE_FILE_TYPES},${AUDIO_FILE_TYPES}`,
     defaultJournalFolders: ['Project Notes', 'Insights', 'Hypotheses', 'Literature Review', 'General'],
     emptyStateTitle: 'No research yet',
     emptyStateBody: 'Upload your first interview or dataset to start identifying themes and patterns.',
@@ -269,7 +270,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     uploadDescription: 'Upload case documents, evidence, court filings, or correspondence.',
     uploadAreaLabel: 'Matter / Practice Area',
     defaultAreas: ['Criminal', 'Civil', 'Contract', 'Family', 'Property', 'Employment', 'Immigration', 'Corporate', 'Litigation', 'Regulatory'],
-    acceptedFileTypes: `${BASE_FILE_TYPES},${IMAGE_FILE_TYPES}`,
+    acceptedFileTypes: `${BASE_FILE_TYPES},${IMAGE_FILE_TYPES},${AUDIO_FILE_TYPES}`,
     defaultJournalFolders: ['Case Notes', 'Client Calls', 'Research', 'Evidence', 'Hearings', 'General'],
     emptyStateTitle: 'No case files yet',
     emptyStateBody: 'Upload your first document to start building your case archive.',
@@ -310,7 +311,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
     uploadDescription: 'Upload HR reports, survey results, workforce analytics, or policy documents.',
     uploadAreaLabel: 'HR Area',
     defaultAreas: ['Recruitment', 'Onboarding', 'L&D', 'Compensation & Benefits', 'Employee Relations', 'HR Operations', 'Workforce Planning', 'DEI', 'Performance Management', 'Payroll', 'Engagement', 'Offboarding'],
-    acceptedFileTypes: BASE_FILE_TYPES,
+    acceptedFileTypes: `${BASE_FILE_TYPES},${AUDIO_FILE_TYPES}`,
     defaultJournalFolders: ['HR Notes', 'Policy Drafts', 'Interview Notes', 'Team Feedback', 'General'],
     emptyStateTitle: 'No reports yet',
     emptyStateBody: 'Upload your first HR report to track workforce health and surface people insights.',

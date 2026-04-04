@@ -25,6 +25,8 @@ export function useSettingsState() {
   const [ollamaVisionModel, setOllamaVisionModel] = useState('llava-phi3')
   const [savedVisionModel, setSavedVisionModel] = useState('llava-phi3')
   const [customVisionModel, setCustomVisionModel] = useState('')
+  const [ollamaAudioModel, setOllamaAudioModel] = useState('')
+  const [savedAudioModel, setSavedAudioModel] = useState('')
   const [ceoName, setCeoName] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [userRole, setUserRole] = useState('')
@@ -63,6 +65,8 @@ export function useSettingsState() {
       setSavedModel(s.ollama_model ?? 'phi4-mini')
       setOllamaVisionModel(s.ollama_vision_model ?? 'llava-phi3')
       setSavedVisionModel(s.ollama_vision_model ?? 'llava-phi3')
+      setOllamaAudioModel(s.ollama_audio_model ?? '')
+      setSavedAudioModel(s.ollama_audio_model ?? '')
       setCeoName(s.ceo_name ?? '')
       setCompanyName(s.company_name ?? '')
       setUserRole(s.user_role ?? '')
@@ -145,7 +149,7 @@ export function useSettingsState() {
         .catch(reject)
     })
 
-  const MULTIMODAL_PATTERNS = ['llava', 'minicpm-v', 'bakllava', 'moondream', 'qwen2-vl', 'qwen-vl', 'cogvlm', 'internvl', 'phi3-vision', 'phi-3-vision', 'llava-phi3']
+  const MULTIMODAL_PATTERNS = ['llava', 'minicpm-v', 'bakllava', 'moondream', 'qwen2-vl', 'qwen-vl', 'cogvlm', 'internvl', 'phi3-vision', 'phi-3-vision', 'llava-phi3', 'gemma4']
   const isMultimodalModel = (name: string) => MULTIMODAL_PATTERNS.some(p => name.toLowerCase().includes(p))
 
   const selectedModel = customModel.trim() || ollamaModel
@@ -184,6 +188,7 @@ export function useSettingsState() {
       saveSetting('ollama_host', ollamaHost),
       saveSetting('ollama_model', selectedModel),
       saveSetting('ollama_vision_model', effectiveVisionModel),
+      saveSetting('ollama_audio_model', ollamaAudioModel.trim()),
       saveSetting('ollama_web_access', webAccess ? 'true' : 'false'),
       saveSetting('ceo_name', ceoName),
       saveSetting('company_name', companyName),
@@ -215,6 +220,7 @@ export function useSettingsState() {
 
     setSavedModel(selectedModel)
     setSavedVisionModel(effectiveVisionModel)
+    setSavedAudioModel(ollamaAudioModel.trim())
     setSavedProvider(aiProvider)
     setSavedMode(appMode)
     setMode(appMode)
@@ -286,6 +292,9 @@ export function useSettingsState() {
     ollamaVisionModel, setOllamaVisionModel,
     savedVisionModel,
     customVisionModel, setCustomVisionModel,
+    // Ollama audio model
+    ollamaAudioModel, setOllamaAudioModel,
+    savedAudioModel,
     // Computed
     selectedModel, modelChanged, switchingToOllama, needsPull,
     // Ollama → cloud model removal
