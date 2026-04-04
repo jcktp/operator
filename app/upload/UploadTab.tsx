@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, FileText, Image as ImageIcon, X, Loader2, CheckCircle, AlertCircle, Globe, ChevronDown, Plus, GitMerge } from 'lucide-react'
+import { Upload, FileText, Image as ImageIcon, Mic, X, Loader2, CheckCircle, AlertCircle, Globe, ChevronDown, Plus, GitMerge } from 'lucide-react'
 import { type QueuedItem, type DirectReport, LINK_LABELS, detectLinkType, guessArea, fileId } from './uploadTypes'
 import { useMode } from '@/components/ModeContext'
 import SelectField from '@/components/SelectField'
@@ -40,6 +40,8 @@ export default function UploadTab() {
   const [linkInput, setLinkInput] = useState('')
   const [linkError, setLinkError] = useState('')
   const [extractText, setExtractText] = useState(false)
+  const [audioCapable, setAudioCapable] = useState<boolean | null>(null)
+  const [audioReason, setAudioReason] = useState<string | null>(null)
 
   const loadDirects = useCallback(async () => {
     if (directsLoaded) return
@@ -60,6 +62,18 @@ export default function UploadTab() {
   }, [projectsLoaded])
 
   useEffect(() => { loadProjects() }, [loadProjects])
+
+  const hasAudio = queue.some(q => q.type === 'file' && q.file && /\.(mp3|wav|m4a|ogg|webm|flac|aac|opus)$/i.test(q.file.name))
+  useEffect(() => {
+    if (!hasAudio || audioCapable !== null) return
+    fetch('/api/audio-check')
+      .then(r => r.json())
+      .then((d: { capable: boolean; reason?: string }) => {
+        setAudioCapable(d.capable)
+        setAudioReason(d.reason ?? null)
+      })
+      .catch(() => {})
+  }, [hasAudio, audioCapable])
 
   const addFiles = (files: FileList | File[]) => {
     const newItems: QueuedItem[] = Array.from(files).map(f => ({
@@ -248,7 +262,9 @@ export default function UploadTab() {
                   {item.status === 'pending' && item.type === 'file' && (
                     item.file && item.file.type.startsWith('image/')
                       ? <ImageIcon size={16} className="text-blue-400" />
-                      : <FileText size={16} className="text-gray-400 dark:text-zinc-500" />
+                      : item.file && /\.(mp3|wav|m4a|ogg|webm|flac|aac|opus)$/i.test(item.file.name)
+                        ? <Mic size={16} className="text-amber-400" />
+                        : <FileText size={16} className="text-gray-400 dark:text-zinc-500" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -367,6 +383,18 @@ export default function UploadTab() {
           </label>
         )}
       </div>
+
+      {/* Audio capability warning */}
+      {hasAudio && audioCapable === false && audioReason && (
+        <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
+          <Mic size={14} className="text-amber-500 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-amber-800 dark:text-amber-300">Audio transcription not available</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">{audioReason}</p>
+            <a href="/settings" className="text-xs text-amber-600 dark:text-amber-400 underline mt-1 inline-block">Open Settings →</a>
+          </div>
+        </div>
+      )}
 
       <button type="submit" disabled={queue.length === 0 || !allHaveArea || submitting || pendingCount === 0}
         className="w-full bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
