@@ -2,7 +2,7 @@
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { MapPin, Loader2, RotateCcw } from 'lucide-react'
+import { MapPin, Loader2, RotateCcw, Plus, Minus } from 'lucide-react'
 import type { LocationPin, MapLayer } from '@/lib/map/mlMap'
 import { useInspector } from '@/components/InspectorContext'
 
@@ -12,6 +12,7 @@ export interface RawLocation {
   reportTitles: Record<string, string>
   reportAreas: Record<string, string>
   reportStoryNames: Record<string, string>
+  reportSummaries: Record<string, string>
   contexts: string[]
   contextsByReport: Array<{ reportId: string; reportTitle: string; area: string; context: string }>
 }
@@ -77,6 +78,8 @@ function useDarkMode(): boolean {
 export default function StoryMapClient({ locations, storyNames }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const destroyRef = useRef<(() => void) | null>(null)
+  const zoomInRef = useRef<(() => void) | null>(null)
+  const zoomOutRef = useRef<(() => void) | null>(null)
   const geocodedKeyRef = useRef<string>('')
 
   const clearGeoCache = () => {
@@ -152,14 +155,20 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
     if (!mapRef.current || pinsToShow.length === 0) { setMapReady(true); return }
     destroyRef.current?.()
     const { initStoryMap } = await import('@/lib/map/mlMap')
-    const result = await initStoryMap(mapRef.current, pinsToShow, pin => setSelected({
-      type: 'location',
-      name: pin.name,
-      reportIds: pin.reportIds,
-      reportTitles: pin.reportTitles,
-      contextsByReport: pin.contextsByReport,
-    }), layer, isDark)
+    const result = await initStoryMap(mapRef.current, pinsToShow, pin => {
+      const loc = locations.find(l => l.name === pin.name)
+      setSelected({
+        type: 'location',
+        name: pin.name,
+        reportIds: pin.reportIds,
+        reportTitles: pin.reportTitles,
+        reportSummaries: loc?.reportSummaries ?? {},
+        contextsByReport: pin.contextsByReport,
+      })
+    }, layer, isDark)
     destroyRef.current = result.destroy
+    zoomInRef.current = result.zoomIn
+    zoomOutRef.current = result.zoomOut
     setMapReady(true)
   }, [setSelected])
 
@@ -286,6 +295,24 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
           style={{ height: 520 }}
           className="w-full rounded-xl border border-gray-200 dark:border-zinc-700 overflow-hidden bg-gray-100 dark:bg-zinc-800"
         />
+        {mapReady && pins.length > 0 && (
+          <div className="absolute bottom-8 right-2 flex flex-col gap-0.5 z-10">
+            <button
+              onClick={() => zoomInRef.current?.()}
+              title="Zoom in"
+              className="w-7 h-7 flex items-center justify-center bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-t-md text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 shadow-sm transition-colors"
+            >
+              <Plus size={13} />
+            </button>
+            <button
+              onClick={() => zoomOutRef.current?.()}
+              title="Zoom out"
+              className="w-7 h-7 flex items-center justify-center bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-b-md text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 shadow-sm transition-colors border-t-0"
+            >
+              <Minus size={13} />
+            </button>
+          </div>
+        )}
         <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1 text-right">
           Map © <a href="https://openfreemap.org" target="_blank" rel="noreferrer" className="underline">OpenFreeMap</a> / <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline">OpenStreetMap</a> contributors · Geocoding by Nominatim
         </p>

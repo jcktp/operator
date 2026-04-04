@@ -7,7 +7,7 @@ export default async function StoryMapTab() {
   const locationEntities = await prisma.reportEntity.findMany({
     where: { type: 'location' },
     include: {
-      report: { select: { id: true, title: true, area: true, storyName: true } },
+      report: { select: { id: true, title: true, area: true, storyName: true, summary: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -27,6 +27,7 @@ export default async function StoryMapTab() {
         reportTitles: {},
         reportAreas: {},
         reportStoryNames: {},
+        reportSummaries: {},
         contexts: [],
         contextsByReport: [],
       }
@@ -37,6 +38,7 @@ export default async function StoryMapTab() {
       g.reportTitles[e.reportId] = e.report.title
       g.reportAreas[e.reportId] = e.report.area
       if (e.report.storyName) g.reportStoryNames[e.reportId] = e.report.storyName
+      if (e.report.summary) g.reportSummaries[e.reportId] = e.report.summary
     }
     if (e.context && !g.contexts.includes(e.context)) {
       g.contexts.push(e.context)

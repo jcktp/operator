@@ -126,51 +126,89 @@ function EntityView({ item }: { item: Extract<InspectorItem, { type: 'entity' }>
 }
 
 function LocationView({ item }: { item: Extract<InspectorItem, { type: 'location' }> }) {
+  const { setSelected } = useInspector()
+  const [entities, setEntities] = useState<Record<string, Array<{ name: string; type: string }>>>({})
+  const [loadingEntities, setLoadingEntities] = useState(true)
+
+  useEffect(() => {
+    if (item.reportIds.length === 0) { setLoadingEntities(false); return }
+    setLoadingEntities(true)
+    fetch(`/api/entities/by-reports?reportIds=${item.reportIds.join(',')}`)
+      .then(r => r.json())
+      .then((d: { results: Record<string, Array<{ name: string; type: string }>> }) => setEntities(d.results ?? {}))
+      .catch(() => {})
+      .finally(() => setLoadingEntities(false))
+  }, [item.reportIds.join(',')])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Deduplicate reports: one entry per reportId (use the first context per report)
+  const reportIds = item.reportIds
   const hasContexts = item.contextsByReport.length > 0
+  const contextByReportId = item.contextsByReport.reduce<Record<string, typeof item.contextsByReport[0]>>(
+    (acc, e) => { if (!acc[e.reportId]) acc[e.reportId] = e; return acc }, {}
+  )
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <section className="px-4 py-3">
-        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center gap-1.5 mb-3">
-          <FileText size={10} /> What happened here
-        </h3>
+    <div className="flex flex-col h-full overflow-hidden divide-y divide-gray-100 dark:divide-zinc-800">
+      {reportIds.map(id => {
+        const entry = contextByReportId[id]
+        const summary = item.reportSummaries[id]
+        const reportEntities = entities[id] ?? []
+        const area = entry?.area ?? ''
+        const title = item.reportTitles[id] ?? id
 
-        {!hasContexts && (
-          <div className="space-y-1">
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 mb-2 italic">Re-analyse the document to extract location context.</p>
-            {item.reportIds.map(id => (
+        return (
+          <section key={id} className="px-4 py-3 space-y-2">
+            {/* Report header */}
+            <div className="flex items-center gap-2">
+              {area && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 shrink-0">{area}</span>}
               <Link
-                key={id}
                 href={`/reports/${id}`}
-                className="block text-xs text-gray-700 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-indigo-400 py-0.5"
+                className="text-xs font-medium text-gray-700 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-indigo-400 truncate"
               >
-                {item.reportTitles[id] ?? id} →
+                {title}
               </Link>
-            ))}
-          </div>
-        )}
+            </div>
 
-        {hasContexts && (
-          <div className="space-y-4">
-            {item.contextsByReport.map((entry, i) => (
-              <div key={i} className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 shrink-0">{entry.area}</span>
-                  <Link
-                    href={`/reports/${entry.reportId}`}
-                    className="text-xs font-medium text-gray-700 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-indigo-400 truncate"
+            {/* Summary */}
+            {summary && (
+              <p className="text-[11px] text-gray-500 dark:text-zinc-400 leading-relaxed line-clamp-3">
+                {summary}
+              </p>
+            )}
+
+            {/* Context / excerpt */}
+            {hasContexts && entry && (
+              <p className="text-xs text-gray-600 dark:text-zinc-300 leading-relaxed italic">
+                &ldquo;{entry.context}&rdquo;
+              </p>
+            )}
+
+            {/* Entities from this report */}
+            {!loadingEntities && reportEntities.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                {reportEntities.slice(0, 12).map(e => (
+                  <button
+                    key={`${e.type}::${e.name}`}
+                    onClick={() => setSelected({ type: 'entity', name: e.name, entityType: e.type })}
+                    className="flex items-center gap-1 group"
+                    title={`View ${e.name}`}
                   >
-                    {entry.reportTitle}
-                  </Link>
-                </div>
-                <p className="text-xs text-gray-600 dark:text-zinc-300 leading-relaxed pl-0.5">
-                  {entry.context}
-                </p>
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${ENTITY_COLORS[e.type] ?? 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700'}`}>
+                      {e.name}
+                    </span>
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+            )}
+          </section>
+        )
+      })}
+
+      {reportIds.length === 0 && (
+        <section className="px-4 py-3">
+          <p className="text-xs text-gray-400 dark:text-zinc-500 italic">No reports linked to this location.</p>
+        </section>
+      )}
     </div>
   )
 }

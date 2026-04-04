@@ -13,6 +13,7 @@ export interface LocationPin {
   reportIds: string[]
   reportTitles: Record<string, string>
   reportAreas: Record<string, string>
+  reportSummaries?: Record<string, string>
   contexts: string[]
   contextsByReport: Array<{ reportId: string; reportTitle: string; area: string; context: string }>
 }
@@ -187,7 +188,7 @@ export async function initStoryMap(
   onPinClick: (pin: LocationPin) => void,
   layer: MapLayer = 'osm',
   dark = false,
-): Promise<{ destroy: () => void }> {
+): Promise<{ destroy: () => void; zoomIn: () => void; zoomOut: () => void }> {
   const maplibregl = (await import('maplibre-gl')).default
 
   const map = new maplibregl.Map({
@@ -261,5 +262,9 @@ export async function initStoryMap(
   map.on('mouseenter', 'pins-circle', () => { map.getCanvas().style.cursor = 'pointer' })
   map.on('mouseleave', 'pins-circle', () => { map.getCanvas().style.cursor = '' })
 
-  return { destroy: () => map.remove() }
+  return {
+    destroy: () => map.remove(),
+    zoomIn: () => map.zoomIn(),
+    zoomOut: () => map.zoomOut(),
+  }
 }

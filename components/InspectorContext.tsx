@@ -4,7 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 
 export type InspectorItem =
   | { type: 'entity'; name: string; entityType: string }
-  | { type: 'location'; name: string; reportIds: string[]; reportTitles: Record<string, string>; contextsByReport: Array<{ reportId: string; reportTitle: string; area: string; context: string }> }
+  | { type: 'location'; name: string; reportIds: string[]; reportTitles: Record<string, string>; reportSummaries: Record<string, string>; contextsByReport: Array<{ reportId: string; reportTitle: string; area: string; context: string }> }
 
 interface InspectorContextValue {
   selected: InspectorItem | null
