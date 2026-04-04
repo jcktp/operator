@@ -67,8 +67,8 @@ export function useSettingsState() {
       setOllamaHost(s.ollama_host ?? 'http://localhost:11434')
       setOllamaModel(s.ollama_model ?? 'phi4-mini')
       setSavedModel(s.ollama_model ?? 'phi4-mini')
-      setOllamaVisionModel(s.ollama_vision_model ?? 'gemma4:e2b')
-      setSavedVisionModel(s.ollama_vision_model ?? 'gemma4:e2b')
+      setOllamaVisionModel(s.ollama_vision_model ?? 'llava-phi3')
+      setSavedVisionModel(s.ollama_vision_model ?? 'llava-phi3')
       setOllamaAudioModel(s.ollama_audio_model ?? '')
       setSavedAudioModel(s.ollama_audio_model ?? '')
       // Derive setup mode from saved settings

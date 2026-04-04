@@ -81,42 +81,4 @@ export async function loadAiSettings(): Promise<void> {
     }
   }
 
-  // ── One-time migration: split multimodal primary model into text + vision ──
-  // If the primary model is vision/audio-capable but no separate vision model is
-  // saved yet, automatically move it to the vision slot and fall back to phi4-mini
-  // for text analysis. This gives faster text analysis without losing vision support.
-  await _maybeSplitModelSetup()
-}
-
-async function _maybeSplitModelSetup(): Promise<void> {
-  const primaryModel = process.env.OLLAMA_MODEL ?? ''
-  const visionModel  = process.env.OLLAMA_VISION_MODEL ?? ''
-
-  // Only applies when Ollama is the active provider
-  if ((process.env.AI_PROVIDER ?? 'ollama') !== 'ollama') return
-  // Only migrate if a vision-capable model is set as primary
-  // and no dedicated vision model has been saved yet (or it's the same model)
-  if (!primaryModel) return
-
-  // Lazy import to avoid circular dep
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { getModelCapsClient } = require('./model-caps-shared') as typeof import('./model-caps-shared')
-  const caps = getModelCapsClient(primaryModel)
-  if (!caps.vision) return  // primary is already text-only, nothing to do
-  if (visionModel && visionModel !== primaryModel) return  // already split
-
-  // Migrate: move vision model to dedicated slot, use phi4-mini for text
-  const upsert = async (key: string, value: string) => {
-    await prisma.setting.upsert({
-      where: { key },
-      update: { value },
-      create: { id: crypto.randomUUID(), key, value },
-    }).catch(() => {})
-  }
-
-  await upsert('ollama_model', 'phi4-mini')
-  await upsert('ollama_vision_model', primaryModel)
-
-  process.env.OLLAMA_MODEL        = 'phi4-mini'
-  process.env.OLLAMA_VISION_MODEL = primaryModel
 }
