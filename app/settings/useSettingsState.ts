@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSetMode } from '@/components/ModeContext'
 import { getModeConfig, type AppMode } from '@/lib/mode'
@@ -39,6 +39,8 @@ export function useSettingsState() {
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
   const [pull, setPull] = useState<PullState>({ active: false, status: '', progress: 0, done: false })
+  const [pullingModel, setPullingModel] = useState('')
+  const pullDoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [webAccess, setWebAccess] = useState(true)
   const [aiProvider, setAiProvider] = useState<AIProvider>('ollama')
   const [savedProvider, setSavedProvider] = useState<AIProvider>('ollama')
@@ -141,12 +143,15 @@ export function useSettingsState() {
 
   const pullModel = (model: string): Promise<void> =>
     new Promise((resolve, reject) => {
+      if (pullDoneTimerRef.current) { clearTimeout(pullDoneTimerRef.current); pullDoneTimerRef.current = null }
+      setPullingModel(model)
       setPull({ active: true, status: 'Starting…', progress: 0, done: false })
       fetch('/api/model-pull', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model }) })
         .then(async res => {
           if (!res.body) { reject(new Error('No stream')); return }
           const reader = res.body.getReader()
           const decoder = new TextDecoder()
+          let succeeded = false
           while (true) {
             const { done, value } = await reader.read()
             if (done) break
@@ -157,14 +162,18 @@ export function useSettingsState() {
                 if (data.error) { reject(new Error(data.error)); return }
                 setPull(p => ({ ...p, status: data.status ?? p.status, progress: data.progress ?? p.progress }))
                 if (data.progress === 100 || data.status === 'success') {
+                  succeeded = true
                   setPull(p => ({ ...p, progress: 100, status: 'Done', done: true }))
-                  setTimeout(() => setPull(p => ({ ...p, active: false })), 1500)
+                  pullDoneTimerRef.current = setTimeout(() => {
+                    pullDoneTimerRef.current = null
+                    setPull(p => ({ ...p, active: false }))
+                  }, 1500)
                   resolve(); return
                 }
               } catch {}
             }
           }
-          resolve()
+          if (!succeeded) reject(new Error('Pull ended without confirmation from Ollama'))
         })
         .catch(reject)
     })
@@ -209,13 +218,27 @@ export function useSettingsState() {
       await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedVisionModel }) }).catch(() => {})
     }
 
-    // Pull audio model if it changed (full-split mode only)
+    // Pull audio model if it changed OR if it's not locally present (full-split mode only)
     const audioModel = customAudioModel.trim() || ollamaAudioModel.trim()
     const audioModelChanged = modelSetupMode === 'full-split' && audioModel !== savedAudioModel
-    if (aiProvider === 'ollama' && audioModelChanged && audioModel) {
+    let isAudioModelLocal = false
+    if (aiProvider === 'ollama' && modelSetupMode === 'full-split' && audioModel) {
+      try {
+        const tagsRes = await fetch(`${ollamaHost}/api/tags`)
+        if (tagsRes.ok) {
+          const tagsData = await tagsRes.json() as { models?: { name: string }[] }
+          const localNames = tagsData.models?.map(m => m.name) ?? []
+          isAudioModelLocal = localNames.some(lm => lm.split(':')[0] === audioModel.split(':')[0])
+        }
+      } catch {}
+    }
+    if (aiProvider === 'ollama' && modelSetupMode === 'full-split' && audioModel && (audioModelChanged || !isAudioModelLocal)) {
       try {
         await pullModel(audioModel)
-      } catch { /* non-critical — audio model pull failed, continue */ }
+      } catch (err) {
+        setPull(p => ({ ...p, active: true, error: String(err), status: 'Failed' }))
+        setSaving(false); return
+      }
     }
     // Remove old audio model if it was replaced
     if (aiProvider === 'ollama' && audioModelChanged && savedAudioModel && savedAudioModel !== audioModel) {
@@ -335,7 +358,7 @@ export function useSettingsState() {
     lastBackup, setLastBackup,
     backupPath,
     // Save state
-    saving, saved, pull, setPull,
+    saving, saved, pull, setPull, pullingModel,
     // Ollama vision model
     ollamaVisionModel, setOllamaVisionModel,
     savedVisionModel,

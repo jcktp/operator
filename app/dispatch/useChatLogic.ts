@@ -278,6 +278,7 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
 
   return {
     // State
+    chatId,
     messages, input, setInput, loading,
     pendingAttachment, setPendingAttachment,
     attachLoading, urlInput, setUrlInput, fetchingUrl,

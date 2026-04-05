@@ -38,8 +38,8 @@ export default function OsintTab() {
 
   return (
     <div className="space-y-4">
-      {/* Search + filter controls */}
-      <div className="space-y-3">
+      {/* Search + filter controls — sticky so they stay visible while scrolling */}
+      <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pb-2 space-y-3">
         <div className="relative">
           <Search
             size={14}

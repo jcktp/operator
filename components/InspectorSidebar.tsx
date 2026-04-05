@@ -111,14 +111,16 @@ function EntityView({ item }: { item: Extract<InspectorItem, { type: 'entity' }>
           <ChevronDown size={10} className={`ml-auto transition-transform ${noteOpen ? 'rotate-180' : ''}`} />
         </button>
         {noteOpen && (
-          <textarea
-            value={note}
-            onChange={e => { setNote(e.target.value); localStorage.setItem(noteKey, e.target.value) }}
-            placeholder="Add observations about this entity…"
-            rows={2}
-            className="mt-2 w-full text-xs border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 placeholder-gray-300 dark:placeholder-zinc-600 overflow-y-auto max-h-48"
-            style={{ fieldSizing: 'content' } as React.CSSProperties}
-          />
+          <div className="mt-2 p-px">
+            <textarea
+              value={note}
+              onChange={e => { setNote(e.target.value); localStorage.setItem(noteKey, e.target.value) }}
+              placeholder="Add observations about this entity…"
+              rows={2}
+              className="w-full text-xs border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 placeholder-gray-300 dark:placeholder-zinc-600 overflow-y-auto max-h-48"
+              style={{ fieldSizing: 'content' } as React.CSSProperties}
+            />
+          </div>
         )}
       </section>
     </div>

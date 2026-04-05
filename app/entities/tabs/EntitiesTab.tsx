@@ -110,7 +110,7 @@ export default async function EntitiesTab({ selectedType, sort, modeConfig, focu
   return (
     <div className="flex gap-6 items-start">
       {/* Sidebar */}
-      <aside className="w-44 shrink-0 space-y-1 sticky top-24">
+      <aside className="w-44 shrink-0 space-y-1 sticky top-0">
         <Link
           href="/entities?tab=entities"
           className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${

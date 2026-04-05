@@ -6,7 +6,7 @@ import TimelineExportButton from './TimelineExportButton'
 
 export default function TimelineTabClient({ events }: { events: TimelineEvent[] }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 pb-8">
       <div className="flex justify-end">
         <TimelineExportButton events={events} />
       </div>

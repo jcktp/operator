@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, Send, MessageSquare, Paperclip, Link2, Loader2, Globe, GlobeLock, Clock, Plus, BookOpen, BookmarkPlus } from 'lucide-react'
+import { X, Send, MessageSquare, Paperclip, Link2, Loader2, Globe, GlobeLock, Clock, Plus, BookOpen, BookmarkPlus, ExternalLink } from 'lucide-react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { renderMarkdown } from './MarkdownRenderer'
 import { useMode } from '@/components/ModeContext'
@@ -88,6 +89,15 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
                 className="p-1.5 rounded-lg transition-colors text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800">
                 <Clock size={13} />
               </button>
+              {!fullPage && (
+                <Link
+                  href={c.chatId ? `/dispatch?chat=${c.chatId}` : '/dispatch'}
+                  title="Open full Dispatch"
+                  className="p-1.5 rounded-lg transition-colors text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                >
+                  <ExternalLink size={13} />
+                </Link>
+              )}
             </>
           )}
           {onClose && (
@@ -279,7 +289,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
           {compact ? (
             /* Compact layout: textarea + send in one row, action icons below */
             <>
-              <div className="flex gap-2 items-end">
+              <div className="flex gap-2 items-end p-px">
                 <textarea
                   ref={c.inputRef}
                   value={c.input}

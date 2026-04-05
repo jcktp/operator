@@ -124,19 +124,22 @@ export default async function DashboardPage({
     })
 
     return (
-      <div className="space-y-6">
-        <div>
+      <div className="flex flex-col h-full pb-4">
+        <div className="shrink-0 pt-2 pb-4">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Intelligence Brief</h1>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Entities, timeline, and claims extracted from all documents</p>
         </div>
-        <IntelligenceBriefClient
-          entityGroups={entityGroups}
-          recentEvents={briefEvents.map(e => ({ id: e.id, dateText: e.dateText, event: e.event, report: e.report }))}
-          storySummaries={storySummaries}
-          totalEntities={rawEntities.length}
-          totalEvents={briefEvents.length}
-          unverifiedCount={unverifiedCount}
-        />
+        <div className="flex-1 min-h-0">
+          <IntelligenceBriefClient
+            entityGroups={entityGroups}
+            recentEvents={briefEvents.map(e => ({ id: e.id, dateText: e.dateText, event: e.event, report: e.report }))}
+            storySummaries={storySummaries}
+            totalEntities={rawEntities.length}
+            totalEvents={briefEvents.length}
+            unverifiedCount={unverifiedCount}
+            projectId={currentProjectId}
+          />
+        </div>
       </div>
     )
   }
@@ -265,30 +268,33 @@ export default async function DashboardPage({
 
   if (totalReports === 0) {
     return (
-      <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Situation Report</h1>
-            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">No {modeConfig.documentLabelPlural.toLowerCase()} match the current filters.</p>
+      <div className="h-full overflow-y-auto pb-8">
+        <div className="space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Situation Report</h1>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">No {modeConfig.documentLabelPlural.toLowerCase()} match the current filters.</p>
+            </div>
+            <DashboardFilters
+              areas={allAreas.map(a => a.area)}
+              directs={directs}
+              activeArea={filterArea}
+              activeFrom={filterFrom}
+              activeTo={filterTo}
+              activeDirect={filterDirect}
+            />
           </div>
-          <DashboardFilters
-            areas={allAreas.map(a => a.area)}
-            directs={directs}
-            activeArea={filterArea}
-            activeFrom={filterFrom}
-            activeTo={filterTo}
-            activeDirect={filterDirect}
-          />
-        </div>
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Activity size={32} className="text-gray-200 dark:text-zinc-700 mb-4" />
-          <p className="text-gray-500 text-sm">No {modeConfig.documentLabelPlural.toLowerCase()} in this period.</p>
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <Activity size={32} className="text-gray-200 dark:text-zinc-700 mb-4" />
+            <p className="text-gray-500 text-sm">No {modeConfig.documentLabelPlural.toLowerCase()} in this period.</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
+    <div className="h-full overflow-y-auto pb-8">
     <div className="space-y-8">
 
       {/* Header */}
@@ -503,6 +509,7 @@ export default async function DashboardPage({
         </div>
       )}
 
+    </div>
     </div>
   )
 }

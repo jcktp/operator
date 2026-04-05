@@ -42,12 +42,6 @@ describe('getModelCapsClient', () => {
     expect(caps.vision).toBe(true)
   })
 
-  it('returns audio=true for whisper', () => {
-    const caps = getModelCapsClient('whisper:small')
-    expect(caps.audio).toBe(true)
-    expect(caps.vision).toBe(false)
-  })
-
   it('returns the default fallback for an unrecognised model', () => {
     const caps = getModelCapsClient('some-unknown-model:99b')
     expect(caps.vision).toBe(false)
@@ -93,9 +87,8 @@ describe('modelRamWarning', () => {
     expect(modelRamWarning('unknown-model', 8)).toBeNull()
   })
 
-  it('returns null for whisper models on machines with adequate RAM', () => {
-    // whisper:small = 0.6 GB → fine on any machine
-    expect(modelRamWarning('whisper:small', 8)).toBeNull()
+  it('returns null for unknown models (sizeGB = 0)', () => {
+    expect(modelRamWarning('some-unknown-model', 8)).toBeNull()
   })
 })
 

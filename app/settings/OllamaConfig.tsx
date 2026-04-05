@@ -21,11 +21,9 @@ const VISION_MODELS = [
 ]
 
 const AUDIO_MODELS = [
-  { id: 'whisper:small',     label: 'Whisper Small',      note: '0.6 GB · lightest · transcription only, no text generation' },
-  { id: 'whisper:medium',    label: 'Whisper Medium',     note: '1.5 GB · better accuracy · transcription only' },
-  { id: 'gemma4:e2b',        label: 'Gemma 4 E2B',        note: '7.2 GB · full multimodal · also handles vision + text' },
-  { id: 'gemma4:e4b',        label: 'Gemma 4 E4B',        note: '9.6 GB · higher quality · also handles vision + text' },
-  { id: 'phi4-multimodal',   label: 'Phi 4 Multimodal',   note: '~8.5 GB · full multimodal · text + vision + audio from Microsoft' },
+  { id: 'gemma4:e2b',        label: 'Gemma 4 E2B',        note: '7.2 GB · text + vision + audio · recommended for most machines' },
+  { id: 'gemma4:e4b',        label: 'Gemma 4 E4B',        note: '9.6 GB · higher quality · requires 16 GB+ RAM' },
+  { id: 'phi4-multimodal',   label: 'Phi 4 Multimodal',   note: '~8.5 GB · text + vision + audio · Microsoft, generally faster than gemma4' },
 ]
 
 // Text-only models for use in split modes
@@ -72,7 +70,8 @@ function ModelRadioList({
   return (
     <div className="space-y-1.5">
       {models.map(m => {
-        const isPulled = availableModels.some(am => am.startsWith(m.id.split(':')[0]))
+        const modelBase = m.id.split(':')[0]
+        const isPulled = availableModels.some(am => am.split(':')[0] === modelBase)
         const isSelected = selected === m.id && !customValue
         const isCurrent = m.id === savedId && savedProvider === 'ollama'
         const warn = systemRamGb ? modelRamWarning(m.id, systemRamGb) : null
@@ -98,7 +97,7 @@ function ModelRadioList({
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               {isCurrent && <span className="text-xs text-blue-600 font-medium">active</span>}
-              {isPulled && !isCurrent && <span className="text-xs text-green-600 font-medium">pulled</span>}
+              {isPulled && <span className="text-xs text-green-600 font-medium">downloaded</span>}
             </div>
           </label>
         )
@@ -173,6 +172,9 @@ export default function OllamaConfig({
       if (d.machine?.ramGb) setSystemRamGb(d.machine.ramGb)
       if (d.ai?.ollamaVersion) setOllamaVersion(d.ai.ollamaVersion)
     }).catch(() => {})
+    // Auto-check local Ollama on mount so downloaded badges appear immediately
+    checkOllama()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const checkOllama = async () => {

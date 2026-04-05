@@ -21,7 +21,7 @@ const UNIVERSAL: Array<{ label: string; desc: (c: ModeConfig) => string }> = [
   { label: 'Library',      desc: c => `Upload ${c.documentLabelPlural.toLowerCase()} and get AI-generated summaries, flags, and insights.` },
   { label: 'Dispatch AI',  desc: () => 'Ask anything about your documents, get cross-references, and draft outputs.' },
   { label: 'Journal',      desc: c => `Private notes with AI rewrite. Folders: ${c.defaultJournalFolders.slice(0, 3).join(', ')}, and more.` },
-  { label: 'Browser',      desc: () => 'In-app browser with Reader mode. Import articles directly to your Library.' },
+  { label: 'Files',        desc: () => 'Browse and manage files saved by Operator. Analyse documents directly from the folder view.' },
   { label: 'Pulse',        desc: () => 'RSS feeds for sources you follow. Save items to your Library in one click.' },
 ]
 

@@ -15,9 +15,12 @@ export async function GET(req: NextRequest) {
   const raw = searchParams.get('name')?.trim()
   if (!raw) return NextResponse.json({ error: 'name is required' }, { status: 400 })
 
-  // Strip common transliterated Russian/CIS administrative prefixes that confuse Nominatim
-  // г./г = город (city), р-н/р. = район (district), обл. = область (region), etc.
+  // Strip common prefixes that confuse Nominatim:
+  // English place-type prefixes (City of, Town of, Village of, Port of, Bar …, etc.)
+  // Russian/CIS administrative prefixes (г., р-н, обл., пос., д., с.)
   const name = raw
+    .replace(/^(city of|town of|village of|municipality of|district of|port of|county of|province of|region of)\s+/i, '')
+    .replace(/^(bar|pub|café|cafe|restaurant|hotel|club)\s+/i, '')
     .replace(/^(г\.\s*|г\s+|гор\.\s*|город\s+)/i, '')
     .replace(/^(р-н\s+|р\.\s+|район\s+)/i, '')
     .replace(/^(обл\.\s*|область\s+)/i, '')

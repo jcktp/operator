@@ -9,6 +9,8 @@ import StoryMapTab from './tabs/StoryMapTab'
 import StorylineTab from './tabs/StorylineTab'
 import OsintTab from './tabs/OsintTab'
 import InspectorSidebar from '@/components/InspectorSidebar'
+import EntitiesSearchBar from './EntitiesSearchBar'
+import { EntitiesSearchProvider } from './EntitiesSearchContext'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,63 +54,71 @@ export default async function EntitiesPage({
   const showInspector = activeTab === 'entities' || activeTab === 'story-map'
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50 flex items-center gap-2">
-          <Users size={20} />
-          {pageTitle}
-        </h1>
-        <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">
-          Entities, timeline, map, and story tools across your {modeConfig.navLibrary.toLowerCase()}.
-        </p>
+    <EntitiesSearchProvider>
+      <div className="flex flex-col h-full pb-4">
+        {/* Header — fixed, never scrolls */}
+        <div className="shrink-0 pt-2 pb-2">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50 flex items-center gap-2">
+            <Users size={20} />
+            {pageTitle}
+          </h1>
+          <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5 mb-3">
+            Entities, timeline, map, and story tools across your {modeConfig.navLibrary.toLowerCase()}.
+          </p>
 
-        {/* Tab nav — pill style */}
-        <div className="flex gap-1 mt-5 flex-wrap">
-          {tabs.map(t => {
-            const isActive = t.id === activeTab
-            return (
-              <Link
-                key={t.id}
-                href={`/entities?tab=${t.id}`}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
-                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800'
-                }`}
-              >
-                {TAB_ICONS[t.id]}
-                {t.label}
-              </Link>
-            )
-          })}
+          <EntitiesSearchBar projectId={currentProjectId} activeTab={activeTab} />
+
+          {/* Tab nav — pill style */}
+          <div className="flex gap-1 mt-1 flex-wrap">
+            {tabs.map(t => {
+              const isActive = t.id === activeTab
+              return (
+                <Link
+                  key={t.id}
+                  href={`/entities?tab=${t.id}`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
+                      : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {TAB_ICONS[t.id]}
+                  {t.label}
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Tab content — fills remaining height, each tab scrolls internally */}
+        <div className="flex-1 min-h-0 mt-3">
+          {showInspector ? (
+            <div className="flex gap-6 h-full">
+              <div className="flex-1 min-w-0 overflow-y-auto pr-1">
+                {activeTab === 'entities' && (
+                  <EntitiesTab selectedType={selectedType} sort={sort} modeConfig={modeConfig} focus={focus} projectId={currentProjectId} />
+                )}
+                {activeTab === 'story-map' && <StoryMapTab projectId={currentProjectId} />}
+              </div>
+              <aside className="w-72 shrink-0 h-full border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-sm overflow-hidden bg-white dark:bg-zinc-900">
+                <InspectorSidebar />
+              </aside>
+            </div>
+          ) : (
+            <div className="h-full overflow-y-auto pr-1">
+              {activeTab === 'timeline' && modeConfig.features.timeline && (
+                <div className="pb-8">
+                  <TimelineTab modeConfig={modeConfig} projectId={currentProjectId} />
+                </div>
+              )}
+              {activeTab === 'storyline' && <StorylineTab />}
+              {activeTab === 'resources' && modeConfig.features.investigationTemplate && (
+                <div className="pb-8"><OsintTab /></div>
+              )}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Tab content — with optional Inspector sidebar */}
-      {showInspector ? (
-        <div className="flex gap-6 items-start">
-          <div className="flex-1 min-w-0">
-            {activeTab === 'entities' && (
-              <EntitiesTab selectedType={selectedType} sort={sort} modeConfig={modeConfig} focus={focus} projectId={currentProjectId} />
-            )}
-            {activeTab === 'story-map' && <StoryMapTab projectId={currentProjectId} />}
-          </div>
-          <aside className="w-72 shrink-0 sticky top-20 h-[calc(100vh-120px)] border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-sm overflow-hidden bg-white dark:bg-zinc-900">
-            <InspectorSidebar />
-          </aside>
-        </div>
-      ) : (
-        <>
-          {activeTab === 'timeline' && modeConfig.features.timeline && (
-            <TimelineTab modeConfig={modeConfig} projectId={currentProjectId} />
-          )}
-          {activeTab === 'storyline' && <StorylineTab />}
-          {activeTab === 'resources' && modeConfig.features.investigationTemplate && (
-            <OsintTab />
-          )}
-        </>
-      )}
-    </div>
+    </EntitiesSearchProvider>
   )
 }

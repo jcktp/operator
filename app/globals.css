@@ -54,6 +54,16 @@ body {
   box-sizing: border-box;
 }
 
+@keyframes timelinePulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
+  50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.0); }
+}
+
+@keyframes briefPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
+  50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.0); }
+}
+
 @keyframes grow {
   from { width: 0% }
   to   { width: 100% }

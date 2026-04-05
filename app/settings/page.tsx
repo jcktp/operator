@@ -50,7 +50,7 @@ export default function SettingsPage() {
       {s.pull.active && (
         <ModelPullOverlay
           pull={s.pull}
-          selectedModel={s.selectedModel}
+          selectedModel={s.pullingModel || s.selectedModel}
           onClose={() => s.setPull(p => ({ ...p, active: false }))}
         />
       )}

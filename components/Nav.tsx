@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio, Globe } from '@/components/icons'
+import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from '@/components/icons'
 import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen } from 'lucide-react'
 import type React from 'react'
 
@@ -81,7 +81,7 @@ export default function Nav() {
   const intakeItems: NavGroupItem[] = [
     { href: '/upload', label: config.navDocuments, icon: Upload },
     { href: '/pulse', label: 'Pulse', icon: Radio },
-    ...(!airGapped ? [{ href: '/browser', label: 'Browser', icon: Globe }] : []),
+    { href: '/files', label: 'Files', icon: FolderOpen },
   ]
 
   // GROUP B: Analysis — library + mode-specific extraNavItems + people

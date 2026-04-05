@@ -6,6 +6,7 @@
 
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { Ollama } from 'ollama'
 import { prisma } from './db'
 import { loadAiSettings } from './settings'
 import { analyzeReport, compareReports, checkResolvedFlags, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist, generateAreaBriefing } from './ai'
@@ -290,6 +291,22 @@ async function processItem(itemId: string): Promise<void> {
   }
 }
 
+// ── Ollama model unload ───────────────────────────────────────────────────────
+// Sending keep_alive: 0 tells Ollama to evict the model from memory immediately,
+// freeing RAM/VRAM and stopping the fans after a batch upload completes.
+async function unloadOllamaModel(): Promise<void> {
+  const provider = process.env.AI_PROVIDER ?? 'ollama'
+  if (provider !== 'ollama') return
+  try {
+    const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
+    const model = process.env.OLLAMA_MODEL ?? 'phi4-mini'
+    const ollama = new Ollama({ host })
+    await ollama.chat({ model, messages: [{ role: 'user', content: '' }], keep_alive: 0 })
+  } catch {
+    // Non-critical — if it fails the model will unload on its own after Ollama's default timeout
+  }
+}
+
 // ── Worker loop ──────────────────────────────────────────────────────────────
 async function runWorker(): Promise<void> {
   if (_workerRunning) return
@@ -318,7 +335,11 @@ async function runWorker(): Promise<void> {
         include: { job: true },
       })
 
-      if (!item) break  // Queue empty — exit worker
+      if (!item) {
+        // Queue empty — unload the model so it stops consuming RAM/CPU immediately
+        unloadOllamaModel().catch(() => {})
+        break
+      }
 
       // Mark job as processing
       await prisma.uploadJob.update({

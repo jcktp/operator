@@ -154,8 +154,8 @@ export const MODES: Record<AppMode, ModeConfig> = {
     acceptedFileTypes: `${BASE_FILE_TYPES},${IMAGE_FILE_TYPES},${AUDIO_FILE_TYPES}`,
     defaultJournalFolders: ['Current Story', 'Sources', 'Raw Notes', 'Background', 'Research'],
     emptyStateTitle: 'No stories yet',
-    emptyStateBody: 'Add your first notes or photos to start building your story archive.',
-    emptyStateCta: 'Add first notes',
+    emptyStateBody: 'Upload your first document or photo to start building your story archive.',
+    emptyStateCta: 'Add first document',
     aiContext: 'You are assisting an investigative journalist. Prioritise verifiable claims, source attribution, factual consistency, and contradictions across notes. Never fabricate quotes or sources.',
     analysisFraming: 'Distinguish verified fact from reported claim from inference — label each explicitly in your analysis. A risk is an unverifiable assertion, a source motive that could invert the narrative, or a gap in the chain of custody. An opportunity is a corroboration lead, a secondary source angle, or an unreported connection worth pursuing. Surface verbatim quotes as separate observations, distinct from paraphrase. Questions should challenge the story: what would disprove this? Who corroborates independently? Flag what is missing as much as what is present.',
     features: {

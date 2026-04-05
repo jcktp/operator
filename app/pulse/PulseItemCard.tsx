@@ -70,9 +70,11 @@ export default function PulseItemCard({ item, isKeywordMode, activeKeywords, sav
         <div className="flex items-center gap-1.5 shrink-0">
           {item.url && (
             <a
-              href={`/browser?url=${encodeURIComponent(item.url)}`}
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
               className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 rounded hover:bg-gray-100 dark:hover:bg-zinc-800"
-              title="Open in Operator Browser"
+              title="Open in browser"
             >
               <ExternalLink size={13} />
             </a>

@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useDispatch } from './DispatchContext'
-import FloatingDispatch from './FloatingDispatch'
 import IdleGuard from './IdleGuard'
 import { useState } from 'react'
 
@@ -37,29 +36,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return <>{children}</>
   }
 
-  // Browser page: full-height, full-width, no padding constraints
-  if (pathname === '/browser') {
-    return (
-      <div className="flex pt-14 h-screen overflow-hidden">
-        <IdleGuard autoLockMinutes={autoLockMinutes} />
-        <main className="flex-1 min-w-0 overflow-hidden">
-          {children}
-        </main>
-      </div>
-    )
-  }
-
   const isReportPage = /^\/reports\/[^/]+/.test(pathname)
+  const isFixedPage = isReportPage || pathname === '/entities' || pathname === '/dashboard' || pathname === '/' || pathname === '/files' || pathname === '/pulse'
 
-  // Report pages: full-height fixed layout, no page scroll — panes scroll internally
-  if (isReportPage) {
+  // Fixed-layout pages: full-height, no page scroll — panes scroll internally
+  if (isFixedPage) {
     return (
       <>
         <IdleGuard autoLockMinutes={autoLockMinutes} />
         <main className="pt-20 h-screen overflow-hidden px-6 sm:px-8 max-w-[1600px] mx-auto flex flex-col">
           {children}
         </main>
-        <FloatingDispatch />
       </>
     )
   }
@@ -89,7 +76,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </a>
         </footer>
       </main>
-      <FloatingDispatch />
     </>
   )
 }

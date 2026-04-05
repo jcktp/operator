@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Trash2, MessageSquare, Plus, AlertTriangle } from 'lucide-react'
 import { formatRelativeDate } from '@/lib/utils'
 import DispatchPanel from './DispatchPanel'
@@ -27,6 +28,16 @@ export default function DispatchPageClient({ chats: initial, context, currentPro
   const [chats, setChats] = useState(initial)
   const [selectedChat, setSelectedChat] = useState<ChatSummary | null>(null)
   const [clearConfirm, setClearConfirm] = useState(false)
+  const searchParams = useSearchParams()
+
+  // Pre-select a chat when linked from the embedded panel (?chat=<id>)
+  useEffect(() => {
+    const chatId = searchParams.get('chat')
+    if (chatId && initial.length > 0) {
+      const match = initial.find(c => c.id === chatId)
+      if (match) setSelectedChat(match)
+    }
+  }, [])
 
   const deleteChat = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()

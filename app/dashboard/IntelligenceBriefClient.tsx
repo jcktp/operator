@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Users, Building2, MapPin, Calendar, AlertTriangle, StickyNote, FileText, ScanSearch, X } from 'lucide-react'
+import { ArrowRight, Users, Building2, MapPin, Calendar, AlertTriangle, StickyNote, FileText, ScanSearch, X, Search, Wand2, Loader2 } from 'lucide-react'
 import { useInspector } from '@/components/InspectorContext'
 import { formatRelativeDate } from '@/lib/utils'
 
@@ -34,6 +34,7 @@ interface Props {
   totalEntities: number
   totalEvents: number
   unverifiedCount: number
+  projectId?: string | null
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -88,7 +89,7 @@ function ContextNotesSidebar() {
   const hasSelection = selected !== null
 
   return (
-    <aside className="w-72 shrink-0 sticky top-20 h-[calc(100vh-120px)] flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl overflow-hidden shadow-sm">
+    <aside className="w-72 shrink-0 h-full flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl overflow-hidden shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800 shrink-0">
         <span className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Context & Notes</span>
@@ -185,17 +186,123 @@ function ContextNotesSidebar() {
   )
 }
 
+// ── Ask bar ──────────────────────────────────────────────────────────────────
+
+const QUESTION_PATTERNS = /^(what|when|who|where|how|which|why|tell me|show me|list|summarize|how many|find)/i
+function isQuestion(text: string) {
+  return QUESTION_PATTERNS.test(text.trim()) || text.trim().endsWith('?')
+}
+
+interface AiAnswer { text: string; sources: Array<{ id: string; title: string }> }
+
+function BriefAskBar({ projectId }: { projectId?: string | null }) {
+  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [answer, setAnswer] = useState<AiAnswer | null>(null)
+  const [error, setError] = useState('')
+
+  const showHint = isQuestion(query.trim()) && query.trim().length > 3
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const q = query.trim()
+    if (!q || !isQuestion(q)) return
+    setLoading(true)
+    setAnswer(null)
+    setError('')
+    try {
+      const res = await fetch('/api/entities-query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, projectId }),
+      })
+      const data = await res.json() as { answer?: string; sources?: Array<{ id: string; title: string }>; error?: string }
+      if (!res.ok || data.error) setError(data.error ?? 'Something went wrong')
+      else setAnswer({ text: data.answer ?? '', sources: data.sources ?? [] })
+    } catch (err) {
+      setError(String(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const clear = () => { setQuery(''); setAnswer(null); setError('') }
+
+  return (
+    <div>
+      <form onSubmit={handleSubmit} className="relative">
+        <div className="relative flex items-center">
+          {showHint
+            ? <Wand2 size={14} className="absolute left-3 text-indigo-400 dark:text-indigo-500 pointer-events-none" />
+            : <Search size={14} className="absolute left-3 text-gray-400 dark:text-zinc-500 pointer-events-none" />
+          }
+          <input
+            value={query}
+            onChange={e => { setQuery(e.target.value); setAnswer(null); setError('') }}
+            placeholder="Ask a question about your intelligence…"
+            className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-600 transition-shadow"
+          />
+          {query && (
+            <button type="button" onClick={clear} className="absolute right-3 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300">
+              <X size={13} />
+            </button>
+          )}
+        </div>
+        {showHint && (
+          <p className="text-[10px] text-indigo-500 dark:text-indigo-400 mt-1 ml-1">Press Enter to ask AI</p>
+        )}
+      </form>
+      {(loading || answer || error) && (
+        <div className="mt-2 rounded-xl border border-indigo-100 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/30 p-3 space-y-2">
+          {loading && (
+            <div className="flex items-center gap-2 text-xs text-indigo-500 dark:text-indigo-400">
+              <Loader2 size={12} className="animate-spin" /> Analysing…
+            </div>
+          )}
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          {answer && (
+            <>
+              <p className="text-sm text-gray-800 dark:text-zinc-200 leading-relaxed">{answer.text}</p>
+              {answer.sources.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1 border-t border-indigo-100 dark:border-indigo-900/40">
+                  {answer.sources.map(s => (
+                    <Link
+                      key={s.id}
+                      href={`/reports/${s.id}`}
+                      className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
+                    >
+                      <FileText size={10} />
+                      {s.title.length > 40 ? s.title.slice(0, 40) + '…' : s.title}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function IntelligenceBriefClient({
-  entityGroups, recentEvents, storySummaries, totalEntities, totalEvents, unverifiedCount,
+  entityGroups, recentEvents, storySummaries, totalEntities, totalEvents, unverifiedCount, projectId,
 }: Props) {
   const { setSelected } = useInspector()
 
   return (
-    <div className="flex gap-6 items-start">
-      {/* Left 70% canvas */}
-      <div className="flex-1 min-w-0 space-y-6">
+    <div className="flex flex-col h-full">
+      {/* Ask bar — fixed, never scrolls */}
+      <div className="shrink-0 pb-3">
+        <BriefAskBar projectId={projectId} />
+      </div>
+
+      {/* Three-column layout */}
+      <div className="flex-1 min-h-0 flex gap-6">
+      {/* Left canvas */}
+      <div className="flex-1 min-w-0 overflow-y-auto space-y-6 pr-1">
 
         {/* Entity summary card */}
         {entityGroups.length > 0 && (
@@ -226,41 +333,6 @@ export default function IntelligenceBriefClient({
                     ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Timeline thread */}
-        {recentEvents.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Timeline</h2>
-              <Link href="/entities?tab=timeline" className="text-xs text-indigo-500 hover:underline flex items-center gap-0.5">
-                Full timeline <ArrowRight size={10} />
-              </Link>
-            </div>
-            <div className="relative border-l-2 border-gray-200 dark:border-zinc-800 ml-1">
-              {recentEvents.map(ev => (
-                <button
-                  key={ev.id}
-                  onClick={() => setSelected({ type: 'entity', name: ev.event.slice(0, 60), entityType: 'date' })}
-                  className="relative pl-6 pb-5 last:pb-0 text-left w-full group"
-                >
-                  <span className="absolute left-[-5px] top-[6px] w-2.5 h-2.5 rounded-full border-2 bg-white dark:bg-zinc-950 border-gray-400 dark:border-zinc-500 group-hover:border-indigo-400 transition-colors" />
-                  <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                    <span className="text-[11px] font-mono text-gray-400 dark:text-zinc-500">{ev.dateText}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400">{ev.report.area}</span>
-                  </div>
-                  <p className="text-sm text-gray-800 dark:text-zinc-200 leading-snug group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">{ev.event}</p>
-                  <Link
-                    href={`/reports/${ev.report.id}`}
-                    onClick={e => e.stopPropagation()}
-                    className="text-xs text-gray-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline mt-0.5 block"
-                  >
-                    {ev.report.title}
-                  </Link>
-                </button>
               ))}
             </div>
           </div>
@@ -299,10 +371,50 @@ export default function IntelligenceBriefClient({
             </div>
           </section>
         )}
+
+        {/* Timeline thread */}
+        {recentEvents.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Timeline</h2>
+              <Link href="/entities?tab=timeline" className="text-xs text-indigo-500 hover:underline flex items-center gap-0.5">
+                Full timeline <ArrowRight size={10} />
+              </Link>
+            </div>
+            <div className="relative border-l-2 border-gray-200 dark:border-zinc-800 ml-1">
+              {recentEvents.map(ev => (
+                <button
+                  key={ev.id}
+                  onClick={() => setSelected({ type: 'entity', name: ev.event.slice(0, 60), entityType: 'date' })}
+                  className="relative pl-6 pb-5 last:pb-0 text-left w-full group"
+                >
+                  <span className="absolute left-0 top-[8px] -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 bg-white dark:bg-zinc-950 border-gray-300 dark:border-zinc-600 transition-all duration-300 group-hover:w-3 group-hover:h-3 group-hover:bg-red-500 group-hover:border-red-500"
+                    style={{ ['--tw-shadow' as string]: 'none' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.animation = 'briefPulse 1.4s ease-in-out infinite' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.animation = '' }}
+                  />
+                  <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                    <span className="text-[11px] font-mono text-gray-400 dark:text-zinc-500">{ev.dateText}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400">{ev.report.area}</span>
+                  </div>
+                  <p className="text-sm text-gray-800 dark:text-zinc-200 leading-snug group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">{ev.event}</p>
+                  <Link
+                    href={`/reports/${ev.report.id}`}
+                    onClick={e => e.stopPropagation()}
+                    className="text-xs text-gray-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline mt-0.5 block"
+                  >
+                    {ev.report.title}
+                  </Link>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Right 30%: Context & Notes */}
+      {/* Context & Notes */}
       <ContextNotesSidebar />
+      </div>
     </div>
   )
 }

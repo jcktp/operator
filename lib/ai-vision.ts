@@ -201,16 +201,16 @@ export async function transcribeAudio(buffer: Buffer, mimeType: string, fileName
         return '[Audio transcription requires a model that supports audio (e.g. gemma4:e2b). Set OLLAMA_AUDIO_MODEL or switch to a model with audio support in Settings.]'
       }
       const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
-      const b64 = buffer.toString('base64')
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Audio transcription timed out after 300s')), 300_000)
       )
+
       const fetchCall = fetch(`${host}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: audioModel,
-          messages: [{ role: 'user', content: TRANSCRIPTION_PROMPT, audio: [b64] }],
+          messages: [{ role: 'user', content: TRANSCRIPTION_PROMPT, audio: [buffer.toString('base64')] }],
           stream: true,
         }),
       }).then(async r => {
@@ -227,6 +227,7 @@ export async function transcribeAudio(buffer: Buffer, mimeType: string, fileName
         }
         return full
       })
+
       const transcript = (await Promise.race([fetchCall, timeout])).trim()
       return transcript || '[Audio stored — transcription model returned empty response]'
     }

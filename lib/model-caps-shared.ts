@@ -61,13 +61,6 @@ export const MODEL_CAPS_REGISTRY: Record<string, ModelCaps> = {
   'gemma4:31b':         { vision: true,  audio: false, contextWindow: 262_144, sizeGB: 20.0 },
   // phi4-multimodal — text + vision + audio, ~8.5 GB
   'phi4-multimodal':    { vision: true,  audio: true,  contextWindow:  16_384, sizeGB: 8.5 },
-  // ── Audio-only (transcription) ─────────────────────────────────────────────
-  // Whisper — pure speech-to-text, no text generation
-  'whisper':            { vision: false, audio: true,  contextWindow: 0, sizeGB: 1.5 },
-  'whisper:small':      { vision: false, audio: true,  contextWindow: 0, sizeGB: 0.6 },
-  'whisper:medium':     { vision: false, audio: true,  contextWindow: 0, sizeGB: 1.5 },
-  'whisper:large':      { vision: false, audio: true,  contextWindow: 0, sizeGB: 3.1 },
-  'whisper:large-v3':   { vision: false, audio: true,  contextWindow: 0, sizeGB: 3.1 },
 }
 
 /**

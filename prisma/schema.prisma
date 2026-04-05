@@ -190,15 +190,6 @@ model TimelineEvent {
   @@index([dateSortKey])
 }
 
-model BrowserBookmark {
-  id        String   @id @default(uuid())
-  url       String
-  title     String
-  favicon   String?
-  createdAt DateTime @default(now())
-
-  @@index([createdAt])
-}
 
 model ReportJournalism {
   id                    String   @id @default(uuid())

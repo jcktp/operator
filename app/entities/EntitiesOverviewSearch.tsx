@@ -2,12 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Search, X, ChevronDown, ChevronRight, ChevronLeft, GitFork } from 'lucide-react'
+import { ChevronDown, ChevronRight, ChevronLeft, GitFork } from 'lucide-react'
 import { useInspector } from '@/components/InspectorContext'
+import { useEntitiesSearch } from './EntitiesSearchContext'
 const PAGE_SIZE = 25
 import { formatRelativeDate } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import FocusEntity from './tabs/FocusEntity'
+
+const QUESTION_PATTERNS = /^(what|when|who|where|how|which|why|tell me|show me|list|summarize|how many|find)/i
+function isQuestion(text: string): boolean {
+  return QUESTION_PATTERNS.test(text.trim()) || text.trim().endsWith('?')
+}
 
 interface EntityEntry {
   name: string
@@ -28,12 +34,14 @@ export default function EntitiesOverviewSearch({
   entityLabels: Record<string, string>
   focus?: string
 }) {
-  const [query, setQuery] = useState('')
+  const { query } = useEntitiesSearch()
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [page, setPage] = useState(1)
   const { setSelected } = useInspector()
 
-  const q = query.trim().toLowerCase()
+  // Don't filter by question text — let AI handle those
+  const rawQ = query.trim().toLowerCase()
+  const q = isQuestion(query.trim()) ? '' : rawQ
   const filtered = q
     ? entities.filter(e => e.name.toLowerCase().includes(q) || e.contexts.some(c => c.toLowerCase().includes(q)))
     : entities
@@ -56,22 +64,6 @@ export default function EntitiesOverviewSearch({
 
   return (
     <>
-      <div className="relative mb-4">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 pointer-events-none" />
-        <input
-          type="text"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Search entities by name or context…"
-          className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 bg-white dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
-        />
-        {query && (
-          <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300">
-            <X size={13} />
-          </button>
-        )}
-      </div>
-
       {q && (
         <p className="text-xs text-gray-400 dark:text-zinc-500 mb-3">
           {filtered.length === 0 ? 'No entities match' : `${filtered.length} entit${filtered.length !== 1 ? 'ies' : 'y'} match`} &ldquo;{query}&rdquo;

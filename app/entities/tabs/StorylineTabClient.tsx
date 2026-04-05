@@ -70,9 +70,9 @@ export default function StorylineTabClient({ stories: initialStories, allReports
   return (
     <div className="flex gap-6 items-start">
       {/* Sidebar — story list */}
-      <aside className="w-56 shrink-0 space-y-2 sticky top-24">
+      <aside className="w-56 shrink-0 space-y-2 sticky top-0">
         {/* Create new */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 p-px">
           <input
             value={newTitle}
             onChange={e => setNewTitle(e.target.value)}

@@ -45,7 +45,7 @@ Operator is a private intelligence workspace. Upload documents, images, and audi
 | **Dispatch** | AI chat with mode-specific personas; has full document context, remembers facts across conversations, and supports web search when enabled in Settings |
 | **Inspector sidebar** | Click any entity or map pin to open a panel showing the report summary, source documents, and connected entities — without leaving the page |
 | **Entities page** | Four-tab hub: entity management, timeline, interactive story map with zoom controls, and AI-assisted storyline builder (Journalism & Legal) — all filtered by active project |
-| **Browser** | In-app web browser with reader and live modes, bookmark management, and one-click save to journal or dispatch |
+| **Files** | Browse and manage files saved by Operator, organised by project and area. Analyse documents directly from the folder view without re-uploading |
 | **Pulse** | Feed aggregator for RSS, Reddit, YouTube, Bluesky, and Mastodon — with keyword monitoring and auto-refresh |
 | **Journal** | Private note-taking with folder organisation and AI grammar correction |
 | **One-pager** | AI-generated executive brief across all documents; export to PDF |

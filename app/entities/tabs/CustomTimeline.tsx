@@ -2,6 +2,12 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useEntitiesSearch } from '../EntitiesSearchContext'
+
+const QUESTION_PATTERNS = /^(what|when|who|where|how|which|why|tell me|show me|list|summarize|how many|find)/i
+function isQuestion(text: string): boolean {
+  return QUESTION_PATTERNS.test(text.trim()) || text.trim().endsWith('?')
+}
 
 export interface TimelineEvent {
   id: string
@@ -52,29 +58,55 @@ function groupLabel(key: string): string {
   return key
 }
 
+// Scale curve for dock-like magnification based on distance from hovered item
+function dockScale(distance: number | null): number {
+  if (distance === null) return 1
+  if (distance === 0) return 1.04
+  if (distance === 1) return 1.02
+  if (distance === 2) return 1.01
+  return 1
+}
+
 interface EventCardProps {
   event: TimelineEvent
   expanded: boolean
   onToggle: () => void
+  hovered: boolean
+  scale: number
+  onMouseEnter: () => void
+  onMouseLeave: () => void
 }
 
-function EventCard({ event, expanded, onToggle }: EventCardProps) {
+function EventCard({ event, expanded, onToggle, hovered, scale, onMouseEnter, onMouseLeave }: EventCardProps) {
   return (
     <div
       className="relative pl-7 cursor-pointer group"
+      style={{
+        transform: `scale(${scale})`,
+        transformOrigin: 'left center',
+        transition: 'transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        zIndex: hovered ? 10 : 1,
+      }}
       onClick={onToggle}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       role="button"
       tabIndex={0}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onToggle()}
     >
-      {/* dot on the timeline line */}
-      <span className={`absolute left-[-4px] top-[7px] w-2.5 h-2.5 rounded-full border-2 transition-all ${
-        expanded
-          ? 'bg-gray-800 dark:bg-zinc-100 border-gray-800 dark:border-zinc-100'
-          : 'bg-white dark:bg-zinc-950 border-gray-400 dark:border-zinc-500 group-hover:border-gray-700 dark:group-hover:border-zinc-300'
-      }`} />
+      {/* dot centered on the timeline line */}
+      <span
+        className={`absolute left-0 top-[10px] -translate-x-1/2 rounded-full border-2 transition-all duration-300 ${
+          expanded
+            ? 'w-3 h-3 bg-red-500 border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.2)]'
+            : hovered
+            ? 'w-3 h-3 bg-red-500 border-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.15)]'
+            : 'w-2.5 h-2.5 bg-white dark:bg-zinc-950 border-gray-300 dark:border-zinc-600'
+        }`}
+        style={hovered && !expanded ? { animation: 'timelinePulse 1.4s ease-in-out infinite' } : undefined}
+      />
 
-      <div className={`pb-5 pr-2 rounded-lg transition-colors ${expanded ? '' : 'group-hover:bg-gray-50/70 dark:group-hover:bg-zinc-800/30'}`}>
+      <div className={`pb-5 pr-2 rounded-lg transition-colors ${expanded ? '' : hovered ? 'bg-gray-50/70 dark:bg-zinc-800/30' : ''}`}>
         {/* date + tags row */}
         <div className="flex flex-wrap items-center gap-1.5 mb-1">
           <span className="text-[11px] font-mono text-gray-400 dark:text-zinc-500 select-none">
@@ -123,11 +155,43 @@ function EventCard({ event, expanded, onToggle }: EventCardProps) {
   )
 }
 
+interface GroupProps {
+  groupEvents: TimelineEvent[]
+  expandedId: string | null
+  onToggle: (id: string) => void
+}
+
+function TimelineGroup({ groupEvents, expandedId, onToggle }: GroupProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+
+  return (
+    <div className="relative border-l-2 border-gray-200 dark:border-zinc-800 ml-1">
+      {groupEvents.map((event, idx) => {
+        const distance = hoveredIndex === null ? null : Math.abs(idx - hoveredIndex)
+        return (
+          <EventCard
+            key={event.id}
+            event={event}
+            expanded={expandedId === event.id}
+            onToggle={() => onToggle(event.id)}
+            hovered={hoveredIndex === idx}
+            scale={dockScale(distance)}
+            onMouseEnter={() => setHoveredIndex(idx)}
+            onMouseLeave={() => setHoveredIndex(null)}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
 export default function CustomTimeline({ events }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [activeArea, setActiveArea] = useState<string | null>(null)
   const [activeStory, setActiveStory] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
+  const { query: contextQuery } = useEntitiesSearch()
+  // Don't filter by question text — AI handles that via the top search bar
+  const search = isQuestion(contextQuery.trim()) ? '' : contextQuery.trim()
 
   const areas = useMemo(
     () => [...new Set(events.map(e => e.area).filter(Boolean))].sort(),
@@ -143,8 +207,8 @@ export default function CustomTimeline({ events }: Props) {
     let result = events
     if (activeArea) result = result.filter(e => e.area === activeArea)
     if (activeStory) result = result.filter(e => e.storyName === activeStory)
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
+    if (search) {
+      const q = search.toLowerCase()
       result = result.filter(
         e =>
           e.event.toLowerCase().includes(q) ||
@@ -155,7 +219,6 @@ export default function CustomTimeline({ events }: Props) {
     return result
   }, [events, activeArea, activeStory, search])
 
-  // Group into ordered buckets: known dates first, then Unknown
   const groups = useMemo(() => {
     const map = new Map<string, TimelineEvent[]>()
     for (const e of filtered) {
@@ -179,14 +242,7 @@ export default function CustomTimeline({ events }: Props) {
     <div className="space-y-4">
       {/* filters row */}
       <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap gap-2 items-center">
-          <input
-            type="search"
-            placeholder="Search events…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-zinc-500 w-48"
-          />
+        <div className="flex items-center gap-2">
           <span className="text-xs text-gray-300 dark:text-zinc-600">{filtered.length} event{filtered.length !== 1 ? 's' : ''}</span>
         </div>
         {stories.length > 0 && (
@@ -194,26 +250,14 @@ export default function CustomTimeline({ events }: Props) {
             <span className="text-[10px] text-gray-400 dark:text-zinc-500 mr-1">Story:</span>
             <button
               onClick={() => setActiveStory(null)}
-              className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
-                activeStory === null
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
-              }`}
-            >
-              All
-            </button>
+              className={`text-xs px-2 py-0.5 rounded-full transition-colors ${activeStory === null ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
+            >All</button>
             {stories.map(story => (
               <button
                 key={story}
                 onClick={() => setActiveStory(activeStory === story ? null : story)}
-                className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
-                  activeStory === story
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
-                }`}
-              >
-                {story}
-              </button>
+                className={`text-xs px-2 py-0.5 rounded-full transition-colors ${activeStory === story ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
+              >{story}</button>
             ))}
           </div>
         )}
@@ -222,26 +266,14 @@ export default function CustomTimeline({ events }: Props) {
             <span className="text-[10px] text-gray-400 dark:text-zinc-500 mr-1">Area:</span>
             <button
               onClick={() => setActiveArea(null)}
-              className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
-                activeArea === null
-                  ? 'bg-gray-800 dark:bg-zinc-200 text-white dark:text-zinc-900'
-                  : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
-              }`}
-            >
-              All
-            </button>
+              className={`text-xs px-2 py-0.5 rounded-full transition-colors ${activeArea === null ? 'bg-gray-800 dark:bg-zinc-200 text-white dark:text-zinc-900' : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
+            >All</button>
             {areas.map(area => (
               <button
                 key={area}
                 onClick={() => setActiveArea(activeArea === area ? null : area)}
-                className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
-                  activeArea === area
-                    ? 'bg-gray-800 dark:bg-zinc-200 text-white dark:text-zinc-900'
-                    : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'
-                }`}
-              >
-                {area}
-              </button>
+                className={`text-xs px-2 py-0.5 rounded-full transition-colors ${activeArea === area ? 'bg-gray-800 dark:bg-zinc-200 text-white dark:text-zinc-900' : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
+              >{area}</button>
             ))}
           </div>
         )}
@@ -255,28 +287,18 @@ export default function CustomTimeline({ events }: Props) {
         <div className="space-y-8">
           {groups.map(([key, groupEvents]) => (
             <div key={key}>
-              {/* group header */}
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-xs font-semibold tracking-widest uppercase text-gray-400 dark:text-zinc-500 shrink-0">
                   {groupLabel(key)}
                 </span>
                 <div className="flex-1 h-px bg-gray-100 dark:bg-zinc-800" />
-                <span className="text-xs text-gray-300 dark:text-zinc-600 shrink-0">
-                  {groupEvents.length}
-                </span>
+                <span className="text-xs text-gray-300 dark:text-zinc-600 shrink-0">{groupEvents.length}</span>
               </div>
-
-              {/* vertical line + events */}
-              <div className="relative border-l-2 border-gray-200 dark:border-zinc-800 ml-1">
-                {groupEvents.map(event => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    expanded={expandedId === event.id}
-                    onToggle={() => toggle(event.id)}
-                  />
-                ))}
-              </div>
+              <TimelineGroup
+                groupEvents={groupEvents}
+                expandedId={expandedId}
+                onToggle={toggle}
+              />
             </div>
           ))}
         </div>

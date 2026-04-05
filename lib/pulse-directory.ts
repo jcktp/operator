@@ -8,8 +8,8 @@ export const PULSE_DIRECTORY: DirectoryEntry[] = [
   // Global
   { name: 'BBC News',              category: 'Global',        url: 'https://feeds.bbci.co.uk/news/rss.xml' },
   { name: 'The New York Times',    category: 'Global',        url: 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml' },
-  { name: 'Reuters',               category: 'Global',        url: 'https://www.reutersagency.com/feed/' },
-  { name: 'Associated Press',      category: 'Global',        url: 'https://apnews.com/rss/all' },
+  { name: 'Deutsche Welle',         category: 'Global',        url: 'https://rss.dw.com/rdf/rss-en-all' },
+  { name: 'France 24',             category: 'Global',        url: 'https://www.france24.com/en/rss' },
   { name: 'The Guardian',          category: 'Global',        url: 'https://www.theguardian.com/world/rss' },
   { name: 'Al Jazeera',            category: 'Global',        url: 'https://www.aljazeera.com/xml/rss/all.xml' },
   { name: 'NPR',                   category: 'Global',        url: 'https://feeds.npr.org/1001/rss.xml' },
