@@ -4,10 +4,13 @@ import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
 import { analyzeReport, extractEntities, extractTimeline } from '@/lib/ai'
 import { getModeConfig } from '@/lib/mode'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const deny = await requireAuth(req)
   if (deny) return deny
+  const limited = checkRateLimit(req, { maxRequests: 10, windowMs: 60_000 })
+  if (limited) return limited
   const { id } = await params
 
   const report = await prisma.report.findUnique({

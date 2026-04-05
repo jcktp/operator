@@ -1,5 +1,5 @@
 import mammoth from 'mammoth'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import Papa from 'papaparse'
 
 export interface ParseResult {
@@ -43,7 +43,7 @@ export async function extractContent(buffer: Buffer, fileType: string): Promise<
       return { ...r, text: normalizeContent(r.text) }
     }
     case 'xlsx':
-    case 'xls':  return extractExcel(buffer)
+    case 'xls':  return await extractExcel(buffer)
     case 'csv':  return extractCsv(buffer)
     case 'txt':  return { text: normalizeContent(buffer.toString('utf-8')) }
     case 'md':   return { text: buffer.toString('utf-8') }   // keep markdown structure intact
@@ -85,22 +85,37 @@ async function extractWord(buffer: Buffer): Promise<ParseResult> {
   return { text: textResult.value, displayContent: htmlResult.value }
 }
 
-function extractExcel(buffer: Buffer): ParseResult {
-  const workbook = XLSX.read(buffer, { type: 'buffer' })
+async function extractExcel(buffer: Buffer): Promise<ParseResult> {
+  const workbook = new ExcelJS.Workbook()
+  await workbook.xlsx.load(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer)
+
   const textLines: string[] = []
   const sheets: Array<{ name: string; rows: string[][] }> = []
 
-  for (const sheetName of workbook.SheetNames) {
-    const sheet = workbook.Sheets[sheetName]
-    // For text (AI analysis): CSV format
-    const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false })
-    textLines.push(`=== Sheet: ${sheetName} ===`, csv)
+  workbook.eachSheet(worksheet => {
+    const rows: string[][] = []
+    worksheet.eachRow({ includeEmpty: false }, row => {
+      const cells = (row.values as ExcelJS.CellValue[]).slice(1) // index 0 is always null in exceljs
+      const strs = cells.map(c => {
+        if (c == null) return ''
+        if (typeof c === 'object' && 'richText' in (c as object)) {
+          return (c as ExcelJS.CellRichTextValue).richText.map(r => r.text).join('')
+        }
+        if (typeof c === 'object' && 'result' in (c as object)) {
+          return String((c as ExcelJS.CellFormulaValue).result ?? '')
+        }
+        if (typeof c === 'object' && 'text' in (c as object)) {
+          return String((c as { text: string }).text)
+        }
+        return String(c)
+      })
+      if (strs.some(s => s !== '')) rows.push(strs)
+    })
 
-    // For display: structured rows
-    const aoa = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: '' })
-    const rows = (aoa as string[][]).filter(r => r.some(c => c !== '' && c != null))
-    sheets.push({ name: sheetName, rows: rows.map(r => r.map(c => String(c ?? ''))) })
-  }
+    const csv = rows.map(r => r.join(',')).join('\n')
+    textLines.push(`=== Sheet: ${worksheet.name} ===`, csv)
+    sheets.push({ name: worksheet.name, rows })
+  })
 
   return {
     text: textLines.join('\n'),

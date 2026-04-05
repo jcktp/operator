@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { dispatchChatStream } from '@/lib/ai'
 import { loadAiSettings } from '@/lib/settings'
+import { checkRateLimit } from '@/lib/rate-limit'
 import type { PersonaId } from '@/lib/personas'
 
 export async function POST(req: NextRequest) {
   const deny = await requireAuth(req)
   if (deny) return deny
+  const limited = checkRateLimit(req, { maxRequests: 30, windowMs: 60_000 })
+  if (limited) return limited
   try {
     const { messages, context, persona, userMemory } = await req.json() as {
       messages: Array<{ role: 'user' | 'assistant'; content: string }>

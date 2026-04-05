@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
 import { loadAiSettings } from '@/lib/settings'
+import { checkRateLimit } from '@/lib/rate-limit'
 import { extractContent, getFileType, IMAGE_TYPES, AUDIO_TYPES, getAudioMimeType } from '@/lib/parsers'
 import { saveReportFile } from '@/lib/reports-folder'
 import { kickWorker } from '@/lib/upload-queue'
@@ -17,6 +18,8 @@ import { canTranscribeAudio, audioUnavailableReason } from '@/lib/model-capabili
 export async function POST(req: NextRequest) {
   const deny = await requireAuth(req)
   if (deny) return deny
+  const limited = checkRateLimit(req, { maxRequests: 20, windowMs: 60_000 })
+  if (limited) return limited
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
