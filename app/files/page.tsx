@@ -37,8 +37,13 @@ export default async function FilesPage() {
   const root = getReportsRoot()
   const initialEntries = listDir(root)
 
-  // Fetch project names so the client can colour project folders distinctly
-  const projects = await prisma.project.findMany({ select: { name: true } })
+  // Fetch project names for the current mode so the client can colour project folders distinctly
+  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const currentMode = modeRow?.value ?? ''
+  const projects = await prisma.project.findMany({
+    where: { OR: [{ mode: '' }, { mode: currentMode }] },
+    select: { name: true },
+  })
   const projectFolderNames = new Set(projects.map(p => sanitizeProjectName(p.name)))
 
   return <FilesClient initialEntries={initialEntries} projectFolderNames={projectFolderNames} />

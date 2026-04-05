@@ -146,6 +146,7 @@ model JournalEntry {
   title     String    @default("Untitled")
   folder    String    @default("General")
   content   String    @default("")
+  mode      String    @default("")  // app mode; "" = visible in all modes (legacy)
   weekStart DateTime?
   projectId String?
   project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)

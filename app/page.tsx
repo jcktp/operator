@@ -69,16 +69,26 @@ export default async function OverviewPage({
   const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
 
   // Fetch project context first so the report query can filter at DB level
-  const [modeRow, currentProjectSetting, projectCount] = await Promise.all([
+  const [modeRow, currentProjectSetting] = await Promise.all([
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
     prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
-    prisma.project.count(),
   ])
-  const modeConfig = getModeConfig(modeRow?.value)
-  const currentProjectId = currentProjectSetting?.value || null
+  const currentMode = modeRow?.value ?? ''
+  const modeConfig = getModeConfig(currentMode)
+  const modeWhere = { OR: [{ mode: '' }, { mode: currentMode }] }
 
-  // First-run: no projects yet → prompt to create one
-  if (projectCount === 0) {
+  // Validate that current project belongs to the active mode
+  const storedProjectId = currentProjectSetting?.value || null
+  let currentProjectId: string | null = storedProjectId
+  if (storedProjectId) {
+    const proj = await prisma.project.findUnique({ where: { id: storedProjectId }, select: { mode: true } })
+    if (proj && proj.mode !== '' && proj.mode !== currentMode) currentProjectId = null
+  }
+
+  const modeProjectCount = await prisma.project.count({ where: modeWhere })
+
+  // First-run: no projects in this mode yet → prompt to create one
+  if (modeProjectCount === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-950 rounded-2xl flex items-center justify-center mb-4">
@@ -101,7 +111,7 @@ export default async function OverviewPage({
   const [reports_final, directs, activeProject] = await Promise.all([
     prisma.report.findMany({
       where: {
-        ...(currentProjectId ? { projectId: currentProjectId } : {}),
+        ...(currentProjectId ? { projectId: currentProjectId } : modeWhere),
         ...(fromDate || toDate ? {
           createdAt: {
             ...(fromDate ? { gte: fromDate } : {}),

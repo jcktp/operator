@@ -54,12 +54,21 @@ export default async function DashboardPage({
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
     prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
   ])
-  const currentProjectId = projectSetting?.value || null
+  const currentMode = modeRow?.value ?? ''
+  const modeWhere = { OR: [{ mode: '' }, { mode: currentMode }] }
+
+  // Validate current project belongs to active mode
+  const storedProjectId = projectSetting?.value || null
+  let currentProjectId: string | null = storedProjectId
+  if (storedProjectId) {
+    const proj = await prisma.project.findUnique({ where: { id: storedProjectId }, select: { mode: true } })
+    if (proj && proj.mode !== '' && proj.mode !== currentMode) currentProjectId = null
+  }
 
   const [allReports, directs] = await Promise.all([
     prisma.report.findMany({
       where: {
-        ...(currentProjectId ? { projectId: currentProjectId } : {}),
+        ...(currentProjectId ? { projectId: currentProjectId } : modeWhere),
         ...(filterArea ? { area: filterArea } : {}),
         ...(filterDirect ? { directReportId: filterDirect } : {}),
         ...(fromDate || toDate ? {
@@ -74,7 +83,7 @@ export default async function DashboardPage({
     }),
     prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
   ])
-  const modeConfig = getModeConfig(modeRow?.value)
+  const modeConfig = getModeConfig(currentMode)
 
   // Fetch recent timeline events for modes that have the timeline feature
   const recentEvents = modeConfig.features.timeline
@@ -145,7 +154,7 @@ export default async function DashboardPage({
   }
 
   const allAreas = await prisma.report.findMany({
-    where: currentProjectId ? { projectId: currentProjectId } : undefined,
+    where: currentProjectId ? { projectId: currentProjectId } : modeWhere,
     select: { area: true }, distinct: ['area'], orderBy: { area: 'asc' },
   })
 

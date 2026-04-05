@@ -5,16 +5,18 @@ import ProjectsClient from './ProjectsClient'
 export const dynamic = 'force-dynamic'
 
 export default async function ProjectsPage() {
-  const [projectRows, modeRow, currentSetting] = await Promise.all([
-    prisma.project.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: { _count: { select: { reports: true } } },
-    }),
+  const [modeRow, currentSetting] = await Promise.all([
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
     prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
   ])
+  const currentMode = modeRow?.value ?? ''
+  const modeConfig = getModeConfig(currentMode)
 
-  const modeConfig = getModeConfig(modeRow?.value)
+  const projectRows = await prisma.project.findMany({
+    where: { OR: [{ mode: '' }, { mode: currentMode }] },
+    orderBy: { createdAt: 'desc' },
+    include: { _count: { select: { reports: true } } },
+  })
 
   const projects = projectRows.map(p => ({
     id: p.id,

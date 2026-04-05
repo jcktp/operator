@@ -31,12 +31,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ entry })
     }
 
-    // Create new
+    // Create new — stamp with current mode so it stays mode-scoped
+    const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
     const entry = await prisma.journalEntry.create({
       data: {
         title: title ?? 'Untitled',
         folder: folder ?? 'General',
         content: content ?? '',
+        mode: modeRow?.value ?? '',
         weekStart: null,
         projectId: projectId ?? null,
       },

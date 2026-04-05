@@ -24,12 +24,21 @@ export default async function LibraryPage({
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
     prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
   ])
-  const modeConfig = getModeConfig(modeRow?.value)
-  const currentProjectId = currentProjectSetting?.value || null
+  const currentMode = modeRow?.value ?? ''
+  const modeConfig = getModeConfig(currentMode)
+  const modeWhere = { OR: [{ mode: '' }, { mode: currentMode }] }
+
+  // Validate current project belongs to active mode
+  const storedProjectId = currentProjectSetting?.value || null
+  let currentProjectId: string | null = storedProjectId
+  if (storedProjectId) {
+    const proj = await prisma.project.findUnique({ where: { id: storedProjectId }, select: { mode: true } })
+    if (proj && proj.mode !== '' && proj.mode !== currentMode) currentProjectId = null
+  }
 
   const [allReports, directs] = await Promise.all([
     prisma.report.findMany({
-      where: currentProjectId ? { projectId: currentProjectId } : undefined,
+      where: currentProjectId ? { projectId: currentProjectId } : modeWhere,
       orderBy: { createdAt: 'desc' },
       include: { directReport: true },
     }),

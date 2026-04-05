@@ -12,13 +12,15 @@ export default async function MetricsPage() {
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
     prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
   ])
-  const modeConfig = getModeConfig(modeRow?.value)
+  const currentMode = modeRow?.value ?? ''
+  const modeConfig = getModeConfig(currentMode)
   const currentProjectId = projectSetting?.value || null
 
   if (!modeConfig.features.metricsBoard) notFound()
 
+  const modeWhere = { OR: [{ mode: '' }, { mode: currentMode }] }
   const reports = await prisma.report.findMany({
-    where: { metrics: { not: null }, ...(currentProjectId ? { projectId: currentProjectId } : {}) },
+    where: { metrics: { not: null }, ...(currentProjectId ? { projectId: currentProjectId } : modeWhere) },
     orderBy: { createdAt: 'desc' },
     select: { id: true, title: true, area: true, reportDate: true, createdAt: true, metrics: true,
       directReport: { select: { name: true } } },
