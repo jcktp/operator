@@ -318,6 +318,7 @@ export default function SettingsPage() {
                   customVisionModel={s.customVisionModel} setCustomVisionModel={s.setCustomVisionModel}
                   savedVisionModel={s.savedVisionModel}
                   ollamaAudioModel={s.ollamaAudioModel} setOllamaAudioModel={s.setOllamaAudioModel}
+                  customAudioModel={s.customAudioModel} setCustomAudioModel={s.setCustomAudioModel}
                   savedAudioModel={s.savedAudioModel}
                   modelSetupMode={s.modelSetupMode} setModelSetupMode={s.setModelSetupMode}
                 />

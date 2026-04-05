@@ -4,6 +4,8 @@ import { logAction } from '@/lib/audit'
 import { requireAuth } from '@/lib/api-auth'
 
 export async function GET(req: NextRequest) {
+  const authError = await requireAuth(req)
+  if (authError) return authError
   const { searchParams } = new URL(req.url)
   const area = searchParams.get('area')
   const directReportId = searchParams.get('directReportId')

@@ -10,7 +10,6 @@ import { loadAiSettings } from '@/lib/settings'
 import { extractContent, getFileType, IMAGE_TYPES, AUDIO_TYPES, getAudioMimeType } from '@/lib/parsers'
 import { saveReportFile } from '@/lib/reports-folder'
 import { kickWorker } from '@/lib/upload-queue'
-import { join } from 'path'
 import { extractImageMetadata } from '@/lib/image-metadata'
 import { scanFile } from '@/lib/file-scan'
 import { canTranscribeAudio, audioUnavailableReason } from '@/lib/model-capabilities'
@@ -51,13 +50,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: audioUnavailableReason() }, { status: 422 })
     }
 
-    // Save file to disk (fast)
-    let savedFileName = file.name
+    // Look up project name for folder scoping
+    let projectName: string | undefined
+    if (projectId) {
+      const proj = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } })
+      projectName = proj?.name ?? undefined
+    }
+
+    // Save file to disk (fast) — returns relative path within getReportsRoot()
     let savedFilePath: string | null = null
     try {
-      const fullPath = saveReportFile(buffer, file.name, area)
-      savedFileName = fullPath.split('/').pop() ?? file.name
-      savedFilePath = join(area, savedFileName)
+      savedFilePath = saveReportFile(buffer, file.name, area, projectName)
     } catch (e) {
       console.warn('[upload-background] Could not save to reports folder:', e)
     }
@@ -70,12 +73,12 @@ export async function POST(req: NextRequest) {
       // Audio transcription is deferred to the background worker.
       // Store the mime type in displayContent so the worker can pass it to transcribeAudio.
       rawContent = `[Audio: ${file.name}]`
-      displayContent = `audio:${join(area, savedFileName)}\n${getAudioMimeType(fileType)}`
+      displayContent = `audio:${savedFilePath ?? ''}\n${getAudioMimeType(fileType)}`
     } else if (isImage) {
       // Vision analysis is deferred to the background worker so the upload response
       // is fast and model-swapping time doesn't block the HTTP request.
       rawContent = `[Image: ${file.name}]`
-      const imagePath = `image:${join(area, savedFileName)}`
+      const imagePath = `image:${savedFilePath ?? ''}`
       const meta = await extractImageMetadata(buffer, file.name, file.size) ?? {}
       // Store OCR flag inside metadata so the worker can read it without a schema change
       if (extractText) meta['_ocr'] = 'true'

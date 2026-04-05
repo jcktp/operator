@@ -11,7 +11,7 @@ import { loadAiSettings } from './settings'
 import { analyzeReport, compareReports, checkResolvedFlags, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist, generateAreaBriefing } from './ai'
 import { getModeConfig } from './mode'
 import { describeImage, transcribeAudio } from './ai-vision'
-import { getMimeType } from './parsers'
+import { getMimeType, normalizeContent } from './parsers'
 import { getReportsRoot } from './reports-folder'
 
 // ── Global worker state ──────────────────────────────────────────────────────
@@ -80,7 +80,10 @@ async function processItem(itemId: string): Promise<void> {
         const fullPath = join(getReportsRoot(), item.savedFilePath)
         const buffer = readFileSync(fullPath)
         const mimeType = getMimeType(item.fileType.toLowerCase())
-        const description = await describeImage(buffer, mimeType, extractText)
+        const raw = await describeImage(buffer, mimeType, extractText)
+        // Normalise OCR output — removes page numbers, decorators, repeated headers, and
+        // collapses whitespace so the text model gets clean input for structured analysis.
+        const description = extractText && !raw.startsWith('[') ? normalizeContent(raw) : raw
         // Update rawContent in DB so UI reflects the result immediately
         await prisma.uploadJobItem.update({
           where: { id: itemId },

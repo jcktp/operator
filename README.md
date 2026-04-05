@@ -221,6 +221,29 @@ Enable in **Settings → Remote** to get a public URL others can use to submit f
 
 ---
 
+## Development
+
+### Running tests
+
+```bash
+npm test                  # all tests
+npm run test:unit         # unit tests only (fast, no DB)
+npm run test:integration  # integration tests (uses a real test SQLite DB)
+npm run test:watch        # watch mode for active development
+npm run test:coverage     # generate coverage report
+npm run test:smoke        # smoke test — requires the dev server to be running
+```
+
+The test suite covers:
+- **Unit tests** — pure functions in `lib/` (parsers, utilities, auth crypto, model capabilities)
+- **Integration tests** — database-backed functions using an isolated test database
+
+### API reference
+
+See [`docs/api.md`](./docs/api.md) for a full reference of all API routes with request/response shapes.
+
+---
+
 ## License
 
 Released under **BSL 1.1**. Non-commercial use is free. Commercial use (deploying as or within a product or service offered to third parties) requires a commercial license. Converts to MIT on January 1, 2032.

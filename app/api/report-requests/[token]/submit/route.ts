@@ -67,8 +67,16 @@ export async function POST(
       return NextResponse.json({ error: 'File appears to be empty or unreadable' }, { status: 422 })
     }
 
+    // Look up project name for folder scoping
+    let projectName: string | undefined
+    if (request.projectId) {
+      const proj = await prisma.project.findUnique({ where: { id: request.projectId }, select: { name: true } })
+      projectName = proj?.name ?? undefined
+    }
+
     // Save to reports folder
-    try { saveReportFile(buffer, fileName, request.area) } catch {}
+    let savedFilePath: string | null = null
+    try { savedFilePath = saveReportFile(buffer, fileName, request.area, projectName) } catch {}
 
     // Resolve directReportId — or auto-create contact from submitter name
     let resolvedDirectId = request.directReportId || null
@@ -100,6 +108,7 @@ export async function POST(
         area: request.area,
         directReportId: resolvedDirectId,
         projectId: request.projectId || null,
+        filePath: savedFilePath,
         reportDate,
         summary: null,
         metrics: null,

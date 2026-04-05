@@ -64,7 +64,8 @@ export interface Metric {
 
 /** Parse and sanitise a metrics JSON string, dropping any entries where label or value is not a plain string. */
 export function parseMetrics(json: string | null | undefined): Metric[] {
-  const raw = parseJsonSafe<unknown[]>(json ?? null, [])
+  const parsed = parseJsonSafe<unknown>(json ?? null, [])
+  const raw = Array.isArray(parsed) ? parsed : []
   return raw.filter((m): m is Metric => {
     if (!m || typeof m !== 'object') return false
     const o = m as Record<string, unknown>

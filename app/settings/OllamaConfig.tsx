@@ -137,6 +137,8 @@ interface Props {
   savedVisionModel: string
   ollamaAudioModel: string
   setOllamaAudioModel: (v: string) => void
+  customAudioModel: string
+  setCustomAudioModel: (v: string) => void
   savedAudioModel: string
   modelSetupMode: ModelSetupMode
   setModelSetupMode: (m: ModelSetupMode) => void
@@ -153,7 +155,9 @@ export default function OllamaConfig({
   ollamaVisionModel, setOllamaVisionModel,
   customVisionModel, setCustomVisionModel,
   savedVisionModel,
-  ollamaAudioModel, setOllamaAudioModel, savedAudioModel,
+  ollamaAudioModel, setOllamaAudioModel,
+  customAudioModel, setCustomAudioModel,
+  savedAudioModel,
   modelSetupMode, setModelSetupMode,
 }: Props) {
   const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'ok' | 'error' | 'idle'>('idle')
@@ -363,13 +367,13 @@ export default function OllamaConfig({
               <ModelRadioList
                 models={AUDIO_MODELS}
                 selected={ollamaAudioModel}
-                onSelect={v => { setOllamaAudioModel(v) }}
+                onSelect={v => { setOllamaAudioModel(v); setCustomAudioModel('') }}
                 availableModels={availableModels}
                 savedId={savedAudioModel}
                 savedProvider={savedProvider}
                 systemRamGb={systemRamGb}
-                customValue={AUDIO_MODELS.some(m => m.id === ollamaAudioModel) ? '' : ollamaAudioModel}
-                onCustomChange={v => setOllamaAudioModel(v)}
+                customValue={customAudioModel}
+                onCustomChange={v => { setCustomAudioModel(v); if (v) setOllamaAudioModel('') }}
                 customPlaceholder="Or enter any audio-capable model"
                 radioName="audio-model"
               />

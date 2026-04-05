@@ -6,7 +6,6 @@ import { extractContent, getFileType, IMAGE_TYPES, AUDIO_TYPES, getMimeType, get
 import { analyzeReport, compareReports, checkResolvedFlags, describeImage, transcribeAudio, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist, generateAreaBriefing } from '@/lib/ai'
 import { saveReportFile } from '@/lib/reports-folder'
 import { logAction } from '@/lib/audit'
-import { join } from 'path'
 import { getModeConfig } from '@/lib/mode'
 import { scanFile } from '@/lib/file-scan'
 import { canTranscribeAudio, audioUnavailableReason } from '@/lib/model-capabilities'
@@ -26,6 +25,8 @@ export async function POST(req: NextRequest) {
     if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
     if (!area) return NextResponse.json({ error: 'Area is required' }, { status: 400 })
 
+    const projectId = formData.get('projectId') as string | null
+
     const fileType = getFileType(file.name)
     const buffer = Buffer.from(await file.arrayBuffer())
     const isImage = IMAGE_TYPES.has(fileType.toLowerCase())
@@ -42,13 +43,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: audioUnavailableReason() }, { status: 422 })
     }
 
-    // Save original file to ~/Documents/Operator Reports/{area}/
-    let savedFileName = file.name
+    // Look up project name for folder scoping
+    let projectName: string | undefined
+    if (projectId) {
+      const proj = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } })
+      projectName = proj?.name ?? undefined
+    }
+
+    // Save original file — returns relative path within getReportsRoot()
     let savedFilePath: string | null = null
     try {
-      const fullPath = saveReportFile(buffer, file.name, area)
-      savedFileName = fullPath.split('/').pop() ?? file.name
-      savedFilePath = join(area, savedFileName)
+      savedFilePath = saveReportFile(buffer, file.name, area, projectName)
     } catch (e) {
       console.warn('Could not save to reports folder:', e)
     }
@@ -99,7 +104,6 @@ export async function POST(req: NextRequest) {
     if (isImage) {
       const mimeType = getMimeType(fileType)
       const description = await describeImage(buffer, mimeType)
-      const relativePath = join(area, savedFileName)
 
       const report = await prisma.report.create({
         data: {
@@ -108,12 +112,13 @@ export async function POST(req: NextRequest) {
           fileType,
           fileSize: file.size,
           rawContent: description,
-          displayContent: `image:${relativePath}`,
-          imagePath: relativePath,
+          displayContent: savedFilePath ? `image:${savedFilePath}` : null,
+          imagePath: savedFilePath,
           filePath: savedFilePath,
           area,
           directReportId: directReportId || null,
           reportDate: reportDate ? new Date(reportDate) : null,
+          projectId: projectId || null,
           summary: description.startsWith('[') ? null : description.slice(0, 300),
         },
         include: { directReport: true },

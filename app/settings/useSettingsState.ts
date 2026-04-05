@@ -29,6 +29,7 @@ export function useSettingsState() {
   const [savedVisionModel, setSavedVisionModel] = useState('llava-phi3')
   const [customVisionModel, setCustomVisionModel] = useState('')
   const [ollamaAudioModel, setOllamaAudioModel] = useState('')
+  const [customAudioModel, setCustomAudioModel] = useState('')
   const [savedAudioModel, setSavedAudioModel] = useState('')
   const [modelSetupMode, setModelSetupMode] = useState<ModelSetupMode>('text-vision')
   const [ceoName, setCeoName] = useState('')
@@ -69,8 +70,14 @@ export function useSettingsState() {
       setSavedModel(s.ollama_model ?? 'phi4-mini')
       setOllamaVisionModel(s.ollama_vision_model ?? 'llava-phi3')
       setSavedVisionModel(s.ollama_vision_model ?? 'llava-phi3')
-      setOllamaAudioModel(s.ollama_audio_model ?? '')
-      setSavedAudioModel(s.ollama_audio_model ?? '')
+      const savedAudio = s.ollama_audio_model ?? ''
+      const knownAudioIds = ['whisper:small', 'whisper:medium', 'gemma4:e2b', 'gemma4:e4b', 'phi4-multimodal']
+      if (savedAudio && !knownAudioIds.includes(savedAudio)) {
+        setOllamaAudioModel(''); setCustomAudioModel(savedAudio)
+      } else {
+        setOllamaAudioModel(savedAudio); setCustomAudioModel('')
+      }
+      setSavedAudioModel(savedAudio)
       // Derive setup mode from saved settings
       const primaryCaps = getModelCapsClient(s.ollama_model ?? 'phi4-mini')
       if (primaryCaps.vision) {
@@ -202,6 +209,19 @@ export function useSettingsState() {
       await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedVisionModel }) }).catch(() => {})
     }
 
+    // Pull audio model if it changed (full-split mode only)
+    const audioModel = customAudioModel.trim() || ollamaAudioModel.trim()
+    const audioModelChanged = modelSetupMode === 'full-split' && audioModel !== savedAudioModel
+    if (aiProvider === 'ollama' && audioModelChanged && audioModel) {
+      try {
+        await pullModel(audioModel)
+      } catch { /* non-critical — audio model pull failed, continue */ }
+    }
+    // Remove old audio model if it was replaced
+    if (aiProvider === 'ollama' && audioModelChanged && savedAudioModel && savedAudioModel !== audioModel) {
+      await fetch('/api/model-remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: savedAudioModel }) }).catch(() => {})
+    }
+
     // If switching from Ollama to cloud and user opted to remove local models, remove them
     const switchingToCloud = savedProvider === 'ollama' && aiProvider !== 'ollama'
     if (switchingToCloud && removeOllamaModels) {
@@ -216,7 +236,7 @@ export function useSettingsState() {
       saveSetting('ollama_host', ollamaHost),
       saveSetting('ollama_model', selectedModel),
       saveSetting('ollama_vision_model', effectiveVisionModel),
-      saveSetting('ollama_audio_model', ollamaAudioModel.trim()),
+      saveSetting('ollama_audio_model', audioModel),
       saveSetting('ollama_web_access', webAccess ? 'true' : 'false'),
       saveSetting('ceo_name', ceoName),
       saveSetting('company_name', companyName),
@@ -248,7 +268,7 @@ export function useSettingsState() {
 
     setSavedModel(selectedModel)
     setSavedVisionModel(effectiveVisionModel)
-    setSavedAudioModel(ollamaAudioModel.trim())
+    setSavedAudioModel(audioModel)
     setSavedProvider(aiProvider)
     setSavedMode(appMode)
     setMode(appMode)
@@ -322,6 +342,7 @@ export function useSettingsState() {
     customVisionModel, setCustomVisionModel,
     // Ollama audio model
     ollamaAudioModel, setOllamaAudioModel,
+    customAudioModel, setCustomAudioModel,
     savedAudioModel,
     // Computed
     selectedModel, modelChanged, switchingToOllama, needsPull,
