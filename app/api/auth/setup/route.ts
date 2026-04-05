@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isSetupComplete, setupAuth, SESSION_COOKIE } from '@/lib/auth'
+import { logAction } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   if (await isSetupComplete()) {
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
 
   const token = await setupAuth(name.trim(), role?.trim() ?? '', password, appMode)
 
+  void logAction('auth:setup', `Account created for ${name.trim()}`)
   const res = NextResponse.json({ ok: true })
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,

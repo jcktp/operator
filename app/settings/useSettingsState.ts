@@ -80,14 +80,18 @@ export function useSettingsState() {
         setOllamaAudioModel(savedAudio); setCustomAudioModel('')
       }
       setSavedAudioModel(savedAudio)
-      // Derive setup mode from saved settings
-      const primaryCaps = getModelCapsClient(s.ollama_model ?? 'phi4-mini')
-      if (primaryCaps.vision) {
-        setModelSetupMode('all-in-one')
-      } else if (s.ollama_audio_model) {
-        setModelSetupMode('full-split')
+      // Load saved setup mode, fall back to deriving it for backwards compat
+      if (s.model_setup_mode === 'all-in-one' || s.model_setup_mode === 'text-vision' || s.model_setup_mode === 'full-split') {
+        setModelSetupMode(s.model_setup_mode as ModelSetupMode)
       } else {
-        setModelSetupMode('text-vision')
+        const primaryCaps = getModelCapsClient(s.ollama_model ?? 'phi4-mini')
+        if (primaryCaps.vision) {
+          setModelSetupMode('all-in-one')
+        } else if (s.ollama_audio_model) {
+          setModelSetupMode('full-split')
+        } else {
+          setModelSetupMode('text-vision')
+        }
       }
       setCeoName(s.ceo_name ?? '')
       setCompanyName(s.company_name ?? '')
@@ -219,7 +223,8 @@ export function useSettingsState() {
     }
 
     // Pull audio model if it changed OR if it's not locally present (full-split mode only)
-    const audioModel = customAudioModel.trim() || ollamaAudioModel.trim()
+    // Clear audio model when not in full-split so re-deriving setup mode stays correct
+    const audioModel = modelSetupMode === 'full-split' ? (customAudioModel.trim() || ollamaAudioModel.trim()) : ''
     const audioModelChanged = modelSetupMode === 'full-split' && audioModel !== savedAudioModel
     let isAudioModelLocal = false
     if (aiProvider === 'ollama' && modelSetupMode === 'full-split' && audioModel) {
@@ -256,6 +261,7 @@ export function useSettingsState() {
 
     await Promise.all([
       saveSetting('app_mode', appMode),
+      saveSetting('model_setup_mode', modelSetupMode),
       saveSetting('ollama_host', ollamaHost),
       saveSetting('ollama_model', selectedModel),
       saveSetting('ollama_vision_model', effectiveVisionModel),

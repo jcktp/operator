@@ -336,6 +336,93 @@ function GlossaryPanel({ appMode }: { appMode: AppMode }) {
   )
 }
 
+// ── Area briefing card (collapsible) ─────────────────────────────────────────
+
+function AreaBriefingCard({
+  briefing, notes, onNotesChange, onRefresh, onClear, onSaveNotes,
+  refreshing, clearing, saving,
+}: {
+  briefing: AreaBriefing
+  notes: string
+  onNotesChange: (v: string) => void
+  onRefresh: () => void
+  onClear: () => void
+  onSaveNotes: () => void
+  refreshing: boolean
+  clearing: boolean
+  saving: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const notesChanged = notes !== (briefing.userNotes ?? '')
+
+  return (
+    <div className="border border-gray-200 dark:border-zinc-700 rounded-xl overflow-hidden">
+      {/* Header — always visible */}
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-gray-900 dark:text-zinc-50">{briefing.area}</p>
+          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">
+            {briefing.reportCount} report{briefing.reportCount !== 1 ? 's' : ''} · updated {new Date(briefing.updatedAt).toLocaleDateString()}
+            {briefing.userNotes && <span className="ml-1.5 text-indigo-500">+ your notes</span>}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); onRefresh() }}
+            disabled={refreshing || clearing}
+            className={cn('flex items-center gap-1 px-2 py-1 rounded-md border border-gray-200 dark:border-zinc-700 text-xs text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-700', (refreshing || clearing) && 'opacity-50 pointer-events-none')}
+          >
+            <RefreshCw size={11} className={cn(refreshing && 'animate-spin')} />
+          </button>
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); onClear() }}
+            disabled={clearing || refreshing}
+            className={cn('flex items-center gap-1 px-2 py-1 rounded-md border border-red-200 dark:border-red-900 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950', (clearing || refreshing) && 'opacity-50 pointer-events-none')}
+          >
+            {clearing ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+          </button>
+          <ChevronDown size={14} className={cn('text-gray-400 dark:text-zinc-500 transition-transform', open && 'rotate-180')} />
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-zinc-800 pt-3">
+          <p className="text-xs text-gray-600 dark:text-zinc-300 leading-relaxed">{briefing.content}</p>
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-gray-500 dark:text-zinc-400">Your context for this area</p>
+            <textarea
+              value={notes}
+              onChange={e => onNotesChange(e.target.value)}
+              placeholder="Add background, context, or anything the AI should know about this area…"
+              rows={3}
+              className="w-full text-xs border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 resize-none"
+            />
+            {notesChanged && (
+              <div className="flex justify-end">
+                <button
+                  onClick={onSaveNotes}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium disabled:opacity-40"
+                >
+                  {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                  Save
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Area knowledge panel ──────────────────────────────────────────────────────
 
 function AreaKnowledgePanel() {
@@ -425,67 +512,18 @@ function AreaKnowledgePanel() {
     <div className="space-y-3">
       <p className="text-xs text-gray-500 dark:text-zinc-400">Auto-generated from your uploaded reports. You can also add your own context per area.</p>
       {pageBriefings.map(b => (
-        <div key={b.id} className="border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-50">{b.area}</h3>
-              <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">
-                {b.reportCount} report{b.reportCount !== 1 ? 's' : ''} · updated {new Date(b.updatedAt).toLocaleDateString()}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => refresh(b.area)}
-                disabled={refreshingArea === b.area || clearingArea === b.area}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-xs font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800',
-                  (refreshingArea === b.area || clearingArea === b.area) && 'opacity-60 pointer-events-none'
-                )}
-              >
-                <RefreshCw size={12} className={cn(refreshingArea === b.area && 'animate-spin')} />
-                Refresh
-              </button>
-              <button
-                onClick={() => clearBriefing(b.area)}
-                disabled={clearingArea === b.area || refreshingArea === b.area}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900 text-xs font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950',
-                  (clearingArea === b.area || refreshingArea === b.area) && 'opacity-60 pointer-events-none'
-                )}
-              >
-                {clearingArea === b.area ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                Clear
-              </button>
-            </div>
-          </div>
-
-          {/* AI-generated briefing */}
-          <p className="text-xs text-gray-600 dark:text-zinc-300 leading-relaxed">{b.content}</p>
-
-          {/* User notes */}
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-gray-500 dark:text-zinc-400">Your context for this area</p>
-            <textarea
-              value={editingNotes[b.area] ?? ''}
-              onChange={e => setEditingNotes(prev => ({ ...prev, [b.area]: e.target.value }))}
-              placeholder="Add background, context, or anything the AI should know about this area…"
-              rows={3}
-              className="w-full text-xs border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 resize-none"
-            />
-            {(editingNotes[b.area] ?? '') !== (b.userNotes ?? '') && (
-              <div className="flex justify-end">
-                <button
-                  onClick={() => saveNotes(b.area)}
-                  disabled={savingNotes === b.area}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium disabled:opacity-40"
-                >
-                  {savingNotes === b.area ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-                  Save
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <AreaBriefingCard
+          key={b.id}
+          briefing={b}
+          notes={editingNotes[b.area] ?? ''}
+          onNotesChange={v => setEditingNotes(prev => ({ ...prev, [b.area]: v }))}
+          onRefresh={() => refresh(b.area)}
+          onClear={() => clearBriefing(b.area)}
+          onSaveNotes={() => saveNotes(b.area)}
+          refreshing={refreshingArea === b.area}
+          clearing={clearingArea === b.area}
+          saving={savingNotes === b.area}
+        />
       ))}
 
       <Pagination page={page} total={briefings.length} onPage={setPage} />

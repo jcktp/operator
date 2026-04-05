@@ -48,6 +48,7 @@ model Project {
   id          String    @id @default(uuid())
   name        String
   area        String    @default("")
+  mode        String    @default("")  // app mode this project belongs to; "" = visible in all modes (legacy)
   startDate   DateTime?
   status      String    @default("in_progress") // in_progress | completed
   description String?   @default("")
@@ -75,6 +76,7 @@ model Report {
   comparison     String?
   displayContent String?
   area           String
+  mode           String    @default("")  // app mode this report belongs to; "" = visible in all modes (legacy)
   reportDate     DateTime?
   resolvedFlags  String?
   imagePath      String?

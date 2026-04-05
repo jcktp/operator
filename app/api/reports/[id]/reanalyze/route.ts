@@ -5,6 +5,7 @@ import { loadAiSettings } from '@/lib/settings'
 import { analyzeReport, extractEntities, extractTimeline } from '@/lib/ai'
 import { getModeConfig } from '@/lib/mode'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logAction } from '@/lib/audit'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const deny = await requireAuth(req)
@@ -92,5 +93,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     ])
   }
 
+  void logAction('report:reanalyze', `${report.title} (${report.area})`)
   return NextResponse.json({ report: updated })
 }

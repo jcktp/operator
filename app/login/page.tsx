@@ -6,7 +6,7 @@ import { Loader2, AlertTriangle, Eye, EyeOff, ShieldAlert, ArrowRight } from 'lu
 import WalkieTalkie from '@/components/WalkieTalkie'
 import { MODE_LIST, type AppMode } from '@/lib/mode'
 
-type Screen = 'loading' | 'mode-pick' | 'setup' | 'login' | 'uninstalled'
+type Screen = 'loading' | 'mode-pick' | 'setup' | 'login' | 'recover' | 'reset' | 'uninstalled'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -20,6 +20,10 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [attemptsLeft, setAttemptsLeft] = useState(3)
+  const [recoveryCode, setRecoveryCode] = useState('')
+  const [resetToken, setResetToken] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('')
   const passwordRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -54,6 +58,56 @@ export default function LoginPage() {
       }
     } catch {
       setError('Could not connect to server. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleRecover = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/auth/recover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: recoveryCode.trim() }),
+      })
+      const data = await res.json() as { resetToken?: string; error?: string }
+      if (res.ok && data.resetToken) {
+        setResetToken(data.resetToken)
+        setScreen('reset')
+      } else {
+        setError(data.error ?? 'Invalid recovery code')
+      }
+    } catch {
+      setError('Could not connect to server.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (newPassword !== newPasswordConfirm) { setError('Passwords do not match'); return }
+    if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return }
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, newPassword }),
+      })
+      const data = await res.json() as { ok?: boolean; error?: string }
+      if (res.ok) {
+        router.replace('/')
+        router.refresh()
+      } else {
+        setError(data.error ?? 'Reset failed')
+      }
+    } catch {
+      setError('Could not connect to server.')
     } finally {
       setSubmitting(false)
     }
@@ -295,6 +349,93 @@ export default function LoginPage() {
             <button type="submit" disabled={submitting || !password}
               className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
               {submitting ? <><Loader2 size={14} className="animate-spin" /> Signing in…</> : 'Sign in'}
+            </button>
+
+            <button type="button" onClick={() => { setError(''); setScreen('recover') }}
+              className="w-full text-xs text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors py-1">
+              Forgot password? Use a recovery code
+            </button>
+          </form>
+        )}
+
+        {/* ── Recovery code screen ── */}
+        {screen === 'recover' && (
+          <form onSubmit={handleRecover} className="space-y-5">
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-zinc-50">Recovery code</h1>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Enter one of your saved recovery codes to reset your password.</p>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4">
+              <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Recovery code</label>
+              <input
+                type="text"
+                value={recoveryCode}
+                onChange={e => setRecoveryCode(e.target.value)}
+                placeholder="XXXXX-XXXXX"
+                autoFocus
+                className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400"
+              />
+            </div>
+
+            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+
+            <div className="flex gap-2">
+              <button type="button" onClick={() => { setError(''); setScreen('login') }}
+                className="px-4 py-2.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                Back
+              </button>
+              <button type="submit" disabled={submitting || !recoveryCode.trim()}
+                className="flex-1 bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                {submitting ? <><Loader2 size={14} className="animate-spin" /> Checking…</> : 'Verify code'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ── New password screen ── */}
+        {screen === 'reset' && (
+          <form onSubmit={handleResetPassword} className="space-y-5">
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-zinc-50">Set new password</h1>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Choose a new password. You&apos;ll be signed in automatically.</p>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1.5">New password</label>
+                <div className="relative">
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    autoFocus
+                    className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 pr-9 text-sm text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400"
+                  />
+                  <button type="button" onClick={() => setShowPass(v => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300">
+                    {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Confirm password</label>
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={newPasswordConfirm}
+                  onChange={e => setNewPasswordConfirm(e.target.value)}
+                  placeholder="Repeat password"
+                  className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400"
+                />
+              </div>
+            </div>
+
+            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+
+            <button type="submit" disabled={submitting || !newPassword || !newPasswordConfirm}
+              className="w-full bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              {submitting ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : 'Set password & sign in'}
             </button>
           </form>
         )}

@@ -31,6 +31,7 @@ const ALLOWED_KEYS = new Set([
   'current_project_id',
   'ollama_vision_model',
   'ollama_audio_model',
+  'model_setup_mode',
 ])
 
 export async function GET(req: NextRequest) {

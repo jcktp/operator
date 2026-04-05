@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '@/components/ThemeProvider'
 import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle, X, Plus } from 'lucide-react'
 import AuditLogPanel from './AuditLogPanel'
+import RecoveryCodesPanel from './RecoveryCodesPanel'
 import { cn } from '@/lib/utils'
 import { CLOUD_PROVIDERS } from './settingsTypes'
 import ModelPullOverlay from './ModelPullOverlay'
@@ -275,6 +276,8 @@ export default function SettingsPage() {
                 </p>
               )}
             </div>
+
+            <RecoveryCodesPanel />
           </>
         )}
 

@@ -11,10 +11,15 @@ export async function GET(req: NextRequest) {
   const directReportId = searchParams.get('directReportId')
   const limit = parseInt(searchParams.get('limit') ?? '50')
 
+  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+  const currentMode = modeRow?.value ?? ''
+
   const reports = await prisma.report.findMany({
     where: {
       ...(area ? { area } : {}),
       ...(directReportId ? { directReportId } : {}),
+      // Show reports belonging to the current mode, plus legacy reports with no mode set
+      OR: [{ mode: '' }, { mode: currentMode }],
     },
     include: { directReport: true },
     orderBy: { createdAt: 'desc' },

@@ -183,6 +183,7 @@ async function processItem(itemId: string): Promise<void> {
         imagePath: item.displayContent?.startsWith('image:') ? item.displayContent.slice('image:'.length).split('\n')[0] : null,
         filePath: item.savedFilePath,
         area: item.area,
+        mode: appMode,
         directReportId: item.directReportId || null,
         reportDate: item.reportDate ? new Date(item.reportDate) : null,
         storyName: item.storyName || null,
