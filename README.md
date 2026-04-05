@@ -214,7 +214,6 @@ Enable in **Settings → Remote** to get a public URL others can use to submit f
 | Local AI | Ollama (`phi4-mini` text, `llava-phi3` vision) |
 | Styling | Tailwind CSS v4 |
 | Maps | OpenLayers + MapLibre GL |
-| Timeline | TimelineJS3 |
 | EXIF | exifr |
 | Tunnel | Cloudflare Quick Tunnel |
 | Auth | SHA-256 session tokens, HTTP-only cookies, AES-256-GCM key storage |
