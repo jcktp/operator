@@ -358,10 +358,12 @@ function AreaBriefingCard({
   return (
     <div className="border border-gray-200 dark:border-zinc-700 rounded-xl overflow-hidden">
       {/* Header — always visible */}
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+        onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setOpen(v => !v)}
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
       >
         <div className="min-w-0">
           <p className="text-sm font-semibold text-gray-900 dark:text-zinc-50">{briefing.area}</p>
@@ -389,7 +391,7 @@ function AreaBriefingCard({
           </button>
           <ChevronDown size={14} className={cn('text-gray-400 dark:text-zinc-500 transition-transform', open && 'rotate-180')} />
         </div>
-      </button>
+      </div>
 
       {/* Expanded content */}
       {open && (
