@@ -479,6 +479,10 @@ export default function SettingsPage() {
         </div>
       </div>}
 
+      <p className="text-[10px] text-gray-300 dark:text-zinc-700 text-right select-none pt-2">
+        Built with purpose by Jorick.
+      </p>
+
       {/* Uninstall overlay */}
       {(uninstallPhase === 'running' || uninstallPhase === 'done') && (
         <div className="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center">
