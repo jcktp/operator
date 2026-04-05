@@ -19,11 +19,9 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:coverage": "vitest run --coverage",
-    "test:smoke": "node tests/smoke.mjs",
-    "postinstall": "node scripts/copy-assets.js"
+    "test:smoke": "node tests/smoke.mjs"
   },
   "dependencies": {
-    "@knight-lab/timelinejs": "^3.9.10",
     "@prisma/adapter-better-sqlite3": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@tiptap/extension-font-family": "^3.22.1",
