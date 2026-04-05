@@ -84,17 +84,24 @@ body {
   100% { transform: translateX(150%);  width: 40% }
 }
 
-/* ── Scrollbars — hidden visually, scroll still works via trackpad/wheel ─── */
-*,
-*::before,
-*::after {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+/* ── Scrollbars — completely suppressed; scroll still works via trackpad/wheel ─── */
+html, body, * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
-*::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+::-webkit-scrollbar-track {
+  display: none !important;
+  background: transparent !important;
+}
+::-webkit-scrollbar-thumb {
+  display: none !important;
+  background: transparent !important;
 }
 
 /* ── Dark mode overrides for vanilla CSS blocks ─────────────────────────── */
@@ -132,7 +139,7 @@ body {
 .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; float: left; height: 0; }
 
 /* Word document rendered HTML */
-.doc-content { font-size: 0.875rem; line-height: 1.6; color: #374151; max-height: 600px; overflow-y: auto; padding-right: 4px; }
+.doc-content { font-size: 0.875rem; line-height: 1.6; color: #374151; max-height: 600px; overflow-y: auto; padding-right: 4px; scrollbar-width: none; }
 .doc-content h1 { font-size: 1.125rem; font-weight: 700; color: #111827; margin: 1.25rem 0 0.5rem; }
 .doc-content h2 { font-size: 1rem; font-weight: 600; color: #111827; margin: 1rem 0 0.375rem; }
 .doc-content h3 { font-size: 0.875rem; font-weight: 600; color: #374151; margin: 0.75rem 0 0.25rem; }
