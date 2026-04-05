@@ -269,13 +269,19 @@ async function processItem(itemId: string): Promise<void> {
       ])
     }
 
-    // Fire-and-forget: refresh area briefing
+    // Refresh area briefing synchronously so it completes before the queue
+    // drains and the model is unloaded — prevents a reload cycle after eviction.
     if (analysis?.summary) {
-      prisma.report.findMany({
-        where: { area: item.area },
-        select: { summary: true, metrics: true, insights: true, createdAt: true },
-        orderBy: { createdAt: 'desc' }, take: 20,
-      }).then(reports => generateAreaBriefing(item!.area, appMode, reports)).catch(() => {})
+      try {
+        const areaReports = await prisma.report.findMany({
+          where: { area: item.area },
+          select: { summary: true, metrics: true, insights: true, createdAt: true },
+          orderBy: { createdAt: 'desc' }, take: 20,
+        })
+        await generateAreaBriefing(item.area, appMode, areaReports)
+      } catch (e) {
+        console.error('[upload-queue] Area briefing failed:', e)
+      }
     }
 
     await prisma.uploadJobItem.update({
