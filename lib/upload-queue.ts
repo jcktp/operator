@@ -14,6 +14,7 @@ import { getModeConfig } from './mode'
 import { describeImage, transcribeAudio } from './ai-vision'
 import { getMimeType, normalizeContent } from './parsers'
 import { getReportsRoot } from './reports-folder'
+import { routeVisionModel, routeAudioModel } from './model-capabilities'
 
 // ── Global worker state ──────────────────────────────────────────────────────
 let _workerRunning = false
@@ -292,18 +293,28 @@ async function processItem(itemId: string): Promise<void> {
 }
 
 // ── Ollama model unload ───────────────────────────────────────────────────────
-// Sending keep_alive: 0 tells Ollama to evict the model from memory immediately,
+// Sending keep_alive: 0 tells Ollama to evict models from memory immediately,
 // freeing RAM/VRAM and stopping the fans after a batch upload completes.
+// We unload all distinct models that may have been loaded during the job.
 async function unloadOllamaModel(): Promise<void> {
   const provider = process.env.AI_PROVIDER ?? 'ollama'
   if (provider !== 'ollama') return
   try {
     const host = process.env.OLLAMA_HOST ?? 'http://localhost:11434'
-    const model = process.env.OLLAMA_MODEL ?? 'phi4-mini'
     const ollama = new Ollama({ host })
-    await ollama.chat({ model, messages: [{ role: 'user', content: '' }], keep_alive: 0 })
+
+    const primary = process.env.OLLAMA_MODEL ?? 'phi4-mini'
+    const vision = routeVisionModel()
+    const audio = routeAudioModel()
+
+    // Collect distinct model IDs that may be loaded
+    const models = [...new Set([primary, vision, audio].filter(Boolean) as string[])]
+
+    await Promise.allSettled(
+      models.map(model => ollama.chat({ model, messages: [{ role: 'user', content: '' }], keep_alive: 0 }))
+    )
   } catch {
-    // Non-critical — if it fails the model will unload on its own after Ollama's default timeout
+    // Non-critical — models will unload on their own after Ollama's default timeout
   }
 }
 
