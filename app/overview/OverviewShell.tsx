@@ -350,13 +350,16 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
           </div>{/* end space-y-8 */}
         </div>{/* end scrollable pane */}
 
-        {/* Persistent dispatch panel */}
-        <div className="w-72 shrink-0 flex flex-col overflow-hidden">
-          <DispatchPanel
-            context={context}
-            currentProjectId={null}
-            compact
-          />
+        {/* Persistent dispatch panel — spacer matches pt-1 + BY BEAT label + mb-3 to align with cards */}
+        <div className="w-72 shrink-0 flex flex-col">
+          <div className="shrink-0 h-8" />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <DispatchPanel
+              context={context}
+              currentProjectId={null}
+              compact
+            />
+          </div>
         </div>
 
       </div>{/* end split */}

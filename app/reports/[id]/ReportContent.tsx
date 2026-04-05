@@ -7,8 +7,8 @@ import { useDispatch } from '@/components/DispatchContext'
 const DispatchPanel = dynamic(() => import('@/app/dispatch/DispatchPanel'), { ssr: false })
 
 const SCROLL_MASK = {
-  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0px, black 28px)',
-  maskImage: 'linear-gradient(to bottom, transparent 0px, black 28px)',
+  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0px, black 4px)',
+  maskImage: 'linear-gradient(to bottom, transparent 0px, black 4px)',
 } as React.CSSProperties
 
 export default function ReportContent({

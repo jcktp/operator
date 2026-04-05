@@ -14,8 +14,10 @@
   --background: #09090b;
   --foreground: #fafafa;
   --surface: #18181b;
-  --border: #3f3f46;
-  --muted: #71717a;
+  --surface2: #27272a;
+  --border: #27272a;
+  --border-mid: #3f3f46;
+  --muted: #a1a1aa;
   --accent: #fafafa;
   color-scheme: dark;
 }
@@ -73,6 +75,19 @@ body {
   0%   { transform: translateX(-100%); width: 40% }
   50%  { transform: translateX(150%);  width: 40% }
   100% { transform: translateX(150%);  width: 40% }
+}
+
+/* ── Scrollbars — hidden visually, scroll still works via trackpad/wheel ─── */
+*,
+*::before,
+*::after {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* ── Dark mode overrides for vanilla CSS blocks ─────────────────────────── */
