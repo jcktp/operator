@@ -47,7 +47,7 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="h-full flex flex-col max-w-lg">
       {s.pull.active && (
         <ModelPullOverlay
           pull={s.pull}
@@ -56,28 +56,33 @@ export default function SettingsPage() {
         />
       )}
 
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Settings</h1>
-        <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">Configure your Operator workspace.</p>
+      {/* Fixed header */}
+      <div className="shrink-0 space-y-4 pb-0">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-zinc-50">Settings</h1>
+          <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">Configure your Operator workspace.</p>
+        </div>
+
+        {/* Tab bar */}
+        <div className="flex gap-5 border-b border-gray-200 dark:border-zinc-700">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={cn(
+                'pb-2 text-xs font-medium transition-colors border-b-2 -mb-px',
+                tab === t.id ? 'border-gray-900 dark:border-zinc-400 text-gray-900 dark:text-zinc-50' : 'border-transparent text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-5 border-b border-gray-200 dark:border-zinc-700">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={cn(
-              'pb-2 text-xs font-medium transition-colors border-b-2 -mb-px',
-              tab === t.id ? 'border-gray-900 dark:border-zinc-400 text-gray-900 dark:text-zinc-50' : 'border-transparent text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
+      {/* Scrollable tab content */}
+      <div className="flex-1 min-h-0 overflow-y-auto py-5">
       <div className="space-y-5">
         {/* Profile tab */}
         {tab === 'profile' && (
@@ -479,9 +484,16 @@ export default function SettingsPage() {
         </div>
       </div>}
 
-      <p className="text-[10px] text-gray-300 dark:text-zinc-700 text-right select-none pt-2">
+      </div>
+
+      <a
+        href="https://github.com/jcktp"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="shrink-0 block text-[10px] text-gray-300 dark:text-zinc-700 hover:text-gray-500 dark:hover:text-zinc-500 text-right select-none py-2 transition-colors"
+      >
         Built with purpose by Jorick.
-      </p>
+      </a>
 
       {/* Uninstall overlay */}
       {(uninstallPhase === 'running' || uninstallPhase === 'done') && (
