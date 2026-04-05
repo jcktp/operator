@@ -19,7 +19,7 @@ interface Props {
 
 export default function ExportAnalysisPDFButton({ title, area, directName, reportDate, summary, metrics, insights, questions }: Props) {
   const handleExport = () => {
-    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const esc = (s: string | null | undefined) => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
     const metricsHtml = metrics.length > 0
       ? `<section><h2>Metrics</h2><table>${metrics.map(m => `<tr><td class="metric-label">${esc(m.label)}${m.context ? `<br><span class="metric-context">${esc(m.context)}</span>` : ''}</td><td class="metric-value">${esc(m.value)}</td></tr>`).join('')}</table></section>`
