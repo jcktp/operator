@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from '@/components/icons'
-import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen } from 'lucide-react'
+import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen, ShieldCheck, GitFork, CheckSquare, FileSearch } from 'lucide-react'
 import type React from 'react'
 
 type AnyIcon = React.ComponentType<{ size?: number; className?: string }>
@@ -13,6 +13,10 @@ const EXTRA_NAV_ICONS: Record<string, AnyIcon> = {
   Users: UsersIcon,
   BarChart2: BarChart2Icon,
   Clock,
+  ShieldCheck,
+  GitFork,
+  CheckSquare,
+  FileSearch,
 }
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef, Suspense } from 'react'
@@ -77,27 +81,37 @@ export default function Nav() {
   const toggleGroup = (id: string) => setOpenGroup(prev => prev === id ? null : id)
   const closeGroups = () => setOpenGroup(null)
 
-  // GROUP A: Intake — ingest points
+  const { extraNavItems, pulseInNotebook, peopleInNotebook } = config.features
+
+  // GROUP A: Intake — upload + (pulse if not in notebook) + files + intake-group extras
   const intakeItems: NavGroupItem[] = [
     { href: '/upload', label: config.navDocuments, icon: Upload },
-    { href: '/pulse', label: 'Pulse', icon: Radio },
+    ...(!pulseInNotebook ? [{ href: '/pulse', label: 'Pulse', icon: Radio }] : []),
     { href: '/files', label: 'Files', icon: FolderOpen },
+    ...extraNavItems
+      .filter(i => i.group === 'intake')
+      .map(i => ({ href: i.href, label: i.label, icon: EXTRA_NAV_ICONS[i.icon] ?? Network })),
   ]
 
-  // GROUP B: Analysis — library + mode-specific extraNavItems + people
+  // GROUP B: Analysis — library + analysis-group extras + (people if not in notebook)
   const analysisItems: NavGroupItem[] = [
-    {
-      href: '/library',
-      label: config.navLibrary,
-      icon: Library,
-    },
-    ...config.features.extraNavItems.map(item => ({
-      href: item.href,
-      label: item.label,
-      icon: EXTRA_NAV_ICONS[item.icon] ?? Network,
-    })),
-    { href: '/directs', label: config.navPeople, icon: Users },
+    { href: '/library', label: config.navLibrary, icon: Library },
+    ...extraNavItems
+      .filter(i => !i.group || i.group === 'analysis')
+      .map(i => ({ href: i.href, label: i.label, icon: EXTRA_NAV_ICONS[i.icon] ?? Network })),
+    ...(!peopleInNotebook ? [{ href: '/directs', label: config.navPeople, icon: Users }] : []),
   ]
+
+  // GROUP C: Notebook — journal + (pulse if pulseInNotebook) + (people if peopleInNotebook) + notebook-group extras
+  const notebookItems: NavGroupItem[] = [
+    { href: '/journal', label: config.navJournal, icon: BookOpen },
+    ...(pulseInNotebook  ? [{ href: '/pulse',   label: 'Pulse',          icon: Radio }] : []),
+    ...(peopleInNotebook ? [{ href: '/directs', label: config.navPeople, icon: Users }] : []),
+    ...extraNavItems
+      .filter(i => i.group === 'notebook')
+      .map(i => ({ href: i.href, label: i.label, icon: EXTRA_NAV_ICONS[i.icon] ?? Network })),
+  ]
+  const notebookIsDropdown = notebookItems.length > 1
 
 
   useEffect(() => {
@@ -139,7 +153,7 @@ export default function Nav() {
   return (
     <>
       {/* ── TOP NAV BAR ─────────────────────────────────────────────────── */}
-      <header className="fixed top-0 inset-x-0 h-14 z-50 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 flex items-center px-4 gap-3">
+      <header className="fixed top-0 inset-x-0 h-14 z-50 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 flex items-center px-4 gap-3" style={{ boxShadow: '0 2px 12px 0 rgba(0,38,192,0.07)' }}>
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
@@ -196,14 +210,27 @@ export default function Nav() {
             activeArea={activeArea}
           />
 
-          {/* Direct: Journal / Notebook */}
-          <Link
-            href="/journal"
-            className={cn(NAV_LINK_CLASS, pathname.startsWith('/journal') && NAV_ACTIVE_CLASS)}
-          >
-            <BookOpen size={13} className="shrink-0" />
-            {config.navJournal}
-          </Link>
+          {/* Notebook — dropdown when mode adds extra items (journalism), standalone otherwise */}
+          {notebookIsDropdown ? (
+            <NavDropdown
+              id="notebook"
+              label={config.navJournal}
+              icon={BookOpen}
+              items={notebookItems}
+              isOpen={openGroup === 'notebook'}
+              onToggle={toggleGroup}
+              onClose={closeGroups}
+              activeArea={activeArea}
+            />
+          ) : (
+            <Link
+              href="/journal"
+              className={cn(NAV_LINK_CLASS, pathname.startsWith('/journal') && NAV_ACTIVE_CLASS)}
+            >
+              <BookOpen size={13} className="shrink-0" />
+              {config.navJournal}
+            </Link>
+          )}
 
           {/* Standalone: Dispatch */}
           <Link

@@ -31,18 +31,31 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Brand blue — overrides Tailwind's indigo palette */
-  --color-indigo-50:  #eef0fa;
-  --color-indigo-100: #d4d8f1;
-  --color-indigo-200: #a9b0e3;
-  --color-indigo-300: #7e88d5;
-  --color-indigo-400: #6771cc;
-  --color-indigo-500: #5C66B3;
-  --color-indigo-600: #4c55a0;
-  --color-indigo-700: #3d4482;
-  --color-indigo-800: #2d3361;
-  --color-indigo-900: #1d2141;
-  --color-indigo-950: #111426;
+  /* Brand blue — #0026c0 as the primary, full scale */
+  --color-indigo-50:  #eaedff;
+  --color-indigo-100: #d0d6ff;
+  --color-indigo-200: #a3adff;
+  --color-indigo-300: #6e80ff;
+  --color-indigo-400: #3653f5;
+  --color-indigo-500: #0026c0;
+  --color-indigo-600: #001fa6;
+  --color-indigo-700: #00188a;
+  --color-indigo-800: #00116d;
+  --color-indigo-900: #000b50;
+  --color-indigo-950: #00062e;
+
+  /* Also override blue-* so bg-blue-* / text-blue-* follow the same hue */
+  --color-blue-50:  #eaedff;
+  --color-blue-100: #d0d6ff;
+  --color-blue-200: #a3adff;
+  --color-blue-300: #6e80ff;
+  --color-blue-400: #3653f5;
+  --color-blue-500: #0026c0;
+  --color-blue-600: #001fa6;
+  --color-blue-700: #00188a;
+  --color-blue-800: #00116d;
+  --color-blue-900: #000b50;
+  --color-blue-950: #00062e;
 }
 
 html {

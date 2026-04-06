@@ -29,8 +29,17 @@ export interface ModeFeatures {
   metricsBoard: boolean
   /** Show extracted metrics and period comparison on individual document pages */
   showReportMetrics: boolean
-  /** Extra nav items inserted after the library link (icon: lucide icon name) */
-  extraNavItems: Array<{ href: string; label: string; icon: string }>
+  /**
+   * Extra nav items with optional group placement:
+   *   'analysis' (default) → Analysis dropdown
+   *   'intake'             → Intake dropdown
+   *   'notebook'           → Notebook dropdown (alongside journal)
+   */
+  extraNavItems: Array<{ href: string; label: string; icon: string; group?: 'analysis' | 'intake' | 'notebook' }>
+  /** Move Pulse from Intake into the Notebook dropdown */
+  pulseInNotebook: boolean
+  /** Move the navPeople link (Sources/Directs/etc.) from Analysis into the Notebook dropdown */
+  peopleInNotebook: boolean
 }
 
 export interface ModeConfig {
@@ -85,7 +94,9 @@ const DEFAULT_FEATURES: ModeFeatures = {
   metricsBoard: false,
   showReportMetrics: true,
   journalDescription: null,
-  extraNavItems: [] as Array<{ href: string; label: string; icon: string }>,
+  extraNavItems: [],
+  pulseInNotebook: false,
+  peopleInNotebook: false,
 }
 
 const BASE_FILE_TYPES = '.pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.md'
@@ -170,7 +181,15 @@ export const MODES: Record<AppMode, ModeConfig> = {
       defaultFeeds: true,
       showReportMetrics: false,
       journalDescription: 'Investigation notes organised by folder — sources, timelines, claims',
-      extraNavItems: [{ href: '/entities', label: 'Entities', icon: 'Network' }],
+      pulseInNotebook: true,
+      peopleInNotebook: true,
+      extraNavItems: [
+        { href: '/entities',     label: 'Entities',       icon: 'Network',      group: 'analysis' },
+        { href: '/network',      label: 'Entity Network', icon: 'GitFork',      group: 'analysis' },
+        { href: '/claims',       label: 'Claims',         icon: 'CheckSquare',  group: 'analysis' },
+        { href: '/foia',         label: 'FOIA',           icon: 'FileSearch',   group: 'analysis' },
+        { href: '/file-cleaner', label: 'File Cleaner',   icon: 'ShieldCheck',  group: 'intake'   },
+      ],
     },
   },
 

@@ -173,6 +173,42 @@ else
   step "Tesseract OCR found"
 fi
 
+# ── 3c. MAT2 (metadata stripping for journalism mode) ────────────────────────
+if ! command -v mat2 &>/dev/null; then
+  step "MAT2 not found — installing..."
+  case "$PLATFORM" in
+    macOS)
+      if command -v pip3 &>/dev/null; then
+        pip3 install mat2 --quiet 2>/dev/null \
+          || warn "Could not install MAT2 — file metadata stripping unavailable in File Cleaner"
+      else
+        warn "pip3 not found — skipping MAT2 install (File Cleaner will use ExifTool only)"
+      fi
+      ;;
+    Linux)
+      if command -v apt-get &>/dev/null; then
+        sudo apt-get install -y mat2 >/dev/null 2>&1 \
+          || pip3 install mat2 --quiet 2>/dev/null \
+          || warn "Could not install MAT2"
+      elif command -v dnf &>/dev/null; then
+        sudo dnf install -y mat2 >/dev/null 2>&1 \
+          || pip3 install mat2 --quiet 2>/dev/null \
+          || warn "Could not install MAT2"
+      elif command -v pacman &>/dev/null; then
+        sudo pacman -Sy --noconfirm python-mat2 >/dev/null 2>&1 \
+          || warn "Could not install MAT2"
+      else
+        warn "Could not install MAT2 — unknown Linux package manager"
+      fi
+      ;;
+    *)
+      warn "MAT2 not available on this platform — File Cleaner will use ExifTool only"
+      ;;
+  esac
+else
+  step "MAT2 found"
+fi
+
 # ── 4. cloudflared + supporting tools (updated in background, non-blocking) ────
 # Note: Ollama is already upgraded synchronously in step 3 — not repeated here.
 update_tools_bg() {

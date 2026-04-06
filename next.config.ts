@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['pdf-parse', '@prisma/client', 'prisma', '@prisma/adapter-better-sqlite3', 'better-sqlite3'],
+  serverExternalPackages: ['pdf-parse', '@prisma/client', 'prisma', '@prisma/adapter-better-sqlite3', 'better-sqlite3', 'exiftool-vendored'],
   outputFileTracingExcludes: {
     '/api/files': ['next.config.ts'],
   },

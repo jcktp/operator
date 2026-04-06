@@ -57,7 +57,8 @@ model Project {
   reports        Report[]
   reportRequests ReportRequest[]
   journalEntries JournalEntry[]
-
+  foiaRequests   FoiaRequest[]
+  claims         Claim[]
   @@index([status])
   @@index([createdAt])
 }
@@ -96,6 +97,7 @@ model Report {
   entities       ReportEntity[]
   timelineEvents TimelineEvent[]
   journalism     ReportJournalism?
+  claims         Claim[]
 
   @@index([area])
   @@index([projectId])
@@ -273,6 +275,54 @@ model EvidenceItem {
   createdAt  DateTime @default(now())
 
   @@index([storyId])
+}
+
+// ── Journalism: FOIA tracker ──────────────────────────────────────────────────
+
+model FoiaRequest {
+  id          String    @id @default(uuid())
+  agency      String
+  subject     String
+  description String?
+  status      String    @default("draft")
+  // status: draft | submitted | acknowledged | partial | fulfilled | denied | appealed
+  filedAt     DateTime?
+  dueAt       DateTime?
+  receivedAt  DateTime?
+  trackingNum String?
+  notes       String?
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// ── Journalism: Claim tracker ─────────────────────────────────────────────────
+
+model Claim {
+  id         String   @id @default(uuid())
+  text       String
+  source     String?
+  sourceType String   @default("document")
+  // sourceType: document | interview | social | official
+  status     String   @default("unverified")
+  // status: unverified | verified | disputed | false | needs_more
+  notes      String?
+  reportId   String?
+  report     Report?  @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  projectId  String?
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status])
+  @@index([reportId])
+  @@index([projectId])
+  @@index([createdAt])
 }
 
 // ── Background upload jobs ─────────────────────────────────────────────────────

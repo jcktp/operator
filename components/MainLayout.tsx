@@ -34,7 +34,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   const isReportPage = /^\/reports\/[^/]+/.test(pathname)
-  const isFixedPage = isReportPage || pathname === '/entities' || pathname === '/dashboard' || pathname === '/' || pathname === '/files' || pathname === '/pulse'
+  const isFixedPage = isReportPage || pathname === '/entities' || pathname === '/dashboard' || pathname === '/' || pathname === '/files' || pathname === '/pulse' || pathname === '/settings' || pathname === '/network'
 
   // Fixed-layout pages: full-height, no page scroll — panes scroll internally
   if (isFixedPage) {

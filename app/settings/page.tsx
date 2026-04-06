@@ -47,7 +47,7 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="h-full flex flex-col max-w-lg">
+    <div className="h-full flex flex-col max-w-2xl mx-auto w-full">
       {s.pull.active && (
         <ModelPullOverlay
           pull={s.pull}
