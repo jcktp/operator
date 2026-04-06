@@ -275,7 +275,7 @@ Full text: [`license.md`](./license.md)
 
 AI-generated outputs are probabilistic and must not be treated as professional legal, financial, medical, or journalistic advice. Verify all analysis before acting on it.
 
-Excel file parsing uses the `xlsx` library, which has known CVEs with no upstream fix currently available. Only upload Excel files from sources you trust.
+Excel file parsing uses the `exceljs` library. Only upload Excel files from sources you trust.
 
 ---
 
