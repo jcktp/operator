@@ -1,4 +1,4 @@
-import { Upload, MessageSquare, BookOpen, Rss, Network, Clock, BarChart2, BookMarked, FolderOpen, GitFork, CheckSquare, FileSearch, ShieldCheck } from 'lucide-react'
+import { Upload, MessageSquare, BookOpen, Rss, Network, Clock, BarChart2, BookMarked, FolderOpen, GitFork, CheckSquare, FileSearch, ShieldCheck, ShieldAlert, Lightbulb, Ban, ListChecks, ScrollText, CalendarClock, Quote, Layers, Users2 } from 'lucide-react'
 import type { ModeConfig } from '@/lib/mode'
 
 interface Props {
@@ -13,6 +13,8 @@ export default function StepTour({ modeConfig, onNext, onBack }: Props) {
   const c = modeConfig
   const f = c.features
 
+  const hasNav = (href: string) => f.extraNavItems.some(i => i.href === href)
+
   const universal: Card[] = [
     { icon: <FolderOpen size={17} className="text-indigo-500" />,   title: 'Projects',     desc: 'Organise work into named projects. All documents, analysis, and dispatch are scoped to the active project.' },
     { icon: <Upload size={17} className="text-indigo-400" />,       title: c.navLibrary,   desc: `Upload ${c.documentLabelPlural.toLowerCase()} and get automatic AI summaries, flags, and insights.` },
@@ -23,7 +25,7 @@ export default function StepTour({ modeConfig, onNext, onBack }: Props) {
   ]
 
   const modeSpecific: Card[] = []
-  if (f.entities)          modeSpecific.push({ icon: <Network size={17} className="text-rose-500" />,       title: c.features.extraNavItems[0]?.label ?? 'Entities',  desc: `Named people, organisations, and places auto-extracted across your ${c.documentLabelPlural.toLowerCase()}.` })
+  if (f.entities)          modeSpecific.push({ icon: <Network size={17} className="text-rose-500" />,       title: c.features.extraNavItems.find(i => i.href === '/entities')?.label ?? 'Entities',  desc: `Named people, organisations, and places auto-extracted across your ${c.documentLabelPlural.toLowerCase()}.` })
   if (f.entities)          modeSpecific.push({ icon: <GitFork size={17} className="text-[#0026c0]" />,      title: 'Entity Network',    desc: 'Force-directed graph of all extracted entities. Pan, zoom, drag nodes, and highlight clusters.' })
   if (f.timeline)          modeSpecific.push({ icon: <Clock size={17} className="text-orange-500" />,       title: 'Timeline',          desc: `Events assembled into a chronological view from your ${c.documentLabelPlural.toLowerCase()}.` })
   if (f.metricsBoard)      modeSpecific.push({ icon: <BarChart2 size={17} className="text-teal-500" />,     title: 'Metrics',           desc: `Aggregated KPI tracking and time-series charts across your ${c.documentLabelPlural.toLowerCase()}.` })
@@ -31,6 +33,14 @@ export default function StepTour({ modeConfig, onNext, onBack }: Props) {
   if (f.investigationTemplate) modeSpecific.push({ icon: <CheckSquare size={17} className="text-emerald-600" />, title: 'Claims Tracker', desc: 'Log factual claims from sources and track their verification status across your investigation.' })
   if (f.investigationTemplate) modeSpecific.push({ icon: <FileSearch size={17} className="text-sky-500" />,      title: 'FOIA Tracker',   desc: 'Track public records requests from filing to receipt — with overdue alerts and status history.' })
   if (f.investigationTemplate) modeSpecific.push({ icon: <ShieldCheck size={17} className="text-violet-500" />,  title: 'File Cleaner',   desc: 'Strip EXIF metadata and identifying information from files before sharing or publishing.' })
+  if (hasNav('/risks'))     modeSpecific.push({ icon: <ShieldAlert size={17} className="text-red-500" />,      title: 'Risk Register',      desc: 'Log risks with probability and impact scores. Track status and assign owners so nothing falls through.' })
+  if (hasNav('/decisions')) modeSpecific.push({ icon: <Lightbulb size={17} className="text-yellow-500" />,    title: 'Decision Log',       desc: 'Record key decisions with context and rationale — a searchable audit trail for your team.' })
+  if (hasNav('/actions'))   modeSpecific.push({ icon: c.id === 'team_lead' ? <Ban size={17} className="text-orange-500" /> : <ListChecks size={17} className="text-sky-500" />, title: c.id === 'team_lead' ? 'Blockers' : 'Action Tracker', desc: c.id === 'team_lead' ? 'Surface and track blockers across sprints — assign owners and flag overdue items.' : 'Track HR actions and follow-ups — assignee, due date, priority, and status in one place.' })
+  if (hasNav('/policies'))  modeSpecific.push({ icon: <ScrollText size={17} className="text-violet-500" />,   title: 'Policy Register',    desc: 'Maintain a live policy register with review dates, owners, and status. Get alerts when reviews are due.' })
+  if (hasNav('/deadlines')) modeSpecific.push({ icon: <CalendarClock size={17} className="text-amber-500" />, title: 'Deadline Tracker',   desc: 'Track filing deadlines, court dates, and HR milestones with urgency indicators and one-click completion.' })
+  if (hasNav('/quotes'))    modeSpecific.push({ icon: <Quote size={17} className="text-indigo-500" />,        title: 'Quote Bank',         desc: 'Capture verbatim quotes from interviews and surveys — tagged, searchable, and source-labelled.' })
+  if (hasNav('/themes'))    modeSpecific.push({ icon: <Layers size={17} className="text-emerald-500" />,      title: 'Themes Board',       desc: 'Synthesise patterns across your research — confirm, develop, or reject each emerging theme.' })
+  if (hasNav('/capacity'))  modeSpecific.push({ icon: <Users2 size={17} className="text-teal-500" />,         title: 'Capacity Planning',  desc: 'Calculate team capacity, identify headcount gaps, estimate recruiting costs, and manage your headcount register.' })
 
   const cards = [...universal, ...modeSpecific]
 

@@ -54,6 +54,14 @@ Operator is a private intelligence workspace. Upload documents, images, and audi
 | **FOIA Tracker** | Track public records requests from draft through receipt with 7 status stages, overdue alerts, and per-request notes. Journalism mode only |
 | **Claims Tracker** | Log factual claims from sources and mark them verified, disputed, false, or needs-more-info. Journalism mode only |
 | **File Cleaner** | Strip EXIF metadata and identifying information from images and documents before sharing or publishing. Journalism mode only |
+| **Risk Register** | Log risks with probability × impact scoring, owner assignment, and status tracking. Executive and Legal modes |
+| **Decision Log** | Capture key decisions with context, rationale, and outcome — a searchable audit trail. Executive mode |
+| **Blockers / Action Tracker** | Track sprint blockers (Team Lead) or HR follow-up actions with assignee, due date, priority, and overdue detection |
+| **Policy Register** | Maintain HR policies with owner, category, review dates, and 30-day review alerts. Human Resources mode |
+| **Deadline Tracker** | Track legal filing deadlines and HR milestones — urgency indicators, one-click mark complete. Legal and HR modes |
+| **Quote Bank** | Capture verbatim quotes from interviews and surveys with source type, speaker, tags, and full-text search. Market Research mode |
+| **Themes Board** | Synthesise patterns across research into candidate / confirmed / rejected themes. Market Research mode |
+| **Capacity Planning** | AIHR-formula capacity calculator, demand gap → FTE analysis, recruiting cost estimator, and headcount registry. HR mode |
 
 ---
 
@@ -83,6 +91,14 @@ Switch modes in **Settings** to adapt the interface, AI framing, and terminology
 | Verification checklist | | ✓ | | ✓ | ✓ | |
 | Keyword monitoring | | ✓ | | | | |
 | Investigation template | | ✓ | | | ✓ | |
+| Risk Register | ✓ | | | | ✓ | |
+| Decision Log | ✓ | | | | | |
+| Blockers / Action Tracker | | | ✓ | | | ✓ |
+| Policy Register | | | | | | ✓ |
+| Deadline Tracker | | | | | ✓ | ✓ |
+| Quote Bank | | | | ✓ | | |
+| Themes Board | | | | ✓ | | |
+| Capacity Planning | | | | | | ✓ |
 
 </details>
 
@@ -238,7 +254,7 @@ npm run test:smoke        # smoke test — requires the dev server to be running
 ```
 
 The test suite covers:
-- **Unit tests** — pure functions in `lib/` (parsers, utilities, auth crypto, model capabilities)
+- **Unit tests** — pure functions in `lib/` (parsers, utilities, auth crypto, model capabilities, capacity planning formulas)
 - **Integration tests** — database-backed functions using an isolated test database
 
 ### API reference
