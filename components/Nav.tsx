@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from '@/components/icons'
-import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen, ShieldCheck, GitFork, CheckSquare, FileSearch } from 'lucide-react'
+import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen, ShieldCheck, GitFork, CheckSquare, FileSearch, ShieldAlert, Lightbulb, Ban, ListChecks, ScrollText, CalendarClock, Quote, Layers, Users2 } from 'lucide-react'
 import type React from 'react'
 
 type AnyIcon = React.ComponentType<{ size?: number; className?: string }>
@@ -17,6 +17,15 @@ const EXTRA_NAV_ICONS: Record<string, AnyIcon> = {
   GitFork,
   CheckSquare,
   FileSearch,
+  ShieldAlert,
+  Lightbulb,
+  Ban,
+  ListChecks,
+  ScrollText,
+  CalendarClock,
+  Quote,
+  Layers,
+  Users2,
 }
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef, Suspense } from 'react'

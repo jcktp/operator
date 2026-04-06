@@ -325,6 +325,172 @@ model Claim {
   @@index([createdAt])
 }
 
+// ── Risk Register ─────────────────────────────────────────────────────────────
+
+model Risk {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  category    String    @default("operational")
+  probability String    @default("medium")   // low/medium/high/critical
+  impact      String    @default("medium")   // low/medium/high/critical
+  owner       String?
+  status      String    @default("open")     // open/mitigated/accepted/closed
+  notes       String?
+  dueAt       DateTime?
+  projectId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// ── Decision Log ──────────────────────────────────────────────────────────────
+
+model Decision {
+  id        String    @id @default(uuid())
+  title     String
+  context   String?
+  rationale String?
+  outcome   String?
+  status    String    @default("pending")    // pending/made/reversed/superseded
+  madeBy    String?
+  madeAt    DateTime?
+  notes     String?
+  projectId String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([status])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// ── Action Items & Blockers ───────────────────────────────────────────────────
+
+model ActionItem {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  kind        String    @default("action")   // action/blocker
+  assignee    String?
+  dueAt       DateTime?
+  priority    String    @default("medium")   // low/medium/high/critical
+  status      String    @default("open")     // open/in_progress/done/cancelled/deferred
+  source      String?
+  notes       String?
+  projectId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([kind])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// ── Policy Register ───────────────────────────────────────────────────────────
+
+model PolicyRecord {
+  id             String    @id @default(uuid())
+  title          String
+  description    String?
+  owner          String?
+  category       String    @default("general")
+  status         String    @default("active")  // draft/active/under_review/archived
+  lastReviewedAt DateTime?
+  nextReviewAt   DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([nextReviewAt])
+}
+
+// ── Deadline Tracker ──────────────────────────────────────────────────────────
+
+model Deadline {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  kind        String    @default("other")     // court/filing/limitation/review/hearing/contract/other
+  dueAt       DateTime
+  completedAt DateTime?
+  status      String    @default("upcoming")  // upcoming/completed/missed/extended
+  priority    String    @default("medium")    // low/medium/high/critical
+  context     String?
+  notes       String?
+  projectId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([dueAt])
+  @@index([projectId])
+}
+
+// ── Quote Bank ────────────────────────────────────────────────────────────────
+
+model Quote {
+  id         String   @id @default(uuid())
+  text       String
+  speaker    String?
+  context    String?
+  sourceType String   @default("interview")  // interview/survey/focus_group/document
+  tags       String   @default("[]")         // JSON-encoded string[]
+  reportId   String?
+  projectId  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([reportId])
+  @@index([createdAt])
+}
+
+// ── Themes Board ──────────────────────────────────────────────────────────────
+
+model Theme {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("candidate")  // candidate/confirmed/rejected
+  notes       String?
+  projectId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([projectId])
+}
+
+// ── Headcount & Capacity Planning ─────────────────────────────────────────────
+
+model HeadcountEntry {
+  id            String    @id @default(uuid())
+  role          String
+  department    String
+  currentCount  Int       @default(0)
+  targetCount   Int       @default(0)
+  openPositions Int       @default(0)
+  attritionRate Float     @default(0)    // % per year, 0-100
+  status        String    @default("planning")  // planning/recruiting/on_hold/filled
+  targetDate    DateTime?
+  hiringManager String?
+  notes         String?
+  projectId     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([department])
+  @@index([status])
+  @@index([projectId])
+}
+
 // ── Background upload jobs ─────────────────────────────────────────────────────
 
 model UploadJob {
