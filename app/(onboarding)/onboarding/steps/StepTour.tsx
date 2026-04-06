@@ -1,4 +1,4 @@
-import { Upload, MessageSquare, BookOpen, Rss, Network, Clock, BarChart2, BookMarked, FolderOpen } from 'lucide-react'
+import { Upload, MessageSquare, BookOpen, Rss, Network, Clock, BarChart2, BookMarked, FolderOpen, GitFork, CheckSquare, FileSearch, ShieldCheck } from 'lucide-react'
 import type { ModeConfig } from '@/lib/mode'
 
 interface Props {
@@ -23,10 +23,14 @@ export default function StepTour({ modeConfig, onNext, onBack }: Props) {
   ]
 
   const modeSpecific: Card[] = []
-  if (f.entities)          modeSpecific.push({ icon: <Network size={17} className="text-rose-500" />,    title: c.features.extraNavItems[0]?.label ?? 'Entities',  desc: `Named people, organisations, and places auto-extracted across your ${c.documentLabelPlural.toLowerCase()}.` })
-  if (f.timeline)          modeSpecific.push({ icon: <Clock size={17} className="text-orange-500" />,    title: 'Timeline',          desc: `Events assembled into a chronological view from your ${c.documentLabelPlural.toLowerCase()}.` })
-  if (f.metricsBoard)      modeSpecific.push({ icon: <BarChart2 size={17} className="text-teal-500" />,  title: 'Metrics',           desc: `Aggregated KPI tracking and time-series charts across your ${c.documentLabelPlural.toLowerCase()}.` })
+  if (f.entities)          modeSpecific.push({ icon: <Network size={17} className="text-rose-500" />,       title: c.features.extraNavItems[0]?.label ?? 'Entities',  desc: `Named people, organisations, and places auto-extracted across your ${c.documentLabelPlural.toLowerCase()}.` })
+  if (f.entities)          modeSpecific.push({ icon: <GitFork size={17} className="text-[#0026c0]" />,      title: 'Entity Network',    desc: 'Force-directed graph of all extracted entities. Pan, zoom, drag nodes, and highlight clusters.' })
+  if (f.timeline)          modeSpecific.push({ icon: <Clock size={17} className="text-orange-500" />,       title: 'Timeline',          desc: `Events assembled into a chronological view from your ${c.documentLabelPlural.toLowerCase()}.` })
+  if (f.metricsBoard)      modeSpecific.push({ icon: <BarChart2 size={17} className="text-teal-500" />,     title: 'Metrics',           desc: `Aggregated KPI tracking and time-series charts across your ${c.documentLabelPlural.toLowerCase()}.` })
   if (f.keywordMonitoring) modeSpecific.push({ icon: <BookMarked size={17} className="text-fuchsia-500" />, title: 'Keyword monitoring', desc: 'Track keywords across Pulse — highlighted whenever they appear in new items.' })
+  if (f.investigationTemplate) modeSpecific.push({ icon: <CheckSquare size={17} className="text-emerald-600" />, title: 'Claims Tracker', desc: 'Log factual claims from sources and track their verification status across your investigation.' })
+  if (f.investigationTemplate) modeSpecific.push({ icon: <FileSearch size={17} className="text-sky-500" />,      title: 'FOIA Tracker',   desc: 'Track public records requests from filing to receipt — with overdue alerts and status history.' })
+  if (f.investigationTemplate) modeSpecific.push({ icon: <ShieldCheck size={17} className="text-violet-500" />,  title: 'File Cleaner',   desc: 'Strip EXIF metadata and identifying information from files before sharing or publishing.' })
 
   const cards = [...universal, ...modeSpecific]
 
@@ -34,7 +38,7 @@ export default function StepTour({ modeConfig, onNext, onBack }: Props) {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-50 mb-1">What you have access to</h2>
-        <p className="text-sm text-gray-500 dark:text-zinc-400">Everything is in the left navigation. Here&apos;s a quick overview.</p>
+        <p className="text-sm text-gray-500 dark:text-zinc-400">Everything is in the top navigation. Here&apos;s a quick overview.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

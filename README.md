@@ -50,6 +50,10 @@ Operator is a private intelligence workspace. Upload documents, images, and audi
 | **Journal** | Private note-taking with folder organisation and AI grammar correction |
 | **One-pager** | AI-generated executive brief across all documents; export to PDF |
 | **Remote submissions** | Shareable link so others can submit files from any device; lands directly in your library |
+| **Entity Network** | Force-directed graph of all extracted entities — pan, zoom, drag nodes, highlight connected clusters. Journalism mode only |
+| **FOIA Tracker** | Track public records requests from draft through receipt with 7 status stages, overdue alerts, and per-request notes. Journalism mode only |
+| **Claims Tracker** | Log factual claims from sources and mark them verified, disputed, false, or needs-more-info. Journalism mode only |
+| **File Cleaner** | Strip EXIF metadata and identifying information from images and documents before sharing or publishing. Journalism mode only |
 
 ---
 
