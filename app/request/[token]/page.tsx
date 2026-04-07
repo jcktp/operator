@@ -236,7 +236,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
             value={submitterName}
             onChange={e => setSubmitterName(e.target.value)}
             placeholder="Your name"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
           {directs.length > 0 && (
             <datalist id="directs-list">
@@ -255,7 +255,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
           type="date"
           value={reportDate}
           onChange={e => setReportDate(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
         />
       </div>
 
@@ -329,7 +329,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
             value={googleUrl}
             onChange={e => setGoogleUrl(e.target.value)}
             placeholder="https://docs.google.com/spreadsheets/d/..."
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 font-mono"
           />
           <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 text-xs text-blue-700 leading-relaxed">
             Make sure the document is shared with <strong>&quot;Anyone with the link&quot;</strong> — otherwise it can&apos;t be fetched.
