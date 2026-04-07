@@ -182,8 +182,6 @@ Three model setup modes are available in **Settings → AI**:
 
 | Model | Size | Notes |
 |---|---|---|
-| `whisper:small` | 0.6 GB | Transcription only — lightest option |
-| `whisper:medium` | 1.5 GB | Better accuracy, still lightweight |
 | `gemma4:e2b` | 7.2 GB | Full multimodal — text, vision, and audio |
 | `phi4-multimodal` | ~8.5 GB | Full multimodal — generally faster than gemma4 |
 
