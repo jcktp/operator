@@ -18,8 +18,8 @@ export async function GET(req: Request) {
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
   ])
   const currentMode = modeRow?.value ?? ''
-  // Show projects belonging to the current mode, plus legacy projects with no mode set
-  const filtered = projects.filter(p => p.mode === '' || p.mode === currentMode)
+  // Show only projects belonging to the current mode (strict isolation between modes)
+  const filtered = currentMode ? projects.filter(p => p.mode === currentMode) : projects
   return Response.json({ projects: filtered, currentProjectId: currentSetting?.value ?? null })
 }
 

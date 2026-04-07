@@ -10,11 +10,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params
   const body = await req.json() as Record<string, unknown>
-  const allowed = ['title', 'description', 'category', 'probability', 'impact', 'owner', 'status', 'notes', 'dueAt', 'projectId']
+  const allowed = ['title', 'description', 'category', 'probability', 'impact', 'owner', 'status', 'notes', 'dueAt', 'resolvedAt', 'projectId']
   const data: Record<string, unknown> = {}
   for (const key of allowed) {
     if (key in body) {
-      data[key] = key === 'dueAt' && body[key] ? new Date(body[key] as string) : body[key]
+      data[key] = (key === 'dueAt' || key === 'resolvedAt') && body[key]
+        ? new Date(body[key] as string)
+        : body[key]
+    }
+  }
+
+  // Auto-set resolvedAt when status changes to closed or mitigated (if not already provided)
+  if ('status' in body && !('resolvedAt' in body)) {
+    const s = body.status as string
+    if (s === 'closed' || s === 'mitigated') {
+      const current = await prisma.risk.findUnique({ where: { id }, select: { resolvedAt: true } })
+      if (!current?.resolvedAt) data.resolvedAt = new Date()
+    } else if (s === 'open' || s === 'accepted') {
+      data.resolvedAt = null
     }
   }
 

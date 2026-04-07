@@ -18,7 +18,7 @@ export default async function MetricsPage() {
 
   if (!modeConfig.features.metricsBoard) notFound()
 
-  const modeWhere = { OR: [{ mode: '' }, { mode: currentMode }] }
+  const modeWhere = currentMode ? { mode: currentMode } : {}
   const reports = await prisma.report.findMany({
     where: { metrics: { not: null }, ...(currentProjectId ? { projectId: currentProjectId } : modeWhere) },
     orderBy: { createdAt: 'desc' },

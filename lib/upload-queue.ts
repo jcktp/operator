@@ -270,6 +270,58 @@ async function processItem(itemId: string): Promise<void> {
       ])
     }
 
+    // Risk Register: auto-create risks from AI insights, auto-resolve from resolvedFlags
+    if (!isImagePlaceholder && !isFailedAudio && modeFeatures.riskRegister) {
+      try {
+        const riskInsights = analysis?.insights?.filter(i => i.type === 'risk') ?? []
+        if (riskInsights.length > 0) {
+          // Fetch existing open risk titles for this project to avoid duplicates
+          const existingTitles = new Set(
+            (await prisma.risk.findMany({
+              where: { ...(item.projectId ? { projectId: item.projectId } : {}), status: { not: 'closed' } },
+              select: { title: true },
+            })).map(r => r.title.toLowerCase())
+          )
+          const toCreate = riskInsights.filter(i => !existingTitles.has(i.text.toLowerCase()))
+          if (toCreate.length > 0) {
+            await prisma.risk.createMany({
+              data: toCreate.map(i => ({
+                id:          crypto.randomUUID(),
+                title:       i.text.length > 200 ? i.text.slice(0, 197) + '…' : i.text,
+                description: `Auto-identified from: ${report.title}`,
+                status:      'open',
+                projectId:   item?.projectId || null,
+              })),
+            })
+          }
+        }
+
+        // Auto-resolve open risks whose text matches flags resolved in this report
+        if (resolvedFlagsJson) {
+          const resolvedTexts: string[] = JSON.parse(resolvedFlagsJson)
+          if (resolvedTexts.length > 0) {
+            const openRisks = await prisma.risk.findMany({
+              where: { status: 'open', ...(item.projectId ? { projectId: item.projectId } : {}) },
+              select: { id: true, title: true },
+            })
+            const now = new Date()
+            for (const risk of openRisks) {
+              const matched = resolvedTexts.some(t =>
+                risk.title.toLowerCase().includes(t.toLowerCase().slice(0, 40)) ||
+                t.toLowerCase().includes(risk.title.toLowerCase().slice(0, 40))
+              )
+              if (matched) {
+                await prisma.risk.update({
+                  where: { id: risk.id },
+                  data: { status: 'closed', resolvedAt: now },
+                })
+              }
+            }
+          }
+        }
+      } catch (e) { console.error('[upload-queue] Risk register sync failed:', e) }
+    }
+
     // Refresh area briefing synchronously so it completes before the queue
     // drains and the model is unloaded — prevents a reload cycle after eviction.
     if (analysis?.summary) {

@@ -15,7 +15,7 @@ export async function DELETE(req: NextRequest) {
     if (r.imagePath) deleteReportFile(r.imagePath)
   }
   // Compact the database after a bulk delete
-  await prisma.$executeRawUnsafe('VACUUM')
+  await prisma.$executeRaw`VACUUM`
   void logAction('report:clear', `All ${reports.length} report${reports.length !== 1 ? 's' : ''} permanently deleted`)
   return NextResponse.json({ ok: true })
 }

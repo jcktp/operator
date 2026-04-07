@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { join, resolve } from 'path'
 import { getReportsRoot } from '@/lib/reports-folder'
 import { requireAuth } from '@/lib/api-auth'
@@ -19,18 +19,17 @@ export async function POST(req: Request) {
   }
 
   const platform = process.platform
-  const escaped = target.replace(/"/g, '\\"')
-  const cmd =
-    platform === 'darwin' ? `open "${escaped}"` :
-    platform === 'win32'  ? `explorer "${escaped}"` :
-    `xdg-open "${escaped}"`
+  const [bin, args]: [string, string[]] =
+    platform === 'darwin' ? ['open',     [target]] :
+    platform === 'win32'  ? ['explorer', [target]] :
+                            ['xdg-open', [target]]
 
-  return new Promise<NextResponse>(resolve => {
-    exec(cmd, err => {
+  return new Promise<NextResponse>(res => {
+    execFile(bin, args, err => {
       if (err) {
-        resolve(NextResponse.json({ error: 'Failed to open' }, { status: 500 }))
+        res(NextResponse.json({ error: 'Failed to open' }, { status: 500 }))
       } else {
-        resolve(NextResponse.json({ ok: true }))
+        res(NextResponse.json({ ok: true }))
       }
     })
   })

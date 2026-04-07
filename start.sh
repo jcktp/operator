@@ -23,6 +23,42 @@ case "$OS" in
   *)       PLATFORM="unknown" ;;
 esac
 
+# ── no-admin support ──────────────────────────────────────────────────────────
+# User-space bin dir — on PATH so binaries installed here are found immediately
+HOME_BIN="$HOME/.local/bin"
+mkdir -p "$HOME_BIN"
+export PATH="$HOME_BIN:$PATH"
+
+# Also pick up Python user-scheme scripts (pip3 install --user on macOS puts
+# binaries in ~/Library/Python/X.Y/bin rather than ~/.local/bin)
+if [ "$PLATFORM" = "macOS" ] && command -v python3 &>/dev/null; then
+  PY_USER_BIN="$(python3 -c 'import sysconfig; print(sysconfig.get_path("scripts", "posix_user"))' 2>/dev/null || true)"
+  [ -n "$PY_USER_BIN" ] && export PATH="$PY_USER_BIN:$PATH"
+fi
+
+# Returns 0 if the current user can gain admin/root privileges
+has_admin() {
+  case "$PLATFORM" in
+    macOS)  groups 2>/dev/null | grep -qw admin ;;
+    Linux)  sudo -n true 2>/dev/null || groups 2>/dev/null | grep -qE '\b(sudo|wheel|admin)\b' ;;
+    *)      return 1 ;;
+  esac
+}
+
+# Install nvm (no admin required) and source it into the current shell
+NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+ensure_nvm() {
+  if [ -s "$NVM_DIR/nvm.sh" ]; then
+    # shellcheck source=/dev/null
+    . "$NVM_DIR/nvm.sh"
+    return 0
+  fi
+  step "Installing nvm (no-admin Node.js version manager)..."
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash >/dev/null 2>&1 || return 1
+  # shellcheck source=/dev/null
+  . "$NVM_DIR/nvm.sh"
+}
+
 open_browser() {
   case "$PLATFORM" in
     macOS)   open "$1" ;;
@@ -48,16 +84,20 @@ bold "\nOperator — starting up in production mode (${PLATFORM})\n"
 # ── 1. Homebrew (macOS only) ──────────────────────────────────────────────────
 if [ "$PLATFORM" = "macOS" ]; then
   if ! command -v brew &>/dev/null; then
-    step "Homebrew not found — installing..."
-    echo -e "${YELLOW}  You may be prompted for your password.${NC}"
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
-      || error "Failed to install Homebrew. Install it manually from https://brew.sh then re-run this script."
-    if [ -f /opt/homebrew/bin/brew ]; then
-      eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [ -f /usr/local/bin/brew ]; then
-      eval "$(/usr/local/bin/brew shellenv)"
+    if has_admin; then
+      step "Homebrew not found — installing..."
+      echo -e "${YELLOW}  You may be prompted for your password.${NC}"
+      NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+        || warn "Homebrew install failed — will use no-admin fallbacks for each tool."
+      if [ -f /opt/homebrew/bin/brew ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+      elif [ -f /usr/local/bin/brew ]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+      fi
+      command -v brew &>/dev/null && step "Homebrew installed"
+    else
+      warn "No admin access and Homebrew is not installed — using no-admin install paths for each tool."
     fi
-    step "Homebrew installed"
   else
     step "Homebrew found ($(brew --version | head -1))"
     if [ -f /opt/homebrew/bin/brew ]; then
@@ -67,26 +107,43 @@ if [ "$PLATFORM" = "macOS" ]; then
 fi
 
 # ── 2. Node.js ────────────────────────────────────────────────────────────────
+# Source nvm if present (makes node available even if not on system PATH yet)
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
 step "Checking Node.js..."
 if ! command -v node &>/dev/null; then
   warn "Node.js not found — installing..."
   case "$PLATFORM" in
     macOS)
-      brew install node || error "Failed to install Node.js via Homebrew"
+      if has_admin && command -v brew &>/dev/null; then
+        brew install node || error "Failed to install Node.js via Homebrew"
+      else
+        warn "No admin access — installing Node.js via nvm (no password required)..."
+        ensure_nvm || error "Could not install nvm. Install Node.js manually: https://nodejs.org"
+        nvm install --lts >/dev/null 2>&1 || error "nvm could not install Node.js LTS"
+        step "Node.js installed via nvm"
+      fi
       ;;
     Linux)
-      if command -v apt-get &>/dev/null; then
-        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - \
-          && sudo apt-get install -y nodejs \
-          || error "Failed to install Node.js. Install manually from https://nodejs.org"
-      elif command -v dnf &>/dev/null; then
-        sudo dnf install -y nodejs || error "Failed to install Node.js. Install manually from https://nodejs.org"
-      elif command -v yum &>/dev/null; then
-        sudo yum install -y nodejs || error "Failed to install Node.js. Install manually from https://nodejs.org"
-      elif command -v pacman &>/dev/null; then
-        sudo pacman -Sy --noconfirm nodejs npm || error "Failed to install Node.js. Install manually from https://nodejs.org"
+      if has_admin; then
+        if command -v apt-get &>/dev/null; then
+          curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - \
+            && sudo apt-get install -y nodejs \
+            || error "Failed to install Node.js. Install manually from https://nodejs.org"
+        elif command -v dnf &>/dev/null; then
+          sudo dnf install -y nodejs || error "Failed to install Node.js. Install manually from https://nodejs.org"
+        elif command -v yum &>/dev/null; then
+          sudo yum install -y nodejs || error "Failed to install Node.js. Install manually from https://nodejs.org"
+        elif command -v pacman &>/dev/null; then
+          sudo pacman -Sy --noconfirm nodejs npm || error "Failed to install Node.js. Install manually from https://nodejs.org"
+        else
+          error "Node.js not found. Install from https://nodejs.org"
+        fi
       else
-        error "Node.js not found. Install from https://nodejs.org"
+        warn "No sudo access — installing Node.js via nvm (no password required)..."
+        ensure_nvm || error "Could not install nvm. Install Node.js manually: https://nodejs.org"
+        nvm install --lts >/dev/null 2>&1 || error "nvm could not install Node.js LTS"
+        step "Node.js installed via nvm"
       fi
       ;;
     Windows)
@@ -105,10 +162,32 @@ if ! command -v ollama &>/dev/null; then
   warn "Ollama not found — installing..."
   case "$PLATFORM" in
     macOS)
-      brew install ollama || error "Failed to install Ollama via Homebrew"
+      if has_admin && command -v brew &>/dev/null; then
+        brew install ollama || error "Failed to install Ollama via Homebrew"
+      else
+        warn "No admin access — downloading Ollama binary to $HOME_BIN (no password required)..."
+        ARCH="$(uname -m)"
+        case "$ARCH" in arm64|aarch64) OLLAMA_BIN="ollama-darwin-arm64" ;; *) OLLAMA_BIN="ollama-darwin-amd64" ;; esac
+        curl -fsSL "https://github.com/ollama/ollama/releases/latest/download/${OLLAMA_BIN}" \
+          -o "$HOME_BIN/ollama" \
+          && chmod +x "$HOME_BIN/ollama" \
+          || error "Failed to download Ollama. Visit https://ollama.com/download"
+        step "Ollama installed to $HOME_BIN/ollama"
+      fi
       ;;
     Linux)
-      curl -fsSL https://ollama.com/install.sh | sh || error "Failed to install Ollama. Visit https://ollama.com"
+      if has_admin; then
+        curl -fsSL https://ollama.com/install.sh | sh || error "Failed to install Ollama. Visit https://ollama.com"
+      else
+        warn "No sudo access — downloading Ollama binary to $HOME_BIN (no password required)..."
+        ARCH="$(uname -m)"
+        case "$ARCH" in aarch64|arm64) OLLAMA_BIN="ollama-linux-arm64" ;; *) OLLAMA_BIN="ollama-linux-amd64" ;; esac
+        curl -fsSL "https://github.com/ollama/ollama/releases/latest/download/${OLLAMA_BIN}" \
+          -o "$HOME_BIN/ollama" \
+          && chmod +x "$HOME_BIN/ollama" \
+          || error "Failed to download Ollama. Visit https://ollama.com/download"
+        step "Ollama installed to $HOME_BIN/ollama"
+      fi
       ;;
     Windows)
       error "Please install Ollama from https://ollama.com/download/windows then re-run this script."
@@ -152,17 +231,25 @@ if ! command -v tesseract &>/dev/null; then
   step "Tesseract OCR not found — installing..."
   case "$PLATFORM" in
     macOS)
-      brew install tesseract || warn "Could not install Tesseract — image text extraction will fall back to vision model"
+      if has_admin && command -v brew &>/dev/null; then
+        brew install tesseract || warn "Could not install Tesseract — image text extraction will fall back to vision model"
+      else
+        warn "No admin access — skipping Tesseract install. Image text extraction will fall back to vision model."
+      fi
       ;;
     Linux)
-      if command -v apt-get &>/dev/null; then
-        sudo apt-get install -y tesseract-ocr >/dev/null 2>&1 || warn "Could not install Tesseract"
-      elif command -v dnf &>/dev/null; then
-        sudo dnf install -y tesseract >/dev/null 2>&1 || warn "Could not install Tesseract"
-      elif command -v pacman &>/dev/null; then
-        sudo pacman -Sy --noconfirm tesseract tesseract-data-eng >/dev/null 2>&1 || warn "Could not install Tesseract"
+      if has_admin; then
+        if command -v apt-get &>/dev/null; then
+          sudo apt-get install -y tesseract-ocr >/dev/null 2>&1 || warn "Could not install Tesseract"
+        elif command -v dnf &>/dev/null; then
+          sudo dnf install -y tesseract >/dev/null 2>&1 || warn "Could not install Tesseract"
+        elif command -v pacman &>/dev/null; then
+          sudo pacman -Sy --noconfirm tesseract tesseract-data-eng >/dev/null 2>&1 || warn "Could not install Tesseract"
+        else
+          warn "Tesseract not available — image text extraction will fall back to vision model"
+        fi
       else
-        warn "Tesseract not available — image text extraction will fall back to vision model"
+        warn "No sudo access — skipping Tesseract install. Image text extraction will fall back to vision model."
       fi
       ;;
     *)
@@ -179,26 +266,37 @@ if ! command -v mat2 &>/dev/null; then
   case "$PLATFORM" in
     macOS)
       if command -v pip3 &>/dev/null; then
-        pip3 install mat2 --quiet 2>/dev/null \
+        # --user installs to ~/Library/Python/X.Y/bin — no admin needed
+        pip3 install mat2 --user --quiet 2>/dev/null \
           || warn "Could not install MAT2 — file metadata stripping unavailable in File Cleaner"
       else
         warn "pip3 not found — skipping MAT2 install (File Cleaner will use ExifTool only)"
       fi
       ;;
     Linux)
-      if command -v apt-get &>/dev/null; then
-        sudo apt-get install -y mat2 >/dev/null 2>&1 \
-          || pip3 install mat2 --quiet 2>/dev/null \
-          || warn "Could not install MAT2"
-      elif command -v dnf &>/dev/null; then
-        sudo dnf install -y mat2 >/dev/null 2>&1 \
-          || pip3 install mat2 --quiet 2>/dev/null \
-          || warn "Could not install MAT2"
-      elif command -v pacman &>/dev/null; then
-        sudo pacman -Sy --noconfirm python-mat2 >/dev/null 2>&1 \
-          || warn "Could not install MAT2"
+      if has_admin; then
+        if command -v apt-get &>/dev/null; then
+          sudo apt-get install -y mat2 >/dev/null 2>&1 \
+            || pip3 install mat2 --quiet 2>/dev/null \
+            || warn "Could not install MAT2"
+        elif command -v dnf &>/dev/null; then
+          sudo dnf install -y mat2 >/dev/null 2>&1 \
+            || pip3 install mat2 --quiet 2>/dev/null \
+            || warn "Could not install MAT2"
+        elif command -v pacman &>/dev/null; then
+          sudo pacman -Sy --noconfirm python-mat2 >/dev/null 2>&1 \
+            || warn "Could not install MAT2"
+        else
+          warn "Could not install MAT2 — unknown Linux package manager"
+        fi
       else
-        warn "Could not install MAT2 — unknown Linux package manager"
+        # Fall back to user-space pip install
+        if command -v pip3 &>/dev/null; then
+          pip3 install mat2 --user --quiet 2>/dev/null \
+            || warn "Could not install MAT2 — File Cleaner will use ExifTool only"
+        else
+          warn "No sudo access and pip3 not found — skipping MAT2 (File Cleaner will use ExifTool only)"
+        fi
       fi
       ;;
     *)
@@ -214,15 +312,19 @@ fi
 update_tools_bg() {
   case "$PLATFORM" in
     macOS)
-      brew upgrade cloudflared tesseract >/dev/null 2>&1 || true ;;
+      command -v brew &>/dev/null && brew upgrade cloudflared tesseract >/dev/null 2>&1 || true ;;
     Linux)
-      # Update cloudflared binary
+      # Update cloudflared binary — install to system path if admin, else user bin
       ARCH="$(uname -m)"
       case "$ARCH" in x86_64) CF_ARCH="amd64" ;; aarch64|arm64) CF_ARCH="arm64" ;; *) CF_ARCH="amd64" ;; esac
       CF_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}"
-      curl -fsSL "$CF_URL" -o /tmp/cloudflared-dl 2>/dev/null \
-        && sudo install -m 0755 /tmp/cloudflared-dl /usr/local/bin/cloudflared 2>/dev/null \
-        && rm -f /tmp/cloudflared-dl || true ;;
+      curl -fsSL "$CF_URL" -o /tmp/cloudflared-dl 2>/dev/null || return
+      if has_admin; then
+        sudo install -m 0755 /tmp/cloudflared-dl /usr/local/bin/cloudflared 2>/dev/null || true
+      else
+        install -m 0755 /tmp/cloudflared-dl "$HOME_BIN/cloudflared" 2>/dev/null || true
+      fi
+      rm -f /tmp/cloudflared-dl ;;
   esac
 }
 if command -v cloudflared &>/dev/null; then

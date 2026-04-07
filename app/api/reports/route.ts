@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
     where: {
       ...(area ? { area } : {}),
       ...(directReportId ? { directReportId } : {}),
-      // Show reports belonging to the current mode, plus legacy reports with no mode set
-      OR: [{ mode: '' }, { mode: currentMode }],
+      // Strict mode isolation: only show reports for the current mode
+      ...(currentMode ? { mode: currentMode } : {}),
     },
     include: { directReport: true },
     orderBy: { createdAt: 'desc' },

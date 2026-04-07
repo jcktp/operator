@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 interface Risk {
   id: string; title: string; description: string | null; category: string
   probability: string; impact: string; owner: string | null; status: string
-  notes: string | null; dueAt: string | null; projectId: string | null; createdAt: string
+  notes: string | null; dueAt: string | null; resolvedAt: string | null
+  projectId: string | null; createdAt: string
 }
 
 const PROBABILITY_LEVELS = ['low', 'medium', 'high', 'critical'] as const
@@ -192,10 +193,17 @@ export default function RisksClient() {
                       rows={1} placeholder="Add notes…"
                       className="mt-2 w-full text-xs border border-gray-100 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 dark:bg-zinc-800/50 dark:text-zinc-300 dark:placeholder-zinc-600 resize-none bg-white/60" />
                   </div>
-                  <select value={risk.status} onChange={e => void updateField(risk.id, 'status', e.target.value)}
-                    className="text-[11px] font-medium px-2 py-1 rounded-full border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 focus:outline-none shrink-0">
-                    {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-                  </select>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <select value={risk.status} onChange={e => void updateField(risk.id, 'status', e.target.value)}
+                      className="text-[11px] font-medium px-2 py-1 rounded-full border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 focus:outline-none">
+                      {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                    </select>
+                    {risk.resolvedAt && (
+                      <span className="text-[10px] text-gray-400 dark:text-zinc-500 whitespace-nowrap">
+                        Resolved {new Date(risk.resolvedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    )}
+                  </div>
                   <button onClick={() => void handleDelete(risk.id)} className="text-gray-300 dark:text-zinc-600 hover:text-red-400 transition-colors shrink-0">
                     <Trash2 size={13} />
                   </button>

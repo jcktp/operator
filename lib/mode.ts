@@ -25,6 +25,8 @@ export interface ModeFeatures {
   defaultFeeds: boolean
   /** Journal page description override */
   journalDescription: string | null
+  /** Automatically extract risk insights into the Risk Register on document upload */
+  riskRegister: boolean
   /** Metrics board page — aggregated KPIs across all documents */
   metricsBoard: boolean
   /** Show extracted metrics and period comparison on individual document pages */
@@ -91,6 +93,7 @@ const DEFAULT_FEATURES: ModeFeatures = {
   keywordMonitoring: false,
   investigationTemplate: false,
   defaultFeeds: false,
+  riskRegister: false,
   metricsBoard: false,
   showReportMetrics: true,
   journalDescription: null,
@@ -136,6 +139,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
       ...DEFAULT_FEATURES,
       documentComparison: true,
       metricsBoard: true,
+      riskRegister: true,
       journalDescription: 'Leadership notes organised by theme — decisions, strategy, reflections',
       extraNavItems: [
         { href: '/metrics',   label: 'Metrics',      icon: 'BarChart2'   },
@@ -315,6 +319,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
       verification: true,
       documentComparison: true,
       investigationTemplate: true,
+      riskRegister: true,
       journalDescription: 'Case notes organised by matter — hearings, evidence, client calls',
       extraNavItems: [
         { href: '/entities',     label: 'Parties',      icon: 'Users'        },

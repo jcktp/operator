@@ -262,6 +262,7 @@ export function useSettingsState() {
     // If the mode changed, clear the active project so the user starts fresh in the new mode
     if (appMode !== savedMode) {
       await saveSetting('current_project_id', '')
+      window.dispatchEvent(new Event('project:changed'))
     }
 
     await Promise.all([

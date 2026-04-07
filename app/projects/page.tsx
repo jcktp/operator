@@ -13,7 +13,7 @@ export default async function ProjectsPage() {
   const modeConfig = getModeConfig(currentMode)
 
   const projectRows = await prisma.project.findMany({
-    where: { OR: [{ mode: '' }, { mode: currentMode }] },
+    where: currentMode ? { mode: currentMode } : {},
     orderBy: { createdAt: 'desc' },
     include: { _count: { select: { reports: true } } },
   })

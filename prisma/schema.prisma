@@ -338,6 +338,7 @@ model Risk {
   status      String    @default("open")     // open/mitigated/accepted/closed
   notes       String?
   dueAt       DateTime?
+  resolvedAt  DateTime?                      // set automatically when status → closed/mitigated
   projectId   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
