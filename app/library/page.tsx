@@ -26,7 +26,7 @@ export default async function LibraryPage({
   ])
   const currentMode = modeRow?.value ?? ''
   const modeConfig = getModeConfig(currentMode)
-  const modeWhere = currentMode ? { mode: currentMode } : {}
+  const modeWhere = currentMode ? { OR: [{ mode: currentMode }, { mode: '' }] } : {}
 
   // Validate current project belongs to active mode
   const storedProjectId = currentProjectSetting?.value || null

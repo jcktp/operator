@@ -41,7 +41,7 @@ export default async function FilesPage() {
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
   const currentMode = modeRow?.value ?? ''
   const projects = await prisma.project.findMany({
-    where: currentMode ? { mode: currentMode } : {},
+    where: currentMode ? { OR: [{ mode: currentMode }, { mode: '' }] } : {},
     select: { name: true },
   })
   const projectFolderNames = new Set(projects.map(p => sanitizeProjectName(p.name)))
