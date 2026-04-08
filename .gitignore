@@ -75,3 +75,4 @@ prisma/.operator_key
 
 # cloudflared binary (downloaded at runtime by start.sh)
 cloudflared
+memory/
