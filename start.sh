@@ -545,8 +545,18 @@ prisma.setting.findUnique({ where: { key: 'ollama_model' } })
       step "Model $MODEL ready"
     fi
 
-    # Vision model — use OLLAMA_VISION_MODEL from .env.local if set, otherwise default to llava-phi3
-    VISION_MODEL="llava-phi3"
+    # Vision model — prefer DB setting (saved by onboarding), then .env.local, then default
+    DEFAULT_VISION_MODEL="llava-phi3"
+    VISION_MODEL=$(node -e "
+const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+const { PrismaClient } = require('@prisma/client');
+const path = require('path');
+const adapter = new PrismaBetterSqlite3({ url: path.resolve(process.cwd(), 'prisma', 'dev.db') });
+const prisma = new PrismaClient({ adapter });
+prisma.setting.findUnique({ where: { key: 'ollama_vision_model' } })
+  .then(s => { console.log(s?.value || '${DEFAULT_VISION_MODEL}'); process.exit(0); })
+  .catch(() => { console.log('${DEFAULT_VISION_MODEL}'); process.exit(0); });
+" 2>/dev/null || echo "$DEFAULT_VISION_MODEL")
     if [ -f ".env.local" ]; then
       VISION_MODEL_OVERRIDE=$(grep -E '^OLLAMA_VISION_MODEL=' .env.local | head -1 | sed 's/OLLAMA_VISION_MODEL=//;s/"//g;s/'"'"'//g' || true)
       [ -n "$VISION_MODEL_OVERRIDE" ] && VISION_MODEL="$VISION_MODEL_OVERRIDE"
