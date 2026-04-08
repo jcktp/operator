@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
 
 export async function POST(req: NextRequest) {
+  const deny = await requireAuth(req)
+  if (deny) return deny
+
   const { host } = await req.json()
   const baseUrl = (host ?? 'http://localhost:11434').replace(/\/$/, '')
 

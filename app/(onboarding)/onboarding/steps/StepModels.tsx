@@ -51,6 +51,14 @@ function modelById(id: string): ModelDef {
   return ALL_MODELS.find(m => m.id === id) ?? { id, label: id, role: '', size: '?' }
 }
 
+// Ollama may store tagless names as 'name:latest' (e.g. 'phi4-mini:latest').
+// Exact match first; fall back to checking ':latest' suffix for tagless ids.
+function isModelInstalled(installed: string[], modelId: string): boolean {
+  if (installed.includes(modelId)) return true
+  if (!modelId.includes(':') && installed.includes(modelId + ':latest')) return true
+  return false
+}
+
 export default function StepModels({ onNext, onBack, onSkip }: Props) {
   const [ollamaOk, setOllamaOk] = useState<boolean | null>(null)
   const [installed, setInstalled] = useState<string[]>([])
@@ -80,6 +88,15 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
       })
       .catch(() => setOllamaOk(false))
   }, [])
+
+  // Auto-mark done when all selected models are already installed
+  useEffect(() => {
+    if (installed.length > 0 && selected.length > 0 && selected.every(id => isModelInstalled(installed, id))) {
+      saveModelSettings(selected).catch(() => {})
+      setAllDone(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [installed, selected])
 
   const setPresetChoice = (p: Preset) => {
     setPreset(p)
@@ -146,20 +163,40 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
     }
   }
 
+  const saveModelSettings = async (models: string[]) => {
+    const save = (key: string, value: string) =>
+      fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value }) })
+
+    if (models.length === 1) {
+      const caps = getModelCapsClient(models[0])
+      await save('ollama_model', models[0])
+      await save('model_setup_mode', caps.vision ? 'all-in-one' : 'text-vision')
+    } else {
+      // Multiple models: assign text model vs vision model by capability
+      const visionModel = models.find(id => getModelCapsClient(id).vision)
+      const textModel = models.find(id => !getModelCapsClient(id).vision) ?? models[0]
+      await save('ollama_model', textModel)
+      if (visionModel && visionModel !== textModel) await save('ollama_vision_model', visionModel)
+      await save('model_setup_mode', visionModel ? 'text-vision' : 'text-vision')
+    }
+  }
+
   const startDownloads = async () => {
     setRunning(true)
-    // Mark all selected as pending
-    const toDownload = selected.filter(id => !installed.includes(id))
+    const toDownload = selected.filter(id => !isModelInstalled(installed, id))
     setStatuses(prev => {
       const next = { ...prev }
       for (const id of toDownload) next[id] = { state: 'pending', progress: 0 }
-      for (const id of selected.filter(id => installed.includes(id))) next[id] = { state: 'done', progress: 100 }
+      for (const id of selected.filter(id => isModelInstalled(installed, id))) next[id] = { state: 'done', progress: 100 }
       return next
     })
 
     for (const modelId of toDownload) {
       await pullModel(modelId)
     }
+
+    // Persist the user's model selection to settings
+    await saveModelSettings(selected)
 
     setRunning(false)
     setAllDone(true)
@@ -176,7 +213,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
   }
 
   const totalSize = selected
-    .filter(id => !installed.includes(id))
+    .filter(id => !isModelInstalled(installed, id))
     .reduce((sum, id) => {
       const s = modelById(id).size.replace(' GB', '')
       return sum + parseFloat(s)
@@ -243,7 +280,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
               }`}
             >
               {p.label}
-              <div className={`text-[10px] mt-0.5 font-normal ${preset === p.id ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500'}`}>
+              <div className={`text-[10px] mt-0.5 font-normal ${preset === p.id ? 'text-gray-300 dark:text-zinc-500' : 'text-gray-400 dark:text-zinc-500'}`}>
                 {p.sub}
               </div>
             </button>
@@ -276,7 +313,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
                     <p className="text-[11px] text-gray-400 dark:text-zinc-500">{m.role}</p>
                   </div>
                   <span className={`text-[11px] shrink-0 ${installed.includes(m.id) ? 'text-green-500' : 'text-gray-400 dark:text-zinc-500'}`}>
-                    {installed.includes(m.id) ? 'Installed' : m.size}
+                    {isModelInstalled(installed, m.id) ? 'Installed' : m.size}
                   </span>
                 </label>
               ))}
@@ -290,7 +327,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
         {selected.map(id => {
           const m = modelById(id)
           const st = statuses[id]
-          const isInstalled = installed.includes(id)
+          const isInstalled = isModelInstalled(installed, id)
           const fb = fallbackFor[id]
           const caps = getModelCapsClient(id)
           const ramWarn = systemRamGb ? modelRamWarning(id, systemRamGb) : null

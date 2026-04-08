@@ -765,11 +765,23 @@ export async function chat(messages: Message[], temperature = 0.1, jsonMode = fa
       // structured analysis calls. Thinking is useful for open-ended chat, not JSON extraction.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const noThink = { think: false } as any
-      const response = await ollama.chat({ model, messages, options: { temperature, ...noThink, ...(jsonMode ? { format: 'json' } : {}) } })
+      // Set num_ctx explicitly so Ollama never reloads the model mid-batch due to a context
+      // size mismatch. Without this, each call with a different prompt length can trigger a
+      // full model reload (~10-30s). Snap to the next 1024-token boundary so consecutive calls
+      // of similar size reuse the same loaded context. Min 4096, max from model registry.
+      const totalChars = messages.reduce((sum, m) => sum + m.content.length, 0)
+      const promptTokens = Math.ceil(totalChars / 4)
+      const num_ctx = Math.max(4096, Math.ceil((promptTokens + 2048) / 1024) * 1024)
+      // format must be a top-level param (not inside options) for Ollama to enforce JSON mode.
+      const response = await ollama.chat({
+        model, messages,
+        ...(jsonMode ? { format: 'json' as const } : {}),
+        options: { temperature, num_ctx, ...noThink },
+      })
       // Small models sometimes return empty content when format:json is forced.
       // Retry without the format constraint — the prompt's own JSON instruction handles structure.
       if (jsonMode && !response.message.content?.trim()) {
-        const retry = await ollama.chat({ model, messages, options: { temperature, ...noThink } })
+        const retry = await ollama.chat({ model, messages, options: { temperature, num_ctx, ...noThink } })
         return retry.message.content
       }
       return response.message.content

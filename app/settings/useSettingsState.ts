@@ -73,7 +73,7 @@ export function useSettingsState() {
       setOllamaVisionModel(s.ollama_vision_model ?? 'llava-phi3')
       setSavedVisionModel(s.ollama_vision_model ?? 'llava-phi3')
       const savedAudio = s.ollama_audio_model ?? ''
-      const knownAudioIds = ['whisper:small', 'whisper:medium', 'gemma4:e2b', 'gemma4:e4b', 'phi4-multimodal']
+      const knownAudioIds = ['gemma4:e2b', 'gemma4:e4b', 'phi4-multimodal']
       if (savedAudio && !knownAudioIds.includes(savedAudio)) {
         setOllamaAudioModel(''); setCustomAudioModel(savedAudio)
       } else {
@@ -233,7 +233,9 @@ export function useSettingsState() {
         if (tagsRes.ok) {
           const tagsData = await tagsRes.json() as { models?: { name: string }[] }
           const localNames = tagsData.models?.map(m => m.name) ?? []
-          isAudioModelLocal = localNames.some(lm => lm.split(':')[0] === audioModel.split(':')[0])
+          isAudioModelLocal = localNames.some(lm =>
+            lm === audioModel || (!audioModel.includes(':') && lm === audioModel + ':latest')
+          )
         }
       } catch {}
     }

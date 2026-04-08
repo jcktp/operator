@@ -79,7 +79,7 @@ export default function StepWelcome({ userName, onNext }: Props) {
               )}
             >
               <span className="text-sm font-medium">{m.label}</span>
-              <span className={cn('text-xs', mode === m.value ? 'text-gray-300 dark:text-zinc-600' : 'text-gray-400 dark:text-zinc-500')}>{m.desc}</span>
+              <span className={cn('text-xs', mode === m.value ? 'text-gray-300 dark:text-zinc-500' : 'text-gray-400 dark:text-zinc-500')}>{m.desc}</span>
             </button>
           ))}
         </div>

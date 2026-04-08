@@ -78,7 +78,7 @@ export default function StepContext({ modeConfig, onNext, onBack }: Props) {
             value={orgName}
             onChange={e => setOrgName(e.target.value)}
             placeholder={orgPlaceholder}
-            className="w-full px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-zinc-500 dark:text-zinc-100 dark:placeholder-zinc-500 transition-colors"
+            className="w-full px-3 py-2.5 text-sm text-gray-900 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-zinc-500 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 transition-colors"
           />
         </div>
 
@@ -91,7 +91,7 @@ export default function StepContext({ modeConfig, onNext, onBack }: Props) {
             onChange={e => setMemory(e.target.value)}
             rows={4}
             placeholder={memPlaceholder}
-            className="w-full px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-zinc-500 resize-none dark:text-zinc-100 dark:placeholder-zinc-500 transition-colors"
+            className="w-full px-3 py-2.5 text-sm text-gray-900 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-zinc-500 resize-none dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 transition-colors"
           />
           <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1.5">
             This feeds directly into Dispatch and every AI analysis from the moment you start.

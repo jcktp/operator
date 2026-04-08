@@ -70,8 +70,9 @@ function ModelRadioList({
   return (
     <div className="space-y-1.5">
       {models.map(m => {
-        const modelBase = m.id.split(':')[0]
-        const isPulled = availableModels.some(am => am.split(':')[0] === modelBase)
+        const isPulled = availableModels.some(am =>
+          am === m.id || (!m.id.includes(':') && am === m.id + ':latest')
+        )
         const isSelected = selected === m.id && !customValue
         const isCurrent = m.id === savedId && savedProvider === 'ollama'
         const warn = systemRamGb ? modelRamWarning(m.id, systemRamGb) : null
@@ -220,7 +221,9 @@ export default function OllamaConfig({
     modelSetupMode === 'full-split' ? ollamaAudioModel.trim() : null,
   ].filter(Boolean) as string[])
   const willRemove = [...savedSet].filter(m => !newSet.has(m))
-  const willPull = [...newSet].filter(m => !savedSet.has(m) && !availableModels.some(am => am.startsWith(m.split(':')[0])))
+  const willPull = [...newSet].filter(m => !savedSet.has(m) && !availableModels.some(am =>
+    am === m || (!m.includes(':') && am === m + ':latest')
+  ))
   const anyChange = modelChanged || visionModelChanged || (modelSetupMode === 'full-split' && ollamaAudioModel.trim() !== savedAudioModel) || switchingToOllama
 
   const SETUP_MODES: { id: ModelSetupMode; label: string; sub: string; badges: string }[] = [

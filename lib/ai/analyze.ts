@@ -206,10 +206,11 @@ export async function analyzeReport(
 
   if (!isCloudProvider() && content.length > OLLAMA_CHUNK_SIZE) {
     const chunks = splitIntoChunks(content)
-    const chunkResults: ChunkResult[] = []
-    for (const [i, chunk] of chunks.entries()) {
-      chunkResults.push(await analyzeChunk(chunk, reportTitle, area, i + 1, chunks.length))
-    }
+    // Chunks run concurrently — Ollama queues them server-side but they share the same
+    // loaded model+context, so total wall time is lower than sequential awaits.
+    const chunkResults = await Promise.all(
+      chunks.map((chunk, i) => analyzeChunk(chunk, reportTitle, area, i + 1, chunks.length))
+    )
     return synthesizeChunks(chunkResults, reportTitle, area, directName)
   }
 

@@ -504,8 +504,25 @@ if [ "$AI_PROVIDER" != "ollama" ]; then
   step "Cloud AI provider ($AI_PROVIDER) — skipping model download"
   sleep 2
 else
-  DEFAULT_MODEL="phi4-mini"
-  MODEL=$(node -e "
+  # On first run onboarding_complete is not set — skip the pull so the
+  # onboarding flow lets the user choose their model before downloading.
+  ONBOARDING_DONE=$(node -e "
+const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+const { PrismaClient } = require('@prisma/client');
+const path = require('path');
+const adapter = new PrismaBetterSqlite3({ url: path.resolve(process.cwd(), 'prisma', 'dev.db') });
+const prisma = new PrismaClient({ adapter });
+prisma.setting.findUnique({ where: { key: 'onboarding_complete' } })
+  .then(s => { console.log(s?.value === 'true' ? 'true' : 'false'); process.exit(0); })
+  .catch(() => { console.log('false'); process.exit(0); });
+" 2>/dev/null || echo "false")
+
+  if [ "$ONBOARDING_DONE" != "true" ]; then
+    step "First run — skipping model download (onboarding will handle it)"
+    sleep 1
+  else
+    DEFAULT_MODEL="phi4-mini"
+    MODEL=$(node -e "
 const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
@@ -516,30 +533,31 @@ prisma.setting.findUnique({ where: { key: 'ollama_model' } })
   .catch(() => { console.log('${DEFAULT_MODEL}'); process.exit(0); });
 " 2>/dev/null || echo "$DEFAULT_MODEL")
 
-  step "Model: $MODEL"
+    step "Model: $MODEL"
 
-  if ollama list 2>/dev/null | grep -q "^${MODEL}"; then
-    step "Model already available"
-    sleep 2
-  else
-    step "Pulling $MODEL — this may take a few minutes on first run..."
-    set_status "Downloading AI model…" "$MODEL — this only happens once"
-    ollama pull "$MODEL" || error "Failed to pull model $MODEL"
-    step "Model $MODEL ready"
-  fi
+    if ollama list 2>/dev/null | grep -q "^${MODEL}"; then
+      step "Model already available"
+      sleep 2
+    else
+      step "Pulling $MODEL — this may take a few minutes on first run..."
+      set_status "Downloading AI model…" "$MODEL — this only happens once"
+      ollama pull "$MODEL" || error "Failed to pull model $MODEL"
+      step "Model $MODEL ready"
+    fi
 
-  # Vision model — use OLLAMA_VISION_MODEL from .env.local if set, otherwise default to moondream
-  VISION_MODEL="llava-phi3"
-  if [ -f ".env.local" ]; then
-    VISION_MODEL_OVERRIDE=$(grep -E '^OLLAMA_VISION_MODEL=' .env.local | head -1 | sed 's/OLLAMA_VISION_MODEL=//;s/"//g;s/'"'"'//g' || true)
-    [ -n "$VISION_MODEL_OVERRIDE" ] && VISION_MODEL="$VISION_MODEL_OVERRIDE"
-  fi
-  if ollama list 2>/dev/null | grep -q "^${VISION_MODEL}"; then
-    step "Vision model ($VISION_MODEL) already available"
-  else
-    step "Pulling vision model $VISION_MODEL (~1.7 GB — for image uploads, only happens once)…"
-    set_status "Downloading vision model…" "$VISION_MODEL — needed for image uploads"
-    ollama pull "$VISION_MODEL" || warn "Could not pull vision model $VISION_MODEL — image analysis will be skipped"
+    # Vision model — use OLLAMA_VISION_MODEL from .env.local if set, otherwise default to llava-phi3
+    VISION_MODEL="llava-phi3"
+    if [ -f ".env.local" ]; then
+      VISION_MODEL_OVERRIDE=$(grep -E '^OLLAMA_VISION_MODEL=' .env.local | head -1 | sed 's/OLLAMA_VISION_MODEL=//;s/"//g;s/'"'"'//g' || true)
+      [ -n "$VISION_MODEL_OVERRIDE" ] && VISION_MODEL="$VISION_MODEL_OVERRIDE"
+    fi
+    if ollama list 2>/dev/null | grep -q "^${VISION_MODEL}"; then
+      step "Vision model ($VISION_MODEL) already available"
+    else
+      step "Pulling vision model $VISION_MODEL (~1.7 GB — for image uploads, only happens once)…"
+      set_status "Downloading vision model…" "$VISION_MODEL — needed for image uploads"
+      ollama pull "$VISION_MODEL" || warn "Could not pull vision model $VISION_MODEL — image analysis will be skipped"
+    fi
   fi
 fi
 

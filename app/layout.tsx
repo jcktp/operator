@@ -57,7 +57,7 @@ export default async function RootLayout({
   } catch { /* DB not ready yet */ }
 
   return (
-    <html lang="en" className={`${dmSans.variable} ${dmMono.variable} ${caveat.variable} h-full${isDark ? ' dark' : ''}`}>
+    <html lang="en" suppressHydrationWarning className={`${dmSans.variable} ${dmMono.variable} ${caveat.variable} h-full${isDark ? ' dark' : ''}`}>
       <body className="min-h-full bg-background">
         {/* Inline script prevents flash-of-light on dark mode reload. Falls back to system preference if no explicit setting saved. */}
         <Script id="dark-mode-init" strategy="beforeInteractive">{`try{var s=localStorage.getItem('dark_mode');if(s==='true'||(s!=='false'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`}</Script>
