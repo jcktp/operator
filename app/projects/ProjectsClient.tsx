@@ -2,10 +2,13 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, FolderOpen, Calendar, FileText, CheckCircle2, Clock, Pencil, Trash2, X, Loader2, ArrowRight, Search, Radio } from 'lucide-react'
+import { Plus, FolderOpen, Calendar, FileText, CheckCircle2, Clock, Pencil, Trash2, X, Loader2, ArrowRight, Search, Radio, Share2 } from 'lucide-react'
 import { AreaBadge } from '@/components/Badge'
 import { formatRelativeDate } from '@/lib/utils'
 import SelectField from '@/components/SelectField'
+import dynamic from 'next/dynamic'
+
+const CollabPanel = dynamic(() => import('@/components/collab/CollabPanel'), { ssr: false })
 
 interface Project {
   id: string
@@ -24,13 +27,14 @@ interface Props {
   projectLabel: string
   projectLabelPlural: string
   defaultAreas: string[]
+  collabEnabled?: boolean
 }
 
 const EMPTY_FORM = { name: '', area: '', startDate: '', status: 'in_progress', description: '' }
 
 type StatusFilter = 'all' | 'in_progress' | 'completed'
 
-export default function ProjectsClient({ projects: initial, currentProjectId: initCurrent, projectLabel, projectLabelPlural, defaultAreas }: Props) {
+export default function ProjectsClient({ projects: initial, currentProjectId: initCurrent, projectLabel, projectLabelPlural, defaultAreas, collabEnabled }: Props) {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>(initial)
   const [currentProjectId, setCurrentProjectId] = useState(initCurrent)
@@ -41,6 +45,7 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [collabProjectId, setCollabProjectId] = useState<string | null>(null)
 
   const openCreate = () => { setEditingId(null); setForm(EMPTY_FORM); setShowForm(true) }
   const openEdit = (p: Project) => {
@@ -275,6 +280,15 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
         </div>
       )}
 
+      {/* Collaboration panel */}
+      {collabEnabled && collabProjectId && (
+        <CollabPanel
+          projectId={collabProjectId}
+          projectName={projects.find(p => p.id === collabProjectId)?.name ?? ''}
+          onClose={() => setCollabProjectId(null)}
+        />
+      )}
+
       {/* Project list */}
       {projects.length > 0 && (
         <div className="space-y-2">
@@ -330,6 +344,15 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
 
                     {/* Actions */}
                     <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {collabEnabled && (
+                        <button
+                          onClick={() => setCollabProjectId(p.id)}
+                          className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 rounded transition-colors"
+                          title="Collaboration"
+                        >
+                          <Share2 size={12} />
+                        </button>
+                      )}
                       <button
                         onClick={() => openEdit(p)}
                         className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded transition-colors"

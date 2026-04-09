@@ -390,6 +390,14 @@ else
   step "Dependencies up to date"
 fi
 
+# ── 6a. Collaboration dependencies (optional — installed when COLLAB_ENABLED=true) ────
+if grep -q 'COLLAB_ENABLED=true' .env.local 2>/dev/null; then
+  if ! node -e "require('multicast-dns')" 2>/dev/null; then
+    step "Installing collaboration dependencies (multicast-dns)..."
+    npm install multicast-dns --loglevel=error || warn "Could not install multicast-dns — local network peer discovery unavailable"
+  fi
+fi
+
 # ── 6b. Prisma generate (skip if client already up to date) ──────────────────
 export DATABASE_URL="file:$(pwd)/prisma/dev.db"
 PRISMA_CLIENT="node_modules/.prisma/client/index.js"

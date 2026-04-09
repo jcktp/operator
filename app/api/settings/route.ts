@@ -32,6 +32,8 @@ const ALLOWED_KEYS = new Set([
   'ollama_vision_model',
   'ollama_audio_model',
   'model_setup_mode',
+  'collab_enabled',
+  'collab_display_name',
 ])
 
 export async function GET(req: NextRequest) {

@@ -36,6 +36,7 @@ export default async function ProjectsPage() {
       projectLabel={modeConfig.projectLabel}
       projectLabelPlural={modeConfig.projectLabelPlural}
       defaultAreas={modeConfig.defaultAreas}
+      collabEnabled={process.env.COLLAB_ENABLED === 'true'}
     />
   )
 }

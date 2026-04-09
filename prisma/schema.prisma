@@ -84,6 +84,8 @@ model Report {
   filePath       String?  // relative path within getReportsRoot(), set for uploaded (non-image) files
   storyName      String?  // kept for backwards compat; projectId is the canonical grouping
   userNotes      String?  // analyst notes visible on the report page
+  removedAt      DateTime?           // set when a peer deletes in a shared project
+  removedBy      String?             // instance ID of the peer that removed it
   projectId      String?
   project        Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   isLongitudinal Boolean       @default(false)
@@ -490,6 +492,74 @@ model HeadcountEntry {
   @@index([department])
   @@index([status])
   @@index([projectId])
+}
+
+// ── Peer-to-peer collaboration ────────────────────────────────────────────────
+
+model InstanceIdentity {
+  id                  String   @id
+  publicKey           String
+  privateKeyEncrypted String
+  displayName         String
+  createdAt           DateTime @default(now())
+}
+
+model Peer {
+  id              String    @id
+  displayName     String?
+  publicKey       String
+  lastSeen        DateTime?
+  tunnelUrl       String?
+  localUrl        String?
+  discoveryMethod String?             // 'mdns' | 'remote'
+  trusted         Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model ProjectShare {
+  projectId  String
+  peerId     String
+  permission String   @default("read_write")  // 'read_only' | 'read_write'
+  sharedAt   DateTime @default(now())
+  sharedBy   String?
+
+  @@id([projectId, peerId])
+  @@index([projectId])
+  @@index([peerId])
+}
+
+model SyncState {
+  projectId String
+  peerId    String
+  lastSync  DateTime?
+  status    String    @default("idle")  // 'idle' | 'syncing' | 'error' | 'conflict'
+
+  @@id([projectId, peerId])
+  @@index([projectId])
+}
+
+model SyncConflict {
+  id              String    @id @default(uuid())
+  projectId       String
+  tableName       String
+  recordId        String
+  fieldName       String
+  localValue      String?
+  remoteValue     String?
+  localPeerId     String?
+  remotePeerId    String?
+  localTimestamp  DateTime?
+  remoteTimestamp DateTime?
+  resolved        Boolean   @default(false)
+  resolution      String?               // 'kept_local' | 'kept_remote' | 'kept_both'
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  createdAt       DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([resolved])
+  @@index([createdAt])
 }
 
 // ── Background upload jobs ─────────────────────────────────────────────────────

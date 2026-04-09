@@ -18,8 +18,10 @@ export async function setup() {
     if (fs.existsSync(f)) fs.unlinkSync(f)
   }
 
-  // Apply all existing migrations to the test DB
-  execSync('npx prisma migrate deploy', {
+  // Push the current schema directly to the test DB.
+  // We use db push (not migrate deploy) because the migration history has drifted
+  // from multiple schema-only pushes — db push always reflects the actual schema.
+  execSync('npx prisma db push', {
     env: { ...process.env, DATABASE_URL: `file:${TEST_DB_PATH}` },
     stdio: 'pipe',
     cwd: process.cwd(),
