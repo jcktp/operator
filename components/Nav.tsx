@@ -35,6 +35,8 @@ import { useMode } from '@/components/ModeContext'
 import { useTheme } from '@/components/ThemeProvider'
 import StatusIndicator from '@/components/StatusIndicator'
 import UploadNotification from '@/components/UploadNotification'
+import dynamic from 'next/dynamic'
+const CollabNotificationBell = dynamic(() => import('@/components/collab/CollabNotificationBell'), { ssr: false })
 import SearchModal from '@/components/SearchModal'
 import NavDropdown, { type NavGroupItem } from '@/components/NavDropdown'
 import ActiveAreaBadge from '@/components/ActiveAreaBadge'
@@ -258,6 +260,9 @@ export default function Nav() {
             <FolderOpen size={13} className="shrink-0" />
             {config.projectLabelPlural}
           </Link>
+
+          {/* Collab — only renders when collab is enabled */}
+          <CollabNotificationBell />
 
           {/* Standalone: Settings */}
           <Link

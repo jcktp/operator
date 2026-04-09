@@ -59,6 +59,7 @@ model Project {
   journalEntries JournalEntry[]
   foiaRequests   FoiaRequest[]
   claims         Claim[]
+  chatMessages   ChatMessage[]
   @@index([status])
   @@index([createdAt])
 }
@@ -560,6 +561,39 @@ model SyncConflict {
   @@index([projectId])
   @@index([resolved])
   @@index([createdAt])
+}
+
+// ── Collaboration chat ────────────────────────────────────────────────────────
+
+model ChatMessage {
+  id         String    @id @default(uuid())
+  projectId  String
+  threadId   String?               // null = root message; set = reply in thread
+  content    String                // plain text with →[type::id::label] reference tokens
+  authorId   String                // instance ID of sender
+  authorName String                // display name at time of sending
+  references String?               // JSON array of {type,id,label}
+  editedAt   DateTime?
+  deletedAt  DateTime?             // soft delete only
+  syncClock  Int       @default(0) // monotonically increasing per-project; used for sync ordering
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  project    Project   @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+  @@index([threadId])
+  @@index([createdAt])
+}
+
+model ChatReadState {
+  projectId     String
+  instanceId    String    // which instance has read up to here
+  lastReadAt    DateTime
+  lastReadMsgId String?
+
+  @@id([projectId, instanceId])
+  @@index([projectId])
 }
 
 // ── Background upload jobs ─────────────────────────────────────────────────────

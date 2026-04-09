@@ -20,7 +20,7 @@ export async function POST(
 ) {
   const deny = await requireAuth(req)
   if (deny) return deny
-  const disabled = requireCollabEnabled()
+  const disabled = await requireCollabEnabled()
   if (disabled) return disabled
 
   const { id } = await params

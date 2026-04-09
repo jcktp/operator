@@ -34,6 +34,7 @@ const ALLOWED_KEYS = new Set([
   'model_setup_mode',
   'collab_enabled',
   'collab_display_name',
+  'collab_lan_only',
 ])
 
 export async function GET(req: NextRequest) {

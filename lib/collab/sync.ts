@@ -18,6 +18,7 @@ import { prisma } from '@/lib/db'
 import type { SyncPayload, SyncRecord } from './types'
 import { getOrCreateIdentity, getPrivateKeyPem } from './identity'
 import { signPayload, verifyPayload } from './signing'
+import { getTunnelUrl, getLocalNetworkUrl } from '@/lib/tunnel'
 
 /** Two modifications within this window on the same record = conflict. */
 const CONFLICT_WINDOW_MS = 5 * 60 * 1000   // 5 minutes
@@ -111,7 +112,33 @@ export async function buildSyncPayload(
     })
   }
 
-  return { fromInstanceId: identity.id, projectId, sentAt, records }
+  // ChatMessages — append-only (edits bump updatedAt)
+  const chatWhere = since
+    ? { projectId, updatedAt: { gt: since } }
+    : { projectId }
+  const chatMsgs = await prisma.chatMessage.findMany({ where: chatWhere })
+  for (const msg of chatMsgs) {
+    records.push({
+      table: 'ChatMessage',
+      id: msg.id,
+      data: msg as unknown as Record<string, unknown>,
+      updatedAt: msg.updatedAt.toISOString(),
+    })
+  }
+
+  const lanOnly = await isLanOnly()
+  return {
+    fromInstanceId: identity.id,
+    projectId,
+    sentAt,
+    records,
+    senderInfo: {
+      publicKey: identity.publicKey,
+      displayName: identity.displayName,
+      tunnelUrl: lanOnly ? null : getTunnelUrl(),
+      localUrl: getLocalNetworkUrl(3000),
+    },
+  }
 }
 
 // ── Inbound apply ─────────────────────────────────────────────────────────────
@@ -156,6 +183,7 @@ async function applyRecord(
     case 'TimelineEvent': return applyAppendOnly('TimelineEvent', record)
     case 'Claim':      return applyClaim(record, remoteTs, fromInstanceId, projectId)
     case 'FoiaRequest': return applyFoia(record, remoteTs, fromInstanceId, projectId)
+    case 'ChatMessage': return applyChatMessage(record)
     default:
       console.warn(`[collab] Unknown sync table: ${record.table}`)
       return false
@@ -381,6 +409,64 @@ async function applyFoia(
   return false
 }
 
+async function applyChatMessage(record: SyncRecord): Promise<boolean> {
+  const d = record.data as {
+    projectId: string; threadId?: string | null; content: string
+    authorId: string; authorName: string; references?: string | null
+    editedAt?: string | null; deletedAt?: string | null; syncClock: number
+    createdAt: string
+  }
+
+  const existing = await prisma.chatMessage.findUnique({ where: { id: record.id } })
+
+  if (!existing) {
+    // Insert new message
+    await prisma.chatMessage.create({
+      data: {
+        id: record.id,
+        projectId: d.projectId,
+        threadId: d.threadId ?? null,
+        content: d.content,
+        authorId: d.authorId,
+        authorName: d.authorName,
+        references: d.references ?? null,
+        editedAt: d.editedAt ? new Date(d.editedAt) : null,
+        deletedAt: d.deletedAt ? new Date(d.deletedAt) : null,
+        syncClock: d.syncClock,
+        createdAt: new Date(d.createdAt),
+      },
+    })
+    return false
+  }
+
+  // Only apply if incoming syncClock is higher
+  if (d.syncClock <= existing.syncClock) return false
+
+  // Apply deletion from any author (deletion consensus)
+  if (d.deletedAt && !existing.deletedAt) {
+    await prisma.chatMessage.update({
+      where: { id: record.id },
+      data: { deletedAt: new Date(d.deletedAt), syncClock: d.syncClock },
+    })
+    return false
+  }
+
+  // Apply edit — only from same author
+  if (d.editedAt && d.authorId === existing.authorId) {
+    await prisma.chatMessage.update({
+      where: { id: record.id },
+      data: {
+        content: d.content,
+        references: d.references ?? existing.references,
+        editedAt: new Date(d.editedAt),
+        syncClock: d.syncClock,
+      },
+    })
+  }
+
+  return false
+}
+
 // ── Conflict logging ──────────────────────────────────────────────────────────
 
 async function logConflict(args: {
@@ -430,6 +516,13 @@ async function logConflict(args: {
  * Pushes local changes for `projectId` to a peer at `peerUrl`.
  * Updates SyncState on success.
  */
+async function isLanOnly(): Promise<boolean> {
+  try {
+    const row = await prisma.setting.findUnique({ where: { key: 'collab_lan_only' } })
+    return row?.value === 'true'
+  } catch { return false }
+}
+
 export async function pushToPeer(
   projectId: string,
   peerId: string,
@@ -459,6 +552,9 @@ export async function pushToPeer(
       signal: AbortSignal.timeout(15_000),
     })
 
+    // 202 = receiver got the intro, not yet trusted — not an error
+    if (res.status === 202) return { ok: true }
+
     if (!res.ok) {
       const body = await res.text()
       return { ok: false, error: `HTTP ${res.status}: ${body}` }
@@ -487,11 +583,15 @@ export async function pushToPeer(
  * loop or manually triggered via the API.
  */
 export async function pushToAllPeers(projectId: string): Promise<void> {
-  const shares = await prisma.projectShare.findMany({ where: { projectId } })
+  const [shares, lanOnly] = await Promise.all([
+    prisma.projectShare.findMany({ where: { projectId } }),
+    isLanOnly(),
+  ])
   for (const share of shares) {
     const peer = await prisma.peer.findUnique({ where: { id: share.peerId } })
     if (!peer?.trusted) continue
-    const peerUrl = peer.tunnelUrl ?? peer.localUrl
+    // LAN-only: skip peers that only have a tunnel URL, use local URL only
+    const peerUrl = lanOnly ? peer.localUrl : (peer.tunnelUrl ?? peer.localUrl)
     if (!peerUrl) continue
     await pushToPeer(projectId, peer.id, peerUrl)
   }

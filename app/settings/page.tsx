@@ -17,6 +17,7 @@ import SettingsBackupTab from './SettingsBackupTab'
 import SettingsPulseTab from './SettingsPulseTab'
 import SelectField from '@/components/SelectField'
 import SettingsKnowledgeTab from './SettingsKnowledgeTab'
+import SettingsCollabTab from './SettingsCollabTab'
 import ModeIcon from './ModeIcons'
 import { useSettingsState } from './useSettingsState'
 
@@ -25,7 +26,7 @@ export default function SettingsPage() {
   const dangerRef = useRef<HTMLDivElement>(null)
   const [uninstallPhase, setUninstallPhase] = useState<'idle' | 'confirming' | 'running' | 'done'>('idle')
 
-  type Tab = 'profile' | 'ai' | 'pulse' | 'remote' | 'backup' | 'knowledge' | 'danger'
+  type Tab = 'profile' | 'ai' | 'pulse' | 'remote' | 'backup' | 'knowledge' | 'collab' | 'danger'
   const [tab, setTab] = useState<Tab>('profile')
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function SettingsPage() {
     { id: 'remote',    label: 'Remote' },
     { id: 'backup',    label: 'Backup' },
     { id: 'knowledge', label: 'AI Context' },
+    { id: 'collab',    label: 'Collab' },
     { id: 'danger',    label: 'Danger' },
   ]
 
@@ -403,6 +405,9 @@ export default function SettingsPage() {
 
       {/* AI Context tab */}
       {tab === 'knowledge' && <SettingsKnowledgeTab appMode={s.appMode} />}
+
+      {/* Collab tab */}
+      {tab === 'collab' && <SettingsCollabTab />}
 
       {/* Danger tab */}
       {tab === 'danger' && <div className="space-y-5">

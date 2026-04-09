@@ -12,7 +12,7 @@ export async function GET(
 ) {
   const deny = await requireAuth(req)
   if (deny) return deny
-  const disabled = requireCollabEnabled()
+  const disabled = await requireCollabEnabled()
   if (disabled) return disabled
 
   const { id: projectId } = await params
@@ -43,7 +43,7 @@ export async function POST(
 ) {
   const deny = await requireAuth(req)
   if (deny) return deny
-  const disabled = requireCollabEnabled()
+  const disabled = await requireCollabEnabled()
   if (disabled) return disabled
 
   const { id: projectId } = await params
@@ -75,7 +75,7 @@ export async function DELETE(
 ) {
   const deny = await requireAuth(req)
   if (deny) return deny
-  const disabled = requireCollabEnabled()
+  const disabled = await requireCollabEnabled()
   if (disabled) return disabled
 
   const { id: projectId } = await params

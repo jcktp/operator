@@ -11,6 +11,7 @@
 import { NextResponse } from 'next/server'
 import { requireCollabEnabled } from '@/lib/collab/feature-flag'
 import { applySyncPayload, pushToAllPeers } from '@/lib/collab/sync'
+import { verifyPayload } from '@/lib/collab/signing'
 import { prisma } from '@/lib/db'
 import type { SyncPayload } from '@/lib/collab/types'
 
@@ -20,7 +21,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
-  const disabled = requireCollabEnabled()
+  const disabled = await requireCollabEnabled()
   if (disabled) return disabled
 
   const { projectId } = await params
@@ -29,8 +30,55 @@ export async function POST(
     return NextResponse.json({ error: 'Missing X-Collab-From header' }, { status: 400 })
   }
 
-  // Look up sender — must be known and trusted
+  let payload: SyncPayload
+  try {
+    payload = await req.json() as SyncPayload
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  // Look up sender
   const peer = await prisma.peer.findUnique({ where: { id: fromInstanceId } })
+
+  // ── Introduction path ──────────────────────────────────────────────────────
+  // If sender is unknown or untrusted but includes senderInfo with a valid
+  // signature, upsert them as an untrusted peer so the user can approve them
+  // from the Peers tab. Then return 202 so the sender knows we got the intro.
+  if ((!peer || !peer.trusted) && payload.senderInfo) {
+    const keyForVerify = peer?.publicKey ?? payload.senderInfo.publicKey
+    const sigValid = verifyPayload(payload, keyForVerify)
+
+    if (sigValid) {
+      await prisma.peer.upsert({
+        where: { id: fromInstanceId },
+        update: {
+          displayName: payload.senderInfo.displayName,
+          publicKey: payload.senderInfo.publicKey,
+          tunnelUrl: payload.senderInfo.tunnelUrl ?? undefined,
+          localUrl: payload.senderInfo.localUrl ?? undefined,
+          lastSeen: new Date(),
+          discoveryMethod: 'remote',
+        },
+        create: {
+          id: fromInstanceId,
+          displayName: payload.senderInfo.displayName,
+          publicKey: payload.senderInfo.publicKey,
+          tunnelUrl: payload.senderInfo.tunnelUrl ?? null,
+          localUrl: payload.senderInfo.localUrl ?? null,
+          lastSeen: new Date(),
+          discoveryMethod: 'remote',
+          trusted: false,
+        },
+      })
+
+      const status = peer?.trusted ? 'untrusted' : 'introduced'
+      return NextResponse.json(
+        { introduced: true, status },
+        { status: 202 }
+      )
+    }
+  }
+
   if (!peer) {
     return NextResponse.json({ error: 'Unknown peer' }, { status: 401 })
   }
@@ -47,13 +95,6 @@ export async function POST(
   }
   if (share.permission === 'read_only') {
     return NextResponse.json({ error: 'Peer has read-only permission' }, { status: 403 })
-  }
-
-  let payload: SyncPayload
-  try {
-    payload = await req.json() as SyncPayload
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
   if (payload.projectId !== projectId) {
@@ -100,7 +141,7 @@ export async function PUT(
   const deny = await requireAuth(req)
   if (deny) return deny
 
-  const disabled = requireCollabEnabled()
+  const disabled = await requireCollabEnabled()
   if (disabled) return disabled
 
   const { projectId } = await params

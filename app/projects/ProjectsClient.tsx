@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, FolderOpen, Calendar, FileText, CheckCircle2, Clock, Pencil, Trash2, X, Loader2, ArrowRight, Search, Radio, Share2 } from 'lucide-react'
+import { Plus, FolderOpen, Calendar, FileText, CheckCircle2, Clock, Pencil, Trash2, X, Loader2, ArrowRight, Search, Radio, Share2, MessageSquare } from 'lucide-react'
 import { AreaBadge } from '@/components/Badge'
 import { formatRelativeDate } from '@/lib/utils'
 import SelectField from '@/components/SelectField'
 import dynamic from 'next/dynamic'
 
 const CollabPanel = dynamic(() => import('@/components/collab/CollabPanel'), { ssr: false })
+import UnreadBadge from '@/components/collab/UnreadBadge'
 
 interface Project {
   id: string
@@ -33,6 +34,7 @@ interface Props {
 const EMPTY_FORM = { name: '', area: '', startDate: '', status: 'in_progress', description: '' }
 
 type StatusFilter = 'all' | 'in_progress' | 'completed'
+type CollabTab = 'peers' | 'sync' | 'conflicts' | 'share' | 'chat'
 
 export default function ProjectsClient({ projects: initial, currentProjectId: initCurrent, projectLabel, projectLabelPlural, defaultAreas, collabEnabled }: Props) {
   const router = useRouter()
@@ -41,19 +43,41 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
   const [showForm, setShowForm] = useState(initial.length === 0)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [shareOnCreate, setShareOnCreate] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [collabProjectId, setCollabProjectId] = useState<string | null>(null)
+  const [collabInitialTab, setCollabInitialTab] = useState<CollabTab>('peers')
+  const [unreadPerProject, setUnreadPerProject] = useState<Record<string, number>>({})
+  const [totalUnread, setTotalUnread] = useState(0)
 
-  const openCreate = () => { setEditingId(null); setForm(EMPTY_FORM); setShowForm(true) }
+  // Fetch unread counts when collab is enabled
+  useEffect(() => {
+    if (!collabEnabled) return
+    const fetchUnread = () => {
+      fetch('/api/collab/notifications/unread')
+        .then(r => r.ok ? r.json() : null)
+        .then((d: { total: number; perProject: Record<string, number> } | null) => {
+          if (!d) return
+          setUnreadPerProject(d.perProject ?? {})
+          setTotalUnread(d.total ?? 0)
+        })
+        .catch(() => {})
+    }
+    fetchUnread()
+    const timer = setInterval(fetchUnread, 60_000)
+    return () => clearInterval(timer)
+  }, [collabEnabled])
+
+  const openCreate = () => { setEditingId(null); setForm(EMPTY_FORM); setShareOnCreate(false); setShowForm(true) }
   const openEdit = (p: Project) => {
     setEditingId(p.id)
     setForm({ name: p.name, area: p.area, startDate: p.startDate?.slice(0, 10) ?? '', status: p.status, description: p.description })
     setShowForm(true)
   }
-  const closeForm = () => { setShowForm(false); setEditingId(null) }
+  const closeForm = () => { setShowForm(false); setEditingId(null); setShareOnCreate(false) }
 
   const handleSave = async () => {
     if (!form.name.trim()) return
@@ -76,6 +100,10 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
         setProjects(ps => [newProject, ...ps])
         setCurrentProjectId(data.project.id)
         window.dispatchEvent(new Event('project:changed'))
+        if (collabEnabled && shareOnCreate) {
+          setCollabProjectId(data.project.id)
+          setCollabInitialTab('share')
+        }
       }
       closeForm()
       router.refresh()
@@ -211,6 +239,22 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
             </div>
           </div>
 
+          {/* Share on create — only for new projects when collab is enabled */}
+          {collabEnabled && !editingId && (
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={shareOnCreate}
+                onClick={() => setShareOnCreate(v => !v)}
+                className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${shareOnCreate ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-zinc-600'}`}
+              >
+                <span className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${shareOnCreate ? 'translate-x-3' : 'translate-x-0.5'}`} />
+              </button>
+              <span className="text-xs text-gray-600 dark:text-zinc-300">Open sharing settings after creation</span>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2">
             <button onClick={closeForm} className="px-3 py-1.5 text-sm text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors">
               Cancel
@@ -285,7 +329,9 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
         <CollabPanel
           projectId={collabProjectId}
           projectName={projects.find(p => p.id === collabProjectId)?.name ?? ''}
-          onClose={() => setCollabProjectId(null)}
+          onClose={() => { setCollabProjectId(null); setCollabInitialTab('peers') }}
+          initialTab={collabInitialTab}
+          unreadCount={unreadPerProject[collabProjectId] ?? 0}
         />
       )}
 
@@ -343,31 +389,47 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 shrink-0">
+                      {/* Collab buttons — always visible when collab is enabled */}
                       {collabEnabled && (
-                        <button
-                          onClick={() => setCollabProjectId(p.id)}
-                          className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 rounded transition-colors"
-                          title="Collaboration"
-                        >
-                          <Share2 size={12} />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => { setCollabProjectId(p.id); setCollabInitialTab('chat') }}
+                            className="relative p-1.5 text-gray-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 rounded transition-colors"
+                            title="Project chat"
+                          >
+                            <MessageSquare size={12} />
+                            {(unreadPerProject[p.id] ?? 0) > 0 && (
+                              <UnreadBadge count={unreadPerProject[p.id]} className="absolute -top-0.5 -right-0.5" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => { setCollabProjectId(p.id); setCollabInitialTab('peers') }}
+                            className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 rounded transition-colors"
+                            title="Collaboration"
+                          >
+                            <Share2 size={12} />
+                          </button>
+                        </>
                       )}
-                      <button
-                        onClick={() => openEdit(p)}
-                        className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded transition-colors"
-                        title={`Edit ${projectLabel}`}
-                      >
-                        <Pencil size={12} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        disabled={deletingId === p.id}
-                        className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 rounded transition-colors"
-                        title={`Delete ${projectLabel}`}
-                      >
-                        {deletingId === p.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                      </button>
+                      {/* Edit/delete — hover only */}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => openEdit(p)}
+                          className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded transition-colors"
+                          title={`Edit ${projectLabel}`}
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p.id)}
+                          disabled={deletingId === p.id}
+                          className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 rounded transition-colors"
+                          title={`Delete ${projectLabel}`}
+                        >
+                          {deletingId === p.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

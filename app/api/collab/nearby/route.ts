@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   const deny = await requireAuth(req)
   if (deny) return deny
-  const disabled = requireCollabEnabled()
+  const disabled = await requireCollabEnabled()
   if (disabled) return disabled
 
   const peers = getNearbyPeers()

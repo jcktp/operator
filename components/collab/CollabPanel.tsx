@@ -1,23 +1,27 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Users, RefreshCw, AlertTriangle, Share2, Loader2 } from 'lucide-react'
+import { X, Users, RefreshCw, AlertTriangle, Share2, Loader2, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import PeersTab from './PeersTab'
 import SyncTab from './SyncTab'
 import ConflictsTab from './ConflictsTab'
 import ShareTab from './ShareTab'
+import ChatTab from './ChatTab'
+import UnreadBadge from './UnreadBadge'
 
-type Tab = 'peers' | 'sync' | 'conflicts' | 'share'
+type Tab = 'peers' | 'sync' | 'conflicts' | 'share' | 'chat'
 
 interface Props {
   projectId: string
   projectName: string
   onClose: () => void
+  initialTab?: Tab
+  unreadCount?: number
 }
 
-export default function CollabPanel({ projectId, projectName, onClose }: Props) {
-  const [tab, setTab] = useState<Tab>('peers')
+export default function CollabPanel({ projectId, projectName, onClose, initialTab = 'peers', unreadCount = 0 }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab)
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<{
     peers: unknown[]
@@ -55,7 +59,10 @@ export default function CollabPanel({ projectId, projectName, onClose }: Props) 
     { id: 'sync',      label: 'Sync',      icon: <RefreshCw size={13} /> },
     { id: 'conflicts', label: 'Conflicts', icon: <AlertTriangle size={13} />, badge: data.unresolvedCount || undefined },
     { id: 'share',     label: 'Share',     icon: <Share2 size={13} /> },
+    { id: 'chat',      label: 'Chat',      icon: <MessageSquare size={13} />, badge: tab !== 'chat' ? (unreadCount || undefined) : undefined },
   ]
+
+  const isChat = tab === 'chat'
 
   return (
     <>
@@ -82,60 +89,65 @@ export default function CollabPanel({ projectId, projectName, onClose }: Props) 
         </div>
 
         {/* Tab bar */}
-        <div className="flex items-center gap-0.5 px-3 py-2 border-b border-gray-100 dark:border-zinc-800 shrink-0">
+        <div className="flex items-center gap-1 px-4 py-2 border-b border-gray-100 dark:border-zinc-800 shrink-0">
           {TABS.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
+              title={t.label}
               className={cn(
-                'relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                'relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
                 tab === t.id
                   ? 'bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-zinc-50'
                   : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800/50'
               )}
             >
               {t.icon}
-              {t.label}
+              {tab === t.id && <span>{t.label}</span>}
               {t.badge ? (
-                <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 flex items-center justify-center bg-amber-400 text-white text-[8px] font-bold rounded-full">
-                  {t.badge > 9 ? '9+' : t.badge}
-                </span>
+                <UnreadBadge count={t.badge} className="absolute -top-1 -right-1" />
               ) : null}
             </button>
           ))}
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 size={20} className="animate-spin text-gray-300 dark:text-zinc-600" />
-            </div>
-          ) : (
-            <>
-              {tab === 'peers' && (
-                <PeersTab
-                  projectId={projectId}
-                  initialPeers={data.peers as Parameters<typeof PeersTab>[0]['initialPeers']}
-                  initialNearby={data.nearby as Parameters<typeof PeersTab>[0]['initialNearby']}
-                />
-              )}
-              {tab === 'sync' && (
-                <SyncTab
-                  projectId={projectId}
-                  initialShares={data.shares as Parameters<typeof SyncTab>[0]['initialShares']}
-                />
-              )}
-              {tab === 'conflicts' && (
-                <ConflictsTab
-                  projectId={projectId}
-                  initialConflicts={data.conflicts as Parameters<typeof ConflictsTab>[0]['initialConflicts']}
-                />
-              )}
-              {tab === 'share' && <ShareTab />}
-            </>
-          )}
-        </div>
+        {isChat ? (
+          <div className="flex-1 min-h-0 px-3 py-3 flex flex-col relative">
+            <ChatTab projectId={projectId} projectName={projectName} />
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 size={20} className="animate-spin text-gray-300 dark:text-zinc-600" />
+              </div>
+            ) : (
+              <>
+                {tab === 'peers' && (
+                  <PeersTab
+                    projectId={projectId}
+                    initialPeers={data.peers as Parameters<typeof PeersTab>[0]['initialPeers']}
+                    initialNearby={data.nearby as Parameters<typeof PeersTab>[0]['initialNearby']}
+                  />
+                )}
+                {tab === 'sync' && (
+                  <SyncTab
+                    projectId={projectId}
+                    initialShares={data.shares as Parameters<typeof SyncTab>[0]['initialShares']}
+                  />
+                )}
+                {tab === 'conflicts' && (
+                  <ConflictsTab
+                    projectId={projectId}
+                    initialConflicts={data.conflicts as Parameters<typeof ConflictsTab>[0]['initialConflicts']}
+                  />
+                )}
+                {tab === 'share' && <ShareTab />}
+              </>
+            )}
+          </div>
+        )}
       </div>
     </>
   )

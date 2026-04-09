@@ -5,9 +5,10 @@ import ProjectsClient from './ProjectsClient'
 export const dynamic = 'force-dynamic'
 
 export default async function ProjectsPage() {
-  const [modeRow, currentSetting] = await Promise.all([
+  const [modeRow, currentSetting, collabRow] = await Promise.all([
     prisma.setting.findUnique({ where: { key: 'app_mode' } }),
     prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
+    prisma.setting.findUnique({ where: { key: 'collab_enabled' } }),
   ])
   const currentMode = modeRow?.value ?? ''
   const modeConfig = getModeConfig(currentMode)
@@ -36,7 +37,7 @@ export default async function ProjectsPage() {
       projectLabel={modeConfig.projectLabel}
       projectLabelPlural={modeConfig.projectLabelPlural}
       defaultAreas={modeConfig.defaultAreas}
-      collabEnabled={process.env.COLLAB_ENABLED === 'true'}
+      collabEnabled={collabRow?.value === 'true' || process.env.COLLAB_ENABLED === 'true'}
     />
   )
 }

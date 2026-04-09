@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   const deny = await requireAuth(req)
   if (deny) return deny
-  const disabled = requireCollabEnabled()
+  const disabled = await requireCollabEnabled()
   if (disabled) return disabled
 
   const body = await req.json() as { inviteString?: string }

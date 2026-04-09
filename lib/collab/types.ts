@@ -9,6 +9,14 @@ export interface SyncRecord {
   removedAt?: string
 }
 
+/** Sender identity included in every sync payload so the receiver can introduce themselves back. */
+export interface SyncSenderInfo {
+  publicKey: string       // PEM — receiver uses this to verify the signature if sender is unknown
+  displayName: string
+  tunnelUrl: string | null
+  localUrl: string | null
+}
+
 /** Full payload sent from one instance to another during sync. */
 export interface SyncPayload {
   fromInstanceId: string
@@ -16,6 +24,7 @@ export interface SyncPayload {
   sentAt: string          // ISO 8601 timestamp of when the payload was built
   records: SyncRecord[]
   signature: string       // hex — signs fromInstanceId+projectId+sentAt+SHA256(records JSON)
+  senderInfo?: SyncSenderInfo  // always included; lets receiver add sender as untrusted peer
 }
 
 /** Serialisable peer descriptor stored in the mDNS cache. */
