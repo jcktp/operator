@@ -2,32 +2,98 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #fafafa;
-  --foreground: #0a0a0a;
-  --surface: #ffffff;
-  --border: #e5e5e5;
-  --muted: #737373;
-  --accent: #0a0a0a;
+  /* ── Layout ───────────────────────────────────────────────── */
+  --background: #ffffff;
+  --foreground: #111111;
+  --surface:    #ffffff;
+  --surface-2:  #fafafa;
+  --surface-3:  #f4f4f4;
+
+  /* ── Borders ──────────────────────────────────────────────── */
+  --border:     #ececec;
+  --border-mid: #d8d8d8;
+
+  /* ── Text scale ───────────────────────────────────────────── */
+  --text-bright:  #111111;
+  --text-body:    #333333;
+  --text-subtle:  #666666;
+  --text-muted:   #999999;
+
+  /* ── Legacy aliases (keep for existing usage) ─────────────── */
+  --muted:  #999999;
+  --accent: #0A0E26;
+
+  /* ── Brand ────────────────────────────────────────────────── */
+  --nav-bg:       #2E4CA6;
+  --nav-bg-dim:   #263f8e;
+  --ink:          #0A0E26;
+  --yellow:       #F2D649;
+
+  /* ── Semantic colours ─────────────────────────────────────── */
+  --green:        #0AA65D;
+  --green-dim:    rgba(10, 166, 93, 0.08);
+  --red:          #F26241;
+  --red-dim:      rgba(242, 98, 65, 0.08);
+  --amber:        #a86200;
+  --amber-dim:    rgba(168, 98, 0, 0.07);
+  --blue:         #2E4CA6;
+  --blue-dim:     rgba(46, 76, 166, 0.07);
 }
 
 .dark {
+  /* ── Layout ───────────────────────────────────────────────── */
   --background: #09090b;
   --foreground: #fafafa;
-  --surface: #18181b;
-  --surface2: #27272a;
-  --border: #27272a;
+  --surface:    #18181b;
+  --surface-2:  #27272a;
+  --surface-3:  #3f3f46;
+
+  /* ── Borders ──────────────────────────────────────────────── */
+  --border:     #27272a;
   --border-mid: #3f3f46;
-  --muted: #a1a1aa;
+
+  /* ── Text scale ───────────────────────────────────────────── */
+  --text-bright:  #fafafa;
+  --text-body:    #d4d4d8;
+  --text-subtle:  #a1a1aa;
+  --text-muted:   #71717a;
+
+  /* ── Legacy aliases ───────────────────────────────────────── */
+  --muted:  #a1a1aa;
   --accent: #fafafa;
+
+  /* ── Brand (nav stays blue in dark mode) ──────────────────── */
+  --nav-bg:       #2E4CA6;
+  --nav-bg-dim:   #263f8e;
+  --ink:          #fafafa;
+
+  /* ── Semantic colours (slightly lighter for dark bg) ──────── */
+  --green:        #10bf6a;
+  --green-dim:    rgba(16, 191, 106, 0.12);
+  --red:          #f47358;
+  --red-dim:      rgba(244, 115, 88, 0.12);
+  --amber:        #d97706;
+  --amber-dim:    rgba(217, 119, 6, 0.12);
+  --blue:         #5b78d4;
+  --blue-dim:     rgba(91, 120, 212, 0.12);
+
   color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-border: var(--border);
-  --color-muted: var(--muted);
+  --color-surface:    var(--surface);
+  --color-surface-2:  var(--surface-2);
+  --color-surface-3:  var(--surface-3);
+  --color-border:     var(--border);
+  --color-border-mid: var(--border-mid);
+  --color-muted:      var(--muted);
+  --color-ink:        var(--ink);
+  --color-nav-bg:     var(--nav-bg);
+  --color-brand-green: var(--green);
+  --color-brand-red:   var(--red);
+  --color-brand-amber: var(--amber);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 

@@ -1,11 +1,5 @@
 import { cn, getAreaColor } from '@/lib/utils'
 
-interface BadgeProps {
-  label: string
-  variant?: 'area' | 'status' | 'type'
-  className?: string
-}
-
 export function AreaBadge({ area, className }: { area: string; className?: string }) {
   const color = getAreaColor(area)
   return (
@@ -21,6 +15,32 @@ export function AreaBadge({ area, className }: { area: string; className?: strin
   )
 }
 
+const STATUS_STYLES = {
+  positive: {
+    bg:   'var(--green-dim)',
+    text: 'var(--green)',
+  },
+  negative: {
+    bg:   'var(--red-dim)',
+    text: 'var(--red)',
+  },
+  neutral: {
+    bg:   'var(--surface-3)',
+    text: 'var(--text-subtle)',
+  },
+  warning: {
+    bg:   'var(--amber-dim)',
+    text: 'var(--amber)',
+  },
+} as const
+
+const STATUS_LABELS = {
+  positive: '↑',
+  negative: '↓',
+  neutral:  '→',
+  warning:  '⚠',
+} as const
+
 export function StatusBadge({
   status,
   className,
@@ -28,34 +48,33 @@ export function StatusBadge({
   status: 'positive' | 'negative' | 'neutral' | 'warning'
   className?: string
 }) {
-  const colors = {
-    positive: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
-    negative: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
-    neutral: 'bg-gray-50 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400',
-    warning: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-  }
-  const labels = {
-    positive: '↑',
-    negative: '↓',
-    neutral: '→',
-    warning: '⚠',
-  }
+  const s = STATUS_STYLES[status]
   return (
-    <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', colors[status], className)}>
-      {labels[status]}
+    <span
+      className={cn('inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', className)}
+      style={{ background: s.bg, color: s.text }}
+    >
+      {STATUS_LABELS[status]}
     </span>
   )
 }
 
+const INSIGHT_STYLES: Record<string, { bg: string; text: string }> = {
+  observation: { bg: 'var(--blue-dim)',  text: 'var(--blue)'  },
+  anomaly:     { bg: 'var(--amber-dim)', text: 'var(--amber)' },
+  risk:        { bg: 'var(--red-dim)',   text: 'var(--red)'   },
+  opportunity: { bg: 'var(--green-dim)', text: 'var(--green)' },
+}
+
+const INSIGHT_FALLBACK = { bg: 'var(--surface-3)', text: 'var(--text-subtle)' }
+
 export function InsightTypeBadge({ type }: { type: string }) {
-  const colors: Record<string, string> = {
-    observation: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-    anomaly: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-    risk: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
-    opportunity: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
-  }
+  const s = INSIGHT_STYLES[type] ?? INSIGHT_FALLBACK
   return (
-    <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium capitalize', colors[type] ?? 'bg-gray-50 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400')}>
+    <span
+      className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium capitalize"
+      style={{ background: s.bg, color: s.text }}
+    >
       {type}
     </span>
   )
