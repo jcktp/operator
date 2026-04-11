@@ -99,12 +99,12 @@ export async function generateCatchMeUp(
     ? `\nThe following patterns have been automatically detected across multiple ${modeConfig.documentLabelPlural.toLowerCase()} — reference them specifically in your narrative when relevant:\n\n${patternBlock}\n`
     : ''
 
-  const prompt = `You are briefing a ${modeConfig.label.toLowerCase()} who hasn't checked their reports in a while. Write a "catch me up" digest — a flowing narrative of 4-6 paragraphs covering what's been happening. Lead with the most important developments, then cover each key area, and close with the top things they should act on or ask about. Write conversationally, as if speaking to them directly. No bullet points.
+  const prompt = `You are writing a professional briefing for a ${modeConfig.label.toLowerCase()}. Produce a concise catch-up digest of 4-6 paragraphs. Lead with the most important developments, cover each significant area in turn, and close with what warrants immediate attention or follow-up. Write in a direct, neutral tone — like an intelligence analyst or senior editor briefing a colleague. No greetings, no rhetorical questions, no encouragement, no numbered "next steps" lists, no filler phrases.
 
-STRICT: Use only the data provided in the reports below. Do not invent metrics, names, figures, or events that are not present in the data. Only reference topics that actually appear in the reports provided.${patternSection}
+STRICT: Use only the data provided in the reports below. Do not invent metrics, names, figures, or events not present in the data.${patternSection}
 
 Recent ${modeConfig.documentLabelPlural.toLowerCase()}:
 ${reportsText}`
 
-  return chat([{ role: 'user', content: prompt }], 0.4)
+  return chat([{ role: 'user', content: prompt }], 0.2)
 }
