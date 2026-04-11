@@ -45,9 +45,8 @@ export default function ActiveAreaBadge({ onAreaChange }: Props) {
   return (
     <div
       className={cn(
-        'flex items-center gap-1.5 px-2 py-1 rounded-full border text-xs font-medium shrink-0',
-        'bg-indigo-50 border-indigo-200 text-indigo-700',
-        'dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300'
+        'flex items-center gap-1.5 px-2 py-1 rounded-[4px] border text-xs font-medium shrink-0',
+        'bg-[var(--blue-dim)] border-[var(--blue)] text-[var(--blue)]',
       )}
     >
       <FolderOpen size={11} className="shrink-0" />
@@ -55,7 +54,7 @@ export default function ActiveAreaBadge({ onAreaChange }: Props) {
       <button
         onClick={dismiss}
         aria-label="Clear area filter"
-        className="shrink-0 hover:text-indigo-900 dark:hover:text-indigo-100 transition-colors leading-none"
+        className="shrink-0 hover:text-[var(--ink)] transition-colors leading-none"
       >
         <X size={11} />
       </button>

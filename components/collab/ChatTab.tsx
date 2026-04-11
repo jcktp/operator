@@ -166,7 +166,7 @@ export default function ChatTab({ projectId, projectName }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 size={20} className="animate-spin text-gray-300 dark:text-zinc-600" />
+        <Loader2 size={20} className="animate-spin text-[var(--border-mid)]" />
       </div>
     )
   }
@@ -174,10 +174,10 @@ export default function ChatTab({ projectId, projectName }: Props) {
   if (!isShared) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
-        <MessageSquare size={28} className="text-gray-300 dark:text-zinc-600" />
+        <MessageSquare size={28} className="text-[var(--border-mid)]" />
         <div>
-          <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">Chat not available</p>
-          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Share this project with a peer to enable the chat channel.</p>
+          <p className="text-sm font-medium text-[var(--text-body)]">Chat not available</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Share this project with a peer to enable the chat channel.</p>
         </div>
       </div>
     )
@@ -200,8 +200,8 @@ export default function ChatTab({ projectId, projectName }: Props) {
       <div className="flex-1 min-h-0 overflow-y-auto px-1 py-2 flex flex-col gap-3">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
-            <MessageSquare size={22} className="text-gray-300 dark:text-zinc-600" />
-            <p className="text-xs text-gray-400 dark:text-zinc-500">No messages yet. Start the conversation.</p>
+            <MessageSquare size={22} className="text-[var(--border-mid)]" />
+            <p className="text-xs text-[var(--text-muted)]">No messages yet. Start the conversation.</p>
           </div>
         ) : (
           messages.map(msg => (
@@ -219,7 +219,7 @@ export default function ChatTab({ projectId, projectName }: Props) {
       </div>
 
       {/* Composer */}
-      <div className="shrink-0 pt-3 border-t border-gray-100 dark:border-zinc-800">
+      <div className="shrink-0 pt-3 border-t border-[var(--border)]">
         <MessageComposer
           projectId={projectId}
           onSend={handleSend}

@@ -57,15 +57,15 @@ export default function SyncTab({ projectId, initialShares }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-900 dark:text-zinc-50">Sync</p>
-          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+          <p className="text-sm font-medium text-[var(--text-bright)]">Sync</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">
             Syncs automatically every 60 seconds when peers are reachable.
           </p>
         </div>
         <button
           onClick={syncNow}
           disabled={syncing}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-zinc-800 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[var(--surface-2)] rounded-[4px] hover:bg-[var(--surface-3)] disabled:opacity-40 transition-colors"
         >
           {syncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
           Sync now
@@ -73,22 +73,22 @@ export default function SyncTab({ projectId, initialShares }: Props) {
       </div>
 
       {shares.length === 0 && (
-        <p className="text-xs text-gray-400 dark:text-zinc-500 text-center py-6">
+        <p className="text-xs text-[var(--text-muted)] text-center py-6">
           No peers connected to this project.
         </p>
       )}
 
       <div className="space-y-2">
         {shares.map(s => (
-          <div key={s.peerId} className="flex items-center gap-3 px-3 py-3 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+          <div key={s.peerId} className="flex items-center gap-3 px-3 py-3 rounded-[4px] border border-[var(--border)] bg-[var(--surface)]">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-medium text-gray-900 dark:text-zinc-50 truncate">
+                <span className="text-sm font-medium text-[var(--text-bright)] truncate">
                   {s.peer?.displayName ?? s.peerId}
                 </span>
-                <span className="text-[10px] text-gray-400 dark:text-zinc-500 font-mono">{s.peerId.slice(0, 8)}</span>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">{s.peerId.slice(0, 8)}</span>
               </div>
-              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400 dark:text-zinc-500">
+              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-[var(--text-muted)]">
                 <span className="capitalize">{s.permission.replace('_', '-')}</span>
                 {s.syncState?.lastSync && (
                   <span className="flex items-center gap-0.5">
@@ -98,7 +98,7 @@ export default function SyncTab({ projectId, initialShares }: Props) {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-zinc-500">
+            <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
               {STATUS_ICON[s.syncState?.status ?? 'idle']}
               <span className="capitalize">{s.syncState?.status ?? 'idle'}</span>
             </div>

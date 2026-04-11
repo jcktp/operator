@@ -34,7 +34,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   const isReportPage = /^\/reports\/[^/]+/.test(pathname)
-  const isFixedPage = isReportPage || pathname === '/entities' || pathname === '/dashboard' || pathname === '/' || pathname === '/files' || pathname === '/pulse' || pathname === '/settings' || pathname === '/network'
+  const isFixedPage = isReportPage || pathname === '/entities' || pathname === '/dashboard' || pathname === '/' || pathname === '/files' || pathname === '/pulse' || pathname === '/settings' || pathname === '/network' || pathname === '/collab' || pathname.startsWith('/collab')
 
   // Fixed-layout pages: full-height, no page scroll — panes scroll internally
   if (isFixedPage) {
@@ -51,8 +51,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <IdleGuard autoLockMinutes={autoLockMinutes} />
-      <main className="h-screen overflow-y-auto pt-20 pb-8 px-6 sm:px-8">
-        <div className="max-w-6xl mx-auto">
+      <main className="pt-20 px-6 sm:px-8">
+        <div className="max-w-6xl mx-auto pb-16">
           {children}
         </div>
       </main>

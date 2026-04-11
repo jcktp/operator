@@ -47,9 +47,9 @@ import { Moon, Sun, ShieldOff } from 'lucide-react'
 export const SIDEBAR_W = 0
 
 const NAV_LINK_CLASS =
-  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors shrink-0 text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800'
+  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors shrink-0 text-white/55 hover:text-white font-normal'
 const NAV_ACTIVE_CLASS =
-  'bg-gray-100 text-gray-900 dark:bg-zinc-800 dark:text-zinc-50'
+  'font-bold text-white'
 
 export default function Nav() {
   const pathname = usePathname()
@@ -164,13 +164,13 @@ export default function Nav() {
   return (
     <>
       {/* ── TOP NAV BAR ─────────────────────────────────────────────────── */}
-      <header className="fixed top-0 inset-x-0 h-14 z-50 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 flex items-center px-4 gap-3" style={{ boxShadow: '0 2px 12px 0 rgba(0,38,192,0.07)' }}>
+      <header className="fixed top-0 inset-x-0 h-14 z-50 bg-black flex items-center px-4 gap-3">
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <WalkieTalkie />
           <span
-            className="text-xl text-gray-900 dark:text-white"
+            className="text-xl text-white"
             style={{ fontFamily: 'var(--font-caveat)', fontWeight: 700 }}
           >
             operator
@@ -282,17 +282,17 @@ export default function Nav() {
         {/* Right controls */}
         <div className="flex items-center gap-1.5 shrink-0">
           {airGapped && (
-            <span className="text-[10px] font-medium text-sky-500 dark:text-sky-400 leading-none">Air-gap</span>
+            <span className="text-[10px] font-medium text-sky-400 leading-none">Air-gap</span>
           )}
 
           {/* Search */}
           <button
             onClick={() => setSearchOpen(true)}
             title="Search (⌘K)"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-gray-400 bg-gray-50 border border-gray-200 hover:border-gray-300 hover:text-gray-500 transition-colors dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-500 dark:hover:border-zinc-600"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-white/50 bg-white/8 border border-white/15 hover:border-white/30 hover:text-white/70 transition-colors"
           >
             <Search size={13} />
-            <span className="text-[10px] text-gray-300 dark:text-zinc-600 font-mono">⌘K</span>
+            <span className="text-[10px] text-white/30 font-mono">⌘K</span>
           </button>
 
           <ProjectSwitcher />
@@ -307,15 +307,15 @@ export default function Nav() {
               className={cn(
                 'flex items-center gap-0.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
                 powerMenuOpen
-                  ? 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300'
-                  : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50 dark:text-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
+                  ? 'bg-white/15 text-white'
+                  : 'text-white/50 hover:text-white hover:bg-white/10'
               )}
             >
               <Power size={13} />
               <ChevronDown size={10} />
             </button>
             {powerMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px] z-50 dark:bg-zinc-900 dark:border-zinc-700">
+              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-[4px] shadow-lg py-1 min-w-[160px] z-50 dark:bg-zinc-900 dark:border-zinc-700">
                 <button
                   onClick={() => { toggleTheme(); setPowerMenuOpen(false) }}
                   className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"

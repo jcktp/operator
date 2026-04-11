@@ -85,10 +85,10 @@ export default function PeriodDropdown({ activeFrom, activeTo, basePath }: Props
       <button
         onClick={() => setOpen(o => !o)}
         className={cn(
-          'flex items-center gap-1.5 text-sm border rounded-lg px-3 py-1.5 bg-white transition-colors focus:outline-none',
+          'flex items-center gap-1.5 h-7 px-2.5 text-xs border rounded-[4px] bg-[var(--surface)] transition-colors focus:outline-none',
           open
-            ? 'border-gray-400 text-gray-900'
-            : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:text-gray-900'
+            ? 'border-[var(--border-mid)] text-[var(--text-bright)]'
+            : 'border-[var(--border)] text-[var(--text-body)] hover:border-[var(--border-mid)] hover:text-[var(--text-bright)]'
         )}
       >
         {label}
@@ -96,7 +96,7 @@ export default function PeriodDropdown({ activeFrom, activeTo, basePath }: Props
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[180px]">
+        <div className="absolute left-0 top-full mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-[10px] shadow-lg py-1 min-w-[180px]">
           {presets.map(p => (
             <button
               key={p.label}
@@ -104,36 +104,36 @@ export default function PeriodDropdown({ activeFrom, activeTo, basePath }: Props
               className={cn(
                 'w-full text-left px-3 py-2 text-xs transition-colors',
                 label === p.label
-                  ? 'text-gray-900 font-medium bg-gray-50'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'text-[var(--text-bright)] font-medium bg-[var(--surface-2)]'
+                  : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)] hover:text-[var(--text-bright)]'
               )}
             >
               {p.label}
             </button>
           ))}
 
-          <div className="mx-3 my-1 h-px bg-gray-100" />
+          <div className="mx-3 my-1 h-px bg-[var(--border)]" />
           <div className="px-3 py-2 space-y-1.5">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Custom range</p>
+            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Custom range</p>
             <div className="flex items-center gap-1.5">
               <input
                 type="date"
                 value={customFrom}
                 onChange={e => setCustomFrom(e.target.value)}
-                className="flex-1 text-xs border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-600 focus:outline-none focus:border-gray-400 min-w-0"
+                className="flex-1 text-xs border border-[var(--border)] rounded-[4px] px-2 py-1 h-7 bg-[var(--surface)] text-[var(--text-body)] focus:outline-none focus:border-[var(--border-mid)] min-w-0"
               />
-              <span className="text-gray-300 text-xs shrink-0">→</span>
+              <span className="text-[var(--text-muted)] text-xs shrink-0">→</span>
               <input
                 type="date"
                 value={customTo}
                 onChange={e => setCustomTo(e.target.value)}
-                className="flex-1 text-xs border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-600 focus:outline-none focus:border-gray-400 min-w-0"
+                className="flex-1 text-xs border border-[var(--border)] rounded-[4px] px-2 py-1 h-7 bg-[var(--surface)] text-[var(--text-body)] focus:outline-none focus:border-[var(--border-mid)] min-w-0"
               />
             </div>
             <button
               onClick={() => update(customFrom || undefined, customTo || undefined)}
               disabled={!customFrom && !customTo}
-              className="w-full text-xs font-medium py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="w-full text-xs font-medium h-7 rounded-[4px] bg-[var(--ink)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Apply
             </button>

@@ -22,7 +22,7 @@ export default function Card({ variant = 'default', className, children, ...prop
     <div
       {...props}
       className={cn(
-        'rounded-[6px]',
+        'rounded-[10px]',
         VARIANT[variant],
         className,
       )}

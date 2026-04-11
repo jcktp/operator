@@ -199,12 +199,12 @@ export default function UploadNotification() {
     <div className="relative flex items-center gap-1">
       <button
         onClick={() => setExpanded(v => !v)}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[4px] text-xs font-medium transition-colors ${
           activeJobs.length > 0
-            ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900'
+            ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30'
             : errorJobs.length > 0 && doneJobs.length === 0
-              ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900'
-              : 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900'
+              ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
+              : 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
         }`}
       >
         {activeJobs.length > 0
@@ -223,14 +223,14 @@ export default function UploadNotification() {
         <button
           onClick={dismissAll}
           title="Clear notifications"
-          className="p-1 text-gray-300 hover:text-gray-500 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors"
+          className="p-1 text-white/30 hover:text-white/60 transition-colors"
         >
           <X size={11} />
         </button>
       )}
 
       {expanded && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-[10px] shadow-xl overflow-hidden">
           {/* Received remote submissions */}
           {visibleSubs.map(sub => (
             <div key={sub.id} className="p-3 border-b border-gray-100 dark:border-zinc-800 last:border-b-0">

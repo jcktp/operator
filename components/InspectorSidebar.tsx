@@ -24,7 +24,7 @@ interface ProfileData {
 
 function EntityBadge({ entityType }: { entityType: string }) {
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${ENTITY_COLORS[entityType] ?? 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700'}`}>
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${ENTITY_COLORS[entityType] ?? 'bg-[var(--surface-2)] text-[var(--text-body)] border-[var(--border)]'}`}>
       {ENTITY_LABELS[entityType] ?? entityType}
     </span>
   )
@@ -53,13 +53,13 @@ function EntityView({ item }: { item: Extract<InspectorItem, { type: 'entity' }>
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Source footprint */}
-      <section className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
-        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center gap-1.5 mb-2">
+      <section className="px-4 py-3 border-b border-[var(--border)]">
+        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5 mb-2">
           <FileText size={10} /> Source Footprint
         </h3>
-        {loading && <p className="text-xs text-gray-400 dark:text-zinc-500">Loading…</p>}
+        {loading && <p className="text-xs text-[var(--text-muted)]">Loading…</p>}
         {!loading && profile && profile.appearances.length === 0 && (
-          <p className="text-xs text-gray-400 dark:text-zinc-500">No documents found.</p>
+          <p className="text-xs text-[var(--text-muted)]">No documents found.</p>
         )}
         {!loading && profile && profile.appearances.map(a => (
           <Link
@@ -68,11 +68,11 @@ function EntityView({ item }: { item: Extract<InspectorItem, { type: 'entity' }>
             className="block py-1.5 group"
           >
             <div className="flex items-start gap-2">
-              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 mt-0.5">{a.area}</span>
+              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-subtle)] mt-0.5">{a.area}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-700 dark:text-zinc-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate leading-tight">{a.reportTitle}</p>
-                {a.context && <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-0.5 line-clamp-2 italic">&ldquo;{a.context}&rdquo;</p>}
-                <p className="text-[10px] text-gray-300 dark:text-zinc-600 mt-0.5">{formatRelativeDate(new Date(a.createdAt))}</p>
+                <p className="text-xs text-[var(--text-body)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate leading-tight">{a.reportTitle}</p>
+                {a.context && <p className="text-[10px] text-[var(--text-muted)] mt-0.5 line-clamp-2 italic">&ldquo;{a.context}&rdquo;</p>}
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{formatRelativeDate(new Date(a.createdAt))}</p>
               </div>
             </div>
           </Link>
@@ -81,8 +81,8 @@ function EntityView({ item }: { item: Extract<InspectorItem, { type: 'entity' }>
 
       {/* Connected entities */}
       {!loading && profile && profile.coEntities.length > 0 && (
-        <section className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
-          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center gap-1.5 mb-2">
+        <section className="px-4 py-3 border-b border-[var(--border)]">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5 mb-2">
             <Users size={10} /> Connected Entities
           </h3>
           <div className="flex flex-wrap gap-1.5">
@@ -94,7 +94,7 @@ function EntityView({ item }: { item: Extract<InspectorItem, { type: 'entity' }>
                 title={`${e.sharedCount} shared doc${e.sharedCount !== 1 ? 's' : ''}`}
               >
                 <EntityBadge entityType={e.entityType} />
-                <span className="text-xs text-gray-600 dark:text-zinc-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{e.name}</span>
+                <span className="text-xs text-[var(--text-body)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{e.name}</span>
               </button>
             ))}
           </div>
@@ -105,7 +105,7 @@ function EntityView({ item }: { item: Extract<InspectorItem, { type: 'entity' }>
       <section className="px-4 py-3">
         <button
           onClick={() => setNoteOpen(v => !v)}
-          className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors w-full"
+          className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors w-full"
         >
           <StickyNote size={10} /> Analyst Notes
           <ChevronDown size={10} className={`ml-auto transition-transform ${noteOpen ? 'rotate-180' : ''}`} />
@@ -117,7 +117,7 @@ function EntityView({ item }: { item: Extract<InspectorItem, { type: 'entity' }>
               onChange={e => { setNote(e.target.value); localStorage.setItem(noteKey, e.target.value) }}
               placeholder="Add observations about this entity…"
               rows={2}
-              className="w-full text-xs border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 placeholder-gray-300 dark:placeholder-zinc-600 overflow-y-auto max-h-48"
+              className="w-full text-xs border border-[var(--border)] rounded-[4px] px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[var(--ink)] bg-[var(--surface)] text-[var(--text-body)] placeholder:text-[var(--text-muted)] overflow-y-auto max-h-48"
               style={{ fieldSizing: 'content' } as React.CSSProperties}
             />
           </div>
@@ -150,7 +150,7 @@ function LocationView({ item }: { item: Extract<InspectorItem, { type: 'location
   )
 
   return (
-    <div className="flex flex-col h-full overflow-hidden divide-y divide-gray-100 dark:divide-zinc-800">
+    <div className="flex flex-col h-full overflow-hidden divide-y divide-[var(--border)]">
       {reportIds.map(id => {
         const entry = contextByReportId[id]
         const summary = item.reportSummaries[id]
@@ -162,10 +162,10 @@ function LocationView({ item }: { item: Extract<InspectorItem, { type: 'location
           <section key={id} className="px-4 py-3 space-y-2">
             {/* Report header */}
             <div className="flex items-center gap-2">
-              {area && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 shrink-0">{area}</span>}
+              {area && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-subtle)] shrink-0">{area}</span>}
               <Link
                 href={`/reports/${id}`}
-                className="text-xs font-medium text-gray-700 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-indigo-400 truncate"
+                className="text-xs font-medium text-[var(--text-body)] hover:text-indigo-600 dark:hover:text-indigo-400 truncate"
               >
                 {title}
               </Link>
@@ -173,14 +173,14 @@ function LocationView({ item }: { item: Extract<InspectorItem, { type: 'location
 
             {/* Summary */}
             {summary && (
-              <p className="text-[11px] text-gray-500 dark:text-zinc-400 leading-relaxed line-clamp-3">
+              <p className="text-[11px] text-[var(--text-subtle)] leading-relaxed line-clamp-3">
                 {summary}
               </p>
             )}
 
             {/* Context / excerpt */}
             {hasContexts && entry && (
-              <p className="text-xs text-gray-600 dark:text-zinc-300 leading-relaxed italic">
+              <p className="text-xs text-[var(--text-body)] leading-relaxed italic">
                 &ldquo;{entry.context}&rdquo;
               </p>
             )}
@@ -195,7 +195,7 @@ function LocationView({ item }: { item: Extract<InspectorItem, { type: 'location
                     className="flex items-center gap-1 group"
                     title={`View ${e.name}`}
                   >
-                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${ENTITY_COLORS[e.type] ?? 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700'}`}>
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${ENTITY_COLORS[e.type] ?? 'bg-[var(--surface-2)] text-[var(--text-body)] border-[var(--border)]'}`}>
                       {e.name}
                     </span>
                   </button>
@@ -208,7 +208,7 @@ function LocationView({ item }: { item: Extract<InspectorItem, { type: 'location
 
       {reportIds.length === 0 && (
         <section className="px-4 py-3">
-          <p className="text-xs text-gray-400 dark:text-zinc-500 italic">No reports linked to this location.</p>
+          <p className="text-xs text-[var(--text-muted)] italic">No reports linked to this location.</p>
         </section>
       )}
     </div>
@@ -221,28 +221,28 @@ export default function InspectorSidebar() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-zinc-800 shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           {selected?.type === 'entity' && (
             <>
               <EntityBadge entityType={selected.entityType} />
-              <span className="text-sm font-semibold text-gray-900 dark:text-zinc-50 truncate">{selected.name}</span>
+              <span className="text-sm font-semibold text-[var(--text-bright)] truncate">{selected.name}</span>
             </>
           )}
           {selected?.type === 'location' && (
             <>
               <MapPin size={13} className="text-indigo-500 shrink-0" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-zinc-50 truncate">{selected.name}</span>
+              <span className="text-sm font-semibold text-[var(--text-bright)] truncate">{selected.name}</span>
             </>
           )}
           {!selected && (
-            <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Inspector</span>
+            <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Inspector</span>
           )}
         </div>
         {selected && (
           <button
             onClick={close}
-            className="shrink-0 p-1 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 rounded transition-colors"
+            className="shrink-0 p-1 text-[var(--text-muted)] hover:text-[var(--text-body)] rounded transition-colors"
           >
             <X size={14} />
           </button>
@@ -253,12 +253,12 @@ export default function InspectorSidebar() {
       <div className="flex-1 overflow-y-auto">
         {!selected && (
           <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center py-16">
-            <div className="w-10 h-10 rounded-2xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-              <ScanSearch size={18} className="text-gray-400 dark:text-zinc-500" />
+            <div className="w-10 h-10 rounded-[10px] bg-[var(--surface-2)] flex items-center justify-center">
+              <ScanSearch size={18} className="text-[var(--text-muted)]" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-zinc-400">Nothing selected</p>
-              <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Click an entity or map pin to inspect it here</p>
+              <p className="text-sm font-medium text-[var(--text-subtle)]">Nothing selected</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">Click an entity or map pin to inspect it here</p>
             </div>
           </div>
         )}

@@ -87,8 +87,8 @@ export default function StatusIndicator() {
       <button
         onClick={() => setOpen(v => !v)}
         className={cn(
-          'flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors hover:bg-gray-50',
-          hasIssue && 'bg-amber-50 hover:bg-amber-100'
+          'flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors hover:bg-white/10',
+          hasIssue && 'bg-amber-500/15 hover:bg-amber-500/20'
         )}
         title="System status — click for details"
       >
@@ -120,7 +120,7 @@ export default function StatusIndicator() {
       </button>
 
       {open && data && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-gray-950 text-white rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-gray-950 text-white rounded-[10px] shadow-2xl overflow-hidden">
           {/* Header */}
           <div className={cn(
             'px-4 py-3 text-xs font-semibold',

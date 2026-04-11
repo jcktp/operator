@@ -73,23 +73,23 @@ export default function CollabPanel({ projectId, projectName, onClose, initialTa
       />
 
       {/* Panel */}
-      <div className="fixed right-0 top-14 bottom-0 w-[420px] bg-white dark:bg-zinc-900 border-l border-gray-200 dark:border-zinc-700 z-50 flex flex-col shadow-2xl">
+      <div className="fixed right-0 top-14 bottom-0 w-[420px] bg-[var(--surface)] border-l border-[var(--border)] z-50 flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-zinc-700 shrink-0">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] shrink-0">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-zinc-50">Collaboration</p>
-            <p className="text-xs text-gray-400 dark:text-zinc-500 truncate">{projectName}</p>
+            <p className="text-sm font-semibold text-[var(--text-bright)]">Collaboration</p>
+            <p className="text-xs text-[var(--text-muted)] truncate">{projectName}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-[4px] text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--surface-2)] transition-colors"
           >
             <X size={14} />
           </button>
         </div>
 
         {/* Tab bar */}
-        <div className="flex items-center gap-1 px-4 py-2 border-b border-gray-100 dark:border-zinc-800 shrink-0">
+        <div className="flex items-center gap-1 px-4 py-2 border-b border-[var(--border)] shrink-0">
           {TABS.map(t => (
             <button
               key={t.id}
@@ -98,8 +98,8 @@ export default function CollabPanel({ projectId, projectName, onClose, initialTa
               className={cn(
                 'relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
                 tab === t.id
-                  ? 'bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-zinc-50'
-                  : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800/50'
+                  ? 'bg-[var(--surface-2)] text-[var(--text-bright)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--surface-2)]'
               )}
             >
               {t.icon}
@@ -120,7 +120,7 @@ export default function CollabPanel({ projectId, projectName, onClose, initialTa
           <div className="flex-1 overflow-y-auto px-5 py-4">
             {loading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 size={20} className="animate-spin text-gray-300 dark:text-zinc-600" />
+                <Loader2 size={20} className="animate-spin text-[var(--border-mid)]" />
               </div>
             ) : (
               <>

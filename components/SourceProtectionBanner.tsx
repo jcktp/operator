@@ -35,7 +35,7 @@ export default function SourceProtectionBanner() {
   if (config.id !== 'journalism' || !providerLabel) return null
 
   return (
-    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
+    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-[10px] px-4 py-3 mb-6">
       <AlertTriangle size={15} className="text-amber-600 shrink-0 mt-0.5" />
       <div>
         <p className="text-sm font-medium text-amber-800">Source protection reminder</p>

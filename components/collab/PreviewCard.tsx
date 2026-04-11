@@ -92,9 +92,9 @@ export default function PreviewCard({ refType, refId, label, projectId }: Props)
   }
 
   return (
-    <div className="w-[260px] bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg p-3 text-xs pointer-events-auto">
+    <div className="w-[260px] bg-[var(--surface)] border border-[var(--border)] rounded-[10px] shadow-lg p-3 text-xs pointer-events-auto">
       {loading ? (
-        <div className="flex items-center gap-2 text-gray-400 dark:text-zinc-500">
+        <div className="flex items-center gap-2 text-[var(--text-muted)]">
           <Loader2 size={12} className="animate-spin" />
           Loading…
         </div>
@@ -103,42 +103,42 @@ export default function PreviewCard({ refType, refId, label, projectId }: Props)
           {preview.type === 'entity' && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold text-gray-900 dark:text-zinc-50 truncate">{preview.name}</p>
-                <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0 capitalize">{preview.entityType}</span>
+                <p className="font-semibold text-[var(--text-bright)] truncate">{preview.name}</p>
+                <span className="text-[10px] text-[var(--text-muted)] shrink-0 capitalize">{preview.entityType}</span>
               </div>
-              <div className="h-px bg-gray-100 dark:bg-zinc-800" />
-              <p className="text-gray-500 dark:text-zinc-400">Appears in {preview.docCount} document{preview.docCount !== 1 ? 's' : ''}</p>
-              {preview.context && <p className="text-gray-600 dark:text-zinc-300 line-clamp-2">{preview.context}</p>}
+              <div className="h-px bg-[var(--surface-2)]" />
+              <p className="text-[var(--text-muted)]">Appears in {preview.docCount} document{preview.docCount !== 1 ? 's' : ''}</p>
+              {preview.context && <p className="text-[var(--text-body)] line-clamp-2">{preview.context}</p>}
             </div>
           )}
           {preview.type === 'document' && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold text-gray-900 dark:text-zinc-50 truncate">{preview.title}</p>
-                <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0 uppercase">{preview.fileType}</span>
+                <p className="font-semibold text-[var(--text-bright)] truncate">{preview.title}</p>
+                <span className="text-[10px] text-[var(--text-muted)] shrink-0 uppercase">{preview.fileType}</span>
               </div>
-              <div className="h-px bg-gray-100 dark:bg-zinc-800" />
-              <p className="text-gray-400 dark:text-zinc-500">{preview.entityCount} entities · {preview.eventCount} events</p>
-              {preview.summary && <p className="text-gray-600 dark:text-zinc-300 line-clamp-2">{preview.summary}</p>}
+              <div className="h-px bg-[var(--surface-2)]" />
+              <p className="text-[var(--text-muted)]">{preview.entityCount} entities · {preview.eventCount} events</p>
+              {preview.summary && <p className="text-[var(--text-body)] line-clamp-2">{preview.summary}</p>}
             </div>
           )}
           {preview.type === 'timeline' && (
             <div className="space-y-1.5">
-              <p className="font-semibold text-gray-900 dark:text-zinc-50">{preview.dateText}</p>
-              <div className="h-px bg-gray-100 dark:bg-zinc-800" />
-              <p className="text-gray-600 dark:text-zinc-300 line-clamp-3">{preview.event}</p>
+              <p className="font-semibold text-[var(--text-bright)]">{preview.dateText}</p>
+              <div className="h-px bg-[var(--surface-2)]" />
+              <p className="text-[var(--text-body)] line-clamp-3">{preview.event}</p>
             </div>
           )}
           <button
             type="button"
             onClick={handleOpen}
-            className="mt-2 flex items-center gap-1 text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
+            className="mt-2 flex items-center gap-1 text-[var(--blue)] hover:opacity-80 font-medium transition-colors"
           >
             Open <ExternalLink size={10} />
           </button>
         </>
       ) : (
-        <p className="text-gray-400 dark:text-zinc-500">{label}</p>
+        <p className="text-[var(--text-muted)]">{label}</p>
       )}
     </div>
   )

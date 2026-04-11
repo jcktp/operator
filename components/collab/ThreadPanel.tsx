@@ -74,28 +74,28 @@ export default function ThreadPanel({ projectId, threadId, currentInstanceId, on
   }
 
   return (
-    <div className="absolute inset-0 bg-white dark:bg-zinc-900 z-10 flex flex-col">
+    <div className="absolute inset-0 bg-[var(--surface)] z-10 flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-zinc-800 shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)] shrink-0">
         <button
           onClick={onClose}
-          className="p-1 rounded text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200"
+          className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-body)]"
         >
           <X size={13} />
         </button>
-        <span className="text-xs font-semibold text-gray-800 dark:text-zinc-200">Thread</span>
+        <span className="text-xs font-semibold text-[var(--text-subtle)]">Thread</span>
       </div>
 
       {/* Body */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 size={18} className="animate-spin text-gray-300 dark:text-zinc-600" />
+          <Loader2 size={18} className="animate-spin text-[var(--border-mid)]" />
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex flex-col overflow-y-auto px-4 py-3 gap-4">
           {/* Root message */}
           {root && (
-            <div className="border-b border-gray-100 dark:border-zinc-800 pb-3">
+            <div className="border-b border-[var(--border)] pb-3">
               <MessageBubble
                 message={root}
                 currentInstanceId={currentInstanceId}
@@ -119,7 +119,7 @@ export default function ThreadPanel({ projectId, threadId, currentInstanceId, on
       )}
 
       {/* Composer */}
-      <div className="px-4 py-3 border-t border-gray-100 dark:border-zinc-800 shrink-0">
+      <div className="px-4 py-3 border-t border-[var(--border)] shrink-0">
         <MessageComposer
           projectId={projectId}
           onSend={handleSend}

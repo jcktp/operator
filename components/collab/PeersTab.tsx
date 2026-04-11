@@ -132,22 +132,22 @@ export default function PeersTab({ projectId, initialPeers, initialNearby }: Pro
       {/* Peer list */}
       <div className="space-y-2">
         {peers.length === 0 && (
-          <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-6">
+          <p className="text-sm text-[var(--text-muted)] text-center py-6">
             No peers connected to this project yet.
           </p>
         )}
         {peers.map(peer => (
-          <div key={peer.id} className="flex items-center gap-3 px-3 py-3 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+          <div key={peer.id} className="flex items-center gap-3 px-3 py-3 rounded-[4px] border border-[var(--border)] bg-[var(--surface)]">
             {/* Online indicator */}
-            <div className={`w-2 h-2 rounded-full shrink-0 ${isOnline(peer) ? 'bg-green-400' : 'bg-gray-300 dark:bg-zinc-600'}`} />
+            <div className={`w-2 h-2 rounded-full shrink-0 ${isOnline(peer) ? 'bg-green-400' : 'bg-[var(--border-mid)]'}`} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-medium text-gray-900 dark:text-zinc-50 truncate">
+                <span className="text-sm font-medium text-[var(--text-bright)] truncate">
                   {peer.displayName ?? 'Unknown'}
                 </span>
-                <span className="text-[10px] text-gray-400 dark:text-zinc-500 font-mono">{peer.id}</span>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">{peer.id}</span>
               </div>
-              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400 dark:text-zinc-500">
+              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-[var(--text-muted)]">
                 <span>{peer.discoveryMethod === 'mdns' ? <Wifi size={9} /> : <WifiOff size={9} />}</span>
                 <span>{peer.discoveryMethod ?? 'remote'}</span>
                 {peer.lastSeen && (
@@ -164,8 +164,8 @@ export default function PeersTab({ projectId, initialPeers, initialNearby }: Pro
               disabled={togglingId === peer.id}
               title={peer.trusted ? 'Revoke trust' : 'Trust peer'}
               className={`p-1.5 rounded transition-colors ${peer.trusted
-                ? 'text-green-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950'
-                : 'text-gray-400 dark:text-zinc-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-950'}`}
+                ? 'text-green-500 hover:text-red-500 hover:bg-[var(--red-dim)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--green)] hover:bg-[var(--green-dim)]'}`}
             >
               {togglingId === peer.id
                 ? <Loader2 size={13} className="animate-spin" />
@@ -174,7 +174,7 @@ export default function PeersTab({ projectId, initialPeers, initialNearby }: Pro
             <button
               onClick={() => removePeer(peer.id)}
               disabled={deletingId === peer.id}
-              className="p-1.5 rounded text-gray-400 dark:text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+              className="p-1.5 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-[var(--red-dim)] transition-colors"
             >
               {deletingId === peer.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
             </button>
@@ -184,46 +184,46 @@ export default function PeersTab({ projectId, initialPeers, initialNearby }: Pro
 
       {/* Add peer */}
       {showAddForm ? (
-        <div className="space-y-3 border border-gray-200 dark:border-zinc-700 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-700 dark:text-zinc-200">Paste invite string</p>
+        <div className="space-y-3 border border-[var(--border)] rounded-[4px] p-4">
+          <p className="text-xs font-medium text-[var(--text-subtle)]">Paste invite string</p>
           <textarea
             value={inviteInput}
             onChange={e => setInviteInput(e.target.value)}
             placeholder="Paste the peer's invite string here…"
             rows={3}
-            className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[var(--ink)]"
           />
           <div className="flex items-center gap-2">
             <button
               onClick={addFromInvite}
               disabled={adding || !inviteInput.trim()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium rounded-lg hover:bg-gray-700 dark:hover:bg-zinc-200 disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--ink)] text-white text-xs font-medium rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
             >
               {adding && <Loader2 size={11} className="animate-spin" />}
               Add peer
             </button>
-            <button onClick={() => setShowAddForm(false)} className="text-xs text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors">
+            <button onClick={() => setShowAddForm(false)} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors">
               Cancel
             </button>
           </div>
 
           {/* Nearby peers on local network */}
           {nearby.length > 0 && (
-            <div className="pt-3 border-t border-gray-100 dark:border-zinc-700">
+            <div className="pt-3 border-t border-[var(--border)]">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">Nearby (local network)</p>
-                <button onClick={refreshNearby} className="text-[10px] text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300">Refresh</button>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">Nearby (local network)</p>
+                <button onClick={refreshNearby} className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-body)]">Refresh</button>
               </div>
               <div className="space-y-1.5">
                 {nearby.map(np => (
                   <div key={np.instanceId} className="flex items-center gap-2 text-xs">
                     <Wifi size={11} className="text-green-400 shrink-0" />
-                    <span className="text-gray-700 dark:text-zinc-200 font-medium">{np.displayName}</span>
-                    <span className="text-gray-400 dark:text-zinc-500 font-mono text-[10px]">{np.instanceId}</span>
+                    <span className="text-[var(--text-subtle)] font-medium">{np.displayName}</span>
+                    <span className="text-[var(--text-muted)] font-mono text-[10px]">{np.instanceId}</span>
                     <button
                       onClick={() => addNearbyPeer(np)}
                       disabled={adding || peers.some(p => p.id === np.instanceId)}
-                      className="ml-auto text-[10px] px-2 py-0.5 bg-gray-100 dark:bg-zinc-800 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+                      className="ml-auto text-[10px] px-2 py-0.5 bg-[var(--surface-2)] rounded hover:bg-[var(--surface-3)] disabled:opacity-40 transition-colors"
                     >
                       {peers.some(p => p.id === np.instanceId) ? 'Added' : 'Add'}
                     </button>
@@ -236,7 +236,7 @@ export default function PeersTab({ projectId, initialPeers, initialNearby }: Pro
       ) : (
         <button
           onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-bright)] transition-colors"
         >
           <Plus size={13} />
           Add peer

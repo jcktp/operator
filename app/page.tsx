@@ -17,299 +17,299 @@ import { isValidSession, SESSION_COOKIE } from '@/lib/auth'
 export const dynamic = 'force-dynamic'
 
 function parseMetricNumeric(value: string | undefined | null): number | null {
-  if (!value) return null
-  let s = value.trim().replace(/[£$€¥₹]/g, '').replace(/,/g, '').replace(/%$/, '')
-  const suffixMatch = s.match(/^([-\d.]+)\s*([kmb])$/i)
-  if (suffixMatch) {
-    const n = parseFloat(suffixMatch[1])
-    const mult = ({ k: 1e3, m: 1e6, b: 1e9 } as Record<string, number>)[suffixMatch[2].toLowerCase()] ?? 1
-    return isNaN(n) ? null : n * mult
-  }
-  const numMatch = s.match(/^([-\d.]+)/)
-  if (numMatch) { const n = parseFloat(numMatch[1]); return isNaN(n) ? null : n }
-  return null
+ if (!value) return null
+ let s = value.trim().replace(/[£$€¥₹]/g, '').replace(/,/g, '').replace(/%$/, '')
+ const suffixMatch = s.match(/^([-\d.]+)\s*([kmb])$/i)
+ if (suffixMatch) {
+ const n = parseFloat(suffixMatch[1])
+ const mult = ({ k: 1e3, m: 1e6, b: 1e9 } as Record<string, number>)[suffixMatch[2].toLowerCase()] ?? 1
+ return isNaN(n) ? null : n * mult
+ }
+ const numMatch = s.match(/^([-\d.]+)/)
+ if (numMatch) { const n = parseFloat(numMatch[1]); return isNaN(n) ? null : n }
+ return null
 }
 
 /** Monday of the week containing `date` (UTC) */
 function weekStart(date: Date): number {
-  const d = new Date(date)
-  d.setUTCHours(0, 0, 0, 0)
-  const day = d.getUTCDay()
-  d.setUTCDate(d.getUTCDate() - ((day + 6) % 7))
-  return d.getTime()
+ const d = new Date(date)
+ d.setUTCHours(0, 0, 0, 0)
+ const day = d.getUTCDay()
+ d.setUTCDate(d.getUTCDate() - ((day + 6) % 7))
+ return d.getTime()
 }
 
 function weekLabel(ts: number, index: number): string {
-  if (index === 0) return 'Latest'
-  const d = new Date(ts)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) + ' week'
+ if (index === 0) return 'Latest'
+ const d = new Date(ts)
+ return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) + ' week'
 }
 
 export default async function OverviewPage({
-  searchParams,
+ searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; week?: string; from?: string; to?: string; area?: string }>
+ searchParams: Promise<{ tab?: string; week?: string; from?: string; to?: string; area?: string }>
 }) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  if (!(await isValidSession(token))) {
-    redirect('/login')
-  }
+ const cookieStore = await cookies()
+ const token = cookieStore.get(SESSION_COOKIE)?.value
+ if (!(await isValidSession(token))) {
+ redirect('/login')
+ }
 
-  const onboardingRow = await prisma.setting.findUnique({ where: { key: 'onboarding_complete' } })
-  if (onboardingRow?.value !== 'true') redirect('/onboarding')
+ const onboardingRow = await prisma.setting.findUnique({ where: { key: 'onboarding_complete' } })
+ if (onboardingRow?.value !== 'true') redirect('/onboarding')
 
-  const params = await searchParams
-  const tab = params.tab
-  const filterFrom = params.from
-  const filterTo = params.to
-  const selectedArea = params.area
+ const params = await searchParams
+ const tab = params.tab
+ const filterFrom = params.from
+ const filterTo = params.to
+ const selectedArea = params.area
 
-  const fromDate = filterFrom ? new Date(filterFrom) : null
-  const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
+ const fromDate = filterFrom ? new Date(filterFrom) : null
+ const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
 
-  // Fetch project context first so the report query can filter at DB level
-  const [modeRow, currentProjectSetting] = await Promise.all([
-    prisma.setting.findUnique({ where: { key: 'app_mode' } }),
-    prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
-  ])
-  const currentMode = modeRow?.value ?? ''
-  const modeConfig = getModeConfig(currentMode)
-  const modeWhere = currentMode ? { OR: [{ mode: currentMode }, { mode: '' }] } : {}
+ // Fetch project context first so the report query can filter at DB level
+ const [modeRow, currentProjectSetting] = await Promise.all([
+ prisma.setting.findUnique({ where: { key: 'app_mode' } }),
+ prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
+ ])
+ const currentMode = modeRow?.value ?? ''
+ const modeConfig = getModeConfig(currentMode)
+ const modeWhere = currentMode ? { OR: [{ mode: currentMode }, { mode: '' }] } : {}
 
-  // Validate that current project belongs to the active mode
-  const storedProjectId = currentProjectSetting?.value || null
-  let currentProjectId: string | null = storedProjectId
-  if (storedProjectId) {
-    const proj = await prisma.project.findUnique({ where: { id: storedProjectId }, select: { mode: true } })
-    if (proj && proj.mode !== '' && proj.mode !== currentMode) currentProjectId = null
-  }
+ // Validate that current project belongs to the active mode
+ const storedProjectId = currentProjectSetting?.value || null
+ let currentProjectId: string | null = storedProjectId
+ if (storedProjectId) {
+ const proj = await prisma.project.findUnique({ where: { id: storedProjectId }, select: { mode: true } })
+ if (proj && proj.mode !== '' && proj.mode !== currentMode) currentProjectId = null
+ }
 
-  const modeProjectCount = await prisma.project.count({ where: modeWhere })
+ const modeProjectCount = await prisma.project.count({ where: modeWhere })
 
-  // First-run: no projects in this mode yet → prompt to create one
-  if (modeProjectCount === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-950 rounded-2xl flex items-center justify-center mb-4">
-          <FileText size={22} className="text-indigo-400" />
-        </div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-zinc-50 mb-2">
-          Start by creating a {modeConfig.projectLabel.toLowerCase()}
-        </h1>
-        <p className="text-gray-500 dark:text-zinc-400 text-sm max-w-sm mb-6">
-          Organise your documents under a {modeConfig.projectLabel.toLowerCase()} to keep everything focused and easy to navigate.
-        </p>
-        <Link href="/projects"
-          className="inline-flex items-center gap-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors">
-          <Upload size={15} />Create first {modeConfig.projectLabel.toLowerCase()}
-        </Link>
-      </div>
-    )
-  }
+ // First-run: no projects in this mode yet → prompt to create one
+ if (modeProjectCount === 0) {
+ return (
+ <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+ <div className="w-14 h-14 bg-[var(--blue-dim)] rounded-2xl flex items-center justify-center mb-4">
+ <FileText size={22} className="text-indigo-400" />
+ </div>
+ <h1 className="text-xl font-semibold text-[var(--text-bright)] mb-2">
+ Start by creating a {modeConfig.projectLabel.toLowerCase()}
+ </h1>
+ <p className="text-[var(--text-muted)] text-sm max-w-sm mb-6">
+ Organise your documents under a {modeConfig.projectLabel.toLowerCase()} to keep everything focused and easy to navigate.
+ </p>
+ <Link href="/projects"
+ className="inline-flex items-center gap-2 bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors">
+ <Upload size={15} />Create first {modeConfig.projectLabel.toLowerCase()}
+ </Link>
+ </div>
+ )
+ }
 
-  const [reports_final, directs, activeProject] = await Promise.all([
-    prisma.report.findMany({
-      where: {
-        ...(currentProjectId ? { projectId: currentProjectId } : modeWhere),
-        ...(fromDate || toDate ? {
-          createdAt: {
-            ...(fromDate ? { gte: fromDate } : {}),
-            ...(toDate ? { lte: toDate } : {}),
-          },
-        } : {}),
-      },
-      orderBy: { createdAt: 'desc' },
-      include: { directReport: true },
-    }),
-    prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
-    currentProjectId
-      ? prisma.project.findUnique({ where: { id: currentProjectId }, select: { name: true } })
-      : Promise.resolve(null),
-  ])
+ const [reports_final, directs, activeProject] = await Promise.all([
+ prisma.report.findMany({
+ where: {
+ ...(currentProjectId ? { projectId: currentProjectId } : modeWhere),
+ ...(fromDate || toDate ? {
+ createdAt: {
+ ...(fromDate ? { gte: fromDate } : {}),
+ ...(toDate ? { lte: toDate } : {}),
+ },
+ } : {}),
+ },
+ orderBy: { createdAt: 'desc' },
+ include: { directReport: true },
+ }),
+ prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
+ currentProjectId
+ ? prisma.project.findUnique({ where: { id: currentProjectId }, select: { name: true } })
+ : Promise.resolve(null),
+ ])
 
-  if (reports_final.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center mb-4">
-          <FileText size={20} className="text-gray-400 dark:text-zinc-500" />
-        </div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-zinc-50 mb-2">
-          {activeProject ? `No documents in "${activeProject.name}" yet` : modeConfig.emptyStateTitle}
-        </h1>
-        <p className="text-gray-500 dark:text-zinc-400 text-sm max-w-sm mb-6">{modeConfig.emptyStateBody}</p>
-        <Link href="/upload"
-          className="inline-flex items-center gap-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-zinc-200 transition-colors">
-          <Upload size={15} />{modeConfig.emptyStateCta}
-        </Link>
-      </div>
-    )
-  }
+ if (reports_final.length === 0) {
+ return (
+ <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+ <div className="w-12 h-12 bg-[var(--surface-2)] rounded-xl flex items-center justify-center mb-4">
+ <FileText size={20} className="text-[var(--text-muted)] " />
+ </div>
+ <h1 className="text-xl font-semibold text-[var(--text-bright)] mb-2">
+ {activeProject ? `No documents in"${activeProject.name} "yet` : modeConfig.emptyStateTitle}
+ </h1>
+ <p className="text-[var(--text-muted)] text-sm max-w-sm mb-6">{modeConfig.emptyStateBody}</p>
+ <Link href="/upload"
+ className="inline-flex items-center gap-2 bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors">
+ <Upload size={15} />{modeConfig.emptyStateCta}
+ </Link>
+ </div>
+ )
+ }
 
-  // ── One Pager tab ───────────────────────────────────────────────────────────
-  if (tab === 'one-pager') {
-    // Group reports into weekly buckets by Monday of their createdAt week
-    const bucketMap: Map<number, typeof reports_final> = new Map()
-    for (const r of reports_final) {
-      const key = weekStart(r.createdAt)
-      if (!bucketMap.has(key)) bucketMap.set(key, [])
-      bucketMap.get(key)!.push(r)
-    }
-    // Sorted newest first
-    const buckets = [...bucketMap.entries()].sort((a, b) => b[0] - a[0])
+ // ── One Pager tab ───────────────────────────────────────────────────────────
+ if (tab === 'one-pager') {
+ // Group reports into weekly buckets by Monday of their createdAt week
+ const bucketMap: Map<number, typeof reports_final> = new Map()
+ for (const r of reports_final) {
+ const key = weekStart(r.createdAt)
+ if (!bucketMap.has(key)) bucketMap.set(key, [])
+ bucketMap.get(key)!.push(r)
+ }
+ // Sorted newest first
+ const buckets = [...bucketMap.entries()].sort((a, b) => b[0] - a[0])
 
-    const weekIndex = Math.min(
-      Math.max(parseInt(params.week ?? '0', 10), 0),
-      buckets.length - 1
-    )
-    const [bucketTs, bucketReports] = buckets[weekIndex] ?? [Date.now(), []]
+ const weekIndex = Math.min(
+ Math.max(parseInt(params.week ?? '0', 10), 0),
+ buckets.length - 1
+ )
+ const [bucketTs, bucketReports] = buckets[weekIndex] ?? [Date.now(), []]
 
-    const onePagerReports: OnePagerReport[] = bucketReports.map(r => ({
-      id: r.id,
-      title: r.title,
-      area: r.area,
-      summary: r.summary,
-      metrics: parseMetrics(r.metrics),
-      insights: parseJsonSafe<Insight[]>(r.insights, []),
-      questions: parseJsonSafe<Question[]>(r.questions, []),
-      createdAt: r.createdAt.toISOString(),
-      directName: r.directReport?.name,
-      directTitle: r.directReport?.title,
-    }))
+ const onePagerReports: OnePagerReport[] = bucketReports.map(r => ({
+ id: r.id,
+ title: r.title,
+ area: r.area,
+ summary: r.summary,
+ metrics: parseMetrics(r.metrics),
+ insights: parseJsonSafe<Insight[]>(r.insights, []),
+ questions: parseJsonSafe<Question[]>(r.questions, []),
+ createdAt: r.createdAt.toISOString(),
+ directName: r.directReport?.name,
+ directTitle: r.directReport?.title,
+ }))
 
-    return (
-      <OnePagerTab
-        reports={onePagerReports}
-        weekIndex={weekIndex}
-        totalWeeks={buckets.length}
-        weekLabel={weekLabel(bucketTs, weekIndex)}
-        modeId={modeConfig.id}
-      />
-    )
-  }
+ return (
+ <OnePagerTab
+ reports={onePagerReports}
+ weekIndex={weekIndex}
+ totalWeeks={buckets.length}
+ weekLabel={weekLabel(bucketTs, weekIndex)}
+ modeId={modeConfig.id}
+ />
+ )
+ }
 
-  // ── Overview tab ────────────────────────────────────────────────────────────
+ // ── Overview tab ────────────────────────────────────────────────────────────
 
-  // Area counts for sidebar (from full date-filtered set)
-  const areaCounts: Record<string, number> = {}
-  for (const r of reports_final) areaCounts[r.area] = (areaCounts[r.area] ?? 0) + 1
-  const sidebarAreas = Object.keys(areaCounts).sort().map(name => ({ name, count: areaCounts[name] }))
+ // Area counts for sidebar (from full date-filtered set)
+ const areaCounts: Record<string, number> = {}
+ for (const r of reports_final) areaCounts[r.area] = (areaCounts[r.area] ?? 0) + 1
+ const sidebarAreas = Object.keys(areaCounts).sort().map(name => ({ name, count: areaCounts[name] }))
 
-  const recent = (selectedArea ? reports_final.filter(r => r.area === selectedArea) : reports_final).slice(0, 30)
+ const recent = (selectedArea ? reports_final.filter(r => r.area === selectedArea) : reports_final).slice(0, 30)
 
-  // Most recent report per area (all areas view) OR up to 6 recent reports (single area view)
-  let activeAreas: typeof reports_final
-  if (selectedArea) {
-    activeAreas = recent.slice(0, 6)
-  } else {
-    const areaMap: Record<string, typeof reports_final[0]> = {}
-    for (const r of recent) {
-      if (!areaMap[r.area]) areaMap[r.area] = r
-    }
-    activeAreas = Object.values(areaMap)
-  }
+ // Most recent report per area (all areas view) OR up to 6 recent reports (single area view)
+ let activeAreas: typeof reports_final
+ if (selectedArea) {
+ activeAreas = recent.slice(0, 6)
+ } else {
+ const areaMap: Record<string, typeof reports_final[0]> = {}
+ for (const r of recent) {
+ if (!areaMap[r.area]) areaMap[r.area] = r
+ }
+ activeAreas = Object.values(areaMap)
+ }
 
-  type FlagItem = { text: string; type: string; reportTitle: string; reportId: string }
-  type QuestionItem = { text: string; reportTitle: string; directName?: string; reportId: string }
-  type ResolvedItem = { text: string; area: string; reportId: string }
+ type FlagItem = { text: string; type: string; reportTitle: string; reportId: string }
+ type QuestionItem = { text: string; reportTitle: string; directName?: string; reportId: string }
+ type ResolvedItem = { text: string; area: string; reportId: string }
 
-  const topInsights: FlagItem[] = []
-  const topQuestions: QuestionItem[] = []
-  const resolvedFlagItems: ResolvedItem[] = []
+ const topInsights: FlagItem[] = []
+ const topQuestions: QuestionItem[] = []
+ const resolvedFlagItems: ResolvedItem[] = []
 
-  for (const r of recent.slice(0, 10)) {
-    parseJsonSafe<Insight[]>(r.insights, [])
-      .filter(i => i.type === 'risk' || i.type === 'anomaly')
-      .forEach(i => topInsights.push({ text: i.text, type: i.type, reportTitle: r.title, reportId: r.id }))
+ for (const r of recent.slice(0, 10)) {
+ parseJsonSafe<Insight[]>(r.insights, [])
+ .filter(i => i.type === 'risk' || i.type === 'anomaly')
+ .forEach(i => topInsights.push({ text: i.text, type: i.type, reportTitle: r.title, reportId: r.id }))
 
-    parseJsonSafe<Question[]>(r.questions, [])
-      .filter(q => q.priority === 'high')
-      .forEach(q => topQuestions.push({ text: q.text, reportTitle: r.title, directName: r.directReport?.name, reportId: r.id }))
+ parseJsonSafe<Question[]>(r.questions, [])
+ .filter(q => q.priority === 'high')
+ .forEach(q => topQuestions.push({ text: q.text, reportTitle: r.title, directName: r.directReport?.name, reportId: r.id }))
 
-    parseJsonSafe<string[]>(r.resolvedFlags, [])
-      .forEach(text => resolvedFlagItems.push({ text, area: r.area, reportId: r.id }))
-  }
+ parseJsonSafe<string[]>(r.resolvedFlags, [])
+ .forEach(text => resolvedFlagItems.push({ text, area: r.area, reportId: r.id }))
+ }
 
-  const labels = getReportLabels(modeConfig.id)
-  const contextLines: string[] = [
-    `${modeConfig.label} overview — ${reports_final.length} ${modeConfig.documentLabelPlural.toLowerCase()} across ${activeAreas.length} ${modeConfig.collectionLabelPlural.toLowerCase()}.`,
-    '',
-    `${modeConfig.collectionLabelPlural.toUpperCase()}:`,
-    ...activeAreas.map(r => {
-      const metrics = parseMetrics(r.metrics).slice(0, 4)
-      return `- ${r.area}: ${r.summary ?? r.title}${metrics.length ? '\n  ' + labels.onePagerMetrics + ': ' + metrics.map(m => `${m.label} ${m.value}`).join(', ') : ''}`
-    }),
-  ]
-  if (topInsights.length > 0) {
-    contextLines.push('', `ACTIVE ${labels.flagsPanel.toUpperCase()}:`)
-    topInsights.slice(0, 5).forEach(f => contextLines.push(`- [${f.type}] ${f.text}`))
-  }
-  if (topQuestions.length > 0) {
-    contextLines.push('', `${labels.questionsPanel.toUpperCase()}:`)
-    topQuestions.slice(0, 5).forEach(q => contextLines.push(`- ${q.text}${q.directName ? ` (${labels.questionsPersonPrefix.toLowerCase()} ${q.directName})` : ''}`))
-  }
+ const labels = getReportLabels(modeConfig.id)
+ const contextLines: string[] = [
+ `${modeConfig.label} overview — ${reports_final.length} ${modeConfig.documentLabelPlural.toLowerCase()} across ${activeAreas.length} ${modeConfig.collectionLabelPlural.toLowerCase()}.`,
+ '',
+ `${modeConfig.collectionLabelPlural.toUpperCase()}:`,
+ ...activeAreas.map(r => {
+ const metrics = parseMetrics(r.metrics).slice(0, 4)
+ return `- ${r.area}: ${r.summary ?? r.title}${metrics.length ? '\n ' + labels.onePagerMetrics + ': ' + metrics.map(m => `${m.label} ${m.value}`).join(', ') : ''}`
+ }),
+ ]
+ if (topInsights.length > 0) {
+ contextLines.push('', `ACTIVE ${labels.flagsPanel.toUpperCase()}:`)
+ topInsights.slice(0, 5).forEach(f => contextLines.push(`- [${f.type}] ${f.text}`))
+ }
+ if (topQuestions.length > 0) {
+ contextLines.push('', `${labels.questionsPanel.toUpperCase()}:`)
+ topQuestions.slice(0, 5).forEach(q => contextLines.push(`- ${q.text}${q.directName ? ` (${labels.questionsPersonPrefix.toLowerCase()} ${q.directName})` : ''}`))
+ }
 
-  // ── Metric time-series per area ─────────────────────────────────────────────
-  // Group all recent reports by area, sorted oldest→newest
-  const byArea: Record<string, typeof reports_final> = {}
-  for (const r of [...recent].reverse()) {
-    if (!byArea[r.area]) byArea[r.area] = []
-    byArea[r.area].push(r)
-  }
+ // ── Metric time-series per area ─────────────────────────────────────────────
+ // Group all recent reports by area, sorted oldest→newest
+ const byArea: Record<string, typeof reports_final> = {}
+ for (const r of [...recent].reverse()) {
+ if (!byArea[r.area]) byArea[r.area] = []
+ byArea[r.area].push(r)
+ }
 
-  const areaMetrics: AreaMetricData[] = Object.entries(byArea).map(([area, areaReports]) => {
-    // Track first-seen label text per normalized key
-    const labelText: Record<string, string> = {}
-    const labelPoints: Record<string, MetricPoint[]> = {}
-    for (const r of areaReports) {
-      for (const m of parseMetrics(r.metrics).filter(m => m.label && m.value)) {
-        const key = m.label.trim().toLowerCase()
-        if (!labelText[key]) labelText[key] = m.label.trim()
-        if (!labelPoints[key]) labelPoints[key] = []
-        labelPoints[key].push({
-          date: (r.reportDate ?? r.createdAt).toISOString(),
-          displayValue: m.value,
-          numericValue: parseMetricNumeric(m.value),
-          status: m.status,
-        })
-      }
-    }
-    const metrics = Object.keys(labelPoints)
-      .filter(key => labelPoints[key].length >= 2)
-      .map(key => ({ label: labelText[key], points: labelPoints[key] }))
-    return { area, metrics }
-  })
+ const areaMetrics: AreaMetricData[] = Object.entries(byArea).map(([area, areaReports]) => {
+ // Track first-seen label text per normalized key
+ const labelText: Record<string, string> = {}
+ const labelPoints: Record<string, MetricPoint[]> = {}
+ for (const r of areaReports) {
+ for (const m of parseMetrics(r.metrics).filter(m => m.label && m.value)) {
+ const key = m.label.trim().toLowerCase()
+ if (!labelText[key]) labelText[key] = m.label.trim()
+ if (!labelPoints[key]) labelPoints[key] = []
+ labelPoints[key].push({
+ date: (r.reportDate ?? r.createdAt).toISOString(),
+ displayValue: m.value,
+ numericValue: parseMetricNumeric(m.value),
+ status: m.status,
+ })
+ }
+ }
+ const metrics = Object.keys(labelPoints)
+ .filter(key => labelPoints[key].length >= 2)
+ .map(key => ({ label: labelText[key], points: labelPoints[key] }))
+ return { area, metrics }
+ })
 
-  const data: OverviewData = {
-    stats: {
-      totalReports: reports_final.length,
-      areasCount: selectedArea ? 1 : activeAreas.length,
-      directsCount: directs.length,
-    },
-    areas: sidebarAreas,
-    selectedArea,
-    activeAreas: activeAreas.map(r => ({
-      id: r.id,
-      area: r.area,
-      title: r.title,
-      summary: r.summary,
-      metrics: parseMetrics(r.metrics),
-      createdAt: r.createdAt.toISOString(),
-    })),
-    topInsights: topInsights.slice(0, 5),
-    topQuestions: topQuestions.slice(0, 5),
-    resolvedFlagItems: resolvedFlagItems.slice(0, 6),
-    recentReports: recent.slice(0, 8).map(r => ({
-      id: r.id,
-      title: r.title,
-      area: r.area,
-      createdAt: r.createdAt.toISOString(),
-      directName: r.directReport?.name,
-      directTitle: r.directReport?.title,
-    })),
-    context: contextLines.join('\n'),
-    areaMetrics: areaMetrics.filter(a => a.metrics.length > 0),
-  }
+ const data: OverviewData = {
+ stats: {
+ totalReports: reports_final.length,
+ areasCount: selectedArea ? 1 : activeAreas.length,
+ directsCount: directs.length,
+ },
+ areas: sidebarAreas,
+ selectedArea,
+ activeAreas: activeAreas.map(r => ({
+ id: r.id,
+ area: r.area,
+ title: r.title,
+ summary: r.summary,
+ metrics: parseMetrics(r.metrics),
+ createdAt: r.createdAt.toISOString(),
+ })),
+ topInsights: topInsights.slice(0, 5),
+ topQuestions: topQuestions.slice(0, 5),
+ resolvedFlagItems: resolvedFlagItems.slice(0, 6),
+ recentReports: recent.slice(0, 8).map(r => ({
+ id: r.id,
+ title: r.title,
+ area: r.area,
+ createdAt: r.createdAt.toISOString(),
+ directName: r.directReport?.name,
+ directTitle: r.directReport?.title,
+ })),
+ context: contextLines.join('\n'),
+ areaMetrics: areaMetrics.filter(a => a.metrics.length > 0),
+ }
 
-  return <OverviewShell data={data} activeFrom={filterFrom} activeTo={filterTo} />
+ return <OverviewShell data={data} activeFrom={filterFrom} activeTo={filterTo} />
 }

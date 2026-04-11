@@ -75,8 +75,8 @@ export default function ProjectSwitcher() {
         className={cn(
           'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors max-w-[160px]',
           open
-            ? 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-200'
-            : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
+            ? 'bg-white/15 text-white'
+            : 'text-white/55 hover:text-white hover:bg-white/10'
         )}
         title="Switch project"
       >
@@ -88,7 +88,7 @@ export default function ProjectSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg py-1 min-w-[200px] z-50">
+        <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-[4px] shadow-lg py-1 min-w-[200px] z-50">
           {activeProjects.length > 0 && (
             <p className="px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
               Active {modeConfig.projectLabelPlural.toLowerCase()}

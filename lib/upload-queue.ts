@@ -322,6 +322,33 @@ async function processItem(itemId: string): Promise<void> {
       } catch (e) { console.error('[upload-queue] Risk register sync failed:', e) }
     }
 
+    // Claims Tracker: auto-populate from all analysis insights
+    if (!isImagePlaceholder && !isFailedAudio && modeFeatures.claims && analysis?.insights?.length) {
+      try {
+        // Fetch existing claim texts for this report to avoid duplicates on re-analysis
+        const existingTexts = new Set(
+          (await prisma.claim.findMany({
+            where: { reportId: report.id },
+            select: { text: true },
+          })).map(c => c.text.toLowerCase())
+        )
+        const toCreate = analysis.insights.filter(i => !existingTexts.has(i.text.toLowerCase()))
+        if (toCreate.length > 0) {
+          await prisma.claim.createMany({
+            data: toCreate.map(i => ({
+              id:         crypto.randomUUID(),
+              text:       i.text.length > 500 ? i.text.slice(0, 497) + '…' : i.text,
+              sourceType: 'document',
+              status:     'unverified',
+              notes:      i.type !== 'observation' ? `AI-flagged as: ${i.type}` : null,
+              reportId:   report.id,
+              projectId:  item?.projectId ?? null,
+            })),
+          })
+        }
+      } catch (e) { console.error('[upload-queue] Claims auto-populate failed:', e) }
+    }
+
     // Refresh area briefing synchronously so it completes before the queue
     // drains and the model is unloaded — prevents a reload cycle after eviction.
     if (analysis?.summary) {

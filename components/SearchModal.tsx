@@ -143,7 +143,7 @@ export default function SearchModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden dark:bg-zinc-900"
+        className="w-full max-w-xl bg-white rounded-[10px] shadow-2xl overflow-hidden dark:bg-zinc-900"
         onClick={e => e.stopPropagation()}
       >
         {/* Mode tabs + input */}

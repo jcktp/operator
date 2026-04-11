@@ -70,7 +70,7 @@ function InlineText({ text }: { text: string }) {
   segments.forEach((seg, i) => {
     if (seg.startsWith('`') && seg.endsWith('`')) {
       parts.push(
-        <code key={i} className="px-1 py-0.5 bg-gray-100 dark:bg-zinc-700 rounded text-[11px] font-mono">
+        <code key={i} className="px-1 py-0.5 bg-[var(--surface-2)] rounded text-[11px] font-mono">
           {seg.slice(1, -1)}
         </code>
       )
@@ -100,36 +100,36 @@ export default function MessageBubble({ message, currentInstanceId, onEdit, onDe
   }
 
   return (
-    <div className={`group flex flex-col gap-1 ${unread ? 'bg-blue-50/40 dark:bg-blue-950/20 -mx-3 px-3 py-1 rounded-lg' : ''}`}>
+    <div className={`group flex flex-col gap-1 ${unread ? 'bg-[var(--blue-dim)] -mx-3 px-3 py-1 rounded-[4px]' : ''}`}>
       {/* Header */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-gray-800 dark:text-zinc-200">{message.authorName}</span>
-        <span className="text-[10px] text-gray-400 dark:text-zinc-500">{time}</span>
+        <span className="text-xs font-semibold text-[var(--text-subtle)]">{message.authorName}</span>
+        <span className="text-[10px] text-[var(--text-muted)]">{time}</span>
         {message.editedAt && (
-          <span className="text-[10px] text-gray-400 dark:text-zinc-500 italic">edited</span>
+          <span className="text-[10px] text-[var(--text-muted)] italic">edited</span>
         )}
         {!isDeleted && isOwn && (
           <div className="relative ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               type="button"
               onClick={() => setMenuOpen(v => !v)}
-              className="p-0.5 rounded text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200"
+              className="p-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-body)]"
             >
               <MoreHorizontal size={12} />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-28 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg py-1 z-20">
+              <div className="absolute right-0 top-full mt-1 w-28 bg-[var(--surface)] border border-[var(--border)] rounded-[4px] shadow-lg py-1 z-20">
                 <button
                   type="button"
                   onClick={() => { setEditing(true); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                  className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-[var(--text-body)] hover:bg-[var(--surface-2)]"
                 >
                   <Pencil size={11} /> Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => { onDelete?.(message.id); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                  className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-500 hover:bg-[var(--red-dim)]"
                 >
                   <Trash2 size={11} /> Delete
                 </button>
@@ -141,7 +141,7 @@ export default function MessageBubble({ message, currentInstanceId, onEdit, onDe
 
       {/* Content */}
       {isDeleted ? (
-        <p className="text-xs text-gray-400 dark:text-zinc-500 italic">This message was deleted.</p>
+        <p className="text-xs text-[var(--text-muted)] italic">This message was deleted.</p>
       ) : editing ? (
         <MessageComposer
           projectId={message.projectId}
@@ -151,7 +151,7 @@ export default function MessageBubble({ message, currentInstanceId, onEdit, onDe
           initialContent={message.content}
         />
       ) : (
-        <div className="text-sm text-gray-800 dark:text-zinc-200 leading-relaxed break-words">
+        <div className="text-sm text-[var(--text-subtle)] leading-relaxed break-words">
           {renderContent(message.content, refs, message.projectId)}
         </div>
       )}
@@ -163,7 +163,7 @@ export default function MessageBubble({ message, currentInstanceId, onEdit, onDe
             <button
               type="button"
               onClick={() => onReply?.(message.id)}
-              className="flex items-center gap-1 text-[11px] font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+              className="flex items-center gap-1 text-[11px] font-medium text-[var(--blue)] hover:opacity-80 transition-colors"
             >
               <MessageSquare size={10} />
               {message.replyCount} {message.replyCount === 1 ? 'reply' : 'replies'}
@@ -172,7 +172,7 @@ export default function MessageBubble({ message, currentInstanceId, onEdit, onDe
           <button
             type="button"
             onClick={() => onReply?.(message.id)}
-            className="text-[11px] text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-body)] opacity-0 group-hover:opacity-100 transition-opacity"
           >
             Reply
           </button>

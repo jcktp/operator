@@ -119,7 +119,7 @@ function MetricCard({ series }: { series: MetricSeries }) {
   const labelStyle   = { color: dark ? '#a1a1aa' : '#6b7280' }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4">
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-[10px] p-4">
       <div className="flex items-start justify-between mb-1">
         <p className="text-xs font-medium text-gray-600 dark:text-zinc-400 truncate max-w-[70%]">{series.label}</p>
         {latest && prev && latest.n !== null && prev.n !== null && (

@@ -27,6 +27,8 @@ export interface ModeFeatures {
   journalDescription: string | null
   /** Automatically extract risk insights into the Risk Register on document upload */
   riskRegister: boolean
+  /** Automatically populate the Claims Tracker from analysis insights on document upload */
+  claims: boolean
   /** Metrics board page — aggregated KPIs across all documents */
   metricsBoard: boolean
   /** Show extracted metrics and period comparison on individual document pages */
@@ -94,6 +96,7 @@ const DEFAULT_FEATURES: ModeFeatures = {
   investigationTemplate: false,
   defaultFeeds: false,
   riskRegister: false,
+  claims: false,
   metricsBoard: false,
   showReportMetrics: true,
   journalDescription: null,
@@ -184,6 +187,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
       redactions: true,
       verification: true,
       documentComparison: true,
+      claims: true,
       keywordMonitoring: true,
       investigationTemplate: true,
       defaultFeeds: true,

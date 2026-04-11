@@ -27,7 +27,12 @@ export default function CollabNotificationBell() {
   useEffect(() => {
     fetchUnread()
     const timer = setInterval(fetchUnread, POLL_MS)
-    return () => clearInterval(timer)
+    // Re-check immediately when collab is enabled mid-session
+    window.addEventListener('collab:enabled', fetchUnread)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('collab:enabled', fetchUnread)
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!enabled) return null
@@ -38,10 +43,10 @@ export default function CollabNotificationBell() {
     <Link
       href="/collab"
       className={cn(
-        'relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors shrink-0',
+        'relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors shrink-0',
         isActive
-          ? 'bg-gray-100 text-gray-900 dark:bg-zinc-800 dark:text-zinc-50'
-          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800'
+          ? 'font-bold text-white'
+          : 'font-normal text-white/55 hover:text-white'
       )}
       title="Collaboration"
     >
