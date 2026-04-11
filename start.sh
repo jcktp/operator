@@ -265,12 +265,13 @@ if ! command -v mat2 &>/dev/null; then
   step "MAT2 not found — installing..."
   case "$PLATFORM" in
     macOS)
-      if command -v pip3 &>/dev/null; then
-        # --user installs to ~/Library/Python/X.Y/bin — no admin needed
-        pip3 install mat2 --user --quiet 2>/dev/null \
-          || warn "Could not install MAT2 — file metadata stripping unavailable in File Cleaner"
+      # Prefer Homebrew — pip3 install on macOS 15+ fails with externally-managed-environment
+      if has_admin && command -v brew &>/dev/null; then
+        brew install mat2 >/dev/null 2>&1 \
+          && step "MAT2 installed" \
+          || warn "Could not install MAT2 — File Cleaner will use ExifTool only"
       else
-        warn "pip3 not found — skipping MAT2 install (File Cleaner will use ExifTool only)"
+        warn "No admin access — skipping MAT2 (File Cleaner will use ExifTool only)"
       fi
       ;;
     Linux)
