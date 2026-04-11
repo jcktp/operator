@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Trash2, CheckCircle2, XCircle, AlertTriangle, HelpCircle, Circle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import SelectField from '@/components/SelectField'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -154,9 +155,11 @@ export default function ClaimsClient() {
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Source type</label>
- <select value={fSourceType} onChange={e => setFSourceType(e.target.value)} className={inputCls}>
- {SOURCE_TYPES.map(t => <option key={t} value={t} className="capitalize">{t}</option>)}
- </select>
+ <SelectField
+   value={fSourceType}
+   onChange={setFSourceType}
+   options={SOURCE_TYPES.map(t => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))}
+ />
  </div>
  </div>
  <div className="flex gap-2 pt-1">
@@ -214,13 +217,12 @@ export default function ClaimsClient() {
  </div>
 
  {/* Status dropdown */}
- <select
- value={claim.status}
- onChange={e => void updateStatus(claim.id, e.target.value)}
- className={cn('text-xs font-medium h-7 px-2 rounded-[4px] border-0 cursor-pointer focus:outline-none bg-transparent shrink-0', cfg.color)}
- >
- {STATUSES.map(s => <option key={s} value={s} className="bg-[var(--surface)] text-[var(--text-bright)]">{STATUS_CONFIG[s].label}</option>)}
- </select>
+ <SelectField
+   value={claim.status}
+   onChange={v => void updateStatus(claim.id, v)}
+   options={STATUSES.map(s => ({ value: s, label: STATUS_CONFIG[s].label }))}
+   className="w-36 shrink-0"
+ />
 
  <button onClick={() => handleDelete(claim.id)} className="text-[var(--border)] hover:text-[var(--red)] transition-colors shrink-0">
  <Trash2 size={13} />

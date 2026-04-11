@@ -11,6 +11,7 @@ import {
  Bold, Italic, UnderlineIcon, Heading2, List, ListOrdered,
  Check, Loader2, Wand2, Download, Printer, Mic, MicOff, RefreshCw,
 } from 'lucide-react'
+import SelectField from '@/components/SelectField'
 
 // ── Custom FontSize extension (built on TextStyle) ────────────────────────────
 declare module '@tiptap/core' {
@@ -244,44 +245,32 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  const currentFontSize = editor.getAttributes('textStyle').fontSize as string | undefined
  const currentFontFamily = editor.getAttributes('textStyle').fontFamily as string | undefined
 
- const selectClass = 'text-xs border border-[var(--border)] rounded-md px-1.5 py-1 bg-[var(--surface)] text-[var(--text-subtle)] focus:outline-none focus:ring-1'
-
  return (
  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] overflow-hidden">
  {/* Toolbar */}
  <div className="flex items-center gap-0.5 px-3 py-2 border-b border-[var(--border)] flex-wrap gap-y-1">
 
  {/* Font family */}
- <select
- value={currentFontFamily ?? ''}
- onChange={e => {
- const v = e.target.value
- if (v) editor.chain().focus().setFontFamily(v).run()
- else editor.chain().focus().unsetFontFamily().run()
- }}
- className={selectClass}
- title="Font family"
- >
- {FONT_FAMILIES.map(f => (
- <option key={f.label} value={f.value}>{f.label}</option>
- ))}
- </select>
+ <SelectField
+   value={currentFontFamily ?? ''}
+   onChange={v => {
+     if (v) editor.chain().focus().setFontFamily(v).run()
+     else editor.chain().focus().unsetFontFamily().run()
+   }}
+   options={FONT_FAMILIES.map(f => ({ value: f.value, label: f.label }))}
+   className="w-24"
+ />
 
  {/* Font size */}
- <select
- value={currentFontSize ?? '14px'}
- onChange={e => {
- const v = e.target.value
- if (v === '14px') editor.chain().focus().unsetFontSize().run()
- else editor.chain().focus().setFontSize(v).run()
- }}
- className={`${selectClass} w-20`}
- title="Font size"
- >
- {FONT_SIZES.map(s => (
- <option key={s.value} value={s.value}>{s.label}</option>
- ))}
- </select>
+ <SelectField
+   value={currentFontSize ?? '14px'}
+   onChange={v => {
+     if (v === '14px') editor.chain().focus().unsetFontSize().run()
+     else editor.chain().focus().setFontSize(v).run()
+   }}
+   options={FONT_SIZES.map(s => ({ value: s.value, label: s.label }))}
+   className="w-20"
+ />
 
  <div className="w-px h-4 bg-[var(--surface-3)] mx-1" />
 
