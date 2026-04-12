@@ -236,53 +236,39 @@ async function toolSearch(query: string): Promise<string> {
     ).join('\n\n')
   }
 
-  // DuckDuckGo fallback — free, no key required
+  // DuckDuckGo HTML search fallback — the Instant Answer API only returns
+  // knowledge-base lookups, not actual web results.  The HTML endpoint works
+  // for news, general queries, and everything in between.
   const res = await fetch(
-    `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1`,
+    `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`,
     {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Operator/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)' },
       signal: AbortSignal.timeout(8000),
     }
   )
-  const ddg = await res.json() as {
-    Answer?: string
-    AbstractText?: string
-    AbstractSource?: string
-    AbstractURL?: string
-    RelatedTopics?: Array<{ Text?: string; FirstURL?: string; Name?: string; Topics?: Array<{ Text?: string; FirstURL?: string }> }>
-  }
+  const html = await res.text()
+  const stripTags = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&nbsp;/g, ' ')
+
+  // Extract result links and snippets from the HTML
+  const titleMatches = [...html.matchAll(/<a rel="nofollow" class="result__a" href="([^"]+)">([\s\S]+?)<\/a>/g)]
+  const snippetMatches = [...html.matchAll(/<a class="result__snippet"[^>]*>([\s\S]+?)<\/a>/g)]
 
   const lines: string[] = []
-
-  if (ddg.Answer) {
-    lines.push(`**Answer:** ${ddg.Answer}`)
-  }
-  if (ddg.AbstractText) {
-    const source = ddg.AbstractSource ? ` (${ddg.AbstractSource})` : ''
-    lines.push(`**Summary${source}:** ${ddg.AbstractText}`)
-    if (ddg.AbstractURL) lines.push(`   ${ddg.AbstractURL}`)
-  }
-
-  const topics = ddg.RelatedTopics ?? []
-  let count = 0
-  for (const t of topics) {
-    if (count >= 4) break
-    if (t.Text && t.FirstURL) {
-      lines.push(`\n${count + 1}. ${t.Text}\n   ${t.FirstURL}`)
-      count++
-    } else if (t.Topics) {
-      for (const sub of t.Topics) {
-        if (count >= 4) break
-        if (sub.Text && sub.FirstURL) {
-          lines.push(`\n${count + 1}. ${sub.Text}\n   ${sub.FirstURL}`)
-          count++
-        }
-      }
-    }
+  const seen = new Set<string>()
+  for (let i = 0; i < Math.min(titleMatches.length, 5); i++) {
+    const rawUrl = titleMatches[i][1]
+    const title = stripTags(titleMatches[i][2]).trim()
+    const snippet = snippetMatches[i] ? stripTags(snippetMatches[i][1]).trim() : ''
+    // Resolve DuckDuckGo redirect URLs to the actual destination
+    const urlParam = rawUrl.match(/uddg=([^&]+)/)
+    const url = urlParam ? decodeURIComponent(urlParam[1]) : rawUrl
+    if (seen.has(url)) continue
+    seen.add(url)
+    lines.push(`${lines.length + 1}. **${title}**${snippet ? `\n   ${snippet}` : ''}\n   ${url}`)
   }
 
   if (!lines.length) return `No results found for: "${query}"`
-  return lines.join('\n')
+  return lines.join('\n\n')
 }
 
 async function toolFetchUrl(url: string): Promise<string> {
