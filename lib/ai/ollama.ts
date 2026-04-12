@@ -2,7 +2,7 @@
 
 import { Ollama } from 'ollama'
 import { availableTools, hasNoteSaveIntent, executeTool, extractWeatherLocation } from '../ai-tools'
-import type { Message } from '../ai-providers'
+import type { Message } from './types'
 
 // ── Tool helpers ─────────────────────────────────────────────────────────────
 

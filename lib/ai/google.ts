@@ -3,7 +3,7 @@
 import { fetchWithRetry } from './stream-utils'
 import { availableTools, executeTool } from '../ai-tools'
 import { getSecret } from '../settings'
-import type { Message } from '../ai-providers'
+import type { Message } from './types'
 
 type GPart = { text?: string; functionCall?: { name: string; args: Record<string, string> }; functionResponse?: { name: string; response: { content: string } } }
 type GContent = { role: string; parts: GPart[] }

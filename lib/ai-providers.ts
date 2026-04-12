@@ -4,6 +4,8 @@ import { chatAnthropicStream, chatAnthropicSimple } from './ai/anthropic'
 import { chatOpenAIStream, chatOpenAISimple } from './ai/openai'
 import { chatGoogleStream, chatGoogleSimple } from './ai/google'
 import { chatOllamaStream, chatOllamaSimple } from './ai/ollama'
+export type { Message, ChatResult } from './ai/types'
+import type { Message, ChatResult } from './ai/types'
 
 // ── Provider types ──────────────────────────────────────────────────────────
 
@@ -19,11 +21,6 @@ export function maxContentLength(): number {
   const { maxCharsForModel } = require('./model-capabilities') as typeof import('./model-capabilities')
   return maxCharsForModel(process.env.OLLAMA_MODEL ?? 'phi4-mini')
 }
-
-// ── Message types ───────────────────────────────────────────────────────────
-
-export interface Message { role: 'user' | 'assistant'; content: string }
-export interface ChatResult { content: string; noteSaved?: { title: string; folder: string } }
 
 // ── chatWithToolsStream ─────────────────────────────────────────────────────
 

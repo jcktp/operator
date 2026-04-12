@@ -3,7 +3,7 @@
 
 import { fetchWithRetry, sseLines } from './stream-utils'
 import { availableTools, executeTool } from '../ai-tools'
-import type { Message } from '../ai-providers'
+import type { Message } from './types'
 
 interface OpenAIStreamResult {
   toolCalls: Array<{ id: string; name: string; args: string }>

@@ -3,7 +3,7 @@
 import { fetchWithRetry, sseLines } from './stream-utils'
 import { availableTools, executeTool } from '../ai-tools'
 import { getSecret } from '../settings'
-import type { Message } from '../ai-providers'
+import type { Message } from './types'
 
 interface AnthropicStreamResult {
   toolBlocks: Array<{ id: string; name: string; input: Record<string, string> }>
