@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
+import { isInternalUrl } from '@/lib/url-safety'
 
 const MAX_CHARS = 8000
 
@@ -9,6 +10,9 @@ export async function POST(req: NextRequest) {
   const { url } = await req.json()
   if (!url || typeof url !== 'string') {
     return NextResponse.json({ error: 'Missing url' }, { status: 400 })
+  }
+  if (isInternalUrl(url)) {
+    return NextResponse.json({ error: 'URLs pointing to internal or private networks are not allowed' }, { status: 403 })
   }
   try {
     const res = await fetch(url, {

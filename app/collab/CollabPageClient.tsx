@@ -58,10 +58,13 @@ export default function CollabPageClient({ initialProjects, initialPeers, initia
  const [lanOnly, setLanOnly] = useState(initialLanOnly)
 
  // Per-project data loaded on project switch
+ interface ShareEntry { projectId: string; peerId: string; permission: string; peer: { id: string; displayName: string | null; tunnelUrl: string | null; localUrl: string | null } | null; syncState: { projectId: string; peerId: string; lastSync: string | null; status: string } | null }
+ interface ConflictEntry { id: string; tableName: string; recordId: string; fieldName: string; localValue: string | null; remoteValue: string | null; localPeerId: string | null; remotePeerId: string | null; localTimestamp: string | null; remoteTimestamp: string | null; resolved: boolean; resolution: string | null; resolvedAt: string | null }
+ interface NearbyPeerEntry { instanceId: string; displayName: string; version: string; localUrl: string; sharedProjectIds: string[]; seenAt: string }
  const [projectData, setProjectData] = useState<{
- shares: unknown[]
- conflicts: unknown[]
- nearby: unknown[]
+ shares: ShareEntry[]
+ conflicts: ConflictEntry[]
+ nearby: NearbyPeerEntry[]
  unresolvedCount: number
  } | null>(null)
  const [projectDataLoading, setProjectDataLoading] = useState(false)
@@ -125,9 +128,9 @@ export default function CollabPageClient({ initialProjects, initialPeers, initia
  fetch(`/api/collab/conflicts?projectId=${selectedProjectId}&resolved=false`).then(r => r.json()),
  fetch('/api/collab/nearby').then(r => r.json()),
  ]).then(([sharesRes, conflictsRes, nearbyRes]: [
- { shares: unknown[] },
- { conflicts: unknown[]; unresolvedCount: number },
- { peers: unknown[] }
+ { shares: ShareEntry[] },
+ { conflicts: ConflictEntry[]; unresolvedCount: number },
+ { peers: NearbyPeerEntry[] }
  ]) => {
  setProjectData({
  shares: sharesRes.shares ?? [],
@@ -330,14 +333,12 @@ export default function CollabPageClient({ initialProjects, initialPeers, initia
  )}
  {activeTab === 'sync' && projectData && (
  <div className="max-w-2xl">
- {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
- <SyncTab projectId={selectedProjectId} initialShares={projectData.shares as any} />
+ <SyncTab projectId={selectedProjectId} initialShares={projectData.shares} />
  </div>
  )}
  {activeTab === 'conflicts' && projectData && (
  <div className="max-w-2xl">
- {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
- <ConflictsTab projectId={selectedProjectId} initialConflicts={projectData.conflicts as any} />
+ <ConflictsTab projectId={selectedProjectId} initialConflicts={projectData.conflicts} />
  </div>
  )}
  {activeTab === 'share' && (
@@ -361,8 +362,7 @@ export default function CollabPageClient({ initialProjects, initialPeers, initia
  </div>
  </div>
  <div className="flex-1 overflow-y-auto px-6 py-5 max-w-2xl">
- {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
- <PeersTab projectId="" initialPeers={peers as any} initialNearby={(projectData?.nearby ?? []) as any} />
+ <PeersTab projectId="" initialPeers={peers} initialNearby={projectData?.nearby ?? []} />
  </div>
  </div>
  )}

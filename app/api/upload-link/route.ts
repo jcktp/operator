@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
+import { isInternalUrl } from '@/lib/url-safety'
 import { prisma } from '@/lib/db'
 import { analyzeReport, compareReports, checkResolvedFlags } from '@/lib/ai'
 import { loadAiSettings } from '@/lib/settings'
@@ -66,6 +67,7 @@ export async function GET(req: NextRequest) {
   if (deny) return deny
   const url = req.nextUrl.searchParams.get('url') ?? ''
   if (!url) return NextResponse.json({ title: '' })
+  if (isInternalUrl(url)) return NextResponse.json({ title: '' })
   try {
     const res = await fetch(url, {
       redirect: 'follow',

@@ -2,6 +2,7 @@
 
 import { Loader2 } from 'lucide-react'
 import { TypeDropdown } from './PulseDropdowns'
+import Input from '@/components/ui/Input'
 
 const TYPE_HINT: Record<string, string> = {
  rss: 'RSS or Atom feed URL',
@@ -36,13 +37,12 @@ export default function PulseAddFeedForm({ form, setForm, onSubmit, adding, bsky
  <div className="grid grid-cols-2 gap-3">
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Name *</label>
- <input
+ <Input
  type="text"
  value={form.name}
  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
  required
  placeholder="Hacker News"
- className="w-full h-8 border border-[var(--border)] rounded-[4px] px-2.5 text-xs focus:outline-none focus:ring-2"
  />
  </div>
  <div>
@@ -58,13 +58,12 @@ export default function PulseAddFeedForm({ form, setForm, onSubmit, adding, bsky
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">
  {form.type === 'twitter' ? 'Username *' : 'URL *'}
  </label>
- <input
+ <Input
  type="text"
  value={form.url}
  onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
  required
  placeholder={TYPE_PLACEHOLDER[form.type] ?? 'https://…'}
- className="w-full h-8 border border-[var(--border)] rounded-[4px] px-2.5 text-xs focus:outline-none focus:ring-2"
  />
  {form.type === 'bluesky' ? (
  bskyConfigured ? (

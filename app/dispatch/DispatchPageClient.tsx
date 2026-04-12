@@ -41,9 +41,16 @@ export default function DispatchPageClient({ chats: initial, context, currentPro
 
  const deleteChat = async (id: string, e: React.MouseEvent) => {
  e.stopPropagation()
+ const prev = chats
  setChats(c => c.filter(x => x.id !== id))
  if (selectedChat?.id === id) setSelectedChat(null)
- await fetch(`/api/dispatch/${id}`, { method: 'DELETE' })
+ try {
+ const res = await fetch(`/api/dispatch/${id}`, { method: 'DELETE' })
+ if (!res.ok) throw new Error(`HTTP ${res.status}`)
+ } catch (err) {
+ console.error('Failed to delete chat:', err)
+ setChats(prev) // rollback on failure
+ }
  }
 
  const clearAll = async () => {
@@ -52,9 +59,14 @@ export default function DispatchPageClient({ chats: initial, context, currentPro
  setTimeout(() => setClearConfirm(false), 3000)
  return
  }
- await fetch('/api/dispatch/clear', { method: 'DELETE' })
+ try {
+ const res = await fetch('/api/dispatch/clear', { method: 'DELETE' })
+ if (!res.ok) throw new Error(`HTTP ${res.status}`)
  setChats([])
  setSelectedChat(null)
+ } catch (err) {
+ console.error('Failed to clear chats:', err)
+ }
  setClearConfirm(false)
  }
 
@@ -63,7 +75,7 @@ export default function DispatchPageClient({ chats: initial, context, currentPro
  return (
  <div className="fixed top-14 left-0 right-0 bottom-0 z-10 flex bg-[var(--surface)] overflow-hidden">
  {/* Sidebar */}
- <aside className="w-64 shrink-0 flex flex-col bg-[var(--surface-2)] border-r border-[var(--border)] h-full">
+ <aside className="w-64 max-w-[70vw] shrink-0 flex flex-col bg-[var(--surface-2)] border-r border-[var(--border)] h-full">
  {/* Sidebar header */}
  <div className="px-4 py-3.5 border-b border-[var(--border)] flex items-center justify-between shrink-0">
  <div className="flex items-center gap-2">

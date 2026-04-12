@@ -70,7 +70,10 @@ export default function NavDropdown({
   return (
     <div className="relative shrink-0" ref={dropRef} data-nav-group={id}>
       <button
+        type="button"
         onClick={() => onToggle(id)}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
         className={cn(
           'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors',
           groupIsActive || isOpen
@@ -87,7 +90,7 @@ export default function NavDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-[4px] shadow-lg py-1 min-w-[180px] z-50 dark:bg-zinc-900 dark:border-zinc-700">
+        <div className="absolute top-full mt-1 left-0 bg-[var(--surface)] border border-[var(--border)] rounded-[4px] shadow-lg py-1 min-w-[180px] z-50">
           {items.map(item => {
             const isActive =
               pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
@@ -103,8 +106,8 @@ export default function NavDropdown({
                 className={cn(
                   'flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors',
                   isActive
-                    ? 'bg-gray-50 text-gray-900 dark:bg-zinc-800 dark:text-zinc-50'
-                    : 'text-gray-600 hover:bg-gray-50 dark:text-zinc-300 dark:hover:bg-zinc-800'
+                    ? 'bg-[var(--surface-2)] text-[var(--text-bright)]'
+                    : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
                 )}
               >
                 <Icon size={13} className="shrink-0" />

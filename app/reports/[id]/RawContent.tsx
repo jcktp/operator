@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import DOMPurify from 'dompurify'
 import { cn } from '@/lib/utils'
 import { Copy, Check } from 'lucide-react'
 
@@ -102,8 +103,8 @@ function CsvDisplay({ json }: { json: string }) {
 // ── Word doc HTML display ───────────────────────────────────────────────────
 
 function WordDisplay({ html }: { html: string }) {
- const safeHtml = html.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/<script\b[^>]*>/gi, '')
- return <div className="doc-content"dangerouslySetInnerHTML={{ __html: safeHtml }} />
+ const safeHtml = DOMPurify.sanitize(html)
+ return <div className="doc-content" dangerouslySetInnerHTML={{ __html: safeHtml }} />
 }
 
 // ── Plain text display ──────────────────────────────────────────────────────

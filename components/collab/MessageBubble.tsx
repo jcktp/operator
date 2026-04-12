@@ -109,10 +109,13 @@ export default function MessageBubble({ message, currentInstanceId, onEdit, onDe
           <span className="text-[10px] text-[var(--text-muted)] italic">edited</span>
         )}
         {!isDeleted && isOwn && (
-          <div className="relative ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="relative ml-auto opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <button
               type="button"
               onClick={() => setMenuOpen(v => !v)}
+              aria-label="Message options"
+              aria-expanded={menuOpen}
+              aria-haspopup="true"
               className="p-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-body)]"
             >
               <MoreHorizontal size={12} />

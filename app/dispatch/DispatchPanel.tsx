@@ -73,7 +73,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  </div>
  <div className="flex items-center gap-1">
  {c.view === 'history' ? (
- <button onClick={() => c.setView('chat')} title="Back to chat"
+ <button type="button" onClick={() => c.setView('chat')} title="Back to chat" aria-label="Back to chat"
  className="p-1.5 rounded-[4px] text-[var(--text-muted)] hover:text-[var(--text-subtle)] hover:bg-[var(--surface-2)] transition-colors">
  <X size={13} />
  </button>
@@ -85,7 +85,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  <Plus size={13} /> New chat
  </button>
  )}
- <button onClick={c.openHistory} title="Chat history"
+ <button type="button" onClick={c.openHistory} title="Chat history" aria-label="Chat history"
  className="p-1.5 rounded-[4px] transition-colors text-[var(--text-muted)] hover:text-[var(--text-subtle)] hover:bg-[var(--surface-2)]">
  <Clock size={13} />
  </button>
@@ -101,7 +101,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  </>
  )}
  {onClose && (
- <button onClick={onClose}
+ <button type="button" onClick={onClose} aria-label="Close dispatch panel"
  className="p-1.5 rounded-[4px] text-[var(--text-muted)] hover:text-[var(--text-subtle)] hover:bg-[var(--surface-2)] transition-colors">
  <X size={14} />
  </button>

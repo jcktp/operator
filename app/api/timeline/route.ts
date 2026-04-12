@@ -19,9 +19,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ events: [] })
     }
 
+    const take = Math.min(Number(searchParams.get('limit')) || 1000, 5000)
+    const skip = Number(searchParams.get('offset')) || 0
+
     const events = await prisma.timelineEvent.findMany({
       where: { reportId: { in: reportIds } },
       orderBy: [{ dateSortKey: 'asc' }, { createdAt: 'asc' }],
+      take,
+      skip,
     })
 
     // Fetch report titles for attribution

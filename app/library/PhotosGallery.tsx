@@ -36,9 +36,16 @@ export default function PhotosGallery({ photos: initial }: Props) {
 
  const deletePhoto = async (id: string) => {
  setDeleting(id)
+ const prev = photos
  setPhotos(p => p.filter(x => x.id !== id))
  if (lightbox?.id === id) close()
- await fetch(`/api/reports/${id}`, { method: 'DELETE' })
+ try {
+ const res = await fetch(`/api/reports/${id}`, { method: 'DELETE' })
+ if (!res.ok) throw new Error(`HTTP ${res.status}`)
+ } catch (err) {
+ console.error('Failed to delete photo:', err)
+ setPhotos(prev) // rollback on failure
+ }
  setDeleting(null)
  }
 
@@ -61,14 +68,16 @@ export default function PhotosGallery({ photos: initial }: Props) {
  >
  {/* Thumbnail */}
  <button
+ type="button"
  onClick={() => setLightbox(photo)}
+ aria-label={`View ${photo.title}`}
  className="shrink-0 relative rounded-[4px] overflow-hidden border border-[var(--border)] hover:border-[var(--border-mid)] transition-colors"
  >
  {/* eslint-disable-next-line @next/next/no-img-element */}
  <img
  src={`/api/reports/${photo.id}/image`}
  alt={photo.title}
- className="w-52 h-36 object-cover block"
+ className="w-36 sm:w-52 h-24 sm:h-36 object-cover block"
  onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
  />
  <div className="absolute inset-0 bg-black/0 hover:bg-black/25 transition-colors flex items-center justify-center">
@@ -89,9 +98,11 @@ export default function PhotosGallery({ photos: initial }: Props) {
  </Link>
  </div>
  <button
+ type="button"
  onClick={() => deletePhoto(photo.id)}
  disabled={deleting === photo.id}
  title="Delete photo"
+ aria-label="Delete photo"
  className="shrink-0 p-1 rounded text-[var(--border)] hover:text-[var(--red)] opacity-0 group-hover:opacity-100 transition-all"
  >
  <Trash2 size={13} />

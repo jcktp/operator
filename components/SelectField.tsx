@@ -36,6 +36,8 @@ export default function SelectField({ value, onChange, options, placeholder = 'S
       <button
         type="button"
         onClick={() => setOpen(s => !s)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
         className="w-full flex items-center gap-2 rounded-[4px] pl-2.5 pr-2 py-1.5 text-xs cursor-pointer overflow-hidden transition-colors focus:outline-none focus:ring-1 focus:ring-[var(--ink)]"
         style={{
           border:      '1px solid var(--border-mid)',

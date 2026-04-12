@@ -1,15 +1,13 @@
 import { prisma } from '@/lib/db'
 import { getModeConfig } from '@/lib/mode'
-import { cn, formatRelativeDate, parseJsonSafe, parseMetrics } from '@/lib/utils'
-import type { Metric, Insight, Question } from '@/lib/utils'
-import { AreaBadge } from '@/components/Badge'
-import Link from 'next/link'
-import {
- AlertTriangle, HelpCircle, Activity, ArrowRight, Clock,
-} from 'lucide-react'
-import { StatCard, TrendIcon, HealthBar } from './DashboardCards'
+import { parseJsonSafe, parseMetrics } from '@/lib/utils'
+import type { Insight, Question } from '@/lib/utils'
+import { Activity } from 'lucide-react'
+import { StatCard } from './DashboardCards'
 import DashboardFilters from './DashboardFilters'
 import DashboardCharts from './DashboardCharts'
+import DashboardAreaCards from './DashboardAreaCards'
+import DashboardFlagsQuestions from './DashboardFlagsQuestions'
 import ExportButton from './ExportButton'
 import IntelligenceBriefClient from './IntelligenceBriefClient'
 import type { AreaHealthDatum, TimelineDatum, InsightTypeDatum, MetricAreaDatum } from './DashboardCharts'
@@ -350,173 +348,19 @@ export default async function DashboardPage({
  />
 
  {/* Area cards */}
- <section>
- <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Areas</h2>
- <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
- {areaCards.map(({ area, latest, metrics, changes, health, count }) => {
- const improved = changes.filter(c => c.direction === 'improved').length
- const declined = changes.filter(c => c.direction === 'declined').length
- const trend: 'up' | 'down' | 'flat' =
- improved > declined ? 'up' : declined > improved ? 'down' : 'flat'
+ <DashboardAreaCards
+ areaCards={areaCards}
+ documentLabel={modeConfig.documentLabel}
+ documentLabelPlural={modeConfig.documentLabelPlural}
+ />
 
- return (
- <div key={area} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:border-[var(--border-mid)] hover:shadow-sm transition-all">
- <div className="px-5 pt-5 pb-4">
- <div className="flex items-start justify-between mb-3">
- <div className="flex items-center gap-2">
- <AreaBadge area={area} />
- <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
- <Clock size={10} />{formatRelativeDate(latest.createdAt)}
- </span>
- </div>
- <div className="flex items-center gap-2">
- <TrendIcon trend={trend} />
- <HealthBar score={health} />
- </div>
- </div>
-
- {latest.summary && (
- <p className="text-sm text-[var(--text-subtle)] line-clamp-2 leading-relaxed mb-4">{latest.summary}</p>
- )}
-
- {metrics.length > 0 && (
- <div className="grid grid-cols-2 gap-2">
- {metrics.map((m, i) => (
- <div key={i} className={cn(
- 'rounded-xl px-3 py-2.5',
- m.status === 'positive' ? 'bg-[var(--green-dim)]' :
- m.status === 'negative' ? 'bg-[var(--red-dim)]' :
- m.status === 'warning' ? 'bg-[var(--amber-dim)]' : 'bg-[var(--surface-2)]'
- )}>
- <p className="text-xs text-[var(--text-muted)] truncate">{m.label}</p>
- <p className={cn(
- 'text-base font-semibold mt-0.5',
- m.status === 'positive' ? 'text-[var(--green)]' :
- m.status === 'negative' ? 'text-[var(--red)]' :
- m.status === 'warning' ? 'text-[var(--amber)]' : 'text-[var(--text-bright)]'
- )}>{m.value}</p>
- </div>
- ))}
- </div>
- )}
- </div>
-
- {changes.length > 0 && (
- <div className="border-t border-[var(--border)] px-5 py-3 flex gap-4 overflow-x-auto">
- {changes.slice(0, 3).map((c, i) => (
- <div key={i} className="flex items-center gap-1.5 shrink-0 text-xs">
- <span className={cn('font-bold',
- c.direction === 'improved' ? 'text-[var(--green)]' :
- c.direction === 'declined' ? 'text-[var(--red)]' : 'text-[var(--text-muted)]'
- )}>
- {c.direction === 'improved' ? '↑' : c.direction === 'declined' ? '↓' : '→'}
- </span>
- <span className="text-[var(--text-muted)] truncate max-w-[120px]">{c.metric}</span>
- <span className="text-[var(--text-muted)] font-mono">{c.current}</span>
- </div>
- ))}
- </div>
- )}
-
- <div className="border-t border-[var(--border)] px-5 py-3 flex items-center justify-between">
- <span className="text-xs text-[var(--text-muted)]">{count} {count !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}</span>
- <Link href={`/library?area=${encodeURIComponent(area)}`}
- className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-bright)] transition-colors font-medium">
- View all <ArrowRight size={11} />
- </Link>
- </div>
- </div>
- )
- })}
- </div>
- </section>
-
- {/* Flags + Questions as card grids */}
- {(allFlags.length > 0 || allQuestions.length > 0) && (
- <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
- {allFlags.length > 0 && (
- <section>
- <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
- <AlertTriangle size={11} /> Flags & Risks
- </h2>
- <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
- {allFlags.slice(0, 6).map((f, i) => (
- <Link key={i} href={`/reports/${f.reportId}`}
- className="group bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 hover:border-[var(--red)] hover:shadow-sm transition-all flex flex-col gap-2">
- <div className="flex items-center gap-2">
- <span className={cn(
- 'text-xs font-bold px-1.5 py-0.5 rounded',
- f.type === 'risk' ? 'bg-[var(--red-dim)] text-[var(--red)]' : 'bg-[var(--amber-dim)] text-[var(--amber)]'
- )}>
- {f.type}
- </span>
- <AreaBadge area={f.area} />
- </div>
- <p className="text-sm text-[var(--text-body)] leading-snug line-clamp-3">{f.text}</p>
- <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-subtle)] flex items-center gap-0.5 mt-auto">
- View {modeConfig.documentLabel.toLowerCase()} <ArrowRight size={10} />
- </span>
- </Link>
- ))}
- </div>
- </section>
- )}
-
- {allQuestions.length > 0 && (
- <section>
- <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
- <HelpCircle size={11} /> Questions to ask
- </h2>
- <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
- {allQuestions.slice(0, 6).map((q, i) => (
- <Link key={i} href={`/reports/${q.reportId}`}
- className="group bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 hover:border-[var(--blue)] hover:shadow-sm transition-all flex flex-col gap-2">
- <div className="flex items-center gap-2">
- <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--blue-dim)] text-[var(--blue)]">?</span>
- <AreaBadge area={q.area} />
- {q.directName && <span className="text-xs text-[var(--text-muted)]">{q.directName}</span>}
- </div>
- <p className="text-sm text-[var(--text-body)] font-medium leading-snug line-clamp-3">{q.text}</p>
- <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-subtle)] flex items-center gap-0.5 mt-auto">
- View {modeConfig.documentLabel.toLowerCase()} <ArrowRight size={10} />
- </span>
- </Link>
- ))}
- </div>
- </section>
- )}
-
- {recentEvents.length > 0 && (
- <section>
- <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
- <Clock size={11} /> Recent Events
- </h2>
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-sm p-5">
- <div className="relative border-l-2 border-[var(--border)] ml-1">
- {recentEvents.map(e => (
- <div key={e.id} className="relative pl-6 pb-4 last:pb-0">
- <span className="absolute left-[-5px] top-[6px] w-2.5 h-2.5 rounded-full border-2 bg-[var(--surface)] border-[var(--border-mid)]" />
- <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
- <span className="text-[11px] font-mono text-[var(--text-muted)]">{e.dateText}</span>
- <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-muted)]">{e.report.area}</span>
- </div>
- <p className="text-sm text-[var(--text-body)] leading-snug">{e.event}</p>
- <Link
- href={`/reports/${e.report.id}`}
- className="text-xs text-[var(--blue)] hover:underline mt-0.5 block"
- >
- {e.report.title}
- </Link>
- </div>
- ))}
- </div>
- </div>
- </section>
- )}
-
- </div>
- )}
+ {/* Flags + Questions + Events */}
+ <DashboardFlagsQuestions
+ allFlags={allFlags}
+ allQuestions={allQuestions}
+ recentEvents={recentEvents}
+ documentLabel={modeConfig.documentLabel}
+ />
 
  </div>
  </div>

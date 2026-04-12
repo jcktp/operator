@@ -70,7 +70,7 @@ export default function TimelineClient({
  return (
  <div className="flex gap-6 items-start">
  {/* Sidebar */}
- <aside className="w-44 shrink-0 space-y-1 sticky top-24">
+ <aside className="w-44 max-w-[40vw] shrink-0 space-y-1 sticky top-24">
  <button
  onClick={() => setSelectedArea(null)}
  className={cn(

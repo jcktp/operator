@@ -35,7 +35,7 @@ export default function ProjectSwitcher() {
         setCurrentProjectId(d.currentProjectId ?? null)
         setLoaded(true)
       })
-      .catch(() => setLoaded(true))
+      .catch((err) => { console.error('Failed to load projects:', err); setLoaded(true) })
   }
 
   useEffect(() => {
@@ -71,6 +71,7 @@ export default function ProjectSwitcher() {
   return (
     <div className="relative" ref={ref}>
       <button
+        type="button"
         onClick={() => setOpen(s => !s)}
         className={cn(
           'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors max-w-[160px]',
@@ -79,6 +80,9 @@ export default function ProjectSwitcher() {
             : 'text-white/55 hover:text-white hover:bg-white/10'
         )}
         title="Switch project"
+        aria-label="Switch project"
+        aria-expanded={open}
+        aria-haspopup="true"
       >
         <FolderOpen size={12} className="shrink-0" />
         <span className="truncate">
@@ -88,9 +92,9 @@ export default function ProjectSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-[4px] shadow-lg py-1 min-w-[200px] z-50">
+        <div className="absolute right-0 top-full mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-[4px] shadow-lg py-1 min-w-[200px] z-50">
           {activeProjects.length > 0 && (
-            <p className="px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
+            <p className="px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
               Active {modeConfig.projectLabelPlural.toLowerCase()}
             </p>
           )}
@@ -104,16 +108,16 @@ export default function ProjectSwitcher() {
                 className={cn(
                   'flex items-center justify-between w-full px-3 py-2 text-xs transition-colors',
                   isCurrent
-                    ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-900 dark:text-indigo-100'
-                    : 'text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700'
+                    ? 'bg-[var(--blue-dim)] text-[var(--text-bright)]'
+                    : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
                 )}
               >
                 <span className="flex items-center gap-2 min-w-0">
-                  <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', isCurrent ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-zinc-600')} />
+                  <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', isCurrent ? 'bg-[var(--blue)]' : 'bg-[var(--border)]')} />
                   <span className="truncate font-medium">{p.name}</span>
                 </span>
                 {isCurrent && (
-                  <span className="ml-2 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-indigo-500 dark:text-indigo-400">
+                  <span className="ml-2 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[var(--blue)]">
                     Active
                   </span>
                 )}
@@ -122,14 +126,14 @@ export default function ProjectSwitcher() {
           })}
 
           {activeProjects.length === 0 && (
-            <p className="px-3 py-2 text-xs text-gray-400 dark:text-zinc-500 italic">No active {modeConfig.projectLabelPlural.toLowerCase()}</p>
+            <p className="px-3 py-2 text-xs text-[var(--text-muted)] italic">No active {modeConfig.projectLabelPlural.toLowerCase()}</p>
           )}
 
-          <div className="mx-2 my-1 h-px bg-gray-100 dark:bg-zinc-800" />
+          <div className="mx-2 my-1 h-px bg-[var(--border)]" />
 
           <button
             onClick={() => { setOpen(false); router.push('/projects') }}
-            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950 transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[var(--blue)] hover:bg-[var(--blue-dim)] transition-colors"
           >
             <Plus size={11} />
             Manage {modeConfig.projectLabelPlural.toLowerCase()}

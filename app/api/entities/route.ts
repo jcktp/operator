@@ -12,12 +12,17 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get('type')
     const q = searchParams.get('q')?.trim().toLowerCase()
 
+    const take = Math.min(Number(searchParams.get('limit')) || 2000, 5000)
+    const skip = Number(searchParams.get('offset')) || 0
+
     const entities = await prisma.reportEntity.findMany({
       where: {
         ...(type ? { type } : {}),
         ...(q ? { name: { contains: q } } : {}),
       },
       orderBy: { createdAt: 'desc' },
+      take,
+      skip,
     })
 
     // Strip placeholder / unnamed entities that the AI occasionally produces

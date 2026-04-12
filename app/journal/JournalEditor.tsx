@@ -95,7 +95,7 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  const [dictating, setDictating] = useState(false)
  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
  // eslint-disable-next-line @typescript-eslint/no-explicit-any
- const recognitionRef = useRef<any>(null)
+ const recognitionRef = useRef<{ stop(): void } | null>(null)
 
  const save = useCallback(async (html: string) => {
  setStatus('saving')
@@ -137,8 +137,10 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  })
 
  const toggleDictation = () => {
- // eslint-disable-next-line @typescript-eslint/no-explicit-any
- const SR: any = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
+ // Web Speech API — not in all TS lib versions, access via window property
+ type SpeechRecognitionCtor = { new(): { continuous: boolean; interimResults: boolean; lang: string; start(): void; stop(): void; onresult: ((e: { results: ArrayLike<{ 0: { transcript: string } }>; resultIndex: number }) => void) | null; onerror: (() => void) | null; onend: (() => void) | null } }
+ const w = window as Window & { SpeechRecognition?: SpeechRecognitionCtor; webkitSpeechRecognition?: SpeechRecognitionCtor }
+ const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
  if (!SR) { alert('Speech recognition is not supported in this browser.'); return }
 
  if (dictating && recognitionRef.current) {
@@ -148,19 +150,16 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  return
  }
 
- // eslint-disable-next-line @typescript-eslint/no-explicit-any
- const recognition: any = new SR()
+ const recognition = new SR()
  recognition.continuous = true
  recognition.interimResults = false
  recognition.lang = 'en-US'
 
- // eslint-disable-next-line @typescript-eslint/no-explicit-any
- recognition.onresult = (event: any) => {
- const results = Array.from(event.results as ArrayLike<SpeechRecognitionResult>)
+ recognition.onresult = (event) => {
+ const results = Array.from(event.results)
  const transcript = results
  .slice(event.resultIndex)
- // eslint-disable-next-line @typescript-eslint/no-explicit-any
- .map((r: any) => r[0].transcript as string)
+ .map((r) => r[0].transcript)
  .join(' ')
  if (transcript && editor) {
  editor.commands.insertContent(transcript + ' ')

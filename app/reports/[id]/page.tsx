@@ -106,7 +106,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
  ])
  : [[], [], null]
 
- // Cross-document entity linking
+ // Cross-document entity linking (batched — single query instead of N+1)
  type CrossDocResult = { name: string; type: string; reportIds: string[]; reportTitles: Record<string, string> }
  const crossLinks: CrossDocResult[] = []
  if (showEntities && entities.length > 0) {
@@ -115,27 +115,41 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
  const linkableEntities = entities.filter(e => linkableTypes.includes(e.type))
  const uniqueNames = [...new Set(linkableEntities.map(e => e.name))]
 
- await Promise.all(uniqueNames.map(async (name) => {
- const others = await prisma.reportEntity.findMany({
- where: { name, reportId: { not: id } },
- select: { reportId: true },
+ if (uniqueNames.length > 0) {
+ // Single batched query for all entity cross-references
+ const allOthers = await prisma.reportEntity.findMany({
+ where: { name: { in: uniqueNames }, reportId: { not: id } },
+ select: { name: true, reportId: true },
  })
- if (others.length === 0) return
- const distinctReportIds = [...new Set(others.map(o => o.reportId))]
- const linkedReports = await prisma.report.findMany({
- where: { id: { in: distinctReportIds } },
+ // Group by entity name
+ const byName = new Map<string, Set<string>>()
+ for (const row of allOthers) {
+ if (!byName.has(row.name)) byName.set(row.name, new Set())
+ byName.get(row.name)!.add(row.reportId)
+ }
+ // Single batched query for all linked report titles
+ const allReportIds = [...new Set(allOthers.map(o => o.reportId))]
+ const linkedReports = allReportIds.length > 0
+ ? await prisma.report.findMany({
+ where: { id: { in: allReportIds } },
  select: { id: true, title: true },
- orderBy: { createdAt: 'desc' },
- take: 5,
  })
+ : []
+ const titleMap = new Map(linkedReports.map(r => [r.id, r.title]))
+
+ for (const name of uniqueNames) {
+ const reportIds = byName.get(name)
+ if (!reportIds || reportIds.size === 0) continue
+ const ids = [...reportIds].slice(0, 5)
  const entity = linkableEntities.find(e => e.name === name)
  crossLinks.push({
  name,
  type: entity?.type ?? 'person',
- reportIds: linkedReports.map(r => r.id),
- reportTitles: Object.fromEntries(linkedReports.map(r => [r.id, r.title])),
+ reportIds: ids,
+ reportTitles: Object.fromEntries(ids.map(rid => [rid, titleMap.get(rid) ?? 'Untitled'])),
  })
- }))
+ }
+ }
  } catch (err) {
  console.error('Cross-link lookup failed:', err)
  }

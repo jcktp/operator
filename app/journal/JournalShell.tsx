@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import DOMPurify from 'dompurify'
 import { Plus, FolderOpen, FileText, Trash2, ChevronRight, ChevronDown, Edit2, PenLine, Eye, X, BookMarked, Search } from 'lucide-react'
 import JournalEditor from './JournalEditor'
 import { useMode } from '@/components/ModeContext'
@@ -417,7 +418,7 @@ export default function JournalShell({ entries: initial, projects = [] }: Props)
  ) : (
  <div
  className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] px-6 py-5 prose prose-sm dark:prose-invert max-w-none text-[var(--text-body)] min-h-[200px]"
- dangerouslySetInnerHTML={{ __html: selected.content || '<p class="text-[var(--text-muted)]">Empty note — click Edit to start writing.</p>' }}
+ dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selected.content || '<p class="text-[var(--text-muted)]">Empty note — click Edit to start writing.</p>') }}
  />
  )}
  </div>

@@ -7,7 +7,14 @@ export async function GET(req: Request) {
   const deny = await requireAuth(req)
   if (deny) return deny
   await seedGlossaryIfEmpty()
-  const terms = await prisma.glossaryTerm.findMany({ orderBy: [{ scope: 'asc' }, { term: 'asc' }] })
+  const url = new URL(req.url)
+  const take = Math.min(Number(url.searchParams.get('limit')) || 1000, 5000)
+  const skip = Number(url.searchParams.get('offset')) || 0
+  const terms = await prisma.glossaryTerm.findMany({
+    orderBy: [{ scope: 'asc' }, { term: 'asc' }],
+    take,
+    skip,
+  })
   return NextResponse.json({ terms })
 }
 

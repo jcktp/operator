@@ -287,8 +287,10 @@ export default function Nav() {
 
           {/* Search */}
           <button
+            type="button"
             onClick={() => setSearchOpen(true)}
             title="Search (⌘K)"
+            aria-label="Search (⌘K)"
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-white/50 bg-white/8 border border-white/15 hover:border-white/30 hover:text-white/70 transition-colors"
           >
             <Search size={13} />
@@ -302,8 +304,12 @@ export default function Nav() {
           {/* Power menu */}
           <div className="relative" ref={powerMenuRef}>
             <button
+              type="button"
               onClick={() => setPowerMenuOpen(s => !s)}
               title="Power menu"
+              aria-label="Power menu"
+              aria-expanded={powerMenuOpen}
+              aria-haspopup="true"
               className={cn(
                 'flex items-center gap-0.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
                 powerMenuOpen
@@ -315,10 +321,11 @@ export default function Nav() {
               <ChevronDown size={10} />
             </button>
             {powerMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-[4px] shadow-lg py-1 min-w-[160px] z-50 dark:bg-zinc-900 dark:border-zinc-700">
+              <div className="absolute right-0 top-full mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-[4px] shadow-lg py-1 min-w-[160px] z-50">
                 <button
+                  type="button"
                   onClick={() => { toggleTheme(); setPowerMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[var(--text-body)] hover:bg-[var(--surface-2)] transition-colors"
                 >
                   {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
                   {theme === 'dark' ? 'Light mode' : 'Dark mode'}
@@ -328,25 +335,27 @@ export default function Nav() {
                   className={cn(
                     'flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors',
                     airGapped
-                      ? 'text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950'
-                      : 'text-gray-600 hover:bg-gray-50 dark:text-zinc-300 dark:hover:bg-zinc-800'
+                      ? 'text-sky-500 hover:bg-[var(--blue-dim)]'
+                      : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
                   )}
                 >
                   <ShieldOff size={12} />
                   {airGapped ? 'Disable air-gap' : 'Enable air-gap'}
                 </button>
-                <div className="mx-2 my-1 h-px bg-gray-100 dark:bg-zinc-800" />
+                <div className="mx-2 my-1 h-px bg-[var(--border)]" />
                 <button
+                  type="button"
                   onClick={handleLogout}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[var(--text-body)] hover:bg-[var(--surface-2)] transition-colors"
                 >
                   <LogOut size={12} />
                   Log out
                 </button>
-                <div className="mx-2 my-1 h-px bg-gray-100 dark:bg-zinc-800" />
+                <div className="mx-2 my-1 h-px bg-[var(--border)]" />
                 <button
+                  type="button"
                   onClick={handleShutdown}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[var(--red)] hover:bg-[var(--red-dim)] transition-colors"
                 >
                   <Power size={12} />
                   Shut down

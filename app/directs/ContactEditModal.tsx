@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { useMode } from '@/components/ModeContext'
 import { type DirectReport } from '@/app/types'
 import AreaDropdown from './AreaDropdown'
+import Input from '@/components/ui/Input'
 
 export default function ContactEditModal({
  contact,
@@ -34,10 +35,18 @@ export default function ContactEditModal({
  })
  const [saving, setSaving] = useState(false)
 
+ const [saveError, setSaveError] = useState<string | null>(null)
+
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault()
  setSaving(true)
+ setSaveError(null)
+ try {
  await onSave({ ...contact, ...form })
+ } catch (err) {
+ console.error('Failed to save contact:', err)
+ setSaveError('Failed to save — please try again.')
+ }
  setSaving(false)
  }
 
@@ -58,13 +67,11 @@ export default function ContactEditModal({
  <div className="grid grid-cols-2 gap-3">
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Name *</label>
- <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
- required className="w-full h-8 border border-[var(--border)] rounded-[4px] px-2.5 text-xs focus:outline-none focus:ring-2" />
+ <Input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Title *</label>
- <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
- required className="w-full h-8 border border-[var(--border)] rounded-[4px] px-2.5 text-xs focus:outline-none focus:ring-2" />
+ <Input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
  </div>
  </div>
 
@@ -76,15 +83,11 @@ export default function ContactEditModal({
  <div className="grid grid-cols-2 gap-3">
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Email</label>
- <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
- placeholder="jane@company.com"
- className="w-full h-8 border border-[var(--border)] rounded-[4px] px-2.5 text-xs focus:outline-none focus:ring-2" />
+ <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="jane@company.com" />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Phone</label>
- <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
- placeholder="+1 555 123 4567"
- className="w-full h-8 border border-[var(--border)] rounded-[4px] px-2.5 text-xs focus:outline-none focus:ring-2" />
+ <Input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+1 555 123 4567" />
  </div>
  </div>
 
@@ -99,6 +102,7 @@ export default function ContactEditModal({
  />
  </div>
 
+ {saveError && <p className="text-xs text-[var(--red)]">{saveError}</p>}
  <div className="flex items-center justify-between pt-1">
  <button
  type="button"

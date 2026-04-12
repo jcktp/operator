@@ -28,7 +28,7 @@ model ReportRequest {
   area           String
   message        String?
   directReportId String?
-  directReport   DirectReport? @relation(fields: [directReportId], references: [id])
+  directReport   DirectReport? @relation(fields: [directReportId], references: [id], onDelete: SetNull)
   projectId      String?
   project        Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   status         String        @default("pending")
@@ -107,6 +107,8 @@ model Report {
   @@index([directReportId])
   @@index([createdAt])
   @@index([area, directReportId])
+  @@index([mode])
+  @@index([reportDate])
 }
 
 model AuditLog {
@@ -159,6 +161,7 @@ model JournalEntry {
   updatedAt DateTime  @updatedAt
 
   @@index([projectId])
+  @@index([mode])
 }
 
 model DispatchChat {
@@ -579,7 +582,7 @@ model ChatMessage {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  project    Project   @relation(fields: [projectId], references: [id])
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([threadId])

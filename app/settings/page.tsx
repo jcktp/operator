@@ -2,23 +2,20 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '@/components/ThemeProvider'
-import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle, X, Plus } from 'lucide-react'
+import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle } from 'lucide-react'
 import AuditLogPanel from './AuditLogPanel'
-import RecoveryCodesPanel from './RecoveryCodesPanel'
 import { cn } from '@/lib/utils'
 import { CLOUD_PROVIDERS } from './settingsTypes'
 import ModelPullOverlay from './ModelPullOverlay'
 import OllamaConfig from './OllamaConfig'
 import CloudProviderConfig from './CloudProviderConfig'
 import { ProviderLogo } from './ProviderLogo'
-import { MODE_LIST, getModeConfig } from '@/lib/mode'
 import SettingsRemoteTab from './SettingsRemoteTab'
 import SettingsBackupTab from './SettingsBackupTab'
 import SettingsPulseTab from './SettingsPulseTab'
-import SelectField from '@/components/SelectField'
 import SettingsKnowledgeTab from './SettingsKnowledgeTab'
 import SettingsCollabTab from './SettingsCollabTab'
-import ModeIcon from './ModeIcons'
+import SettingsProfileTab from './SettingsProfileTab'
 import { useSettingsState } from './useSettingsState'
 
 export default function SettingsPage() {
@@ -88,204 +85,7 @@ export default function SettingsPage() {
  <div className="space-y-5">
  {/* Profile tab */}
  {tab === 'profile' && (
- <>
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-3">
- <h2 className="text-sm font-semibold text-[var(--text-bright)]">Profile</h2>
- <div className="grid grid-cols-2 gap-3">
- <div>
- <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1.5">Your name</label>
- <input type="text" value={s.ceoName} onChange={e => s.setCeoName(e.target.value)} placeholder="Alex Chen"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
- </div>
- <div>
- <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1.5">Company</label>
- <input type="text" value={s.companyName} onChange={e => s.setCompanyName(e.target.value)} placeholder="Acme Corp"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
- </div>
- </div>
- <div>
- <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1.5">Your role</label>
- <input type="text" value={s.userRole} onChange={e => s.setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
- </div>
- </div>
-
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-3">
- <div className="flex items-center justify-between">
- <h2 className="text-sm font-semibold text-[var(--text-bright)]">App Mode</h2>
- {s.appMode !== s.savedMode && <span className="text-xs text-[var(--amber)]">Unsaved</span>}
- </div>
- <div className="grid grid-cols-3 gap-2">
- {MODE_LIST.map(m => (
- <button key={m.id} type="button" onClick={() => {
- s.setAppMode(m.id)
- s.setCustomAreas(getModeConfig(m.id).defaultAreas)
- s.setAreasCustomized(false)
- }}
- className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
- s.appMode === m.id ? 'border-[var(--ink)] bg-[var(--ink)] text-white' : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-bright)] hover:border-[var(--border)]'
- )}>
- <ModeIcon modeId={m.id} className="w-6 h-6" />
- <div className="text-xs font-semibold mt-1">{m.label}</div>
- {s.savedMode === m.id && s.appMode !== m.id && <div className="text-[10px] text-blue-400 mt-0.5">current</div>}
- </button>
- ))}
- </div>
- </div>
-
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5">
- <div className="flex items-center justify-between">
- <div>
- <p className="text-sm font-semibold text-[var(--text-bright)]">Sound effects</p>
- <p className="text-xs text-[var(--text-muted)] mt-0.5">Walkie-talkie chirp on startup and shutdown</p>
- </div>
- <button
- type="button"
- onClick={() => s.setSoundEnabled(v => !v)}
- className={cn(
- 'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
- s.soundEnabled ? 'bg-[var(--ink)]' : 'bg-[var(--surface-3)]'
- )}
- >
- <span className={cn(
- 'pointer-events-none inline-block h-4 w-4 rounded-full bg-[var(--surface)] shadow transform transition-transform',
- s.soundEnabled ? 'translate-x-4' : 'translate-x-0'
- )} />
- </button>
- </div>
- </div>
-
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5">
- <div className="flex items-center justify-between gap-4">
- <div>
- <p className="text-sm font-semibold text-[var(--text-bright)]">Appearance</p>
- <p className="text-xs text-[var(--text-muted)] mt-0.5">
- {mode === 'system' ? `Auto — following system (${theme})` : mode === 'dark' ? 'Dark theme' : 'Light theme'}
- </p>
- </div>
- <div className="flex rounded-lg border border-[var(--border)] overflow-hidden shrink-0">
- {(['light', 'dark', 'system'] as const).map((m, i) => (
- <button
- key={m}
- type="button"
- onClick={() => setMode(m)}
- className={cn(
- 'px-3 py-1.5 text-xs font-medium transition-colors',
- i > 0 && 'border-l border-[var(--border)]',
- mode === m
- ? 'bg-[var(--ink)] text-white'
- : 'text-[var(--text-muted)] hover:bg-[var(--surface-2)]'
- )}
- >
- {m === 'system' ? 'Auto' : m.charAt(0).toUpperCase() + m.slice(1)}
- </button>
- ))}
- </div>
- </div>
- </div>
-
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-3">
- <div className="flex items-center justify-between">
- <h2 className="text-sm font-semibold text-[var(--text-bright)]">Areas</h2>
- {s.areasCustomized && (
- <button type="button"
- onClick={() => { s.setCustomAreas(getModeConfig(s.appMode).defaultAreas); s.setAreasCustomized(false) }}
- className="text-xs text-[var(--text-muted)] hover:text-[var(--text-subtle)] transition-colors">
- Reset to {getModeConfig(s.appMode).label} defaults
- </button>
- )}
- </div>
- <p className="text-xs text-[var(--text-muted)]">Areas appear when uploading {getModeConfig(s.appMode).documentLabelPlural.toLowerCase()} and creating request links. Switching modes resets to that mode&apos;s defaults unless you&apos;ve customised them.</p>
- <div className="flex flex-wrap gap-2">
- {s.customAreas.map(area => (
- <span key={area} className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-[var(--surface-2)] text-xs text-[var(--text-body)] rounded-md">
- {area}
- <button type="button" onClick={() => { s.setCustomAreas(a => a.filter(x => x !== area)); s.setAreasCustomized(true) }}
- className="text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors">
- <X size={11} />
- </button>
- </span>
- ))}
- </div>
- <div className="flex gap-2">
- <input
- type="text"
- value={s.newArea}
- onChange={e => s.setNewArea(e.target.value)}
- onKeyDown={e => {
- if (e.key === 'Enter') {
- e.preventDefault()
- const v = s.newArea.trim()
- if (v && !s.customAreas.includes(v)) { s.setCustomAreas(a => [...a, v]); s.setNewArea(''); s.setAreasCustomized(true) }
- }
- }}
- placeholder="Add area…"
- className="flex-1 border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
- />
- <button
- type="button"
- onClick={() => {
- const v = s.newArea.trim()
- if (v && !s.customAreas.includes(v)) { s.setCustomAreas(a => [...a, v]); s.setNewArea(''); s.setAreasCustomized(true) }
- }}
- className="px-3 py-2 bg-[var(--ink)] text-white text-sm font-medium rounded-lg hover:bg-[var(--ink)] transition-colors"
- >
- <Plus size={14} />
- </button>
- </div>
- </div>
-
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-4">
- <h2 className="text-sm font-semibold text-[var(--text-bright)]">Security</h2>
-
- <div className="flex items-center justify-between">
- <div>
- <p className="text-sm text-[var(--text-body)]">Auto-lock</p>
- <p className="text-xs text-[var(--text-muted)] mt-0.5">Lock after inactivity and require password</p>
- </div>
- <SelectField
- value={String(s.autoLockMinutes)}
- onChange={v => s.setAutoLockMinutes(parseInt(v))}
- className="w-32"
- options={[
- { value: '0', label: 'Never' },
- { value: '5', label: '5 min' },
- { value: '10', label: '10 min' },
- { value: '15', label: '15 min' },
- { value: '30', label: '30 min' },
- { value: '60', label: '1 hour' },
- ]}
- />
- </div>
-
- <div className="flex items-center justify-between">
- <div>
- <p className="text-sm text-[var(--text-body)]">Air-gap mode</p>
- <p className="text-xs text-[var(--text-muted)] mt-0.5">Block all outbound network calls (cloud AI, web search, feeds)</p>
- </div>
- <button
- type="button"
- onClick={() => s.setAirGapMode(v => !v)}
- className={cn(
- 'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
- s.airGapMode ? 'bg-red-500' : 'bg-[var(--surface-3)]'
- )}
- >
- <span className={cn(
- 'pointer-events-none inline-block h-4 w-4 rounded-full bg-[var(--surface)] shadow transform transition-transform',
- s.airGapMode ? 'translate-x-4' : 'translate-x-0'
- )} />
- </button>
- </div>
- {s.airGapMode && (
- <p className="text-xs text-[var(--red)] bg-[var(--red-dim)] border border-[var(--red)] rounded-lg px-3 py-2">
- Air-gap active — only Ollama (local) analysis works. Cloud providers and Pulse feeds are disabled.
- </p>
- )}
- </div>
-
- <RecoveryCodesPanel />
- </>
+ <SettingsProfileTab s={s} theme={theme} mode={mode} setMode={setMode} />
  )}
 
  {/* AI tab */}

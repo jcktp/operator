@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
+import { errorResponse } from '@/lib/api-error'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,7 @@ export interface NetworkData {
 export async function GET(req: NextRequest) {
   const deny = await requireAuth(req)
   if (deny) return deny
-
+  try {
   const { searchParams } = req.nextUrl
   const projectId = searchParams.get('projectId')
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '120'), 200)
@@ -85,4 +86,7 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ nodes, edges } satisfies NetworkData)
+  } catch (e) {
+    return errorResponse(e)
+  }
 }

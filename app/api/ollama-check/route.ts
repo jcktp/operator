@@ -6,7 +6,23 @@ export async function POST(req: NextRequest) {
   if (deny) return deny
 
   const { host } = await req.json()
-  const baseUrl = (host ?? 'http://localhost:11434').replace(/\/$/, '')
+  const raw = (host ?? 'http://localhost:11434').replace(/\/$/, '')
+  // Validate URL and block dangerous targets (metadata endpoints, link-local)
+  let baseUrl: string
+  try {
+    const parsed = new URL(raw)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return NextResponse.json({ error: 'Only HTTP/HTTPS hosts are allowed' }, { status: 400 })
+    }
+    const h = parsed.hostname.toLowerCase()
+    // Block cloud metadata and link-local endpoints
+    if (h === '169.254.169.254' || h === 'metadata.google.internal' || h.startsWith('169.254.')) {
+      return NextResponse.json({ error: 'Metadata endpoints are not allowed' }, { status: 403 })
+    }
+    baseUrl = raw
+  } catch {
+    return NextResponse.json({ error: 'Invalid host URL' }, { status: 400 })
+  }
 
   try {
     const [tagsRes, versionRes] = await Promise.all([
