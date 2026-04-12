@@ -78,9 +78,14 @@ export async function preemptiveWebTool(
     return await executeTool('fetch_url', { url }).catch(() => null)
   }
 
+  // Only suppress web search when the user is clearly referring to their OWN local data
+  // (e.g. "this document", "my report", "the attached file") — not generic topic mentions
+  // like "tell me about the Geneva Convention document".
+  const refersToLocalData = /\b(this|my|the attached|the uploaded|these)\s+(document|report|file|analysis|note|briefing|data|project)\b|\b(attached|uploaded)\s+(file|document)\b/i.test(q)
+
   const isSearchIntent =
     /\b(news|current events|what(?:'s| is) (?:happening|going on)|what happened|latest|what.*today|right now|this week|search for|look up|find me|tell me about.*latest|according to the news|in the world|going on in|update[sd]? on)\b/i.test(q) &&
-    !/\b(document|report|analysis|this file|attached|uploaded)\b/i.test(q)
+    !refersToLocalData
 
   if (isSearchIntent) {
     const query = buildSearchQuery(q)
@@ -93,8 +98,7 @@ export async function preemptiveWebTool(
   // Online mode fallback: any question not about local documents gets a web search.
   // The narrow regex above catches explicit news intent; this catches everything else
   // so that enabling "Online" mode actually makes the assistant search for answers.
-  const isLocalOnly = /\b(document|report|analysis|this file|attached|uploaded|my notes|my data|briefing|area|project)\b/i.test(q)
-  if (!isLocalOnly && q.length > 5) {
+  if (!refersToLocalData && q.length > 5) {
     // Strip conversational fluff to build a clean search query
     const query = q
       .replace(/^(?:hey|hi|hello|please|can you|could you|would you|tell me|explain|what do you know about)\s+/i, '')
