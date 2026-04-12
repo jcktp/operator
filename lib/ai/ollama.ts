@@ -90,6 +90,25 @@ export async function preemptiveWebTool(
     return result
   }
 
+  // Online mode fallback: any question not about local documents gets a web search.
+  // The narrow regex above catches explicit news intent; this catches everything else
+  // so that enabling "Online" mode actually makes the assistant search for answers.
+  const isLocalOnly = /\b(document|report|analysis|this file|attached|uploaded|my notes|my data|briefing|area|project)\b/i.test(q)
+  if (!isLocalOnly && q.length > 5) {
+    // Strip conversational fluff to build a clean search query
+    const query = q
+      .replace(/^(?:hey|hi|hello|please|can you|could you|would you|tell me|explain|what do you know about)\s+/i, '')
+      .replace(/\?$/, '')
+      .trim()
+      .slice(0, 120)
+    if (query.length > 3) {
+      onToolCall?.('search_web', { query })
+      const result = await executeTool('search_web', { query }).catch(() => null)
+      if (!result || /^No results found/i.test(result)) return null
+      return result
+    }
+  }
+
   return null
 }
 
