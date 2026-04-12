@@ -202,7 +202,7 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
  onClick={() => setActiveStory(null)}
  className={`text-xs px-2.5 py-0.5 rounded-[4px] transition-colors ${
  activeStory === null
- ? 'bg-[var(--ink)] text-white'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
  : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'
  }`}
  >
@@ -214,7 +214,7 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
  onClick={() => setActiveStory(activeStory === s ? null : s)}
  className={`text-xs px-2.5 py-0.5 rounded-[4px] transition-colors ${
  activeStory === s
- ? 'bg-[var(--ink)] text-white'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
  : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'
  }`}
  >
@@ -257,7 +257,7 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
  onClick={() => setActiveLayer(l)}
  className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${
  activeLayer === l
- ? 'bg-[var(--ink)] text-white border-[var(--ink)]'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-[var(--ink)]'
  : 'bg-[var(--surface)] text-[var(--text-subtle)] border-[var(--border)] hover:border-[var(--border-mid)]'
  }`}
  >

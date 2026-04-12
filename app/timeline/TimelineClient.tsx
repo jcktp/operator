@@ -75,7 +75,7 @@ export default function TimelineClient({
  onClick={() => setSelectedArea(null)}
  className={cn(
  'w-full flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors text-left',
- !selectedArea ? 'bg-[var(--ink)] text-white font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
+ !selectedArea ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
  )}
  >
  <span>All {modeConfig.collectionLabel.toLowerCase()}s</span>
@@ -89,7 +89,7 @@ export default function TimelineClient({
  onClick={() => setSelectedArea(isActive ? null : area)}
  className={cn(
  'w-full flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors text-left',
- isActive ? 'bg-[var(--ink)] text-white font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
+ isActive ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
  )}
  >
  <span className="truncate">{area}</span>

@@ -397,7 +397,7 @@ export default function UploadTab() {
  )}
 
  <button type="submit" disabled={queue.length === 0 || !allHaveArea || submitting || pendingCount === 0}
- className="w-full bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] :bg-[var(--ink)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+ className="w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] :bg-[var(--ink)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
  {submitting ? <><Loader2 size={15} className="animate-spin" />Sending {processingIndex} of {processingTotal}…</>
  : allDone ? <><CheckCircle size={15} />{doneCount} queued for analysis{errorCount > 0 && ` · ${errorCount} failed`}</>
  : !allHaveArea && pendingCount > 0 ? <>Select an area for all files to continue</>

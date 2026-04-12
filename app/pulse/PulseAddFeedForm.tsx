@@ -81,7 +81,7 @@ export default function PulseAddFeedForm({ form, setForm, onSubmit, adding, bsky
  <button
  type="submit"
  disabled={adding}
- className="bg-[var(--ink)] text-white text-xs font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] disabled:opacity-50 flex items-center gap-2"
+ className="bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] disabled:opacity-50 flex items-center gap-2"
  >
  {adding && <Loader2 size={13} className="animate-spin" />}
  {adding ? 'Fetching…' : 'Add feed'}

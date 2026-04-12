@@ -78,7 +78,7 @@ export default async function EntitiesPage({
  href={`/entities?tab=${t.id}`}
  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-xs font-medium transition-colors ${
  isActive
- ? 'bg-[var(--ink)] text-white'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
  : 'text-[var(--text-subtle)] hover:text-[var(--text-body)] hover:bg-[var(--surface-2)]'
  }`}
  >

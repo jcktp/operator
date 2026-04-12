@@ -181,7 +181,7 @@ export default function StorylineSources({ storyId, sources, allDirects, onChang
  <button
  onClick={handleAdd}
  disabled={loading || !selectedDirectId}
- className="shrink-0 px-3 py-1.5 bg-[var(--ink)] text-white text-xs font-medium rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
+ className="shrink-0 px-3 py-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
  >
  {loading ? <Loader2 size={11} className="animate-spin" /> : 'Add'}
  </button>

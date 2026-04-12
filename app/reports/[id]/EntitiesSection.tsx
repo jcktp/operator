@@ -79,7 +79,7 @@ export default function EntitiesSection({
  onClick={() => setFilter(opt)}
  className={`px-2.5 py-1 rounded-[4px] text-xs font-medium border transition-colors ${
  filter === opt
- ? 'bg-[var(--ink)] text-white border-[var(--ink)]'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-[var(--ink)]'
  : 'bg-[var(--surface)] text-[var(--text-body)] border-[var(--border)] hover:border-[var(--border-mid)]'
  }`}
  >

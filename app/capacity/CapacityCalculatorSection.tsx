@@ -106,7 +106,7 @@ export default function CapacityCalculatorSection(props: CapacityCalculatorSecti
             if (!newDemandLabel.trim() || !newDemandHours) return
             setDemand(prev => [...prev, { label: newDemandLabel.trim(), hours: parseInt(newDemandHours) || 0 }])
             setNewDemandLabel(''); setNewDemandHours('')
-          }} className="h-7 px-2.5 rounded-[4px] text-xs bg-[var(--ink)] text-white hover:bg-[var(--ink)] transition-colors">
+          }} className="h-7 px-2.5 rounded-[4px] text-xs bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors">
             <Plus size={13} />
           </button>
         </div>

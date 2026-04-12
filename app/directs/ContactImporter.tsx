@@ -199,7 +199,7 @@ export default function ContactImporter({ areas, onClose, onImported }: Props) {
  type="button"
  onClick={handleImport}
  disabled={selectedCount === 0 || importing || done}
- className="flex items-center gap-2 bg-[var(--ink)] text-white text-xs font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] disabled:opacity-50 transition-colors"
+ className="flex items-center gap-2 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] disabled:opacity-50 transition-colors"
  >
  {done ? (
  <><Check size={13} /> Imported</>

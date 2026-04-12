@@ -197,7 +197,7 @@ export default function PeersTab({ projectId, initialPeers, initialNearby }: Pro
             <button
               onClick={addFromInvite}
               disabled={adding || !inviteInput.trim()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--ink)] text-white text-xs font-medium rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
             >
               {adding && <Loader2 size={11} className="animate-spin" />}
               Add peer

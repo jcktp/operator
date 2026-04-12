@@ -69,7 +69,7 @@ export default function SettingsPulseTab({
  </div>
 
  <button type="button" onClick={onSave} disabled={saving}
- className="w-full bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] :bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+ className="w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] :bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
  {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : 'Save'}
  </button>
  </div>

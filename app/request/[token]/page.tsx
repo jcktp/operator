@@ -350,7 +350,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
  <button
  onClick={submit}
  disabled={!canSubmit || stage === 'submitting'}
- className="mt-6 w-full bg-[var(--ink)] text-white text-sm font-medium px-4 py-3 rounded-[10px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+ className="mt-6 w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium px-4 py-3 rounded-[10px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
  >
  {stage === 'submitting' ? (
  <><Loader2 size={15} className="animate-spin" /> Submitting…</>

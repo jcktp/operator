@@ -106,7 +106,7 @@ export default function StepContext({ modeConfig, onNext, onBack }: Props) {
  <button
  onClick={handleContinue}
  disabled={saving}
- className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors disabled:opacity-60"
+ className="flex-[3] py-3 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors disabled:opacity-60"
  >
  {saving ? 'Saving…' : 'Continue →'}
  </button>

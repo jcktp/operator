@@ -244,7 +244,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-[10px] hover:bg-[var(--surface-3)] transition-colors">
  ← Back
  </button>
- <button onClick={onSkip} className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors">
+ <button onClick={onSkip} className="flex-[3] py-3 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors">
  Skip — configure AI later →
  </button>
  </div>
@@ -275,7 +275,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  onClick={() => setPresetChoice(p.id)}
  className={`py-2.5 px-3 rounded-[10px] text-xs font-medium border transition-colors text-left ${
  preset === p.id
- ? 'bg-[var(--ink)] text-white border-[var(--ink)]'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-[var(--ink)]'
  : 'bg-[var(--surface)] text-[var(--text-body)] border-[var(--border)] hover:border-[var(--border-mid)]'
  }`}
  >
@@ -418,14 +418,14 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  {selected.length > 0 && totalSize > 0 ? (
  <button
  onClick={startDownloads}
- className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
+ className="flex-[3] py-3 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  Download {selected.filter(id => !installed.includes(id)).length} model{selected.filter(id => !installed.includes(id)).length !== 1 ? 's' : ''} →
  </button>
  ) : (
  <button
  onClick={onNext}
- className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
+ className="flex-[3] py-3 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  Continue →
  </button>
@@ -445,7 +445,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  <div className="flex gap-3">
  <button
  onClick={onNext}
- className="w-full py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
+ className="w-full py-3 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  Continue →
  </button>

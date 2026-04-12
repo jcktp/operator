@@ -217,7 +217,7 @@ export default function FilesClient({
  </button>
  <button
  onClick={() => openPath('')}
- className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[var(--ink)] text-white hover:opacity-90 transition-colors"
+ className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] hover:opacity-90 transition-colors"
  >
  <FolderOpen size={13} />
  Open in Finder

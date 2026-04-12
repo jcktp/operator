@@ -250,13 +250,13 @@ export default function CustomTimeline({ events }: Props) {
  <span className="text-[10px] text-[var(--text-muted)] mr-1">Story:</span>
  <button
  onClick={() => setActiveStory(null)}
- className={`text-xs px-2 py-0.5 rounded-[4px] transition-colors ${activeStory === null ? 'bg-[var(--ink)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'}`}
+ className={`text-xs px-2 py-0.5 rounded-[4px] transition-colors ${activeStory === null ? 'bg-[var(--ink)] text-[var(--ink-contrast)]' : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'}`}
  >All</button>
  {stories.map(story => (
  <button
  key={story}
  onClick={() => setActiveStory(activeStory === story ? null : story)}
- className={`text-xs px-2 py-0.5 rounded-[4px] transition-colors ${activeStory === story ? 'bg-[var(--ink)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'}`}
+ className={`text-xs px-2 py-0.5 rounded-[4px] transition-colors ${activeStory === story ? 'bg-[var(--ink)] text-[var(--ink-contrast)]' : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'}`}
  >{story}</button>
  ))}
  </div>
@@ -266,13 +266,13 @@ export default function CustomTimeline({ events }: Props) {
  <span className="text-[10px] text-[var(--text-muted)] mr-1">Area:</span>
  <button
  onClick={() => setActiveArea(null)}
- className={`text-xs px-2 py-0.5 rounded-[4px] transition-colors ${activeArea === null ? 'bg-[var(--ink)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'}`}
+ className={`text-xs px-2 py-0.5 rounded-[4px] transition-colors ${activeArea === null ? 'bg-[var(--ink)] text-[var(--ink-contrast)]' : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'}`}
  >All</button>
  {areas.map(area => (
  <button
  key={area}
  onClick={() => setActiveArea(activeArea === area ? null : area)}
- className={`text-xs px-2 py-0.5 rounded-[4px] transition-colors ${activeArea === area ? 'bg-[var(--ink)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'}`}
+ className={`text-xs px-2 py-0.5 rounded-[4px] transition-colors ${activeArea === area ? 'bg-[var(--ink)] text-[var(--ink-contrast)]' : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'}`}
  >{area}</button>
  ))}
  </div>

@@ -180,7 +180,7 @@ export default function SettingsPage() {
 
  {(tab === 'profile' || tab === 'ai') && (
  <button type="button" onClick={s.handleSave} disabled={s.saving}
- className="w-full bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+ className="w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
  {s.saving
  ? <><Loader2 size={14} className="animate-spin" /> {s.needsPull ? 'Pulling model…' : 'Saving…'}</>
  : s.saved ? <><CheckCircle size={14} /> Saved</>

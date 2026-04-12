@@ -204,7 +204,7 @@ export default function LoginPage() {
  onClick={() => setSelectedMode(m.id)}
  className={`text-left p-3 rounded-[10px] border-2 transition-all ${
  selectedMode === m.id
- ? 'border-[var(--ink)] bg-[var(--ink)] text-white'
+ ? 'border-[var(--ink)] bg-[var(--ink)] text-[var(--ink-contrast)]'
  : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-bright)] hover:border-[var(--border)] '
  }`}
  >
@@ -220,7 +220,7 @@ export default function LoginPage() {
  <button
  type="button"
  onClick={() => setScreen('setup')}
- className="w-full bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors flex items-center justify-center gap-2"
+ className="w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors flex items-center justify-center gap-2"
  >
  Continue <ArrowRight size={14} />
  </button>
@@ -300,7 +300,7 @@ export default function LoginPage() {
  Back
  </button>
  <button type="submit"disabled={submitting || !name.trim() || !password || !confirm}
- className="flex-1 bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+ className="flex-1 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
  {submitting ? <><Loader2 size={14} className="animate-spin" /> Setting up…</> : 'Create account'}
  </button>
  </div>
@@ -347,7 +347,7 @@ export default function LoginPage() {
  {error && <p className="text-sm text-[var(--red)] text-center">{error}</p>}
 
  <button type="submit"disabled={submitting || !password}
- className="w-full bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+ className="w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
  {submitting ? <><Loader2 size={14} className="animate-spin" /> Signing in…</> : 'Sign in'}
  </button>
 
@@ -386,7 +386,7 @@ export default function LoginPage() {
  Back
  </button>
  <button type="submit"disabled={submitting || !recoveryCode.trim()}
- className="flex-1 bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+ className="flex-1 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
  {submitting ? <><Loader2 size={14} className="animate-spin" /> Checking…</> : 'Verify code'}
  </button>
  </div>
@@ -434,7 +434,7 @@ export default function LoginPage() {
  {error && <p className="text-sm text-[var(--red)] text-center">{error}</p>}
 
  <button type="submit"disabled={submitting || !newPassword || !newPasswordConfirm}
- className="w-full bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+ className="w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
  {submitting ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : 'Set password & sign in'}
  </button>
  </form>

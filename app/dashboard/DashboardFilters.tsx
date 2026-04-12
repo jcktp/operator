@@ -36,7 +36,7 @@ export default function DashboardFilters({ areas, directs, activeArea, activeFro
  className={cn(
  'px-3 py-1.5 text-sm font-medium rounded-[4px] border transition-colors',
  activeArea === area
- ? 'bg-[var(--ink)] text-white border-[var(--ink)]'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-[var(--ink)]'
  : 'bg-[var(--surface)] text-[var(--text-body)] border-[var(--border)] hover:text-[var(--text-bright)] hover:border-[var(--border)] '
  )}
  >

@@ -324,7 +324,7 @@ export default function RequestTab() {
  <input readOnly value={link}
  className="flex-1 h-8 border border-[var(--border)] rounded-[4px] px-2.5 text-xs font-mono text-[var(--text-body)] bg-[var(--surface-2)] focus:outline-none" />
  <button onClick={copy}
- className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-[var(--ink)] text-white text-xs font-medium rounded-[4px] hover:bg-[var(--ink)] transition-colors">
+ className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium rounded-[4px] hover:bg-[var(--ink)] transition-colors">
  {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy</>}
  </button>
  </div>
@@ -357,7 +357,7 @@ export default function RequestTab() {
  </div>
  {tunnelInstalled && (
  <button type="button" onClick={toggleTunnel} disabled={togglingTunnel}
- className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-md transition-colors disabled:opacity-50 ${tunnelUrl ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-[var(--ink)] text-white hover:bg-[var(--ink)]'}`}>
+ className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-md transition-colors disabled:opacity-50 ${tunnelUrl ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)]'}`}>
  {togglingTunnel ? <Loader2 size={11} className="animate-spin" /> : tunnelUrl ? 'Turn off' : 'Turn on'}
  </button>
  )}
@@ -416,7 +416,7 @@ export default function RequestTab() {
  </div>
  )}
  <button type="submit" disabled={!title || !area || generating}
- className="w-full bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] :bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+ className="w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] :bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
  {generating ? <><Loader2 size={14} className="animate-spin" />{generatingStep || 'Generating…'}</> : <><Link2 size={14} />Generate request link</>}
  </button>
  </form>

@@ -74,7 +74,7 @@ export default function StepWelcome({ userName, onNext }: Props) {
  className={cn(
  'flex flex-col items-center gap-1.5 py-3 px-2 rounded-[10px] border text-center transition-colors',
  mode === m.value
- ? 'border-[var(--ink)] bg-[var(--ink)] text-white'
+ ? 'border-[var(--ink)] bg-[var(--ink)] text-[var(--ink-contrast)]'
  : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-subtle)] hover:border-[var(--border-mid)]'
  )}
  >
@@ -87,7 +87,7 @@ export default function StepWelcome({ userName, onNext }: Props) {
 
  <button
  onClick={onNext}
- className="w-full py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
+ className="w-full py-3 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  Let&apos;s get you set up →
  </button>

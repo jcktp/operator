@@ -102,7 +102,7 @@ export default function MessageComposer({ projectId, onSend, placeholder = 'Mess
           type="button"
           onClick={submit}
           disabled={!content.trim() || sending}
-          className="shrink-0 p-1.5 rounded-[4px] bg-[var(--ink)] text-white hover:opacity-90 disabled:opacity-40 transition-colors"
+          className="shrink-0 p-1.5 rounded-[4px] bg-[var(--ink)] text-[var(--ink-contrast)] hover:opacity-90 disabled:opacity-40 transition-colors"
         >
           <Send size={12} />
         </button>

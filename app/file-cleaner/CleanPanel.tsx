@@ -142,7 +142,7 @@ export default function CleanPanel({
  className={cn(
  'flex items-center justify-center gap-2 w-full py-2 rounded-[4px] text-sm font-medium transition-colors',
  canClean && !cleaning
- ? 'bg-[var(--ink)] text-white hover:opacity-90'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] hover:opacity-90'
  : 'bg-[var(--surface-2)] text-[var(--text-muted)] cursor-not-allowed'
  )}
  >

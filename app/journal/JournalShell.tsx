@@ -209,7 +209,7 @@ export default function JournalShell({ entries: initial, projects = [] }: Props)
  // Open form in currently selected note's folder, or General
  selected?.folder ?? DEFAULT_FOLDER
  )}
- className="w-full flex items-center gap-2 h-7 px-2.5 mb-3 bg-[var(--ink)] text-white text-xs font-medium rounded-[4px] hover:bg-[var(--ink)] transition-colors"
+ className="w-full flex items-center gap-2 h-7 px-2.5 mb-3 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium rounded-[4px] hover:bg-[var(--ink)] transition-colors"
  >
  <PenLine size={12} />
  New note
@@ -226,7 +226,7 @@ export default function JournalShell({ entries: initial, projects = [] }: Props)
  />
  {newFolderName.trim() && (
  <button onClick={createFolder}
- className="shrink-0 px-2 py-1.5 bg-[var(--ink)] text-white text-xs rounded-[4px] hover:bg-[var(--ink)] transition-colors">
+ className="shrink-0 px-2 py-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs rounded-[4px] hover:bg-[var(--ink)] transition-colors">
  <Plus size={11} />
  </button>
  )}
@@ -307,7 +307,7 @@ export default function JournalShell({ entries: initial, projects = [] }: Props)
  />
  <button
  onClick={() => createNote()}
- className="shrink-0 text-[10px] font-medium px-2 py-1.5 bg-[var(--ink)] text-white rounded-[4px] hover:bg-[var(--ink)] whitespace-nowrap"
+ className="shrink-0 text-[10px] font-medium px-2 py-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[4px] hover:bg-[var(--ink)] whitespace-nowrap"
  >
  Save
  </button>
@@ -384,7 +384,7 @@ export default function JournalShell({ entries: initial, projects = [] }: Props)
  {viewMode === 'view' ? (
  <button
  onClick={() => setViewMode('edit')}
- className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-[4px] bg-[var(--ink)] text-white hover:bg-[var(--ink)] transition-colors"
+ className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-[4px] bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors"
  >
  <Edit2 size={11} /> Edit
  </button>
@@ -428,7 +428,7 @@ export default function JournalShell({ entries: initial, projects = [] }: Props)
  <p className="text-sm text-[var(--text-muted)] mb-3">Select a note or create a new one</p>
  <button
  onClick={() => openNewNoteForm(DEFAULT_FOLDER)}
- className="inline-flex items-center gap-1.5 text-xs font-medium h-7 px-2.5 bg-[var(--ink)] text-white rounded-[4px] hover:bg-[var(--ink)] transition-colors"
+ className="inline-flex items-center gap-1.5 text-xs font-medium h-7 px-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[4px] hover:bg-[var(--ink)] transition-colors"
  >
  <PenLine size={12} /> Create first note
  </button>

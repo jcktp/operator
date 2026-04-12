@@ -140,7 +140,7 @@ export default function LibrarySearch({
  )}
 
  {selectedIds.size > 0 && (
- <div className="flex items-center gap-3 mb-3 px-3 py-2 bg-[var(--ink)] text-white rounded-[4px] text-sm">
+ <div className="flex items-center gap-3 mb-3 px-3 py-2 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[4px] text-sm">
  <span className="flex-1 text-xs">{selectedIds.size} document{selectedIds.size !== 1 ? 's' : ''} selected</span>
  {showEntities && (
  <button

@@ -291,7 +291,7 @@ export default function StorylineEditor({ story, allReports, allDirects, onUpdat
  <button
  onClick={handleGenerate}
  disabled={generating || reportIds.length === 0}
- className="w-full flex items-center justify-center gap-2 py-2.5 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+ className="w-full flex items-center justify-center gap-2 py-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
  >
  {generating ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
  {generating ? 'Generating story brief…' : reportIds.length === 0 ? 'Select source documents above first' : narrative ? 'Regenerate story brief' : 'Generate story brief'}
@@ -424,7 +424,7 @@ export default function StorylineEditor({ story, allReports, allDirects, onUpdat
  <button
  onClick={handleAddEvidence}
  disabled={addingEvidence || !newEvidenceUrl.trim() || !newEvidenceTitle.trim()}
- className="shrink-0 p-1.5 bg-[var(--ink)] text-white rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
+ className="shrink-0 p-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
  >
  {addingEvidence ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
  </button>

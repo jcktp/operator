@@ -65,7 +65,7 @@ export default function PulsePage() {
  </button>
  <button
  onClick={() => { p.setShowAdd(s => !s); p.setShowDirectory(false) }}
- className="inline-flex items-center gap-1.5 bg-[var(--ink)] text-white text-sm font-medium px-3 py-1.5 rounded-[4px] hover:bg-[var(--ink)] transition-colors"
+ className="inline-flex items-center gap-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium px-3 py-1.5 rounded-[4px] hover:bg-[var(--ink)] transition-colors"
  >
  {p.showAdd ? <X size={14} /> : <Plus size={14} />}
  {p.showAdd ? 'Cancel' : 'Add feed'}
@@ -194,7 +194,7 @@ export default function PulsePage() {
  <button
  onClick={() => { p.setActiveFeed(null); p.setPage(1) }}
  className={`w-full flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors ${
- p.activeFeed === null ? 'bg-[var(--ink)] text-white font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
+ p.activeFeed === null ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
  }`}
  >
  <span>All feeds</span>
@@ -224,7 +224,7 @@ export default function PulsePage() {
  type="button"
  disabled={p.savingEdit}
  onClick={() => p.handleSaveEdit(f.id)}
- className="flex-1 flex items-center justify-center gap-1 bg-[var(--ink)] text-white text-xs font-medium py-1 rounded hover:bg-[var(--ink)] disabled:opacity-50"
+ className="flex-1 flex items-center justify-center gap-1 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium py-1 rounded hover:bg-[var(--ink)] disabled:opacity-50"
  >
  {p.savingEdit ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
  Save
@@ -243,7 +243,7 @@ export default function PulsePage() {
  <button
  onClick={() => { p.setActiveFeed(f.id === p.activeFeed ? null : f.id); p.setEditingId(null); p.setPage(1) }}
  className={`w-full flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors ${
- p.activeFeed === f.id ? 'bg-[var(--ink)] text-white font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
+ p.activeFeed === f.id ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
  }`}
  >
  <span className="truncate text-left">{f.name}</span>

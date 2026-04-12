@@ -177,7 +177,7 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
  </div>
  <button
  onClick={openCreate}
- className="flex items-center gap-1.5 h-7 px-2.5 bg-[var(--ink)] text-white text-xs font-medium rounded-[4px] hover:opacity-90 transition-colors"
+ className="flex items-center gap-1.5 h-7 px-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium rounded-[4px] hover:opacity-90 transition-colors"
  >
  <Plus size={14} />
  New {projectLabel}
@@ -297,7 +297,7 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
  <button
  onClick={handleSave}
  disabled={saving || !form.name.trim()}
- className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--ink)] text-white text-sm font-medium rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
+ className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
  >
  {saving ? <Loader2 size={13} className="animate-spin" /> : null}
  {editingId ? 'Save changes' : `Create ${projectLabel}`}
@@ -318,7 +318,7 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
  </p>
  <button
  onClick={openCreate}
- className="mt-4 flex items-center gap-1.5 h-7 px-2.5 bg-[var(--ink)] text-white text-xs font-medium rounded-[4px] hover:opacity-90 transition-colors"
+ className="mt-4 flex items-center gap-1.5 h-7 px-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium rounded-[4px] hover:opacity-90 transition-colors"
  >
  <Plus size={14} />
  Create {projectLabel}

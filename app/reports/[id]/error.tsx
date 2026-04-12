@@ -39,7 +39,7 @@ export default function ReportError({
  <div className="flex gap-2">
  <button
  onClick={reset}
- className="text-xs font-medium px-3 py-1.5 bg-[var(--ink)] text-white rounded-[4px] hover:opacity-90 transition-colors"
+ className="text-xs font-medium px-3 py-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[4px] hover:opacity-90 transition-colors"
  >
  Try again
  </button>

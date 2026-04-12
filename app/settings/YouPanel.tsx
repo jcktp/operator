@@ -84,7 +84,7 @@ export default function YouPanel() {
         <button
           onClick={addFact}
           disabled={saving || !newFact.trim()}
-          className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] bg-[var(--ink)] text-white text-xs font-medium disabled:opacity-40"
+          className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium disabled:opacity-40"
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
           Add

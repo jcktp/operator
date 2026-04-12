@@ -117,11 +117,11 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
  <Wand2 size={13} />
  Catch me up
  </Button>
- <Link href="/?tab=one-pager"className="inline-flex items-center gap-1.5 h-7 px-2.5 text-xs font-medium rounded-[4px] border border-[var(--border-mid)] text-[var(--text-body)] hover:bg-[var(--ink)] hover:text-white hover:border-[var(--ink)] transition-colors">
+ <Link href="/?tab=one-pager"className="inline-flex items-center gap-1.5 h-7 px-2.5 text-xs font-medium rounded-[4px] border border-[var(--border-mid)] text-[var(--text-body)] hover:bg-[var(--ink)] hover:text-[var(--ink-contrast)] hover:border-[var(--ink)] transition-colors">
  <FileStack size={13} />
  One Pager
  </Link>
- <Link href="/upload"className="inline-flex items-center gap-1.5 h-7 px-2.5 text-xs font-medium rounded-[4px] bg-[var(--ink)] text-white hover:bg-[#333] transition-colors">
+ <Link href="/upload"className="inline-flex items-center gap-1.5 h-7 px-2.5 text-xs font-medium rounded-[4px] bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[#333] transition-colors">
  <Upload size={13} />
  {mode.navDocuments}
  </Link>

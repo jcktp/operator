@@ -133,7 +133,7 @@ export default function PeriodDropdown({ activeFrom, activeTo, basePath }: Props
             <button
               onClick={() => update(customFrom || undefined, customTo || undefined)}
               disabled={!customFrom && !customTo}
-              className="w-full text-xs font-medium h-7 rounded-[4px] bg-[var(--ink)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="w-full text-xs font-medium h-7 rounded-[4px] bg-[var(--ink)] text-[var(--ink-contrast)] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Apply
             </button>

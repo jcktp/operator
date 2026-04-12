@@ -95,7 +95,7 @@ function AreaBriefingCard({
  <button
  onClick={onSaveNotes}
  disabled={saving}
- className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-[var(--ink)] text-white text-xs font-medium disabled:opacity-40"
+ className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium disabled:opacity-40"
  >
  {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
  Save

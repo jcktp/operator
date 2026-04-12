@@ -121,7 +121,7 @@ export default function SettingsCollabTab() {
  type="button"
  onClick={save}
  disabled={saving}
- className="flex items-center gap-2 h-7 px-3 rounded-[4px] bg-[var(--ink)] text-white text-xs font-medium hover:opacity-90 transition-colors disabled:opacity-50"
+ className="flex items-center gap-2 h-7 px-3 rounded-[4px] bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium hover:opacity-90 transition-colors disabled:opacity-50"
  >
  {saving ? <Loader2 size={13} className="animate-spin" /> : saved ? <Check size={13} /> : null}
  {saved ? 'Saved' : 'Save'}

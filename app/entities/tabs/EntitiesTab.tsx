@@ -115,7 +115,7 @@ export default async function EntitiesTab({ selectedType, sort, modeConfig, focu
  href="/entities?tab=entities"
  className={`flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors ${
  !selectedType
- ? 'bg-[var(--ink)] text-white font-medium'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium'
  : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
  }`}
  >
@@ -130,7 +130,7 @@ export default async function EntitiesTab({ selectedType, sort, modeConfig, focu
  href={`/entities?tab=entities&type=${t}${sort !== 'frequency' ? `&sort=${sort}` : ''}`}
  className={`flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors ${
  selectedType === t
- ? 'bg-[var(--ink)] text-white font-medium'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium'
  : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
  }`}
  >
@@ -152,7 +152,7 @@ export default async function EntitiesTab({ selectedType, sort, modeConfig, focu
  href={`/entities?tab=entities${selectedType ? `&type=${selectedType}` : ''}&sort=${s}`}
  className={`text-xs px-2.5 py-1 rounded-[4px] border transition-colors ${
  sort === s
- ? 'bg-[var(--ink)] text-white border-[var(--ink)]'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-[var(--ink)]'
  : 'bg-[var(--surface)] text-[var(--text-body)] border-[var(--border)] hover:border-[var(--border-mid)]'
  }`}
  >

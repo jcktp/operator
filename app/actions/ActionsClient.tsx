@@ -115,7 +115,7 @@ export default function ActionsClient() {
  <p className="text-sm text-[var(--text-muted)] mt-0.5">{openCount} open item{openCount !== 1 ? 's' : ''}</p>
  </div>
  <button onClick={() => setShowForm(v => !v)}
- className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-white hover:bg-[var(--ink)] transition-colors">
+ className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors">
  <Plus size={14} /> {addLabel}
  </button>
  </div>
@@ -126,7 +126,7 @@ export default function ActionsClient() {
  {(['open', 'in_progress', 'done', 'all'] as const).map(s => (
  <button key={s} onClick={() => setFilterStatus(s)}
  className={cn('h-6 px-2.5 rounded-[4px] text-[11px] font-medium border transition-colors',
- filterStatus === s ? 'bg-[var(--ink)] text-white border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
+ filterStatus === s ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
  {s === 'all' ? 'All' : STATUS_LABEL[s]}
  </button>
  ))}
@@ -135,7 +135,7 @@ export default function ActionsClient() {
  {(['all', 'action', 'blocker'] as const).map(k => (
  <button key={k} onClick={() => setFilterKind(k)}
  className={cn('h-6 px-2.5 rounded-[4px] text-[11px] font-medium border transition-colors capitalize',
- filterKind === k ? 'bg-[var(--ink)] text-white border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
+ filterKind === k ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
  {k === 'all' ? 'All types' : k + 's'}
  </button>
  ))}
@@ -176,7 +176,7 @@ export default function ActionsClient() {
  </div>
  <div className="flex gap-2 pt-1">
  <button onClick={handleCreate} disabled={saving || !fTitle.trim()}
- className="h-7 px-3 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-white hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center gap-2">
+ className="h-7 px-3 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center gap-2">
  {saving && <Loader2 size={13} className="animate-spin" />} Add
  </button>
  <button onClick={() => setShowForm(false)} className="h-7 px-3 rounded-[4px] text-xs font-medium border border-[var(--border)] text-[var(--text-subtle)] hover:bg-[var(--surface-2)] transition-colors">Cancel</button>

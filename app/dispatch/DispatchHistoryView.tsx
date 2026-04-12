@@ -39,7 +39,7 @@ export default function DispatchHistoryView({
  <div className="px-3 pt-3 pb-2 shrink-0">
  <button
  onClick={onNewChat}
- className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
+ className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  <Plus size={14} /> New chat
  </button>

@@ -123,7 +123,7 @@ export default function ContactEditModal({
  Cancel
  </button>
  <button type="submit" disabled={saving}
- className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-[4px] bg-[var(--ink)] text-white hover:bg-[var(--ink)] transition-colors disabled:opacity-50">
+ className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-[4px] bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors disabled:opacity-50">
  {saving && <Loader2 size={11} className="animate-spin" />}
  Save
  </button>

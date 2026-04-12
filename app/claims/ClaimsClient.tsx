@@ -117,7 +117,7 @@ export default function ClaimsClient() {
  <p className="text-sm text-[var(--text-muted)] mt-0.5">Track factual claims and their verification status.</p>
  </div>
  <button onClick={() => setShowForm(v => !v)}
- className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-white hover:bg-[var(--ink)] transition-colors">
+ className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors">
  <Plus size={14} /> Add claim
  </button>
  </div>
@@ -125,7 +125,7 @@ export default function ClaimsClient() {
  {/* Status filter pills */}
  <div className="flex items-center gap-1.5 flex-wrap">
  <button onClick={() => setFilter('all')}
- className={cn('h-6 px-2.5 rounded-[4px] text-[11px] font-medium transition-colors border', filterStatus === 'all' ? 'bg-[var(--ink)] text-white border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
+ className={cn('h-6 px-2.5 rounded-[4px] text-[11px] font-medium transition-colors border', filterStatus === 'all' ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
  All ({claims.length})
  </button>
  {STATUSES.map(s => {
@@ -133,7 +133,7 @@ export default function ClaimsClient() {
  const Icon = cfg.icon
  return (
  <button key={s} onClick={() => setFilter(s)}
- className={cn('flex items-center gap-1 h-6 px-2.5 rounded-[4px] text-[11px] font-medium transition-colors border', filterStatus === s ? 'bg-[var(--ink)] text-white border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
+ className={cn('flex items-center gap-1 h-6 px-2.5 rounded-[4px] text-[11px] font-medium transition-colors border', filterStatus === s ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
  <Icon size={9} /> {cfg.label} ({counts[s] ?? 0})
  </button>
  )
@@ -164,7 +164,7 @@ export default function ClaimsClient() {
  </div>
  <div className="flex gap-2 pt-1">
  <button onClick={handleCreate} disabled={saving || !fText.trim()}
- className="h-7 px-3 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-white hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center gap-2">
+ className="h-7 px-3 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center gap-2">
  {saving ? <Loader2 size={13} className="animate-spin" /> : null} Add
  </button>
  <button onClick={() => setShowForm(false)} className="h-7 px-3 rounded-[4px] text-xs font-medium border border-[var(--border)] text-[var(--text-subtle)] hover:bg-[var(--surface-2)] transition-colors">

@@ -27,6 +27,7 @@
   --nav-bg:       #000000;
   --nav-bg-dim:   #1a1a1a;
   --ink:          #0A0E26;
+  --ink-contrast: #ffffff;
   --yellow:       #F2D649;
 
   /* ── Semantic colours ─────────────────────────────────────── */
@@ -66,6 +67,7 @@
   --nav-bg:       #000000;
   --nav-bg-dim:   #1a1a1a;
   --ink:          #fafafa;
+  --ink-contrast: #09090b;
 
   /* ── Semantic colours (slightly lighter for dark bg) ──────── */
   --green:        #34c255;

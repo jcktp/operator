@@ -24,7 +24,7 @@ export default function StepReady({ modeConfig, onComplete, onUpload }: Props) {
  <div className="space-y-3 max-w-xs mx-auto">
  <button
  onClick={onUpload}
- className="w-full py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
+ className="w-full py-3 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  Upload your first {modeConfig.documentLabel.toLowerCase()} →
  </button>

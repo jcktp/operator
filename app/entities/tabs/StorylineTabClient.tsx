@@ -83,7 +83,7 @@ export default function StorylineTabClient({ stories: initialStories, allReports
  <button
  onClick={handleCreate}
  disabled={creating || !newTitle.trim()}
- className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-[var(--ink)] text-white text-xs font-medium rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
+ className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium rounded-[4px] hover:opacity-90 disabled:opacity-40 transition-colors"
  >
  {creating ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
  Create story
@@ -104,7 +104,7 @@ export default function StorylineTabClient({ stories: initialStories, allReports
  onClick={() => setSelectedId(s.id)}
  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-[4px] text-left transition-colors ${
  isActive
- ? 'bg-[var(--ink)] text-white'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
  : 'hover:bg-[var(--surface-2)] text-[var(--text-body)]'
  }`}
  >

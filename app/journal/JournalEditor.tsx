@@ -375,7 +375,7 @@ function ToolButton({ onClick, active, title, children }: {
  type="button"
  onClick={onClick}
  title={title}
- className={`p-1.5 rounded-md transition-colors ${active ? 'bg-[var(--ink)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--surface-2)]'}`}
+ className={`p-1.5 rounded-md transition-colors ${active ? 'bg-[var(--ink)] text-[var(--ink-contrast)]' : 'text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--surface-2)]'}`}
  >
  {children}
  </button>

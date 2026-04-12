@@ -194,7 +194,7 @@ export default function DirectsPage() {
  </button>
  <button
  onClick={() => setShowForm(!showForm)}
- className="inline-flex items-center gap-1.5 bg-[var(--ink)] text-white text-sm font-medium px-3 py-1.5 rounded-[4px] hover:bg-[var(--ink)] transition-colors"
+ className="inline-flex items-center gap-1.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium px-3 py-1.5 rounded-[4px] hover:bg-[var(--ink)] transition-colors"
  >
  {showForm ? <X size={14} /> : <Plus size={14} />}
  {showForm ? 'Cancel' : `Add ${modeConfig.personLabel.toLowerCase()}`}
@@ -241,7 +241,7 @@ export default function DirectsPage() {
  </div>
  </div>
  <button type="submit" disabled={saving}
- className="bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center gap-2">
+ className="bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center gap-2">
  {saving && <Loader2 size={13} className="animate-spin" />}
  Save
  </button>
@@ -264,7 +264,7 @@ export default function DirectsPage() {
  onClick={() => setSelectedArea(null)}
  className={cn(
  'w-full flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors text-left',
- !selectedArea ? 'bg-[var(--ink)] text-white font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
+ !selectedArea ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
  )}
  >
  <span>All areas</span>
@@ -279,7 +279,7 @@ export default function DirectsPage() {
  onClick={() => setSelectedArea(isActive ? null : area)}
  className={cn(
  'w-full flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors text-left',
- isActive ? 'bg-[var(--ink)] text-white font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
+ isActive ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium' : 'text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
  )}
  >
  <span className="truncate">{area}</span>

@@ -80,7 +80,7 @@ export default function ShareTab() {
         </div>
         <button
           onClick={copyInvite}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[var(--ink)] text-white rounded-[4px] hover:opacity-90 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[4px] hover:opacity-90 transition-colors"
         >
           {copied ? <CheckCircle2 size={12} /> : <Copy size={12} />}
           {copied ? 'Copied!' : 'Copy invite string'}

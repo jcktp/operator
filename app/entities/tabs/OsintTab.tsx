@@ -67,7 +67,7 @@ export default function OsintTab() {
  onClick={() => setActiveCategory(null)}
  className={`px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors ${
  activeCategory === null
- ? 'bg-[var(--ink)] text-white'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
  : 'bg-[var(--surface-2)] text-[var(--text-body)] hover:bg-[var(--surface-3)]'
  }`}
  >
@@ -79,7 +79,7 @@ export default function OsintTab() {
  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
  className={`px-2.5 py-1 rounded-[4px] text-xs font-medium transition-colors ${
  activeCategory === cat
- ? 'bg-[var(--ink)] text-white'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
  : 'bg-[var(--surface-2)] text-[var(--text-subtle)] hover:bg-[var(--surface-3)] '
  }`}
  >

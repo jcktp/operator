@@ -365,7 +365,7 @@ export default function NetworkClient() {
         onWheel={handleWheel}
        />
        {hoveredName && !selected && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[var(--ink)] text-white text-xs font-medium px-3 py-1.5 rounded-[4px] pointer-events-none shadow-lg whitespace-nowrap">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium px-3 py-1.5 rounded-[4px] pointer-events-none shadow-lg whitespace-nowrap">
          {hoveredName}
         </div>
        )}

@@ -71,7 +71,7 @@ function ExcelDisplay({ json }: { json: string }) {
  className={cn(
  'px-3 py-1 text-xs font-medium rounded-md border transition-colors',
  activeSheet === i
- ? 'bg-[var(--ink)] text-white border-[var(--ink)]'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-[var(--ink)]'
  : 'bg-[var(--surface)] text-[var(--text-subtle)] border-[var(--border)] hover:border-[var(--border-mid)]'
  )}
  >
@@ -298,7 +298,7 @@ export default function RawContent({
  onClick={() => setMode('formatted')}
  className={cn(
  'text-xs px-2.5 py-1 rounded-md font-medium transition-colors',
- mode === 'formatted' ? 'bg-[var(--ink)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-body)] '
+ mode === 'formatted' ? 'bg-[var(--ink)] text-[var(--ink-contrast)]' : 'text-[var(--text-muted)] hover:text-[var(--text-body)] '
  )}
  >
  {isWord ? 'Document' : isExcel || isCsv ? 'Spreadsheet' : 'Formatted'}
@@ -307,7 +307,7 @@ export default function RawContent({
  onClick={() => setMode('raw')}
  className={cn(
  'text-xs px-2.5 py-1 rounded-md font-medium transition-colors',
- mode === 'raw' ? 'bg-[var(--ink)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-body)] '
+ mode === 'raw' ? 'bg-[var(--ink)] text-[var(--ink-contrast)]' : 'text-[var(--text-muted)] hover:text-[var(--text-body)] '
  )}
  >
  Raw text

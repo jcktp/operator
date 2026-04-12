@@ -87,7 +87,7 @@ export default function DecisionsClient() {
  <p className="text-sm text-[var(--text-muted)] mt-0.5">Record key decisions with rationale and outcomes.</p>
  </div>
  <button onClick={() => setShowForm(v => !v)}
- className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-white hover:bg-[var(--ink)] transition-colors">
+ className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors">
  <Plus size={14} /> Log decision
  </button>
  </div>
@@ -96,7 +96,7 @@ export default function DecisionsClient() {
  {(['all', ...STATUSES] as const).map(s => (
  <button key={s} onClick={() => setFilter(s)}
  className={cn('h-6 px-2.5 rounded-[4px] text-[11px] font-medium border transition-colors',
- filter === s ? 'bg-[var(--ink)] text-white border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
+ filter === s ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-transparent' : 'border-[var(--border)] text-[var(--text-muted)]')}>
  {s === 'all' ? `All (${decisions.length})` : STATUS_LABEL[s]}
  </button>
  ))}
@@ -111,7 +111,7 @@ export default function DecisionsClient() {
  <input value={fMadeBy} onChange={e => setFMadeBy(e.target.value)} placeholder="Decision maker" className={inputCls} />
  <div className="flex gap-2 pt-1">
  <button onClick={handleCreate} disabled={saving || !fTitle.trim()}
- className="h-7 px-3 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-white hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center gap-2">
+ className="h-7 px-3 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center gap-2">
  {saving && <Loader2 size={13} className="animate-spin" />} Log
  </button>
  <button onClick={() => setShowForm(false)} className="h-7 px-3 rounded-[4px] text-xs font-medium border border-[var(--border)] text-[var(--text-subtle)] hover:bg-[var(--surface-2)] transition-colors">Cancel</button>

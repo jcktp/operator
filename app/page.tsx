@@ -101,7 +101,7 @@ export default async function OverviewPage({
  Organise your documents under a {modeConfig.projectLabel.toLowerCase()} to keep everything focused and easy to navigate.
  </p>
  <Link href="/projects"
- className="inline-flex items-center gap-2 bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors">
+ className="inline-flex items-center gap-2 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors">
  <Upload size={15} />Create first {modeConfig.projectLabel.toLowerCase()}
  </Link>
  </div>
@@ -139,7 +139,7 @@ export default async function OverviewPage({
  </h1>
  <p className="text-[var(--text-muted)] text-sm max-w-sm mb-6">{modeConfig.emptyStateBody}</p>
  <Link href="/upload"
- className="inline-flex items-center gap-2 bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors">
+ className="inline-flex items-center gap-2 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors">
  <Upload size={15} />{modeConfig.emptyStateCta}
  </Link>
  </div>

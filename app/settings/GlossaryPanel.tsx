@@ -134,7 +134,7 @@ export default function GlossaryPanel({ appMode }: { appMode: AppMode }) {
           <button
             onClick={addTerm}
             disabled={saving || !newTerm.trim() || !newDef.trim()}
-            className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] bg-[var(--ink)] text-white text-xs font-medium disabled:opacity-40 shrink-0"
+            className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium disabled:opacity-40 shrink-0"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             Add

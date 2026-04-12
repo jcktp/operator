@@ -125,7 +125,7 @@ export default async function LibraryPage({
  <FileText size={20} className="text-[var(--text-muted)]" />
  </div>
  <p className="text-sm text-[var(--text-subtle)]">No {modeConfig.documentLabelPlural.toLowerCase()} yet.</p>
- <Link href="/upload"className="mt-4 inline-flex items-center gap-2 bg-[var(--ink)] text-white text-sm font-medium h-7 px-3 rounded-[4px] hover:opacity-90 transition-colors">
+ <Link href="/upload"className="mt-4 inline-flex items-center gap-2 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:opacity-90 transition-colors">
  Upload your first {modeConfig.documentLabel.toLowerCase()}
  </Link>
  </div>
@@ -182,7 +182,7 @@ export default async function LibraryPage({
  className={cn(
  'flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors',
  showPhotos && !selectedArea
- ? 'bg-[var(--ink)] text-white font-medium'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium'
  : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
  )}
  >
@@ -204,7 +204,7 @@ export default async function LibraryPage({
  className={cn(
  'flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors',
  isActive
- ? 'bg-[var(--ink)] text-white font-medium'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium'
  : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
  )}
  >

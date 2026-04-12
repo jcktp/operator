@@ -25,7 +25,7 @@ export default function PulseFeedDirectory({ existingUrls, dirCategory, setDirCa
  onClick={() => setDirCategory(cat)}
  className={`text-xs px-2.5 py-1 rounded-[4px] border transition-colors ${
  dirCategory === cat
- ? 'bg-[var(--ink)] text-white border-[var(--ink)]'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-[var(--ink)]'
  : 'border-[var(--border)] text-[var(--text-subtle)] hover:bg-[var(--surface-2)]'
  }`}
  >

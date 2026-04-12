@@ -52,7 +52,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
               s.setAreasCustomized(false)
             }}
               className={cn('text-left px-3 py-2.5 rounded-[4px] border-2 transition-all',
-                s.appMode === m.id ? 'border-[var(--ink)] bg-[var(--ink)] text-white' : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-bright)] hover:border-[var(--border)]'
+                s.appMode === m.id ? 'border-[var(--ink)] bg-[var(--ink)] text-[var(--ink-contrast)]' : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-bright)] hover:border-[var(--border)]'
               )}>
               <ModeIcon modeId={m.id} className="w-6 h-6" />
               <div className="text-xs font-semibold mt-1">{m.label}</div>
@@ -102,7 +102,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
                   'px-3 py-1.5 text-xs font-medium transition-colors',
                   i > 0 && 'border-l border-[var(--border)]',
                   mode === m
-                    ? 'bg-[var(--ink)] text-white'
+                    ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
                     : 'text-[var(--text-muted)] hover:bg-[var(--surface-2)]'
                 )}
               >
@@ -157,7 +157,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
               const v = s.newArea.trim()
               if (v && !s.customAreas.includes(v)) { s.setCustomAreas(a => [...a, v]); s.setNewArea(''); s.setAreasCustomized(true) }
             }}
-            className="px-3 py-2 bg-[var(--ink)] text-white text-sm font-medium rounded-[4px] hover:bg-[var(--ink)] transition-colors"
+            className="px-3 py-2 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium rounded-[4px] hover:bg-[var(--ink)] transition-colors"
           >
             <Plus size={14} />
           </button>

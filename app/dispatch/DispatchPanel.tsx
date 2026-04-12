@@ -139,7 +139,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  className={cn(
  'flex-1 py-1.5 rounded-[4px] text-xs font-medium transition-colors',
  active
- ? 'bg-[var(--ink)] text-white'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
  : locked
  ? 'text-[var(--border)] cursor-not-allowed'
  : 'text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--surface-2)]'
@@ -189,7 +189,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  <div className={cn(
  'max-w-[85%] rounded-[10px] px-3.5 py-2.5 text-sm leading-relaxed',
  m.role === 'user'
- ? 'bg-[var(--ink)] text-white rounded-br-sm whitespace-pre-wrap'
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] rounded-br-sm whitespace-pre-wrap'
  : 'bg-[var(--surface-2)] text-[var(--text-body)] rounded-bl-sm'
  )}>
  {m.role === 'assistant' ? renderMarkdown(m.content, downloadCode) : m.content}
@@ -273,7 +273,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  className="flex-1 text-xs border border-[var(--border)] rounded-[6px] px-3 py-2 focus:outline-none focus:ring-2"
  />
  <button onClick={c.fetchUrl} disabled={!c.urlInput.trim() || c.fetchingUrl}
- className="shrink-0 px-3 py-2 bg-[var(--ink)] text-white text-xs rounded-[6px] hover:bg-[var(--ink)] disabled:opacity-40 flex items-center gap-1">
+ className="shrink-0 px-3 py-2 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs rounded-[6px] hover:bg-[var(--ink)] disabled:opacity-40 flex items-center gap-1">
  {c.fetchingUrl ? <Loader2 size={11} className="animate-spin" /> : 'Fetch'}
  </button>
  </div>
@@ -301,7 +301,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  style={{ fieldSizing: 'content' } as React.CSSProperties}
  />
  <button onClick={c.send} disabled={(!c.input.trim() && !c.pendingAttachment) || c.loading}
- className="shrink-0 flex items-center justify-center px-2.5 py-2.5 bg-[var(--ink)] text-white rounded-[10px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40">
+ className="shrink-0 flex items-center justify-center px-2.5 py-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[10px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40">
  <Send size={14} />
  </button>
  </div>
@@ -311,7 +311,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  {c.attachLoading ? <Loader2 size={12} className="animate-spin" /> : <Paperclip size={12} />}
  </button>
  <button onClick={() => c.setShowUrlInput(v => !v)} title="Fetch a web page"
- className={cn('p-1.5 rounded-[4px] transition-colors', c.showUrlInput ? 'bg-[var(--ink)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-subtle)] hover:bg-[var(--surface-2)]')}>
+ className={cn('p-1.5 rounded-[4px] transition-colors', c.showUrlInput ? 'bg-[var(--ink)] text-[var(--ink-contrast)]' : 'text-[var(--text-muted)] hover:text-[var(--text-subtle)] hover:bg-[var(--surface-2)]')}>
  <Link2 size={12} />
  </button>
  <div className="relative">
@@ -321,7 +321,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  {c.webAccess || c.isApiProvider ? <Globe size={12} /> : <GlobeLock size={12} />}
  </button>
  {c.apiLockNotice && (
- <div className="absolute bottom-full left-0 mb-2 w-52 bg-[var(--ink)] text-white text-[11px] rounded-[4px] px-3 py-2 shadow-lg z-50 leading-snug">
+ <div className="absolute bottom-full left-0 mb-2 w-52 bg-[var(--ink)] text-[var(--ink-contrast)] text-[11px] rounded-[4px] px-3 py-2 shadow-lg z-50 leading-snug">
  Always on for API providers.
  <div className="absolute bottom-0 left-3 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900" />
  </div>
@@ -345,7 +345,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  <button
  onClick={() => c.setShowUrlInput(v => !v)}
  title="Fetch a web page"
- className={cn('shrink-0 p-2 rounded-[10px] transition-colors', c.showUrlInput ? 'bg-[var(--ink)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--surface-2)]')}
+ className={cn('shrink-0 p-2 rounded-[10px] transition-colors', c.showUrlInput ? 'bg-[var(--ink)] text-[var(--ink-contrast)]' : 'text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--surface-2)]')}
  >
  <Link2 size={14} />
  </button>
@@ -358,7 +358,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  {c.webAccess || c.isApiProvider ? <Globe size={14} /> : <GlobeLock size={14} />}
  </button>
  {c.apiLockNotice && (
- <div className="absolute bottom-full right-0 mb-2 w-56 bg-[var(--ink)] text-white text-[11px] rounded-[4px] px-3 py-2 shadow-lg z-50 leading-snug">
+ <div className="absolute bottom-full right-0 mb-2 w-56 bg-[var(--ink)] text-[var(--ink-contrast)] text-[11px] rounded-[4px] px-3 py-2 shadow-lg z-50 leading-snug">
  Always on for API providers. Enable air-gap mode in Settings to disconnect.
  <div className="absolute bottom-0 right-3 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900" />
  </div>
@@ -375,7 +375,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  style={{ fieldSizing: 'content' } as React.CSSProperties}
  />
  <button onClick={c.send} disabled={(!c.input.trim() && !c.pendingAttachment) || c.loading}
- className="shrink-0 flex items-center justify-center px-2.5 py-2.5 bg-[var(--ink)] text-white rounded-[10px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40">
+ className="shrink-0 flex items-center justify-center px-2.5 py-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[10px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40">
  <Send size={14} />
  </button>
  </div>
