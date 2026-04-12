@@ -107,6 +107,12 @@ export async function chatOllamaStream(
   const ollama = new Ollama({ host })
   const journalIntent = hasNoteSaveIntent(messages)
 
+  // Right-size context window — avoids using the full model default (often 128k)
+  const totalChars = messages.reduce((sum, m) => sum + m.content.length, 0) + systemPrompt.length
+  const promptTokens = Math.ceil(totalChars / 4)
+  const num_ctx = Math.max(4096, Math.ceil((promptTokens + 2048) / 1024) * 1024)
+  const noThink: Record<string, unknown> = { think: false }
+
   try {
     // ── PREEMPTIVE WEB TOOL EXECUTION ────────────────────────────────────────
     if (process.env.OLLAMA_WEB_ACCESS === 'true') {
@@ -128,7 +134,7 @@ export async function chatOllamaStream(
           model,
           messages: [{ role: 'system' as const, content: enriched }, ...messages],
           stream: true,
-          options: { temperature },
+          options: { temperature, num_ctx, ...noThink },
         })
         for await (const chunk of stream) {
           if (chunk.message.content) emit(chunk.message.content)
@@ -155,7 +161,7 @@ export async function chatOllamaStream(
 
       const stream = await ollama.chat({
         model, messages: msgs, tools: ollamaTools,
-        stream: true, options: { temperature },
+        stream: true, options: { temperature, num_ctx, ...noThink },
       })
       let accContent = ''
       let finalToolCalls: Array<{ function: { name: string; arguments: unknown } }> | undefined
@@ -193,14 +199,14 @@ export async function chatOllamaStream(
       } else if (accContent) {
         return
       } else {
-        const fallback = await ollama.chat({ model, messages: msgs, options: { temperature } })
+        const fallback = await ollama.chat({ model, messages: msgs, options: { temperature, num_ctx, ...noThink } })
         if (fallback.message.content) emit(fallback.message.content)
         return
       }
     }
   } catch {
     const msgs = [{ role: 'system' as const, content: systemPrompt }, ...messages]
-    const fallback = await ollama.chat({ model, messages: msgs, options: { temperature } })
+    const fallback = await ollama.chat({ model, messages: msgs, options: { temperature, num_ctx, ...noThink } })
     emit(fallback.message.content)
   }
 }

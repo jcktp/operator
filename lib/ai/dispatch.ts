@@ -85,8 +85,10 @@ export function dispatchChatStream(
       }
       controller.close()
 
-      // Background: extract new memory facts (fire and forget)
-      extractMemoryFacts([...messages, { role: 'assistant', content: fullContent }], userMemory)
+      // Background: extract new memory facts every 4th user message (fire and forget)
+      // Running this after every message queues a blocking Ollama call that delays the next reply.
+      const userMsgCount = messages.filter(m => m.role === 'user').length
+      if (userMsgCount % 4 === 0) extractMemoryFacts([...messages, { role: 'assistant', content: fullContent }], userMemory)
         .then(async newFacts => {
           if (newFacts.length === 0) return
           const existing = userMemory
