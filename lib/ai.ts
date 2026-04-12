@@ -7,9 +7,10 @@ export { describeImage, transcribeAudio } from './ai-vision'
 export {
   extractEntities, extractTimeline, detectRedactions,
   compareDocumentsJournalism, generateVerificationChecklist,
+  extractMerged,
   type NamedEntity, type JournalismTimelineEvent, type RedactionEntry,
   type JournalismPassage, type JournalismFigureChange, type JournalismComparison,
-  type VerificationItem,
+  type VerificationItem, type MergedExtractionResult,
 } from './ai-journalism'
 
 export * from './ai/analyze'

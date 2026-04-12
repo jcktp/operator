@@ -1,5 +1,5 @@
 // ── Journalism-specific AI analysis functions ─────────────────────────────────
-import { chat } from './ai-providers'
+import { chat, getProvider } from './ai-providers'
 import { maxContentLength } from './ai-providers'
 import { extractJsonFromText } from './utils'
 
@@ -319,5 +319,103 @@ Only include claims that genuinely need verification — skip obvious background
   } catch (e) {
     console.error('generateVerificationChecklist failed:', e)
     return []
+  }
+}
+
+// ── Merged extraction (single call for local models) ────────────────────────
+// Combines entities + timeline + redactions + verification into one prompt so
+// Ollama reads the document once instead of up to 4 times.
+
+export interface MergedExtractionResult {
+  entities: NamedEntity[]
+  events: JournalismTimelineEvent[]
+  redactions: RedactionEntry[]
+  verification: VerificationItem[]
+}
+
+export async function extractMerged(
+  content: string,
+  title: string,
+  area: string,
+  features: { entities: boolean; timeline: boolean; redactions: boolean; verification: boolean },
+): Promise<MergedExtractionResult> {
+  // Cloud providers are fast enough to run separate calls in parallel
+  if (getProvider() !== 'ollama') {
+    const [entities, events, redactions, verification] = await Promise.all([
+      features.entities ? extractEntities(content, title, area) : Promise.resolve([]),
+      features.timeline ? extractTimeline(content, title) : Promise.resolve([]),
+      features.redactions ? detectRedactions(content, title) : Promise.resolve([]),
+      features.verification ? generateVerificationChecklist(content, title, area) : Promise.resolve([]),
+    ])
+    return { entities, events, redactions, verification }
+  }
+
+  // Build a single combined prompt for Ollama
+  const truncated = content.slice(0, maxContentLength())
+  const sections: string[] = []
+  const schema: string[] = []
+
+  if (features.entities) {
+    sections.push(`ENTITIES: Extract all named entities (person, organisation, location, date, financial). For locations, include context describing what happened there. Max 30.`)
+    schema.push(`"entities": [{"type": "person|organisation|location|date|financial", "name": "exact name", "context": "brief context or role"}]`)
+  }
+  if (features.timeline) {
+    sections.push(`TIMELINE: Extract all dated events with date references. Max 15.`)
+    schema.push(`"events": [{"dateText": "date as written", "dateSortKey": "YYYY-MM-DD or null", "event": "what happened"}]`)
+  }
+  if (features.redactions) {
+    sections.push(`REDACTIONS: Look for [REDACTED] markers, blackout bars, numbering gaps, missing references, cut-off text. Empty array if none found.`)
+    schema.push(`"redactions": [{"type": "blackout|placeholder|gap|missing_reference", "location": "where in document", "context": "surrounding text"}]`)
+  }
+  if (features.verification) {
+    sections.push(`VERIFICATION: Identify up to 6 key claims that need fact-checking before publication. Classify each as statistical, attribution, event, or legal.`)
+    schema.push(`"verification": [{"claim": "the claim", "claimType": "statistical|attribution|event|legal", "evidenceNeeded": "what to check", "suggestedSources": ["source type"]}]`)
+  }
+
+  if (sections.length === 0) return { entities: [], events: [], redactions: [], verification: [] }
+
+  const prompt = `Analyse this document and extract the requested information. Always respond in English — translate from any source language.
+
+Document: ${title} (${area})
+
+Content:
+${truncated}
+
+TASKS:
+${sections.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+
+Return ONLY valid JSON:
+{
+  ${schema.join(',\n  ')}
+}`
+
+  try {
+    const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
+    const json = extractJsonFromText(text)
+    const parsed = JSON.parse(json) as Record<string, unknown>
+
+    const VALID_ENTITY_TYPES = new Set(['person', 'organisation', 'location', 'date', 'financial'])
+    const entities = features.entities && Array.isArray(parsed.entities)
+      ? (parsed.entities as NamedEntity[]).filter(e => e && VALID_ENTITY_TYPES.has(e.type) && typeof e.name === 'string' && e.name.trim().length > 0)
+      : []
+    const events = features.timeline && Array.isArray(parsed.events)
+      ? (parsed.events as JournalismTimelineEvent[]).filter(e => e && typeof e.dateText === 'string' && typeof e.event === 'string' && e.event.trim().length > 0)
+      : []
+    const redactions = features.redactions && Array.isArray(parsed.redactions)
+      ? (parsed.redactions as RedactionEntry[]).filter(r => r && typeof r.type === 'string' && typeof r.location === 'string')
+      : []
+    const verification = features.verification && Array.isArray(parsed.verification)
+      ? (parsed.verification as VerificationItem[]).filter(v => v && typeof v.claim === 'string' && v.claim.length > 0)
+          .map(v => ({
+            ...v,
+            claimType: (['statistical', 'attribution', 'event', 'legal'].includes(v.claimType) ? v.claimType : 'event') as VerificationItem['claimType'],
+            suggestedSources: Array.isArray(v.suggestedSources) ? v.suggestedSources.map(String) : [],
+          }))
+      : []
+
+    return { entities, events, redactions, verification }
+  } catch (e) {
+    console.error('extractMerged failed:', e)
+    return { entities: [], events: [], redactions: [], verification: [] }
   }
 }

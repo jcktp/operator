@@ -9,7 +9,7 @@ import { join } from 'path'
 import { Ollama } from 'ollama'
 import { prisma } from './db'
 import { loadAiSettings } from './settings'
-import { analyzeReport, compareReports, checkResolvedFlags, extractEntities, extractTimeline, detectRedactions, compareDocumentsJournalism, generateVerificationChecklist, generateAreaBriefing } from './ai'
+import { analyzeReport, compareReports, checkResolvedFlags, extractMerged, compareDocumentsJournalism, generateAreaBriefing } from './ai'
 import { getModeConfig } from './mode'
 import { describeImage, transcribeAudio } from './ai-vision'
 import { getMimeType, normalizeContent } from './parsers'
@@ -134,42 +134,11 @@ async function processItem(itemId: string): Promise<void> {
       }
     }
 
-    // Comparison + resolved flags in parallel
-    let comparison = null
-    let resolvedFlagsJson: string | null = null
-
-    type PrevInsight = { type: string; text: string }
-    if (!isImagePlaceholder && !isFailedAudio) {
-      if (previousReport) await setStep('Comparing with previous report…')
-      await Promise.all([
-        (async () => {
-          if (!previousReport || !analysis || !previousReport.summary || !previousReport.metrics) return
-          try {
-            comparison = await compareReports(
-              previousReport.summary, previousReport.metrics,
-              analysis.summary, JSON.stringify(analysis.metrics),
-              item.area, appMode
-            )
-          } catch (e) { console.error('[upload-queue] Comparison failed:', e) }
-        })(),
-        (async () => {
-          if (!previousReport?.insights || !analysis) return
-          try {
-            const prevInsights: PrevInsight[] = JSON.parse(previousReport.insights)
-            const prevFlags = prevInsights.filter(i => i.type === 'risk' || i.type === 'anomaly')
-            if (prevFlags.length > 0) {
-              const resolved = await checkResolvedFlags(prevFlags, item.rawContent, analysis.insights)
-              if (resolved.length > 0) resolvedFlagsJson = JSON.stringify(resolved)
-            }
-          } catch (e) { console.error('[upload-queue] Resolved flags failed:', e) }
-        })(),
-      ])
-    }
-
     // Check if cancelled while AI was running — don't save the report
     const freshStatus = await prisma.uploadJobItem.findUnique({ where: { id: itemId }, select: { status: true } })
     if (freshStatus?.status === 'error') return
 
+    // Save the report immediately so it's visible in the UI while enrichment runs
     const report = await prisma.report.create({
       data: {
         title: item.title,
@@ -177,9 +146,7 @@ async function processItem(itemId: string): Promise<void> {
         fileType: item.fileType,
         fileSize: item.fileSizeBytes,
         rawContent: item.rawContent,
-        // Audio items: clear displayContent so the report page renders the transcript as text
         displayContent: item.displayContent?.startsWith('audio:') ? null : item.displayContent,
-        // For image uploads, imagePath = relative path after 'image:' on the first line
         imagePath: item.displayContent?.startsWith('image:') ? item.displayContent.slice('image:'.length).split('\n')[0] : null,
         filePath: item.savedFilePath,
         area: item.area,
@@ -192,82 +159,117 @@ async function processItem(itemId: string): Promise<void> {
         metrics: analysis?.metrics ? JSON.stringify(analysis.metrics) : null,
         insights: analysis?.insights ? JSON.stringify(analysis.insights) : null,
         questions: analysis?.questions ? JSON.stringify(analysis.questions) : null,
-        comparison: comparison ? JSON.stringify(comparison) : null,
-        resolvedFlags: resolvedFlagsJson,
+        comparison: null,
+        resolvedFlags: null,
       },
     })
 
-    // Mode-specific: entities, timeline, redactions, verification, journalism comparison
-    // Skip all of these for image placeholders — no real text content to analyse
+    // ── Enrichment: comparison, resolved flags, mode features ────────────────
+    // Each runs as a separate sequential AI call for Ollama (one model at a time).
+    // Merged extraction combines entities+timeline+redactions+verification into
+    // a single prompt so Ollama reads the document once instead of 4 times.
     const modeFeatures = getModeConfig(appMode).features
-    if (!isImagePlaceholder && !isFailedAudio && (modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification || modeFeatures.documentComparison)) {
-      await setStep('Extracting insights…')
-      let entitiesResult: Awaited<ReturnType<typeof extractEntities>> = []
-      let eventsResult: Awaited<ReturnType<typeof extractTimeline>> = []
-      let redactionsJson: string | null = null
-      let journalismComparisonJson: string | null = null
-      let verificationChecklistJson: string | null = null
+    let comparison = null
+    let resolvedFlagsJson: string | null = null
+    let journalismComparisonJson: string | null = null
 
-      await Promise.all([
-        (async () => {
-          if (!modeFeatures.entities) return
-          try { entitiesResult = await extractEntities(item.rawContent, item.title, item.area) }
-          catch (e) { console.error('[upload-queue] Entity extraction failed:', e) }
-        })(),
-        (async () => {
-          if (!modeFeatures.timeline) return
-          try { eventsResult = await extractTimeline(item.rawContent, item.title) }
-          catch (e) { console.error('[upload-queue] Timeline extraction failed:', e) }
-        })(),
-        (async () => {
-          if (!modeFeatures.redactions) return
-          try {
-            const redactions = await detectRedactions(item.rawContent, item.title)
-            if (redactions.length > 0) redactionsJson = JSON.stringify(redactions)
-          } catch (e) { console.error('[upload-queue] Redaction detection failed:', e) }
-        })(),
-        (async () => {
-          if (!modeFeatures.documentComparison) return
-          if (!previousReport?.rawContent || previousReport.rawContent.trim().length <= 10) return
-          try {
-            const jComp = await compareDocumentsJournalism(
-              previousReport.rawContent, previousReport.title, item.rawContent, item.title
-            )
-            journalismComparisonJson = JSON.stringify(jComp)
-          } catch (e) { console.error('[upload-queue] Journalism comparison failed:', e) }
-        })(),
-        (async () => {
-          if (!modeFeatures.verification) return
-          try {
-            const checklist = await generateVerificationChecklist(item.rawContent, item.title, item.area)
-            if (checklist.length > 0) verificationChecklistJson = JSON.stringify(checklist)
-          } catch (e) { console.error('[upload-queue] Verification checklist failed:', e) }
-        })(),
-      ])
+    type PrevInsight = { type: string; text: string }
 
-      await Promise.all([
-        entitiesResult.length > 0
-          ? prisma.reportEntity.createMany({
-              data: entitiesResult.map(e => ({
-                reportId: report.id, type: e.type, name: e.name, context: e.context ?? null,
-              })),
-            })
-          : Promise.resolve(),
-        eventsResult.length > 0
-          ? prisma.timelineEvent.createMany({
-              data: eventsResult.map(e => ({
-                reportId: report.id, dateText: e.dateText, dateSortKey: e.dateSortKey ?? null, event: e.event,
-              })),
-            })
-          : Promise.resolve(),
-        (redactionsJson || journalismComparisonJson || verificationChecklistJson)
-          ? prisma.reportJournalism.upsert({
-              where: { reportId: report.id },
-              create: { reportId: report.id, redactions: redactionsJson, journalismComparison: journalismComparisonJson, verificationChecklist: verificationChecklistJson },
-              update: { redactions: redactionsJson, journalismComparison: journalismComparisonJson, verificationChecklist: verificationChecklistJson },
-            })
-          : Promise.resolve(),
-      ])
+    if (!isImagePlaceholder && !isFailedAudio) {
+      // Step 1: Comparison with previous report (if exists)
+      if (previousReport && analysis && previousReport.summary && previousReport.metrics) {
+        await setStep('Comparing with previous report…')
+        try {
+          comparison = await compareReports(
+            previousReport.summary, previousReport.metrics,
+            analysis.summary, JSON.stringify(analysis.metrics),
+            item.area, appMode
+          )
+        } catch (e) { console.error('[upload-queue] Comparison failed:', e) }
+      }
+
+      // Step 2: Resolved flags check (if previous had risk/anomaly flags)
+      if (previousReport?.insights && analysis) {
+        try {
+          const prevInsights: PrevInsight[] = JSON.parse(previousReport.insights)
+          const prevFlags = prevInsights.filter(i => i.type === 'risk' || i.type === 'anomaly')
+          if (prevFlags.length > 0) {
+            const resolved = await checkResolvedFlags(prevFlags, item.rawContent, analysis.insights)
+            if (resolved.length > 0) resolvedFlagsJson = JSON.stringify(resolved)
+          }
+        } catch (e) { console.error('[upload-queue] Resolved flags failed:', e) }
+      }
+
+      // Update report with comparison data
+      if (comparison || resolvedFlagsJson) {
+        await prisma.report.update({
+          where: { id: report.id },
+          data: {
+            comparison: comparison ? JSON.stringify(comparison) : null,
+            resolvedFlags: resolvedFlagsJson,
+          },
+        })
+      }
+
+      // Step 3: Merged extraction — one AI call for entities+timeline+redactions+verification
+      const needsMerged = modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification
+      if (needsMerged) {
+        await setStep('Extracting insights…')
+        try {
+          const merged = await extractMerged(item.rawContent, item.title, item.area, {
+            entities: !!modeFeatures.entities,
+            timeline: !!modeFeatures.timeline,
+            redactions: !!modeFeatures.redactions,
+            verification: !!modeFeatures.verification,
+          })
+
+          await Promise.all([
+            merged.entities.length > 0
+              ? prisma.reportEntity.createMany({
+                  data: merged.entities.map(e => ({
+                    reportId: report.id, type: e.type, name: e.name, context: e.context ?? null,
+                  })),
+                })
+              : Promise.resolve(),
+            merged.events.length > 0
+              ? prisma.timelineEvent.createMany({
+                  data: merged.events.map(e => ({
+                    reportId: report.id, dateText: e.dateText, dateSortKey: e.dateSortKey ?? null, event: e.event,
+                  })),
+                })
+              : Promise.resolve(),
+            (merged.redactions.length > 0 || merged.verification.length > 0)
+              ? prisma.reportJournalism.upsert({
+                  where: { reportId: report.id },
+                  create: {
+                    reportId: report.id,
+                    redactions: merged.redactions.length > 0 ? JSON.stringify(merged.redactions) : null,
+                    verificationChecklist: merged.verification.length > 0 ? JSON.stringify(merged.verification) : null,
+                  },
+                  update: {
+                    redactions: merged.redactions.length > 0 ? JSON.stringify(merged.redactions) : null,
+                    verificationChecklist: merged.verification.length > 0 ? JSON.stringify(merged.verification) : null,
+                  },
+                })
+              : Promise.resolve(),
+          ])
+        } catch (e) { console.error('[upload-queue] Merged extraction failed:', e) }
+      }
+
+      // Step 4: Document comparison (separate call — needs both docs in prompt)
+      if (modeFeatures.documentComparison && previousReport?.rawContent && previousReport.rawContent.trim().length > 10) {
+        try {
+          const jComp = await compareDocumentsJournalism(
+            previousReport.rawContent, previousReport.title, item.rawContent, item.title
+          )
+          journalismComparisonJson = JSON.stringify(jComp)
+          await prisma.reportJournalism.upsert({
+            where: { reportId: report.id },
+            create: { reportId: report.id, journalismComparison: journalismComparisonJson },
+            update: { journalismComparison: journalismComparisonJson },
+          })
+        } catch (e) { console.error('[upload-queue] Document comparison failed:', e) }
+      }
     }
 
     // Risk Register: auto-create risks from AI insights, auto-resolve from resolvedFlags
@@ -349,21 +351,6 @@ async function processItem(itemId: string): Promise<void> {
       } catch (e) { console.error('[upload-queue] Claims auto-populate failed:', e) }
     }
 
-    // Refresh area briefing synchronously so it completes before the queue
-    // drains and the model is unloaded — prevents a reload cycle after eviction.
-    if (analysis?.summary) {
-      try {
-        const areaReports = await prisma.report.findMany({
-          where: { area: item.area },
-          select: { summary: true, metrics: true, insights: true, createdAt: true },
-          orderBy: { createdAt: 'desc' }, take: 20,
-        })
-        await generateAreaBriefing(item.area, appMode, areaReports)
-      } catch (e) {
-        console.error('[upload-queue] Area briefing failed:', e)
-      }
-    }
-
     await prisma.uploadJobItem.update({
       where: { id: itemId },
       data: { status: 'done', reportId: report.id },
@@ -404,6 +391,47 @@ async function unloadOllamaModel(): Promise<void> {
   }
 }
 
+// ── Deferred area briefing ──────────────────────────────────────────────────
+// Runs once after the entire batch finishes, not after each document.
+// Finds all distinct areas that received new reports and regenerates
+// their briefing in a single sequential pass.
+async function refreshBriefingsForBatch(): Promise<void> {
+  try {
+    const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
+    const appMode = modeRow?.value ?? 'executive'
+
+    // Find areas that have recent reports but stale or missing briefings
+    const recentReports = await prisma.report.findMany({
+      where: { summary: { not: null } },
+      select: { area: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    })
+    const areas = [...new Set(recentReports.map(r => r.area))]
+
+    for (const area of areas) {
+      const briefing = await prisma.areaBriefing.findFirst({ where: { area, mode: appMode } })
+      const latestReport = await prisma.report.findFirst({
+        where: { area, summary: { not: null } },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      })
+      // Skip if briefing is newer than the latest report
+      if (briefing && latestReport && briefing.updatedAt >= latestReport.createdAt) continue
+
+      const areaReports = await prisma.report.findMany({
+        where: { area },
+        select: { summary: true, metrics: true, insights: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      })
+      await generateAreaBriefing(area, appMode, areaReports)
+    }
+  } catch (e) {
+    console.error('[upload-queue] Batch area briefing failed:', e)
+  }
+}
+
 // ── Worker loop ──────────────────────────────────────────────────────────────
 async function runWorker(): Promise<void> {
   if (_workerRunning) return
@@ -433,7 +461,9 @@ async function runWorker(): Promise<void> {
       })
 
       if (!item) {
-        // Queue empty — unload the model so it stops consuming RAM/CPU immediately
+        // Queue empty — refresh area briefings for all areas that got new documents,
+        // then unload the model so it stops consuming RAM/CPU immediately.
+        await refreshBriefingsForBatch()
         unloadOllamaModel().catch(() => {})
         break
       }

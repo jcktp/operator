@@ -31,7 +31,7 @@ const ALL_MODELS: ModelDef[] = [
  { id: 'phi4-mini', label: 'phi4-mini', role: 'Text analysis · fast, structured output', size: '2.5 GB', fallbacks: ['qwen3:4b', 'llama3.2:3b', 'gemma2:2b'] },
  { id: 'gemma4:e2b', label: 'gemma4:e2b', role: 'Text + vision + audio · 128K context', size: '7.2 GB', fallbacks: ['gemma4:e4b', 'llava-phi3'] },
  { id: 'gemma4:e4b', label: 'gemma4:e4b', role: 'Text + vision + audio · higher quality', size: '9.6 GB', fallbacks: ['gemma4:e2b'] },
- { id: 'llava', label: 'llava', role: 'Image & document vision', size: '4.7 GB', fallbacks: ['llava-llama3', 'moondream'] },
+ { id: 'llava-phi3', label: 'llava-phi3', role: 'Image & document vision', size: '2.9 GB', fallbacks: ['llava', 'llava-llama3', 'moondream'] },
  { id: 'qwen3:4b', label: 'qwen3:4b', role: 'Text analysis', size: '2.6 GB' },
  { id: 'llama3.2:3b', label: 'llama3.2:3b', role: 'Text analysis (fallback)', size: '2.0 GB' },
  { id: 'gemma2:2b', label: 'gemma2:2b', role: 'Text analysis (fallback)', size: '1.6 GB' },
@@ -40,7 +40,7 @@ const ALL_MODELS: ModelDef[] = [
 ]
 
 const PRESETS = {
- recommended: ['phi4-mini', 'llava'],
+ recommended: ['phi4-mini', 'llava-phi3'],
  multimodal: ['gemma4:e2b'], // single model — text + vision + audio
  textonly: ['phi4-mini'],
 }
