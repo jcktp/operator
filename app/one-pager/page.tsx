@@ -66,7 +66,7 @@ export default async function OnePagerPage() {
  {serialized.map((r, i) => (
  <div
  key={r.id}
- className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 print:border-[var(--border)] print:rounded-none print:break-inside-avoid"
+ className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-6 print:border-[var(--border)] print:rounded-none print:break-inside-avoid"
  >
  {/* Report header */}
  <div className="flex items-start justify-between mb-4">
@@ -94,7 +94,7 @@ export default async function OnePagerPage() {
  <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Metrics</p>
  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
  {r.metrics.map((m, mi) => (
- <div key={mi} className={`rounded-lg px-3 py-2 ${
+ <div key={mi} className={`rounded-[4px] px-3 py-2 ${
  m.status === 'positive' ? 'bg-green-50' :
  m.status === 'negative' ? 'bg-red-50' :
  m.status === 'warning' ? 'bg-amber-50' : 'bg-[var(--surface-2)]'

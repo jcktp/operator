@@ -78,7 +78,7 @@ export default function StepContext({ modeConfig, onNext, onBack }: Props) {
  value={orgName}
  onChange={e => setOrgName(e.target.value)}
  placeholder={orgPlaceholder}
- className="w-full px-3 py-2.5 text-sm text-[var(--text-bright)] bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-1 placeholder-gray-400 transition-colors"
+ className="w-full px-3 py-2.5 text-sm text-[var(--text-bright)] bg-[var(--surface)] border border-[var(--border)] rounded-[4px] focus:outline-none focus:ring-1 placeholder-gray-400 transition-colors"
  />
  </div>
 
@@ -91,7 +91,7 @@ export default function StepContext({ modeConfig, onNext, onBack }: Props) {
  onChange={e => setMemory(e.target.value)}
  rows={4}
  placeholder={memPlaceholder}
- className="w-full px-3 py-2.5 text-sm text-[var(--text-bright)] bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-1 resize-none placeholder-gray-400 transition-colors"
+ className="w-full px-3 py-2.5 text-sm text-[var(--text-bright)] bg-[var(--surface)] border border-[var(--border)] rounded-[4px] focus:outline-none focus:ring-1 resize-none placeholder-gray-400 transition-colors"
  />
  <p className="text-xs text-[var(--text-muted)] mt-1.5">
  This feeds directly into Dispatch and every AI analysis from the moment you start.
@@ -100,13 +100,13 @@ export default function StepContext({ modeConfig, onNext, onBack }: Props) {
  </div>
 
  <div className="flex gap-3">
- <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-xl hover:bg-[var(--surface-3)] transition-colors">
+ <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-[10px] hover:bg-[var(--surface-3)] transition-colors">
  ← Back
  </button>
  <button
  onClick={handleContinue}
  disabled={saving}
- className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-xl hover:opacity-90 transition-colors disabled:opacity-60"
+ className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors disabled:opacity-60"
  >
  {saving ? 'Saving…' : 'Continue →'}
  </button>

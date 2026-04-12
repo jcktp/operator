@@ -202,7 +202,7 @@ export default function LoginPage() {
  key={m.id}
  type="button"
  onClick={() => setSelectedMode(m.id)}
- className={`text-left p-3 rounded-xl border-2 transition-all ${
+ className={`text-left p-3 rounded-[10px] border-2 transition-all ${
  selectedMode === m.id
  ? 'border-[var(--ink)] bg-[var(--ink)] text-white'
  : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-bright)] hover:border-[var(--border)] '
@@ -236,7 +236,7 @@ export default function LoginPage() {
  </div>
 
  {/* Warning */}
- <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3">
+ <div className="bg-red-50 border border-red-200 rounded-[10px] p-4 flex gap-3">
  <AlertTriangle size={16} className="text-[var(--red)] shrink-0 mt-0.5" />
  <div className="text-xs text-red-700 leading-relaxed space-y-1">
  <p className="font-semibold">Do not forget your password</p>
@@ -247,13 +247,13 @@ export default function LoginPage() {
  </div>
  </div>
 
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 space-y-4">
+ <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-4 space-y-4">
  <div>
  <label className="block text-xs font-medium text-[var(--text-body)] mb-1.5">Your name <span className="text-[var(--red)]">*</span></label>
  <input
  type="text"value={name} onChange={e => setName(e.target.value)} required
  placeholder="Alex Chen"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
  />
  </div>
  <div>
@@ -261,7 +261,7 @@ export default function LoginPage() {
  <input
  type="text"value={role} onChange={e => setRole(e.target.value)}
  placeholder="e.g. CEO, Journalist, Team Lead"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
  />
  <p className="text-[11px] text-[var(--text-muted)] mt-1">The AI will tailor responses to your role.</p>
  </div>
@@ -273,7 +273,7 @@ export default function LoginPage() {
  type={showPass ? 'text' : 'password'}
  value={password} onChange={e => setPassword(e.target.value)} required
  placeholder="Min. 6 characters"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 pr-9 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 pr-9 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
  />
  <button type="button"onClick={() => setShowPass(v => !v)}
  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-subtle)]">
@@ -287,7 +287,7 @@ export default function LoginPage() {
  type={showPass ? 'text' : 'password'}
  value={confirm} onChange={e => setConfirm(e.target.value)} required
  placeholder="Repeat password"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
  />
  </div>
  </div>
@@ -316,7 +316,7 @@ export default function LoginPage() {
  </div>
 
  {attemptsLeft < 3 && (
- <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
+ <div className="bg-amber-50 border border-amber-200 rounded-[10px] p-3 flex gap-2">
  <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
  <p className="text-xs text-amber-700">
  <strong>{attemptsLeft} attempt{attemptsLeft !== 1 ? 's' : ''} remaining.</strong>{' '}
@@ -327,7 +327,7 @@ export default function LoginPage() {
  </div>
  )}
 
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4">
+ <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-4">
  <label className="block text-xs font-medium text-[var(--text-body)] mb-1.5">Password</label>
  <div className="relative">
  <input
@@ -335,7 +335,7 @@ export default function LoginPage() {
  type={showPass ? 'text' : 'password'}
  value={password} onChange={e => setPassword(e.target.value)} required autoFocus
  placeholder="Enter your password"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 pr-9 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 pr-9 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
  />
  <button type="button"onClick={() => setShowPass(v => !v)}
  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-subtle)]">
@@ -366,7 +366,7 @@ export default function LoginPage() {
  <p className="text-sm text-[var(--text-muted)] mt-0.5">Enter one of your saved recovery codes to reset your password.</p>
  </div>
 
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4">
+ <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-4">
  <label className="block text-xs font-medium text-[var(--text-body)] mb-1.5">Recovery code</label>
  <input
  type="text"
@@ -374,7 +374,7 @@ export default function LoginPage() {
  onChange={e => setRecoveryCode(e.target.value)}
  placeholder="XXXXX-XXXXX"
  autoFocus
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm font-mono text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm font-mono text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
  />
  </div>
 
@@ -401,7 +401,7 @@ export default function LoginPage() {
  <p className="text-sm text-[var(--text-muted)] mt-0.5">Choose a new password. You&apos;ll be signed in automatically.</p>
  </div>
 
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 space-y-4">
+ <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-4 space-y-4">
  <div>
  <label className="block text-xs font-medium text-[var(--text-body)] mb-1.5">New password</label>
  <div className="relative">
@@ -411,7 +411,7 @@ export default function LoginPage() {
  onChange={e => setNewPassword(e.target.value)}
  placeholder="Min. 6 characters"
  autoFocus
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 pr-9 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 pr-9 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
  />
  <button type="button"onClick={() => setShowPass(v => !v)}
  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-subtle)]">
@@ -426,7 +426,7 @@ export default function LoginPage() {
  value={newPasswordConfirm}
  onChange={e => setNewPasswordConfirm(e.target.value)}
  placeholder="Repeat password"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm text-[var(--text-bright)] bg-[var(--surface)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2"
  />
  </div>
  </div>

@@ -30,7 +30,7 @@ export default function DashboardFlagsQuestions({ allFlags, allQuestions, recent
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {allFlags.slice(0, 6).map((f, i) => (
               <Link key={i} href={`/reports/${f.reportId}`}
-                className="group bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 hover:border-[var(--red)] hover:shadow-sm transition-all flex flex-col gap-2">
+                className="group bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-4 hover:border-[var(--red)] hover:shadow-sm transition-all flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <span className={cn(
                     'text-xs font-bold px-1.5 py-0.5 rounded',
@@ -58,7 +58,7 @@ export default function DashboardFlagsQuestions({ allFlags, allQuestions, recent
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {allQuestions.slice(0, 6).map((q, i) => (
               <Link key={i} href={`/reports/${q.reportId}`}
-                className="group bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 hover:border-[var(--blue)] hover:shadow-sm transition-all flex flex-col gap-2">
+                className="group bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-4 hover:border-[var(--blue)] hover:shadow-sm transition-all flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--blue-dim)] text-[var(--blue)]">?</span>
                   <AreaBadge area={q.area} />
@@ -79,7 +79,7 @@ export default function DashboardFlagsQuestions({ allFlags, allQuestions, recent
           <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <Clock size={11} /> Recent Events
           </h2>
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-sm p-5">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] shadow-sm p-5">
             <div className="relative border-l-2 border-[var(--border)] ml-1">
               {recentEvents.map(e => (
                 <div key={e.id} className="relative pl-6 pb-4 last:pb-0">

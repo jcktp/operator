@@ -218,7 +218,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
  <p className="text-sm text-[var(--text-muted)] mt-1">For {info.directReport.name}</p>
  )}
  {info?.message && (
- <div className="mt-4 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-4 py-3">
+ <div className="mt-4 bg-[var(--surface-2)] border border-[var(--border)] rounded-[10px] px-4 py-3">
  <p className="text-sm text-[var(--text-subtle)] leading-relaxed">{info.message}</p>
  </div>
  )}
@@ -236,7 +236,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
  value={submitterName}
  onChange={e => setSubmitterName(e.target.value)}
  placeholder="Your name"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2"
  />
  {directs.length > 0 && (
  <datalist id="directs-list">
@@ -255,12 +255,12 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
  type="date"
  value={reportDate}
  onChange={e => setReportDate(e.target.value)}
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2"
  />
  </div>
 
  {/* Upload mode toggle */}
- <div className="flex bg-[var(--surface-2)] rounded-lg p-1 gap-1 mb-5">
+ <div className="flex bg-[var(--surface-2)] rounded-[4px] p-1 gap-1 mb-5">
  <button
  onClick={() => setUploadMode('file')}
  className={cn(
@@ -293,7 +293,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
  onDrop={handleDrop}
  onClick={() => document.getElementById('req-file')?.click()}
  className={cn(
- 'border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors',
+ 'border-2 border-dashed rounded-[10px] p-10 text-center cursor-pointer transition-colors',
  dragging ? 'border-[var(--border-mid)] bg-[var(--surface-2)]' : 'border-[var(--border)] hover:border-[var(--border)] hover:bg-[var(--surface-2)]'
  )}
  >
@@ -309,7 +309,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
  <p className="text-xs text-[var(--text-muted)] mt-1">PDF, Word, Excel, CSV, text</p>
  </div>
  ) : (
- <div className="flex items-center gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3">
+ <div className="flex items-center gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-[10px] px-4 py-3">
  <FileText size={16} className="text-[var(--text-muted)] shrink-0" />
  <div className="flex-1 min-w-0">
  <p className="text-sm font-medium text-[var(--text-bright)] truncate">{file.name}</p>
@@ -329,9 +329,9 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
  value={googleUrl}
  onChange={e => setGoogleUrl(e.target.value)}
  placeholder="https://docs.google.com/spreadsheets/d/..."
- className="w-full border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2 font-mono"
+ className="w-full border border-[var(--border)] rounded-[10px] px-4 py-3 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2 font-mono"
  />
- <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 text-xs text-blue-700 leading-relaxed">
+ <div className="bg-blue-50 border border-blue-100 rounded-[4px] px-3 py-2.5 text-xs text-blue-700 leading-relaxed">
  Make sure the document is shared with <strong>&quot;Anyone with the link&quot;</strong> — otherwise it can&apos;t be fetched.
  Works with Google Sheets and Google Docs.
  </div>
@@ -340,7 +340,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
 
  {/* Error */}
  {errorMsg && (
- <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-sm text-[var(--red)] flex items-start gap-2">
+ <div className="mt-4 bg-red-50 border border-red-200 rounded-[4px] px-3 py-2.5 text-sm text-[var(--red)] flex items-start gap-2">
  <AlertCircle size={14} className="shrink-0 mt-0.5" />
  {errorMsg}
  </div>
@@ -350,7 +350,7 @@ export default function RequestPage({ params }: { params: Promise<{ token: strin
  <button
  onClick={submit}
  disabled={!canSubmit || stage === 'submitting'}
- className="mt-6 w-full bg-[var(--ink)] text-white text-sm font-medium px-4 py-3 rounded-xl hover:bg-[var(--ink)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+ className="mt-6 w-full bg-[var(--ink)] text-white text-sm font-medium px-4 py-3 rounded-[10px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
  >
  {stage === 'submitting' ? (
  <><Loader2 size={15} className="animate-spin" /> Submitting…</>

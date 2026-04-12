@@ -237,14 +237,14 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  Ollama isn't running. Local AI models require Ollama to be installed and running on your machine.
  </p>
  </div>
- <div className="p-4 bg-[var(--amber-dim)]/40 border border-[var(--amber)] rounded-xl text-sm text-amber-800">
+ <div className="p-4 bg-[var(--amber-dim)]/40 border border-[var(--amber)] rounded-[10px] text-sm text-amber-800">
  Start Ollama, then come back to this step — or skip and configure AI later in Settings.
  </div>
  <div className="flex gap-3">
- <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-xl hover:bg-[var(--surface-3)] transition-colors">
+ <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-[10px] hover:bg-[var(--surface-3)] transition-colors">
  ← Back
  </button>
- <button onClick={onSkip} className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-xl hover:opacity-90 transition-colors">
+ <button onClick={onSkip} className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors">
  Skip — configure AI later →
  </button>
  </div>
@@ -273,7 +273,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  <button
  key={p.id}
  onClick={() => setPresetChoice(p.id)}
- className={`py-2.5 px-3 rounded-xl text-xs font-medium border transition-colors text-left ${
+ className={`py-2.5 px-3 rounded-[10px] text-xs font-medium border transition-colors text-left ${
  preset === p.id
  ? 'bg-[var(--ink)] text-white border-[var(--ink)]'
  : 'bg-[var(--surface)] text-[var(--text-body)] border-[var(--border)] hover:border-[var(--border-mid)]'
@@ -290,7 +290,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
 
  {/* Custom model picker */}
  {!running && !allDone && preset === 'custom' && (
- <div className="border border-[var(--border)] rounded-xl overflow-hidden">
+ <div className="border border-[var(--border)] rounded-[10px] overflow-hidden">
  <button
  onClick={() => setShowCustomPicker(v => !v)}
  className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-[var(--text-body)] bg-[var(--surface-2)] hover:bg-[var(--surface-2)] transition-colors"
@@ -333,7 +333,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  const ramWarn = systemRamGb ? modelRamWarning(id, systemRamGb) : null
 
  return (
- <div key={id} className="border border-[var(--border)] rounded-xl px-4 py-3">
+ <div key={id} className="border border-[var(--border)] rounded-[10px] px-4 py-3">
  <div className="flex items-center gap-3">
  {st?.state === 'done' || (!st && isInstalled)
  ? <CheckCircle size={14} className="text-[var(--green)] shrink-0" />
@@ -412,20 +412,20 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  {/* Actions */}
  {!running && !allDone && (
  <div className="flex gap-3">
- <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-xl hover:bg-[var(--surface-3)] transition-colors">
+ <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-[10px] hover:bg-[var(--surface-3)] transition-colors">
  ← Back
  </button>
  {selected.length > 0 && totalSize > 0 ? (
  <button
  onClick={startDownloads}
- className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-xl hover:opacity-90 transition-colors"
+ className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  Download {selected.filter(id => !installed.includes(id)).length} model{selected.filter(id => !installed.includes(id)).length !== 1 ? 's' : ''} →
  </button>
  ) : (
  <button
  onClick={onNext}
- className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-xl hover:opacity-90 transition-colors"
+ className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  Continue →
  </button>
@@ -445,7 +445,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  <div className="flex gap-3">
  <button
  onClick={onNext}
- className="w-full py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-xl hover:opacity-90 transition-colors"
+ className="w-full py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  Continue →
  </button>

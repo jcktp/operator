@@ -53,7 +53,7 @@ export default function StepTour({ modeConfig, onNext, onBack }: Props) {
 
  <div className="grid grid-cols-2 gap-3">
  {cards.map(card => (
- <div key={card.title} className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4">
+ <div key={card.title} className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-4">
  <div className="flex items-center gap-2 mb-2">
  {card.icon}
  <span className="text-sm font-medium text-[var(--text-body)]">{card.title}</span>
@@ -64,10 +64,10 @@ export default function StepTour({ modeConfig, onNext, onBack }: Props) {
  </div>
 
  <div className="flex gap-3">
- <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-xl hover:bg-[var(--surface-3)] transition-colors">
+ <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-[10px] hover:bg-[var(--surface-3)] transition-colors">
  ← Back
  </button>
- <button onClick={onNext} className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-xl hover:opacity-90 transition-colors">
+ <button onClick={onNext} className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors">
  Continue →
  </button>
  </div>

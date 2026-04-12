@@ -10,7 +10,7 @@ export default function StepReady({ modeConfig, onComplete, onUpload }: Props) {
  return (
  <div className="space-y-8 text-center">
  <div className="space-y-4">
- <div className="w-16 h-16 bg-[var(--green-dim)] border border-green-100 rounded-2xl flex items-center justify-center mx-auto">
+ <div className="w-16 h-16 bg-[var(--green-dim)] border border-green-100 rounded-[10px] flex items-center justify-center mx-auto">
  <span className="text-2xl">✓</span>
  </div>
  <div>
@@ -24,13 +24,13 @@ export default function StepReady({ modeConfig, onComplete, onUpload }: Props) {
  <div className="space-y-3 max-w-xs mx-auto">
  <button
  onClick={onUpload}
- className="w-full py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-xl hover:opacity-90 transition-colors"
+ className="w-full py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors"
  >
  Upload your first {modeConfig.documentLabel.toLowerCase()} →
  </button>
  <button
  onClick={onComplete}
- className="w-full py-3 bg-[var(--surface)] border border-[var(--border)] text-[var(--text-body)] text-sm font-medium rounded-xl hover:bg-[var(--surface-2)] transition-colors"
+ className="w-full py-3 bg-[var(--surface)] border border-[var(--border)] text-[var(--text-body)] text-sm font-medium rounded-[10px] hover:bg-[var(--surface-2)] transition-colors"
  >
  Explore Operator →
  </button>

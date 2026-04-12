@@ -50,7 +50,7 @@ export default function StepMode({ modeConfig, onNext, onBack }: Props) {
  </p>
  <div className="space-y-2">
  {enabledFeatures.map(f => (
- <div key={f.label} className="flex items-start gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-4 py-3">
+ <div key={f.label} className="flex items-start gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-[4px] px-4 py-3">
  <span className="text-[var(--blue)] mt-0.5 shrink-0">✦</span>
  <div>
  <p className="text-sm font-medium text-[var(--text-body)]">{f.label}</p>
@@ -68,7 +68,7 @@ export default function StepMode({ modeConfig, onNext, onBack }: Props) {
  </p>
  <div className="space-y-2">
  {UNIVERSAL.map(f => (
- <div key={f.label} className="flex items-start gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-4 py-3">
+ <div key={f.label} className="flex items-start gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-[4px] px-4 py-3">
  <span className="text-[var(--border)] mt-0.5 shrink-0">◆</span>
  <div>
  <p className="text-sm font-medium text-[var(--text-body)]">{f.label}</p>
@@ -84,10 +84,10 @@ export default function StepMode({ modeConfig, onNext, onBack }: Props) {
  </p>
 
  <div className="flex gap-3">
- <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-xl hover:bg-[var(--surface-3)] transition-colors">
+ <button onClick={onBack} className="flex-1 py-3 bg-[var(--surface-2)] text-[var(--text-body)] text-sm font-medium rounded-[10px] hover:bg-[var(--surface-3)] transition-colors">
  ← Back
  </button>
- <button onClick={onNext} className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-xl hover:opacity-90 transition-colors">
+ <button onClick={onNext} className="flex-[3] py-3 bg-[var(--ink)] text-white text-sm font-medium rounded-[10px] hover:opacity-90 transition-colors">
  Continue →
  </button>
  </div>

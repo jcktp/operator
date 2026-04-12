@@ -54,7 +54,7 @@ export default async function MetricsPage() {
 
  {allMetrics.length === 0 ? (
  <div className="flex flex-col items-center justify-center py-20 text-center">
- <div className="w-12 h-12 bg-[var(--surface-2)] rounded-xl flex items-center justify-center mb-4">
+ <div className="w-12 h-12 bg-[var(--surface-2)] rounded-[10px] flex items-center justify-center mb-4">
  <span className="text-2xl">📊</span>
  </div>
  <p className="text-sm text-[var(--text-muted)]">No metrics yet.</p>

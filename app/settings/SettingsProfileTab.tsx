@@ -18,28 +18,28 @@ interface Props {
 export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
   return (
     <>
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-3">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5 space-y-3">
         <h2 className="text-sm font-semibold text-[var(--text-bright)]">Profile</h2>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1.5">Your name</label>
             <input type="text" value={s.ceoName} onChange={e => s.setCeoName(e.target.value)} placeholder="Alex Chen"
-              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+              className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1.5">Company</label>
             <input type="text" value={s.companyName} onChange={e => s.setCompanyName(e.target.value)} placeholder="Acme Corp"
-              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+              className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2" />
           </div>
         </div>
         <div>
           <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1.5">Your role</label>
           <input type="text" value={s.userRole} onChange={e => s.setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
-            className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+            className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2" />
         </div>
       </div>
 
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-3">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--text-bright)]">App Mode</h2>
           {s.appMode !== s.savedMode && <span className="text-xs text-[var(--amber)]">Unsaved</span>}
@@ -51,7 +51,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
               s.setCustomAreas(getModeConfig(m.id).defaultAreas)
               s.setAreasCustomized(false)
             }}
-              className={cn('text-left px-3 py-2.5 rounded-lg border-2 transition-all',
+              className={cn('text-left px-3 py-2.5 rounded-[4px] border-2 transition-all',
                 s.appMode === m.id ? 'border-[var(--ink)] bg-[var(--ink)] text-white' : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-bright)] hover:border-[var(--border)]'
               )}>
               <ModeIcon modeId={m.id} className="w-6 h-6" />
@@ -62,7 +62,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
         </div>
       </div>
 
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-[var(--text-bright)]">Sound effects</p>
@@ -84,7 +84,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
         </div>
       </div>
 
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-[var(--text-bright)]">Appearance</p>
@@ -92,7 +92,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
               {mode === 'system' ? `Auto — following system (${theme})` : mode === 'dark' ? 'Dark theme' : 'Light theme'}
             </p>
           </div>
-          <div className="flex rounded-lg border border-[var(--border)] overflow-hidden shrink-0">
+          <div className="flex rounded-[4px] border border-[var(--border)] overflow-hidden shrink-0">
             {(['light', 'dark', 'system'] as const).map((m, i) => (
               <button
                 key={m}
@@ -113,7 +113,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
         </div>
       </div>
 
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-3">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--text-bright)]">Areas</h2>
           {s.areasCustomized && (
@@ -149,7 +149,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
               }
             }}
             placeholder="Add area…"
-            className="flex-1 border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+            className="flex-1 border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2"
           />
           <button
             type="button"
@@ -157,14 +157,14 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
               const v = s.newArea.trim()
               if (v && !s.customAreas.includes(v)) { s.setCustomAreas(a => [...a, v]); s.setNewArea(''); s.setAreasCustomized(true) }
             }}
-            className="px-3 py-2 bg-[var(--ink)] text-white text-sm font-medium rounded-lg hover:bg-[var(--ink)] transition-colors"
+            className="px-3 py-2 bg-[var(--ink)] text-white text-sm font-medium rounded-[4px] hover:bg-[var(--ink)] transition-colors"
           >
             <Plus size={14} />
           </button>
         </div>
       </div>
 
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-4">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5 space-y-4">
         <h2 className="text-sm font-semibold text-[var(--text-bright)]">Security</h2>
 
         <div className="flex items-center justify-between">
@@ -207,7 +207,7 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
           </button>
         </div>
         {s.airGapMode && (
-          <p className="text-xs text-[var(--red)] bg-[var(--red-dim)] border border-[var(--red)] rounded-lg px-3 py-2">
+          <p className="text-xs text-[var(--red)] bg-[var(--red-dim)] border border-[var(--red)] rounded-[4px] px-3 py-2">
             Air-gap active — only Ollama (local) analysis works. Cloud providers and Pulse feeds are disabled.
           </p>
         )}

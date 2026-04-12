@@ -91,7 +91,7 @@ export default async function OverviewPage({
  if (modeProjectCount === 0) {
  return (
  <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
- <div className="w-14 h-14 bg-[var(--blue-dim)] rounded-2xl flex items-center justify-center mb-4">
+ <div className="w-14 h-14 bg-[var(--blue-dim)] rounded-[10px] flex items-center justify-center mb-4">
  <FileText size={22} className="text-indigo-400" />
  </div>
  <h1 className="text-xl font-semibold text-[var(--text-bright)] mb-2">
@@ -131,7 +131,7 @@ export default async function OverviewPage({
  if (reports_final.length === 0) {
  return (
  <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
- <div className="w-12 h-12 bg-[var(--surface-2)] rounded-xl flex items-center justify-center mb-4">
+ <div className="w-12 h-12 bg-[var(--surface-2)] rounded-[10px] flex items-center justify-center mb-4">
  <FileText size={20} className="text-[var(--text-muted)] " />
  </div>
  <h1 className="text-xl font-semibold text-[var(--text-bright)] mb-2">

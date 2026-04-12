@@ -91,7 +91,7 @@ export default function SettingsPage() {
  {/* AI tab */}
  {tab === 'ai' && (
  <>
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-3">
+ <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5 space-y-3">
  <h2 className="text-sm font-semibold text-[var(--text-bright)]">AI Provider</h2>
  <div className="grid grid-cols-2 gap-2">
  <button type="button" onClick={() => s.setAiProvider('ollama')}
@@ -113,7 +113,7 @@ export default function SettingsPage() {
  </div>
  </div>
  {s.aiProvider === 'ollama' && (
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5">
+ <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5">
  <OllamaConfig
  ollamaHost={s.ollamaHost} setOllamaHost={s.setOllamaHost}
  ollamaModel={s.ollamaModel} setOllamaModel={s.setOllamaModel}
@@ -135,7 +135,7 @@ export default function SettingsPage() {
  </div>
  )}
  {CLOUD_PROVIDERS.map(p => s.aiProvider === p.id && (
- <div key={p.id} className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5">
+ <div key={p.id} className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5">
  <CloudProviderConfig
  activeProvider={p.id}
  savedProvider={s.savedProvider}
@@ -162,7 +162,7 @@ export default function SettingsPage() {
 
  {/* Remove local models checkbox — only shown when switching from Ollama to a cloud provider */}
  {tab === 'ai' && s.savedProvider === 'ollama' && s.aiProvider !== 'ollama' && (
- <label className="flex items-start gap-3 bg-[var(--amber-dim)] border border-[var(--amber)] rounded-xl px-4 py-3 cursor-pointer">
+ <label className="flex items-start gap-3 bg-[var(--amber-dim)] border border-[var(--amber)] rounded-[10px] px-4 py-3 cursor-pointer">
  <input
  type="checkbox"
  checked={s.removeOllamaModels}
@@ -213,7 +213,7 @@ export default function SettingsPage() {
  {tab === 'danger' && <div className="space-y-5">
  <AuditLogPanel />
 
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5">
+ <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5">
  <h2 className="text-sm font-semibold text-[var(--text-bright)] mb-1">About Operator</h2>
  <p className="text-xs text-[var(--text-muted)] leading-relaxed">
  Operator is fully local. Reports are saved to <code className="font-mono">~/Documents/Operator Reports/</code>.
@@ -223,7 +223,7 @@ export default function SettingsPage() {
  </p>
  </div>
 
- <div ref={dangerRef} id="danger" className="bg-[var(--surface)] border border-red-100 rounded-xl p-5">
+ <div ref={dangerRef} id="danger" className="bg-[var(--surface)] border border-red-100 rounded-[10px] p-5">
  <h2 className="text-sm font-semibold text-[var(--red)] mb-1">Danger zone</h2>
  <p className="text-xs text-[var(--text-muted)] mb-4">These actions are permanent and cannot be undone.</p>
 
@@ -246,7 +246,7 @@ export default function SettingsPage() {
  )}
 
  {uninstallPhase === 'confirming' && (
- <div className="bg-[var(--red-dim)] border border-[var(--red)] rounded-xl p-4 space-y-3">
+ <div className="bg-[var(--red-dim)] border border-[var(--red)] rounded-[10px] p-4 space-y-3">
  <div className="flex items-start gap-2">
  <AlertTriangle size={16} className="text-[var(--red)] shrink-0 mt-0.5" />
  <div>

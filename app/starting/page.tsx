@@ -53,11 +53,11 @@ export default function StartingPage() {
 
  {/* Logo */}
  <div className="relative">
- <div className="w-20 h-20 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center justify-center">
+ <div className="w-20 h-20 rounded-[10px] bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center justify-center">
  <WalkieTalkie />
  </div>
  {/* Pulse ring */}
- <div className="absolute inset-0 rounded-2xl border-2 border-yellow-400 animate-ping opacity-20" />
+ <div className="absolute inset-0 rounded-[10px] border-2 border-yellow-400 animate-ping opacity-20" />
  </div>
 
  {/* Title */}
@@ -72,7 +72,7 @@ export default function StartingPage() {
  </div>
 
  {/* Current step */}
- <div className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-5 py-4 shadow-sm">
+ <div className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-[10px] px-5 py-4 shadow-sm">
  <p className="text-sm font-medium text-[var(--text-body)]">
  {status.step}{!status.ready && dots}
  </p>

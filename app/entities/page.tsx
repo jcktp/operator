@@ -100,7 +100,7 @@ export default async function EntitiesPage({
  )}
  {activeTab === 'story-map' && <StoryMapTab projectId={currentProjectId} />}
  </div>
- <aside className="w-72 shrink-0 h-full border border-[var(--border)] rounded-2xl shadow-sm overflow-hidden bg-[var(--surface)]">
+ <aside className="w-72 shrink-0 h-full border border-[var(--border)] rounded-[10px] shadow-sm overflow-hidden bg-[var(--surface)]">
  <InspectorSidebar />
  </aside>
  </div>

@@ -38,7 +38,7 @@ export default function DashboardAreaCards({ areaCards, documentLabel, documentL
             improved > declined ? 'up' : declined > improved ? 'down' : 'flat'
 
           return (
-            <div key={area} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:border-[var(--border-mid)] hover:shadow-sm transition-all">
+            <div key={area} className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] overflow-hidden hover:border-[var(--border-mid)] hover:shadow-sm transition-all">
               <div className="px-5 pt-5 pb-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -61,7 +61,7 @@ export default function DashboardAreaCards({ areaCards, documentLabel, documentL
                   <div className="grid grid-cols-2 gap-2">
                     {metrics.map((m, i) => (
                       <div key={i} className={cn(
-                        'rounded-xl px-3 py-2.5',
+                        'rounded-[10px] px-3 py-2.5',
                         m.status === 'positive' ? 'bg-[var(--green-dim)]' :
                         m.status === 'negative' ? 'bg-[var(--red-dim)]' :
                         m.status === 'warning' ? 'bg-[var(--amber-dim)]' : 'bg-[var(--surface-2)]'

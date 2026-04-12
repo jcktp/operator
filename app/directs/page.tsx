@@ -175,7 +175,7 @@ export default function DirectsPage() {
  <button
  onClick={handleClearAll}
  className={cn(
- 'inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors',
+ 'inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-[4px] border transition-colors',
  clearingAll
  ? 'border-red-300 text-[var(--red)] bg-[var(--red-dim)] hover:bg-red-100'
  : 'border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-2)]'
@@ -187,14 +187,14 @@ export default function DirectsPage() {
  )}
  <button
  onClick={() => setShowImporter(true)}
- className="inline-flex items-center gap-1.5 border border-[var(--border)] text-[var(--text-body)] text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"
+ className="inline-flex items-center gap-1.5 border border-[var(--border)] text-[var(--text-body)] text-sm font-medium px-3 py-1.5 rounded-[4px] hover:bg-[var(--surface-2)] transition-colors"
  >
  <Upload size={14} />
  Import
  </button>
  <button
  onClick={() => setShowForm(!showForm)}
- className="inline-flex items-center gap-1.5 bg-[var(--ink)] text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-[var(--ink)] transition-colors"
+ className="inline-flex items-center gap-1.5 bg-[var(--ink)] text-white text-sm font-medium px-3 py-1.5 rounded-[4px] hover:bg-[var(--ink)] transition-colors"
  >
  {showForm ? <X size={14} /> : <Plus size={14} />}
  {showForm ? 'Cancel' : `Add ${modeConfig.personLabel.toLowerCase()}`}
@@ -204,20 +204,20 @@ export default function DirectsPage() {
 
  {/* Add form */}
  {showForm && (
- <form onSubmit={handleAdd} className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-4">
+ <form onSubmit={handleAdd} className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5 space-y-4">
  <h2 className="text-sm font-semibold text-[var(--text-bright)]">Add {modeConfig.personLabel.toLowerCase()}</h2>
  <div className="grid grid-cols-2 gap-3">
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Name *</label>
  <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
  required placeholder="Jane Smith"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2" />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Title *</label>
  <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
  required placeholder="CFO"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2" />
  </div>
  </div>
  <div className="grid grid-cols-2 gap-3">
@@ -229,7 +229,7 @@ export default function DirectsPage() {
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Email</label>
  <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
  placeholder="jane@company.com"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2" />
  </div>
  </div>
  <div className="grid grid-cols-2 gap-3">
@@ -237,7 +237,7 @@ export default function DirectsPage() {
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Phone</label>
  <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
  placeholder="+1 555 123 4567"
- className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+ className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2" />
  </div>
  </div>
  <button type="submit" disabled={saving}
@@ -250,7 +250,7 @@ export default function DirectsPage() {
 
  {directs.length === 0 ? (
  <div className="flex flex-col items-center justify-center py-16 text-center">
- <div className="w-10 h-10 bg-[var(--surface-2)] rounded-xl flex items-center justify-center mb-3">
+ <div className="w-10 h-10 bg-[var(--surface-2)] rounded-[10px] flex items-center justify-center mb-3">
  <Users size={18} className="text-[var(--text-muted)]" />
  </div>
  <p className="text-sm text-[var(--text-muted)]">No {modeConfig.personLabelPlural.toLowerCase()} yet.</p>
@@ -299,7 +299,7 @@ export default function DirectsPage() {
  value={search}
  onChange={e => setSearch(e.target.value)}
  placeholder={`Search ${modeConfig.personLabelPlural.toLowerCase()} by name, title, area…`}
- className="w-full border border-[var(--border)] rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2"
+ className="w-full border border-[var(--border)] rounded-[4px] pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2"
  />
  {search && (
  <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-subtle)]">
@@ -324,7 +324,7 @@ export default function DirectsPage() {
  </div>
  ) : (
  <>
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl divide-y divide-[var(--border)]">
+ <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] divide-y divide-[var(--border)]">
  {pageItems.map(d => (
  <div
  key={d.id}
@@ -383,7 +383,7 @@ export default function DirectsPage() {
  <button
  onClick={() => setPage(p => Math.max(1, p - 1))}
  disabled={safePage === 1}
- className="p-1.5 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-2)] disabled:opacity-30 disabled:cursor-default transition-colors"
+ className="p-1.5 rounded-[4px] border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-2)] disabled:opacity-30 disabled:cursor-default transition-colors"
  >
  <ChevronLeft size={13} />
  </button>
@@ -391,7 +391,7 @@ export default function DirectsPage() {
  <button
  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
  disabled={safePage === totalPages}
- className="p-1.5 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-2)] disabled:opacity-30 disabled:cursor-default transition-colors"
+ className="p-1.5 rounded-[4px] border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-2)] disabled:opacity-30 disabled:cursor-default transition-colors"
  >
  <ChevronRightIcon size={13} />
  </button>
