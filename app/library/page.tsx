@@ -2,11 +2,12 @@ import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { formatRelativeDate } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
-import { FileText, Image as ImageIcon } from 'lucide-react'
+import { FileText, Image as ImageIcon, AudioLines } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import LibraryClearButton from './LibraryClearButton'
 import LibrarySearch from './LibrarySearch'
 import PhotosGallery from './PhotosGallery'
+import AudioGallery from './AudioGallery'
 import { getModeConfig } from '@/lib/mode'
 import SourceProtectionBanner from '@/components/SourceProtectionBanner'
 
@@ -19,6 +20,7 @@ export default async function LibraryPage({
 }) {
  const { area: selectedArea, tab } = await searchParams
  const showPhotos = tab === 'photos'
+ const showAudio = tab === 'audio'
 
  const [modeRow, currentProjectSetting] = await Promise.all([
  prisma.setting.findUnique({ where: { key: 'app_mode' } }),
@@ -105,6 +107,27 @@ export default async function LibraryPage({
  storyName: r.storyName ?? null,
  }))
 
+ // All audio reports (displayContent starts with 'audio:')
+ const allAudio = allReports.filter(r => r.displayContent?.startsWith('audio:'))
+ const audioCount = allAudio.length
+ const audioReports = (selectedArea ? allAudio.filter(r => r.area === selectedArea) : allAudio)
+ .map(r => {
+ const meta = JSON.parse(r.displayContent!.slice(6)) as {
+ filePath: string
+ diarization: { segments: { speaker: string; start: number; end: number; duration: number }[]; num_speakers: number; duration: number }
+ speakerNames: Record<string, string>
+ }
+ return {
+ id: r.id,
+ title: r.title,
+ area: r.area,
+ filePath: meta.filePath,
+ diarization: meta.diarization,
+ speakerNames: meta.speakerNames,
+ createdAt: r.createdAt,
+ }
+ })
+
  return (
  <div className="space-y-6">
  <SourceProtectionBanner />
@@ -139,19 +162,19 @@ export default async function LibraryPage({
  href="/library"
  className={cn(
  'flex items-center justify-between pl-3 pr-3 py-2 rounded-r-[4px] text-sm transition-colors border-l-2',
- !selectedArea && !showPhotos
+ !selectedArea && !showPhotos && !showAudio
  ? 'border-l-[var(--blue)] bg-[rgba(46,76,166,0.05)] text-[var(--ink)] font-semibold '
  : 'border-l-transparent text-[var(--text-subtle)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)]'
  )}
  >
  <span>All areas</span>
- <span className={cn('text-xs', !selectedArea && !showPhotos ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]')}>
+ <span className={cn('text-xs', !selectedArea && !showPhotos && !showAudio ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]')}>
  {allReports.length}
  </span>
  </Link>
 
  {usedAreas.map(area => {
- const isActive = selectedArea === area && !showPhotos
+ const isActive = selectedArea === area && !showPhotos && !showAudio
  return (
  <Link
  key={area}
@@ -217,6 +240,51 @@ export default async function LibraryPage({
  })}
  </>
  )}
+
+ {/* Audio section — only shown when there are audio recordings */}
+ {audioCount > 0 && (
+ <>
+ <div className="pt-3">
+ <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-muted)] px-3 pb-1">Audio</p>
+ </div>
+ <Link
+ href={`/library?tab=audio${selectedArea ? `&area=${encodeURIComponent(selectedArea)}` : ''}`}
+ className={cn(
+ 'flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors',
+ showAudio && !selectedArea
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium'
+ : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
+ )}
+ >
+ <span className="flex items-center gap-1.5">
+ <AudioLines size={12} />
+ All recordings
+ </span>
+ <span className="text-xs text-[var(--text-muted)]">{audioCount}</span>
+ </Link>
+ {usedAreas.filter(a => allAudio.some(r => r.area === a)).map(area => {
+ const areaAudioCount = allAudio.filter(r => r.area === area).length
+ const isActive = showAudio && selectedArea === area
+ return (
+ <Link
+ key={`audio-${area}`}
+ href={`/library?tab=audio&area=${encodeURIComponent(area)}`}
+ className={cn(
+ 'flex items-center justify-between h-7 px-2.5 rounded-[4px] text-sm transition-colors',
+ isActive
+ ? 'bg-[var(--ink)] text-[var(--ink-contrast)] font-medium'
+ : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
+ )}
+ >
+ <span className="truncate">{area}</span>
+ <span className={cn('text-xs shrink-0', isActive ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]')}>
+ {areaAudioCount}
+ </span>
+ </Link>
+ )
+ })}
+ </>
+ )}
  </aside>
 
  {/* Main content */}
@@ -227,14 +295,18 @@ export default async function LibraryPage({
  <span className="text-sm text-[var(--text-subtle)]">
  {showPhotos
  ? `${photoReports.length} photo${photoReports.length !== 1 ? 's' : ''}`
+ : showAudio
+ ? `${audioReports.length} recording${audioReports.length !== 1 ? 's' : ''}`
  : `${areaStats[selectedArea]?.count} ${areaStats[selectedArea]?.count !== 1 ? modeConfig.documentLabelPlural.toLowerCase() : modeConfig.documentLabel.toLowerCase()}`
  }
- {!showPhotos && <>{' · '}last {formatRelativeDate(areaStats[selectedArea]?.latest)}</>}
+ {!showPhotos && !showAudio && <>{' · '}last {formatRelativeDate(areaStats[selectedArea]?.latest)}</>}
  </span>
  </div>
  )}
  {showPhotos ? (
  <PhotosGallery photos={photoReports} />
+ ) : showAudio ? (
+ <AudioGallery reports={audioReports} />
  ) : (
  <LibrarySearch
  reports={reports.map(r => ({

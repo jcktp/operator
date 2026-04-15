@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from '@/components/icons'
-import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen, ShieldCheck, GitFork, CheckSquare, FileSearch, ShieldAlert, Lightbulb, Ban, ListChecks, ScrollText, CalendarClock, Quote, Layers, Users2 } from 'lucide-react'
+import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen, ShieldCheck, GitFork, CheckSquare, FileSearch, ShieldAlert, Lightbulb, Ban, ListChecks, ScrollText, CalendarClock, Quote, Layers, Users2, UserSearch, ScanSearch, MapPin, GitCompare, History, AudioLines } from 'lucide-react'
 import type React from 'react'
 
 type AnyIcon = React.ComponentType<{ size?: number; className?: string }>
@@ -26,6 +26,12 @@ const EXTRA_NAV_ICONS: Record<string, AnyIcon> = {
   Quote,
   Layers,
   Users2,
+  UserSearch,
+  ScanSearch,
+  MapPin,
+  GitCompare,
+  History,
+  AudioLines,
 }
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef, Suspense } from 'react'
@@ -41,7 +47,7 @@ import SearchModal from '@/components/SearchModal'
 import NavDropdown, { type NavGroupItem } from '@/components/NavDropdown'
 import ActiveAreaBadge from '@/components/ActiveAreaBadge'
 import ProjectSwitcher from '@/components/ProjectSwitcher'
-import { Moon, Sun, ShieldOff } from 'lucide-react'
+import { Moon, Sun, ShieldOff, FlaskConical } from 'lucide-react'
 
 // Kept for any imports that reference it; top nav has no sidebar
 export const SIDEBAR_W = 0
@@ -112,6 +118,11 @@ export default function Nav() {
       .map(i => ({ href: i.href, label: i.label, icon: EXTRA_NAV_ICONS[i.icon] ?? Network })),
     ...(!peopleInNotebook ? [{ href: '/directs', label: config.navPeople, icon: Users }] : []),
   ]
+
+  // GROUP B2: Investigate — investigate-group extras (only shown when non-empty)
+  const investigateItems: NavGroupItem[] = extraNavItems
+    .filter(i => i.group === 'investigate')
+    .map(i => ({ href: i.href, label: i.label, icon: EXTRA_NAV_ICONS[i.icon] ?? Network }))
 
   // GROUP C: Notebook — journal + (pulse if pulseInNotebook) + (people if peopleInNotebook) + notebook-group extras
   const notebookItems: NavGroupItem[] = [
@@ -220,6 +231,20 @@ export default function Nav() {
             onClose={closeGroups}
             activeArea={activeArea}
           />
+
+          {/* GROUP B2: Investigate (only shown in modes that have investigate items) */}
+          {investigateItems.length > 0 && (
+            <NavDropdown
+              id="investigate"
+              label="Investigate"
+              icon={FlaskConical}
+              items={investigateItems}
+              isOpen={openGroup === 'investigate'}
+              onToggle={toggleGroup}
+              onClose={closeGroups}
+              activeArea={activeArea}
+            />
+          )}
 
           {/* Notebook — dropdown when mode adds extra items (journalism), standalone otherwise */}
           {notebookIsDropdown ? (

@@ -60,6 +60,7 @@ model Project {
   foiaRequests   FoiaRequest[]
   claims         Claim[]
   chatMessages   ChatMessage[]
+  faceEmbeddings FaceEmbedding[]
   @@index([status])
   @@index([createdAt])
 }
@@ -612,6 +613,22 @@ model UploadJob {
 
   @@index([status])
   @@index([createdAt])
+}
+
+// ── Journalism: Facial recognition embeddings ────────────────────────────────
+
+model FaceEmbedding {
+  id          String   @id @default(cuid())
+  projectId   String
+  documentId  String?
+  imageSource String           // relative path within getReportsRoot(), or document reference
+  bbox        String           // JSON: [x, y, w, h]
+  embedding   String           // JSON: float[] (512 dims, ArcFace)
+  createdAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model UploadJobItem {

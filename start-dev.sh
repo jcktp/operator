@@ -173,6 +173,137 @@ else
   step "Tesseract OCR found"
 fi
 
+# ── 3c. Python 3.12 (required for TensorFlow / DeepFace) ─────────────────────
+step "Ensuring Python 3.12 is installed..."
+case "$PLATFORM" in
+  macOS)
+    if ! command -v python3.12 &>/dev/null; then
+      step "  Installing python@3.12 via brew..."
+      brew install python@3.12 >/dev/null 2>&1 || warn "  Could not install python@3.12"
+    else
+      brew upgrade python@3.12 >/dev/null 2>&1 || true
+    fi
+    ;;
+  Linux)
+    if ! command -v python3.12 &>/dev/null; then
+      if command -v apt-get &>/dev/null; then
+        sudo apt-get install -y python3.12 python3.12-venv >/dev/null 2>&1 || warn "  Could not install python3.12"
+      fi
+    fi
+    ;;
+esac
+
+# ── 3d. Face recognition service ─────────────────────────────────────────────
+FACE_PID=0
+FACES_VENV=".venv-faces"
+FACES_SKIP=false
+step "Setting up facial recognition..."
+
+# TensorFlow requires Python 3.9-3.12; prefer 3.12
+FACES_PYTHON=""
+for _v in python3.12 python3.11 python3.10 python3.9; do
+  if command -v "$_v" &>/dev/null; then FACES_PYTHON="$_v"; break; fi
+done
+if [ -z "$FACES_PYTHON" ]; then
+  warn "  No compatible Python (3.9-3.12) found — facial recognition will be unavailable"
+  FACES_SKIP=true
+fi
+
+# Create isolated virtualenv (avoids macOS externally-managed-environment error)
+if [ "$FACES_SKIP" = "false" ] && [ ! -f "$FACES_VENV/bin/python3" ]; then
+  step "  Creating face service virtual environment ($FACES_PYTHON)..."
+  "$FACES_PYTHON" -m venv "$FACES_VENV" \
+    || { warn "  Could not create venv — facial recognition will be unavailable"; FACES_SKIP=true; }
+fi
+
+# Install deps into the venv if not already present
+if [ "$FACES_SKIP" = "false" ] && ! "$FACES_VENV/bin/python3" -c "import deepface" 2>/dev/null; then
+  step "  Installing DeepFace dependencies (first run — this may take a few minutes)..."
+  "$FACES_VENV/bin/pip" install -q --prefer-binary -r requirements-faces.txt \
+    || { warn "  Could not install DeepFace — facial recognition will be unavailable"; FACES_SKIP=true; }
+fi
+
+# Download ArcFace + RetinaFace model weights on first run (non-interactive)
+if [ "$FACES_SKIP" = "false" ]; then
+  "$FACES_VENV/bin/python3" -c "
+from deepface import DeepFace
+import numpy as np, cv2, tempfile, os
+dummy = np.zeros((112,112,3), dtype=np.uint8)
+with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+    cv2.imwrite(f.name, dummy)
+    tmp = f.name
+try:
+    DeepFace.represent(tmp, model_name='ArcFace', detector_backend='retinaface', enforce_detection=False)
+except:
+    pass
+os.unlink(tmp)
+print('  Face models ready.')
+" 2>/dev/null || step "  Face model pre-download skipped (will download on first use)."
+
+  pkill -f face_service.py 2>/dev/null || true
+  "$FACES_VENV/bin/python3" face_service.py &
+  FACE_PID=$!
+  step "  Face service started (PID $FACE_PID)"
+else
+  warn "  Facial recognition service skipped"
+fi
+
+# ── 3e. Image analysis service (ELA + deepfake) ──────────────────────────────
+ANALYSIS_PID=0
+ANALYSIS_SKIP=false
+step "Setting up image analysis service..."
+
+if [ "$FACES_SKIP" = "true" ]; then
+  warn "  Faces venv unavailable — image analysis service will be skipped"
+  ANALYSIS_SKIP=true
+fi
+
+if [ "$ANALYSIS_SKIP" = "false" ] && ! "$FACES_VENV/bin/python3" -c "from PIL import Image" 2>/dev/null; then
+  step "  Installing Pillow into faces venv..."
+  "$FACES_VENV/bin/pip" install -q --prefer-binary Pillow \
+    || { warn "  Could not install Pillow — image analysis will be unavailable"; ANALYSIS_SKIP=true; }
+fi
+
+if [ "$ANALYSIS_SKIP" = "false" ]; then
+  pkill -f analysis_service.py 2>/dev/null || true
+  "$FACES_VENV/bin/python3" analysis_service.py &
+  ANALYSIS_PID=$!
+  step "  Analysis service started (PID $ANALYSIS_PID)"
+else
+  warn "  Image analysis service skipped"
+fi
+
+# ── 3f. Media service (speaker diarization) ──────────────────────────────────
+MEDIA_PID=0
+MEDIA_VENV=".venv-media"
+MEDIA_SKIP=false
+step "Setting up media analysis service..."
+
+if ! command -v python3 &>/dev/null; then
+  MEDIA_SKIP=true
+fi
+
+if [ "$MEDIA_SKIP" = "false" ] && [ ! -f "$MEDIA_VENV/bin/python3" ]; then
+  step "  Creating media service virtual environment..."
+  python3 -m venv "$MEDIA_VENV" \
+    || { warn "  Could not create media venv — speaker diarization will be unavailable"; MEDIA_SKIP=true; }
+fi
+
+if [ "$MEDIA_SKIP" = "false" ] && ! "$MEDIA_VENV/bin/python3" -c "import resemblyzer" 2>/dev/null; then
+  step "  Installing resemblyzer + dependencies (first run)..."
+  "$MEDIA_VENV/bin/pip" install -q --prefer-binary -r requirements-media.txt \
+    || { warn "  Could not install media deps — speaker diarization will be unavailable"; MEDIA_SKIP=true; }
+fi
+
+if [ "$MEDIA_SKIP" = "false" ]; then
+  pkill -f media_service.py 2>/dev/null || true
+  "$MEDIA_VENV/bin/python3" media_service.py &
+  MEDIA_PID=$!
+  step "  Media service started (PID $MEDIA_PID)"
+else
+  warn "  Media analysis service skipped"
+fi
+
 # ── 4. cloudflared + supporting tools (updated in background, non-blocking) ────
 # Note: Ollama is already upgraded synchronously in step 3 — not repeated here.
 update_tools_bg() {
@@ -317,6 +448,12 @@ node -e "
 " 2>/dev/null || true
 
 # ── 9. Start Next.js (dev mode — hot reload, see changes instantly) ──────────
+# Kill any stale Next.js process on the target port to avoid ChunkLoadError from
+# two servers serving mismatched chunks to the same browser session
+if lsof -ti ":$PORT" &>/dev/null; then
+  step "  Killing existing process on port $PORT..."
+  lsof -ti ":$PORT" | xargs kill -9 2>/dev/null || true
+fi
 set_status "Starting server…"
 step "Starting Operator (dev mode)..."
 npm run dev -- --port $PORT > "$LOG_FILE" 2>&1 &
@@ -459,6 +596,12 @@ cleanup() {
       .then(() => process.exit(0)).catch(() => process.exit(0));
   " 2>/dev/null || true
   [ -f "$PID_FILE" ] && kill "$(cat $PID_FILE)" 2>/dev/null; rm -f "$PID_FILE"
+  [ "$FACE_PID" -gt 0 ] 2>/dev/null && kill "$FACE_PID" 2>/dev/null || true
+  pkill -f face_service.py 2>/dev/null || true
+  [ "$ANALYSIS_PID" -gt 0 ] 2>/dev/null && kill "$ANALYSIS_PID" 2>/dev/null || true
+  pkill -f analysis_service.py 2>/dev/null || true
+  [ "$MEDIA_PID" -gt 0 ] 2>/dev/null && kill "$MEDIA_PID" 2>/dev/null || true
+  pkill -f media_service.py 2>/dev/null || true
   pkill -x "ollama" 2>/dev/null || true
   rm -f "$STATUS_FILE"
   step "Stopped. Goodbye."

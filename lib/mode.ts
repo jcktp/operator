@@ -39,7 +39,7 @@ export interface ModeFeatures {
    *   'intake'             → Intake dropdown
    *   'notebook'           → Notebook dropdown (alongside journal)
    */
-  extraNavItems: Array<{ href: string; label: string; icon: string; group?: 'analysis' | 'intake' | 'notebook' }>
+  extraNavItems: Array<{ href: string; label: string; icon: string; group?: 'analysis' | 'investigate' | 'intake' | 'notebook' }>
   /** Move Pulse from Intake into the Notebook dropdown */
   pulseInNotebook: boolean
   /** Move the navPeople link (Sources/Directs/etc.) from Analysis into the Notebook dropdown */
@@ -196,11 +196,15 @@ export const MODES: Record<AppMode, ModeConfig> = {
       pulseInNotebook: true,
       peopleInNotebook: true,
       extraNavItems: [
-        { href: '/entities',     label: 'Entities',       icon: 'Network',      group: 'analysis' },
-        { href: '/network',      label: 'Entity Network', icon: 'GitFork',      group: 'analysis' },
-        { href: '/claims',       label: 'Claims',         icon: 'CheckSquare',  group: 'analysis' },
-        { href: '/foia',         label: 'FOIA',           icon: 'FileSearch',   group: 'analysis' },
-        { href: '/file-cleaner', label: 'File Cleaner',   icon: 'ShieldCheck',  group: 'intake'   },
+        { href: '/entities',     label: 'Entities',        icon: 'Network',      group: 'analysis'    },
+        { href: '/network',      label: 'Entity Network',  icon: 'GitFork',      group: 'analysis'    },
+        { href: '/claims',       label: 'Claims',          icon: 'CheckSquare',  group: 'analysis'    },
+        { href: '/foia',         label: 'FOIA',            icon: 'FileSearch',   group: 'analysis'    },
+        { href: '/analysis',     label: 'Image Analysis',  icon: 'ScanSearch',   group: 'investigate' },
+        { href: '/research',     label: 'Research Tools',  icon: 'History',      group: 'investigate' },
+        { href: '/map',          label: 'Photo Map',       icon: 'MapPin',       group: 'investigate' },
+        { href: '/speakers',     label: 'Speakers',        icon: 'AudioLines',   group: 'investigate' },
+        { href: '/file-cleaner', label: 'File Cleaner',    icon: 'ShieldCheck',  group: 'intake'      },
       ],
     },
   },

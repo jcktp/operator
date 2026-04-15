@@ -30,6 +30,10 @@ const MIME_MAP: Record<string, string> = {
   wav:  'audio/wav',
   flac: 'audio/flac',
   ogg:  'audio/ogg',
+  m4a:  'audio/mp4',
+  aac:  'audio/aac',
+  opus: 'audio/ogg; codecs=opus',
+  webm: 'audio/webm',
 }
 
 function mimeForExt(filename: string): string {
@@ -56,10 +60,12 @@ export async function GET(req: NextRequest) {
     const bytes = readFileSync(guard.abs)
     const name = basename(guard.abs)
 
+    const mime = mimeForExt(name)
+    const inline = mime.startsWith('audio/') || mime.startsWith('video/')
     return new NextResponse(bytes, {
       headers: {
-        'Content-Type': mimeForExt(name),
-        'Content-Disposition': `attachment; filename="${name}"`,
+        'Content-Type': mime,
+        'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${name}"`,
         'Content-Length': bytes.length.toString(),
       },
     })
