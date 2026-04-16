@@ -84,6 +84,8 @@ Switch modes in **Settings** to adapt the interface, AI framing, and terminology
 | ⚖️ Legal | Case files, evidence & matter management |
 | 🫂 Human Resources | People operations, talent & workforce analytics |
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/GQbDxk5euKE?si=Q8BiToKmXZT9jrd4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 <details>
 <summary>Mode-specific feature flags</summary>
 
