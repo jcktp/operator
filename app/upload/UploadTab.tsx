@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, FileText, Image as ImageIcon, Mic, X, Loader2, CheckCircle, AlertCircle, Globe, ChevronDown, Plus, GitMerge } from 'lucide-react'
+import { Upload, FileText, Image as ImageIcon, Mic, X, Loader2, CheckCircle, AlertCircle, Globe, Plus, GitMerge } from 'lucide-react'
 import { type QueuedItem, type DirectReport, LINK_LABELS, detectLinkType, guessArea, fileId } from './uploadTypes'
 import { useMode } from '@/components/ModeContext'
 import SelectField from '@/components/SelectField'
@@ -288,14 +288,16 @@ export default function UploadTab() {
  )}
  </div>
  {item.status === 'pending' && (
- <div className="shrink-0 relative">
- <select value={item.area} onChange={e => updateItem(item.id, { area: e.target.value })}
- className={`text-xs border rounded-[4px] pl-2 pr-6 py-1.5 focus:outline-none focus:ring-1 bg-[var(--surface)] appearance-none cursor-pointer ${!item.area ? 'border-amber-300 text-[var(--amber)]' : 'border-[var(--border)] text-[var(--text-body)]'}`}>
- <option value="">{modeConfig.uploadAreaLabel}…</option>
- {modeConfig.defaultAreas.map(a => <option key={a} value={a}>{a}</option>)}
- </select>
- <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)]" />
- </div>
+ <SelectField
+ value={item.area}
+ onChange={v => updateItem(item.id, { area: v })}
+ options={[
+ { value: '', label: `${modeConfig.uploadAreaLabel}…` },
+ ...modeConfig.defaultAreas.map(a => ({ value: a, label: a })),
+ ]}
+ placeholder={`${modeConfig.uploadAreaLabel}…`}
+ className="w-36 shrink-0"
+ />
  )}
  {item.status === 'pending' && (
  <button type="button" onClick={e => { e.stopPropagation(); removeItem(item.id) }}
@@ -308,14 +310,16 @@ export default function UploadTab() {
  {pendingCount > 1 && (
  <div className="flex items-center gap-2 pt-1">
  <span className="text-xs text-[var(--text-muted)]">Set all to:</span>
- <div className="relative">
- <select value={defaultArea} onChange={e => setDefaultArea(e.target.value)}
- className="text-xs border border-[var(--border)] rounded-[4px] pl-2 pr-6 py-1.5 focus:outline-none bg-[var(--surface)] appearance-none">
- <option value="">Select…</option>
- {modeConfig.defaultAreas.map(a => <option key={a} value={a}>{a}</option>)}
- </select>
- <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)]" />
- </div>
+ <SelectField
+ value={defaultArea}
+ onChange={setDefaultArea}
+ options={[
+ { value: '', label: 'Select…' },
+ ...modeConfig.defaultAreas.map(a => ({ value: a, label: a })),
+ ]}
+ placeholder="Select…"
+ className="w-36"
+ />
  <button type="button" onClick={applyDefaultArea} disabled={!defaultArea}
  className="text-xs px-2.5 py-1.5 bg-[var(--surface-2)] text-[var(--text-body)] rounded-[4px] hover:bg-[var(--surface-3)] transition-colors disabled:opacity-40">
  Apply to all
@@ -342,14 +346,15 @@ export default function UploadTab() {
  <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Applied to all files</p>
  <div onClick={loadDirects}>
  <label className="block text-xs font-medium text-[var(--text-body)] mb-1.5">From {modeConfig.personLabel.toLowerCase()} <span className="text-[var(--text-muted)] font-normal">(optional)</span></label>
- <div className="relative">
- <select value={directReportId} onChange={e => setDirectReportId(e.target.value)}
- className="w-full border border-[var(--border)] rounded-[4px] pl-3 pr-8 py-2 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2 bg-[var(--surface)] appearance-none cursor-pointer">
- <option value="">Not specified</option>
- {directs.map(d => <option key={d.id} value={d.id}>{d.name} — {d.title}</option>)}
- </select>
- <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)]" />
- </div>
+ <SelectField
+ value={directReportId}
+ onChange={setDirectReportId}
+ options={[
+ { value: '', label: 'Not specified' },
+ ...directs.map(d => ({ value: d.id, label: `${d.name} — ${d.title}` })),
+ ]}
+ placeholder="Not specified"
+ />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-body)] mb-1.5">Report date <span className="text-[var(--text-muted)] font-normal">(optional)</span></label>

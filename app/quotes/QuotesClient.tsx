@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Trash2, Quote } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import SelectField from '@/components/SelectField'
 
 interface QuoteItem {
  id: string; text: string; speaker: string | null; context: string | null
@@ -121,9 +122,11 @@ export default function QuotesClient() {
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Source type</label>
- <select value={fSourceType} onChange={e => setFSourceType(e.target.value)} className={inputCls}>
- {SOURCE_TYPES.map(t => <option key={t} value={t}>{SOURCE_LABEL[t]}</option>)}
- </select>
+ <SelectField
+ value={fSourceType}
+ onChange={setFSourceType}
+ options={SOURCE_TYPES.map(t => ({ value: t, label: SOURCE_LABEL[t] }))}
+ />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Context</label>

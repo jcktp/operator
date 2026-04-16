@@ -2,7 +2,8 @@
 
 import { TrendingUp } from 'lucide-react'
 import { type RoleComplexityItem } from '@/lib/capacity'
-import { StatCard, SectionHeader, numCls, inputCls } from './capacity-shared'
+import { StatCard, SectionHeader, numCls } from './capacity-shared'
+import SelectField from '@/components/SelectField'
 
 interface RecruitingDemandSectionProps {
   openRoles: number; setOpenRoles: (v: number) => void
@@ -52,11 +53,15 @@ export default function RecruitingDemandSection(props: RecruitingDemandSectionPr
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Planning horizon</label>
-            <select value={horizonMonths} onChange={e => setHorizonMonths(parseInt(e.target.value) as 3 | 6 | 12)} className={inputCls}>
-              <option value={3}>3 months</option>
-              <option value={6}>6 months</option>
-              <option value={12}>12 months</option>
-            </select>
+            <SelectField
+              value={String(horizonMonths)}
+              onChange={v => setHorizonMonths(parseInt(v) as 3 | 6 | 12)}
+              options={[
+                { value: '3', label: '3 months' },
+                { value: '6', label: '6 months' },
+                { value: '12', label: '12 months' },
+              ]}
+            />
           </div>
         </div>
 

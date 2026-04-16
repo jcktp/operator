@@ -3,6 +3,7 @@
 import { Loader2, Plus, Trash2, Users, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { StatCard, SectionHeader, HC_STATUSES, HC_STATUS_LABEL, HC_STATUS_COLOR, inputCls } from './capacity-shared'
+import SelectField from '@/components/SelectField'
 
 interface HeadcountEntry {
   id: string; role: string; department: string; currentCount: number; targetCount: number
@@ -108,9 +109,11 @@ export default function HeadcountRegistrySection(props: HeadcountRegistrySection
             </div>
             <div>
               <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Status</label>
-              <select value={fStatus} onChange={e => setFStatus(e.target.value)} className={inputCls}>
-                {HC_STATUSES.map(s => <option key={s} value={s}>{HC_STATUS_LABEL[s]}</option>)}
-              </select>
+              <SelectField
+                value={fStatus}
+                onChange={setFStatus}
+                options={HC_STATUSES.map(s => ({ value: s, label: HC_STATUS_LABEL[s] }))}
+              />
             </div>
             <div>
               <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Target fill date</label>
@@ -157,10 +160,12 @@ export default function HeadcountRegistrySection(props: HeadcountRegistrySection
                       {entry.targetDate && <span>Target: {new Date(entry.targetDate).toLocaleDateString()}</span>}
                     </div>
                   </div>
-                  <select value={entry.status} onChange={e => void updateStatus(entry.id, e.target.value)}
-                    className={cn('text-xs font-medium h-7 px-2 rounded-[4px] border-0 bg-transparent focus:outline-none shrink-0', HC_STATUS_COLOR[entry.status])}>
-                    {HC_STATUSES.map(s => <option key={s} value={s} className="bg-[var(--surface)] text-[var(--text-bright)]">{HC_STATUS_LABEL[s]}</option>)}
-                  </select>
+                  <SelectField
+                    value={entry.status}
+                    onChange={v => void updateStatus(entry.id, v)}
+                    options={HC_STATUSES.map(s => ({ value: s, label: HC_STATUS_LABEL[s] }))}
+                    className="w-32 shrink-0"
+                  />
                   <button onClick={() => void handleDelete(entry.id)} className="text-[var(--border)] hover:text-[var(--red)] transition-colors shrink-0">
                     <Trash2 size={13} />
                   </button>

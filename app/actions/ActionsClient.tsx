@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Trash2, Ban, ListChecks } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useMode } from '@/components/ModeContext'
+import SelectField from '@/components/SelectField'
 
 interface ActionItem {
  id: string; title: string; description: string | null; kind: string
@@ -150,16 +151,19 @@ export default function ActionsClient() {
  <div className="grid grid-cols-2 gap-3">
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Type</label>
- <select value={fKind} onChange={e => setFKind(e.target.value)} className={inputCls}>
- <option value="action">Action</option>
- <option value="blocker">Blocker</option>
- </select>
+ <SelectField
+ value={fKind}
+ onChange={setFKind}
+ options={[{ value: 'action', label: 'Action' }, { value: 'blocker', label: 'Blocker' }]}
+ />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Priority</label>
- <select value={fPriority} onChange={e => setFPriority(e.target.value)} className={inputCls}>
- {PRIORITIES.map(p => <option key={p} value={p} className="capitalize">{p}</option>)}
- </select>
+ <SelectField
+ value={fPriority}
+ onChange={setFPriority}
+ options={PRIORITIES.map(p => ({ value: p, label: p.charAt(0).toUpperCase() + p.slice(1) }))}
+ />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Assignee</label>
@@ -212,10 +216,12 @@ export default function ActionsClient() {
  rows={1} placeholder="Add notes…"
  className="w-full text-xs border border-[var(--border)] rounded-[4px] px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500/30/50 resize-none" />
  </div>
- <select value={item.status} onChange={e => void updateField(item.id, 'status', e.target.value)}
- className={cn('text-xs font-medium h-7 px-2 rounded-[4px] border-0 bg-transparent focus:outline-none shrink-0', STATUS_COLOR[item.status])}>
- {STATUSES.map(s => <option key={s} value={s} className="bg-[var(--surface)] text-[var(--text-bright)]">{STATUS_LABEL[s]}</option>)}
- </select>
+ <SelectField
+ value={item.status}
+ onChange={v => void updateField(item.id, 'status', v)}
+ options={STATUSES.map(s => ({ value: s, label: STATUS_LABEL[s] }))}
+ className="w-28 shrink-0"
+ />
  <button onClick={() => void handleDelete(item.id)} className="text-[var(--border)] hover:text-[var(--red)] transition-colors shrink-0">
  <Trash2 size={13} />
  </button>

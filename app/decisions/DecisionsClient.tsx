@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Trash2, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import SelectField from '@/components/SelectField'
 
 interface Decision {
  id: string; title: string; context: string | null; rationale: string | null
@@ -136,10 +137,12 @@ export default function DecisionsClient() {
  rows={1} placeholder="Record outcome…"
  className="w-full text-xs border border-[var(--border)] rounded-[4px] px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500/30/50 resize-none" />
  </div>
- <select value={dec.status} onChange={e => void updateField(dec.id, 'status', e.target.value)}
- className={cn('text-xs font-medium h-7 px-2 rounded-[4px] border-0 bg-transparent focus:outline-none shrink-0', STATUS_COLOR[dec.status])}>
- {STATUSES.map(s => <option key={s} value={s} className="bg-[var(--surface)] text-[var(--text-bright)]">{STATUS_LABEL[s]}</option>)}
- </select>
+ <SelectField
+ value={dec.status}
+ onChange={v => void updateField(dec.id, 'status', v)}
+ options={STATUSES.map(s => ({ value: s, label: STATUS_LABEL[s] }))}
+ className="w-32 shrink-0"
+ />
  <button onClick={() => void handleDelete(dec.id)} className="text-[var(--border)] hover:text-[var(--red)] transition-colors shrink-0">
  <Trash2 size={13} />
  </button>

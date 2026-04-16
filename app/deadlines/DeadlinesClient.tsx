@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Trash2, CalendarClock, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import SelectField from '@/components/SelectField'
 
 interface Deadline {
  id: string; title: string; description: string | null; kind: string
@@ -133,15 +134,19 @@ export default function DeadlinesClient() {
  <div className="grid grid-cols-2 gap-3">
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Type</label>
- <select value={fKind} onChange={e => setFKind(e.target.value)} className={inputCls}>
- {[...new Set([...KINDS_LEGAL, ...KINDS_HR])].map(k => <option key={k} value={k} className="capitalize">{k}</option>)}
- </select>
+ <SelectField
+ value={fKind}
+ onChange={setFKind}
+ options={[...new Set([...KINDS_LEGAL, ...KINDS_HR])].map(k => ({ value: k, label: k.charAt(0).toUpperCase() + k.slice(1) }))}
+ />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Priority</label>
- <select value={fPriority} onChange={e => setFPriority(e.target.value)} className={inputCls}>
- {PRIORITIES.map(p => <option key={p} value={p} className="capitalize">{p}</option>)}
- </select>
+ <SelectField
+ value={fPriority}
+ onChange={setFPriority}
+ options={PRIORITIES.map(p => ({ value: p, label: p.charAt(0).toUpperCase() + p.slice(1) }))}
+ />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Due date *</label>
@@ -202,10 +207,12 @@ export default function DeadlinesClient() {
  Done
  </button>
  )}
- <select value={dl.status} onChange={e => void updateField(dl.id, 'status', e.target.value)}
- className="text-xs font-medium h-7 px-2 rounded-[4px] border-0 bg-transparent text-[var(--text-muted)] focus:outline-none shrink-0">
- {STATUSES.map(s => <option key={s} value={s} className="bg-[var(--surface)] text-[var(--text-bright)]">{STATUS_LABEL[s]}</option>)}
- </select>
+ <SelectField
+ value={dl.status}
+ onChange={v => void updateField(dl.id, 'status', v)}
+ options={STATUSES.map(s => ({ value: s, label: STATUS_LABEL[s] }))}
+ className="w-28 shrink-0"
+ />
  <button onClick={() => void handleDelete(dl.id)} className="text-[var(--border)] hover:text-[var(--red)] transition-colors shrink-0">
  <Trash2 size={13} />
  </button>

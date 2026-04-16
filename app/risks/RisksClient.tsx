@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Trash2, ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import SelectField from '@/components/SelectField'
 
 interface Risk {
  id: string; title: string; description: string | null; category: string
@@ -136,9 +137,11 @@ export default function RisksClient() {
  <div className="grid grid-cols-2 gap-3">
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Category</label>
- <select value={fCategory} onChange={e => setFCategory(e.target.value)} className={inputCls}>
- {CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
- </select>
+ <SelectField
+ value={fCategory}
+ onChange={setFCategory}
+ options={CATEGORIES.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))}
+ />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Owner</label>
@@ -146,15 +149,19 @@ export default function RisksClient() {
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Probability</label>
- <select value={fProb} onChange={e => setFProb(e.target.value)} className={inputCls}>
- {PROBABILITY_LEVELS.map(l => <option key={l} value={l} className="capitalize">{l}</option>)}
- </select>
+ <SelectField
+ value={fProb}
+ onChange={setFProb}
+ options={PROBABILITY_LEVELS.map(l => ({ value: l, label: l.charAt(0).toUpperCase() + l.slice(1) }))}
+ />
  </div>
  <div>
  <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1">Impact</label>
- <select value={fImpact} onChange={e => setFImpact(e.target.value)} className={inputCls}>
- {IMPACT_LEVELS.map(l => <option key={l} value={l} className="capitalize">{l}</option>)}
- </select>
+ <SelectField
+ value={fImpact}
+ onChange={setFImpact}
+ options={IMPACT_LEVELS.map(l => ({ value: l, label: l.charAt(0).toUpperCase() + l.slice(1) }))}
+ />
  </div>
  </div>
  <div className="flex gap-2 pt-1">
@@ -194,10 +201,12 @@ export default function RisksClient() {
  className="mt-2 w-full text-xs border border-[var(--border)] rounded-[4px] px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500/30/50 resize-none bg-[var(--surface)]/60" />
  </div>
  <div className="flex flex-col items-end gap-1 shrink-0">
- <select value={risk.status} onChange={e => void updateField(risk.id, 'status', e.target.value)}
- className="text-xs font-medium h-7 px-2 rounded-[4px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-body)] focus:outline-none">
- {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
- </select>
+ <SelectField
+ value={risk.status}
+ onChange={v => void updateField(risk.id, 'status', v)}
+ options={STATUSES.map(s => ({ value: s, label: STATUS_LABEL[s] }))}
+ className="w-28 shrink-0"
+ />
  {risk.resolvedAt && (
  <span className="text-[10px] text-[var(--text-muted)] whitespace-nowrap">
  Resolved {new Date(risk.resolvedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

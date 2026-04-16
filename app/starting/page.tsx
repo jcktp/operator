@@ -48,7 +48,7 @@ export default function StartingPage() {
  }, [router])
 
  return (
- <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center px-6">
+ <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center px-6">
  <div className="flex flex-col items-center gap-6 max-w-sm w-full text-center">
 
  {/* Logo */}
@@ -57,7 +57,7 @@ export default function StartingPage() {
  <WalkieTalkie />
  </div>
  {/* Pulse ring */}
- <div className="absolute inset-0 rounded-[10px] border-2 border-yellow-400 animate-ping opacity-20" />
+ <div className="absolute inset-0 rounded-[10px] border-2 border-[var(--yellow)] animate-ping opacity-20" />
  </div>
 
  {/* Title */}
