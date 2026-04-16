@@ -1,3 +1,4 @@
 deepface==0.0.93
+tf-keras
 fastapi==0.111.0
 uvicorn==0.30.1
