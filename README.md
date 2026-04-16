@@ -62,6 +62,12 @@ Operator is a private intelligence workspace. Upload documents, images, and audi
 | **Quote Bank** | Capture verbatim quotes from interviews and surveys with source type, speaker, tags, and full-text search. Market Research mode |
 | **Themes Board** | Synthesise patterns across research into candidate / confirmed / rejected themes. Market Research mode |
 | **Capacity Planning** | AIHR-formula capacity calculator, demand gap → FTE analysis, recruiting cost estimator, and headcount registry. HR mode |
+| **Speaker Diarization** | Upload audio and get speaker-segmented transcripts with per-speaker timelines, talk-time stats, and a reusable speaker library. Journalism mode |
+| **Photo Map** | Plot geotagged photos on an interactive map — cluster view, satellite/street layers, click-to-inspect with EXIF details. Journalism mode |
+| **Image Analysis** | Forensic image tools: face extraction and comparison, Error Level Analysis (ELA), AI deepfake detection, and reverse image search. Journalism mode |
+| **Research Tools** | Wayback Machine lookups, document diff (side-by-side and inline change tracking), and structured research workflows. Journalism mode |
+| **P2P Collaboration** | LAN-based peer-to-peer sync — invite teammates via mDNS or invite strings, threaded chat, conflict resolution UI, and role-based permissions |
+| **In-app Browser** | Tabbed web browser with reader mode, bookmark clipping, and the ability to send pages directly to Dispatch for AI analysis |
 
 ---
 
@@ -99,6 +105,12 @@ Switch modes in **Settings** to adapt the interface, AI framing, and terminology
 | Quote Bank | | | | ✓ | | |
 | Themes Board | | | | ✓ | | |
 | Capacity Planning | | | | | | ✓ |
+| Speaker Diarization | | ✓ | | | | |
+| Photo Map | | ✓ | | | | |
+| Image Analysis | | ✓ | | | | |
+| Research Tools | | ✓ | | | | |
+| P2P Collaboration | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| In-app Browser | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 </details>
 

@@ -1,4 +1,4 @@
-import { Upload, MessageSquare, BookOpen, Rss, Network, Clock, BarChart2, BookMarked, FolderOpen, GitFork, CheckSquare, FileSearch, ShieldCheck, ShieldAlert, Lightbulb, Ban, ListChecks, ScrollText, CalendarClock, Quote, Layers, Users2 } from 'lucide-react'
+import { Upload, MessageSquare, BookOpen, Rss, Network, Clock, BarChart2, BookMarked, FolderOpen, GitFork, CheckSquare, FileSearch, ShieldCheck, ShieldAlert, Lightbulb, Ban, ListChecks, ScrollText, CalendarClock, Quote, Layers, Users2, AudioLines, MapPin, ScanSearch, GitCompare } from 'lucide-react'
 import type { ModeConfig } from '@/lib/mode'
 
 interface Props {
@@ -33,6 +33,10 @@ export default function StepTour({ modeConfig, onNext, onBack }: Props) {
  if (f.investigationTemplate) modeSpecific.push({ icon: <CheckSquare size={17} className="text-emerald-600" />, title: 'Claims Tracker', desc: 'Log factual claims from sources and track their verification status across your investigation.' })
  if (f.investigationTemplate) modeSpecific.push({ icon: <FileSearch size={17} className="text-sky-500" />, title: 'FOIA Tracker', desc: 'Track public records requests from filing to receipt — with overdue alerts and status history.' })
  if (f.investigationTemplate) modeSpecific.push({ icon: <ShieldCheck size={17} className="text-violet-500" />, title: 'File Cleaner', desc: 'Strip EXIF metadata and identifying information from files before sharing or publishing.' })
+ if (hasNav('/speakers')) modeSpecific.push({ icon: <AudioLines size={17} className="text-pink-400" />, title: 'Speaker Diarization', desc: 'Upload audio and get speaker-segmented transcripts with per-speaker timelines and talk-time stats.' })
+ if (hasNav('/map')) modeSpecific.push({ icon: <MapPin size={17} className="text-orange-500" />, title: 'Photo Map', desc: 'Plot geotagged photos on an interactive map — cluster view, satellite layers, and click-to-inspect EXIF details.' })
+ if (hasNav('/analysis')) modeSpecific.push({ icon: <ScanSearch size={17} className="text-violet-500" />, title: 'Image Analysis', desc: 'Forensic image tools: face extraction and comparison, Error Level Analysis (ELA), and AI deepfake detection.' })
+ if (hasNav('/research')) modeSpecific.push({ icon: <GitCompare size={17} className="text-emerald-500" />, title: 'Research Tools', desc: 'Wayback Machine lookups and document diff with side-by-side and inline change tracking.' })
  if (hasNav('/risks')) modeSpecific.push({ icon: <ShieldAlert size={17} className="text-[var(--red)]" />, title: 'Risk Register', desc: 'Log risks with probability and impact scores. Track status and assign owners so nothing falls through.' })
  if (hasNav('/decisions')) modeSpecific.push({ icon: <Lightbulb size={17} className="text-yellow-500" />, title: 'Decision Log', desc: 'Record key decisions with context and rationale — a searchable audit trail for your team.' })
  if (hasNav('/actions')) modeSpecific.push({ icon: c.id === 'team_lead' ? <Ban size={17} className="text-orange-500" /> : <ListChecks size={17} className="text-sky-500" />, title: c.id === 'team_lead' ? 'Blockers' : 'Action Tracker', desc: c.id === 'team_lead' ? 'Surface and track blockers across sprints — assign owners and flag overdue items.' : 'Track HR actions and follow-ups — assignee, due date, priority, and status in one place.' })

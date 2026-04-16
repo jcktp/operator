@@ -311,7 +311,7 @@
       transition: background 0.15s;
     }
 
-    .feature-card:hover { background: #0f0f11; }
+    .feature-card:hover { background: var(--surface2); }
 
     .feature-icon {
       width: 36px; height: 36px;
@@ -608,7 +608,7 @@
     <div class="hero-actions">
       <a href="https://github.com/jcktp/operator/releases/latest/download/operator.zip" class="btn btn-primary">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download v0.1.6
+        Download v0.1.7
       </a>
       <a href="https://github.com/jcktp/operator" class="btn btn-outline">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
@@ -761,6 +761,75 @@
         </div>
         <h3>Remote submissions</h3>
         <p>Share a link so others can submit files from any device. Files land directly in your library — no app required.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <!-- AudioLines -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>
+          </svg>
+        </div>
+        <h3>Speaker diarization</h3>
+        <p>Upload audio and get speaker-segmented transcripts with per-speaker timelines, talk-time stats, and a reusable speaker library.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <!-- MapPin -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <h3>Photo map</h3>
+        <p>Plot geotagged photos on an interactive map with cluster view, satellite and street layers, and click-to-inspect EXIF details.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <!-- ScanSearch -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+            <circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>
+          </svg>
+        </div>
+        <h3>Image analysis</h3>
+        <p>Forensic image tools — face extraction and comparison, Error Level Analysis (ELA), AI deepfake detection, and reverse image search.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <!-- GitCompare -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/>
+          </svg>
+        </div>
+        <h3>Research tools</h3>
+        <p>Wayback Machine lookups, document diff with side-by-side and inline change tracking, and structured research workflows.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <!-- Users -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <h3>P2P collaboration</h3>
+        <p>LAN-based peer-to-peer sync — invite teammates via mDNS or invite strings, threaded chat, conflict resolution, and role-based permissions.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <!-- Globe -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        <h3>In-app browser</h3>
+        <p>Tabbed web browser with reader mode, bookmark clipping, and the ability to send pages directly to Dispatch for AI analysis.</p>
       </div>
 
     </div>
