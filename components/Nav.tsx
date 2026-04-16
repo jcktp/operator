@@ -47,7 +47,7 @@ import SearchModal from '@/components/SearchModal'
 import NavDropdown, { type NavGroupItem } from '@/components/NavDropdown'
 import ActiveAreaBadge from '@/components/ActiveAreaBadge'
 import ProjectSwitcher from '@/components/ProjectSwitcher'
-import { Moon, Sun, ShieldOff, FlaskConical } from 'lucide-react'
+import { Moon, Sun, ShieldOff, FlaskConical, Bug } from 'lucide-react'
 
 // Kept for any imports that reference it; top nav has no sidebar
 export const SIDEBAR_W = 0
@@ -367,6 +367,17 @@ export default function Nav() {
                   <ShieldOff size={12} />
                   {airGapped ? 'Disable air-gap' : 'Enable air-gap'}
                 </button>
+                <div className="mx-2 my-1 h-px bg-[var(--border)]" />
+                <a
+                  href="https://github.com/jcktp/operator/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setPowerMenuOpen(false)}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[var(--text-body)] hover:bg-[var(--surface-2)] transition-colors"
+                >
+                  <Bug size={12} />
+                  Report an issue
+                </a>
                 <div className="mx-2 my-1 h-px bg-[var(--border)]" />
                 <button
                   type="button"
