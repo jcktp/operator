@@ -26,6 +26,8 @@ interface MdnsSocket {
 }
 
 const _req = createRequire(import.meta.url)
+// Build an opaque module name so Turbopack cannot statically resolve it
+const _mdnsModule = ['multicast', 'dns'].join('-')
 
 const SERVICE_TYPE = '_operator._tcp.local'
 const ANNOUNCE_INTERVAL_MS = 30_000
@@ -77,7 +79,7 @@ export async function startMdns(
   try {
     // Use createRequire so Turbopack does not statically analyse this import
     // and fail the build when multicast-dns is not yet installed.
-    const mod = _req('multicast-dns') as ((...args: unknown[]) => MdnsSocket) | { default: (...args: unknown[]) => MdnsSocket }
+    const mod = _req(_mdnsModule) as ((...args: unknown[]) => MdnsSocket) | { default: (...args: unknown[]) => MdnsSocket }
     mdnsFn = typeof mod === 'function' ? mod : (mod as { default: (...args: unknown[]) => MdnsSocket }).default
   } catch {
     console.warn('[collab] multicast-dns not installed — mDNS discovery disabled')
