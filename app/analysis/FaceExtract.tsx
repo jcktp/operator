@@ -1,6 +1,7 @@
 'use client'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { Button, Spinner, EmptyState } from '@/components/ui'
+import { X } from 'lucide-react'
 import FilePicker from './FilePicker'
 
 interface SavedFace {
@@ -16,6 +17,8 @@ interface Props {
 
 function FaceCrop({ imageSource, bboxJson }: { imageSource: string; bboxJson: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [lightbox, setLightbox] = useState(false)
+  const imgUrl = `/api/files/download?path=${encodeURIComponent(imageSource)}`
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -37,17 +40,84 @@ function FaceCrop({ imageSource, bboxJson }: { imageSource: string; bboxJson: st
     img.onload = () => {
       ctx.drawImage(img, x, y, w, h, 0, 0, thumb, thumb)
     }
-    img.src = `/api/files/download?path=${encodeURIComponent(imageSource)}`
-  }, [imageSource, bboxJson])
+    img.src = imgUrl
+  }, [imgUrl, bboxJson])
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={80}
-      height={80}
-      className="rounded border border-[var(--border)] bg-[var(--surface-2)]"
-      style={{ width: 80, height: 80 }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        width={80}
+        height={80}
+        className="rounded border border-[var(--border)] bg-[var(--surface-2)] cursor-pointer hover:ring-2 hover:ring-[var(--brand)] transition-shadow"
+        style={{ width: 80, height: 80 }}
+        onClick={() => setLightbox(true)}
+        title="Click to view full image"
+      />
+      {lightbox && (
+        <FaceLightbox imgUrl={imgUrl} bboxJson={bboxJson} onClose={() => setLightbox(false)} />
+      )}
+    </>
+  )
+}
+
+function FaceLightbox({ imgUrl, bboxJson, onClose }: { imgUrl: string; bboxJson: string; onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  const handleKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose()
+  }, [onClose])
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [handleKey])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    let bbox: [number, number, number, number]
+    try {
+      bbox = JSON.parse(bboxJson) as [number, number, number, number]
+    } catch {
+      return
+    }
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0)
+      const [x, y, w, h] = bbox
+      ctx.strokeStyle = '#22c55e'
+      ctx.lineWidth = Math.max(2, Math.round(img.naturalWidth / 300))
+      ctx.strokeRect(x, y, w, h)
+    }
+    img.src = imgUrl
+  }, [imgUrl, bboxJson])
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors z-10"
+        aria-label="Close"
+      >
+        <X size={16} />
+      </button>
+      <canvas
+        ref={canvasRef}
+        className="max-w-[90vw] max-h-[85vh] rounded-lg shadow-2xl object-contain"
+        style={{ width: 'auto', height: 'auto', maxWidth: '90vw', maxHeight: '85vh' }}
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
   )
 }
 
