@@ -10,7 +10,7 @@ export default function StepReady({ modeConfig, onComplete, onUpload }: Props) {
  return (
  <div className="space-y-8 text-center">
  <div className="space-y-4">
- <div className="w-16 h-16 bg-[var(--green-dim)] border border-green-100 rounded-[10px] flex items-center justify-center mx-auto">
+ <div className="w-16 h-16 bg-[var(--green-dim)] border border-[var(--border)] rounded-[10px] flex items-center justify-center mx-auto">
  <span className="text-2xl">✓</span>
  </div>
  <div>

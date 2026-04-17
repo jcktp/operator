@@ -237,7 +237,7 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  Ollama isn't running. Local AI models require Ollama to be installed and running on your machine.
  </p>
  </div>
- <div className="p-4 bg-[var(--amber-dim)]/40 border border-[var(--amber)] rounded-[10px] text-sm text-amber-800">
+ <div className="p-4 bg-[var(--amber-dim)]/40 border border-[var(--amber)] rounded-[10px] text-sm text-[var(--amber)]">
  Start Ollama, then come back to this step — or skip and configure AI later in Settings.
  </div>
  <div className="flex gap-3">
@@ -363,8 +363,8 @@ export default function StepModels({ onNext, onBack, onSkip }: Props) {
  {/* Capability badges */}
  <div className="flex items-center gap-1">
  <span title="Text" className="text-[10px] px-1 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-muted)] font-mono">T</span>
- {caps.vision && <span title="Vision" className="text-[10px] px-1 py-0.5 rounded bg-blue-50/50 text-blue-600 font-mono">V</span>}
- {caps.audio && <span title="Audio" className="text-[10px] px-1 py-0.5 rounded bg-purple-50/50 text-purple-600 font-mono">A</span>}
+ {caps.vision && <span title="Vision" className="text-[10px] px-1 py-0.5 rounded bg-[var(--blue-dim)] text-[var(--blue)] font-mono">V</span>}
+ {caps.audio && <span title="Audio" className="text-[10px] px-1 py-0.5 rounded bg-[var(--surface-3)] text-[var(--text-subtle)] font-mono">A</span>}
  <span className="text-[10px] text-[var(--text-muted)]">{formatContextWindow(caps.contextWindow)}</span>
  </div>
  {/* RAM warning */}

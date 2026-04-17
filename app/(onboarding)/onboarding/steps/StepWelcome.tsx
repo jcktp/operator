@@ -54,10 +54,10 @@ export default function StepWelcome({ userName, onNext }: Props) {
  </div>
 
  <div className="bg-[var(--amber-dim)] border border-[var(--amber)] rounded-[10px] px-5 py-4 space-y-1.5">
- <p className="text-xs text-amber-800">
+ <p className="text-xs text-[var(--amber)]">
  <strong>AI outputs are probabilistic.</strong> They can be wrong, incomplete, or misleading. Always verify before acting on them.
  </p>
- <p className="text-xs text-amber-700">
+ <p className="text-xs text-[var(--amber)]">
  Open source under BSL 1.1 · free for personal and non-commercial use.
  </p>
  </div>
