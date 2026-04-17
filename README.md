@@ -69,7 +69,6 @@ Operator is a private intelligence workspace. Upload documents, images, and audi
 | **Image Analysis** | Forensic image tools: face extraction and comparison, Error Level Analysis (ELA), AI deepfake detection, and reverse image search. Journalism mode |
 | **Research Tools** | Wayback Machine lookups, document diff (side-by-side and inline change tracking), and structured research workflows. Journalism mode |
 | **P2P Collaboration** | LAN-based peer-to-peer sync — invite teammates via mDNS or invite strings, threaded chat, conflict resolution UI, and role-based permissions |
-| **In-app Browser** | Tabbed web browser with reader mode, bookmark clipping, and the ability to send pages directly to Dispatch for AI analysis |
 
 ---
 
@@ -112,7 +111,6 @@ Switch modes in **Settings** to adapt the interface, AI framing, and terminology
 | Image Analysis | | ✓ | | | | |
 | Research Tools | | ✓ | | | | |
 | P2P Collaboration | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| In-app Browser | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 </details>
 
