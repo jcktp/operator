@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { getReportsRoot } from '@/lib/reports-folder'
+import { detectDeepfake } from '@/lib/image-forensics'
 import { join, resolve } from 'path'
 import { writeFileSync, unlinkSync } from 'fs'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
-
-const ANALYSIS_SERVICE = 'http://127.0.0.1:5051'
-
-interface DeepfakeServiceResponse {
-  score: number
-  verdict: string
-  detail: string
-}
 
 export async function POST(req: Request) {
   const deny = await requireAuth(req)
@@ -47,25 +40,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const res = await fetch(`${ANALYSIS_SERVICE}/deepfake`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_path: imagePath }),
-    })
-    const data = await res.json() as DeepfakeServiceResponse & { detail?: string }
-    if (!res.ok) {
-      return NextResponse.json({ error: data.detail ?? 'Deepfake analysis failed' }, { status: 422 })
-    }
-    return NextResponse.json(data)
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException & { cause?: NodeJS.ErrnoException })?.cause?.code
-    if (code === 'ECONNREFUSED') {
-      return NextResponse.json(
-        { error: 'Analysis service unavailable. Ensure start.sh is running.' },
-        { status: 503 },
-      )
-    }
-    throw err
+    const result = await detectDeepfake(imagePath)
+    return NextResponse.json(result)
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'Deepfake analysis failed' },
+      { status: 422 },
+    )
   } finally {
     if (tempPath) {
       try { unlinkSync(tempPath) } catch {}

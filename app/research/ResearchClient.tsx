@@ -1,13 +1,13 @@
 'use client'
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import { Button, Spinner, EmptyState, Input, Card, CardHeader, CardBody } from '@/components/ui'
 import SelectField from '@/components/SelectField'
-import { ExternalLink, Clock, AlertCircle, GitCompare, Upload } from 'lucide-react'
+import { ExternalLink, Clock, AlertCircle, GitCompare, Upload, Search, CheckCircle2, XCircle, ShieldAlert, UserSearch } from 'lucide-react'
 import { diff_match_patch } from 'diff-match-patch'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Tab = 'wayback' | 'diff'
+type Tab = 'wayback' | 'diff' | 'username'
 
 interface Snapshot {
   timestamp: string
@@ -361,11 +361,326 @@ function DiffTab({ projects }: { projects: Project[] }) {
   )
 }
 
+// ── Username search tab ──────────────────────────────────────────────────────
+
+interface UsernameResult {
+  site: string
+  url: string
+  urlMain: string
+  status: 'found' | 'not_found' | 'error' | 'invalid' | 'waf'
+  httpStatus?: number
+  elapsed?: number
+  progress?: number
+  pageTitle?: string
+  domain?: string
+}
+
+function UsernameTab() {
+  const [username, setUsername] = useState('')
+  const [results, setResults] = useState<UsernameResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const [total, setTotal] = useState(0)
+  const [foundCount, setFoundCount] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+  const [filter, setFilter] = useState<'all' | 'found'>('found')
+  const abortRef = useRef<AbortController | null>(null)
+
+  const handleSearch = useCallback(async () => {
+    const trimmed = username.trim()
+    if (!trimmed) return
+
+    // Abort any previous search
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    setSearching(true)
+    setResults([])
+    setTotal(0)
+    setFoundCount(0)
+    setProgress(0)
+    setError(null)
+
+    try {
+      const res = await fetch(
+        `/api/research/username-search?username=${encodeURIComponent(trimmed)}`,
+        { signal: controller.signal },
+      )
+
+      if (!res.ok) {
+        const data = await res.json() as { error?: string }
+        setError(data.error ?? 'Search failed')
+        setSearching(false)
+        return
+      }
+
+      const reader = res.body?.getReader()
+      if (!reader) { setError('No response stream'); setSearching(false); return }
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const msg = JSON.parse(line) as Record<string, unknown>
+            if (msg.type === 'start') {
+              setTotal(msg.total as number)
+            } else if (msg.type === 'result') {
+              const r = msg as unknown as UsernameResult & { type: string }
+              setResults(prev => [...prev, r])
+              setProgress(r.progress ?? 0)
+              if (r.status === 'found') setFoundCount(prev => prev + 1)
+            } else if (msg.type === 'done') {
+              setFoundCount(msg.found as number)
+            } else if (msg.type === 'error') {
+              setError(msg.message as string)
+            }
+          } catch { /* skip malformed lines */ }
+        }
+      }
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') {
+        setError('Could not reach the server')
+      }
+    } finally {
+      setSearching(false)
+    }
+  }, [username])
+
+  const handleStop = useCallback(() => {
+    abortRef.current?.abort()
+    setSearching(false)
+  }, [])
+
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 25
+
+  const filtered = filter === 'found'
+    ? results.filter(r => r.status === 'found')
+    : results
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
+  const displayed = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
+  const doneCount = results.length
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-[var(--text-muted)]">
+        Search for a username across 500+ social networks and websites.
+        Powered by the <a href="https://github.com/sherlock-project/sherlock" target="_blank" rel="noopener noreferrer" className="text-[var(--blue)] hover:underline">Sherlock</a> site database.
+      </p>
+
+      <div className="flex gap-2">
+        <Input
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          placeholder="Enter a username…"
+          inputSize="md"
+          className="flex-1"
+          onKeyDown={e => { if (e.key === 'Enter' && !searching) handleSearch() }}
+          disabled={searching}
+        />
+        {searching ? (
+          <Button variant="outline" size="md" onClick={handleStop}>Stop</Button>
+        ) : (
+          <Button variant="primary" size="md" onClick={handleSearch} disabled={!username.trim()}>
+            <Search size={14} className="mr-1.5" />Search
+          </Button>
+        )}
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-[var(--red)]">
+          <AlertCircle size={14} />{error}
+        </div>
+      )}
+
+      {/* Progress bar */}
+      {searching && total > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+            <span className="flex items-center gap-1.5">
+              <Spinner size="xs" />
+              Checking {doneCount} of {total} sites…
+            </span>
+            <span>{foundCount} found</span>
+          </div>
+          <div className="h-1 rounded-full bg-[var(--surface-3)] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[var(--ink)] transition-all duration-300"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Results */}
+      {results.length > 0 && (
+        <>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-[var(--green)] flex items-center gap-1">
+                <CheckCircle2 size={12} />{foundCount} found
+              </span>
+              {!searching && (
+                <span className="text-[var(--text-muted)]">
+                  {total - foundCount - results.filter(r => r.status === 'error' || r.status === 'waf').length} not found
+                </span>
+              )}
+            </div>
+            <div className="flex gap-1">
+              {(['found', 'all'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => { setFilter(f); setPage(1) }}
+                  className={`text-[11px] px-2.5 py-1 rounded-[4px] border transition-colors ${
+                    filter === f
+                      ? 'bg-[var(--ink)] text-[var(--ink-contrast)] border-[var(--ink)]'
+                      : 'bg-[var(--surface)] text-[var(--text-subtle)] border-[var(--border)] hover:border-[var(--border-mid)]'
+                  }`}
+                >
+                  {f === 'found' ? 'Found only' : 'All results'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            {displayed.map(r => (
+              <div
+                key={r.site}
+                className="flex items-center gap-3 rounded-[6px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5"
+              >
+                {/* Favicon */}
+                {r.domain && (
+                  <img
+                    src={`https://www.google.com/s2/favicons?sz=32&domain=${r.domain}`}
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="shrink-0 rounded-[2px]"
+                    loading="lazy"
+                  />
+                )}
+                {!r.domain && (
+                  <div className="w-4 h-4 shrink-0 rounded-[2px] bg-[var(--surface-3)]" />
+                )}
+
+                {/* Status icon */}
+                {r.status === 'found' && <CheckCircle2 size={13} className="text-[var(--green)] shrink-0" />}
+                {r.status === 'not_found' && <XCircle size={13} className="text-[var(--text-muted)] shrink-0" />}
+                {r.status === 'error' && <AlertCircle size={13} className="text-[var(--amber)] shrink-0" />}
+                {r.status === 'waf' && <ShieldAlert size={13} className="text-[var(--amber)] shrink-0" />}
+                {r.status === 'invalid' && <XCircle size={13} className="text-[var(--text-muted)] shrink-0" />}
+
+                {/* Site info */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className={`text-xs font-medium truncate ${r.status === 'found' ? 'text-[var(--text-bright)]' : 'text-[var(--text-muted)]'}`}>
+                      {r.site}
+                    </p>
+                    {r.domain && (
+                      <span className="text-[10px] text-[var(--text-muted)] shrink-0">{r.domain}</span>
+                    )}
+                  </div>
+                  {r.status === 'found' && r.pageTitle && (
+                    <p className="text-[11px] text-[var(--text-subtle)] truncate mt-0.5">{r.pageTitle}</p>
+                  )}
+                  {r.status === 'found' && (
+                    <p className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">{r.url}</p>
+                  )}
+                </div>
+
+                {/* Right side */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {r.elapsed != null && (
+                    <span className="text-[10px] text-[var(--text-muted)]">{r.elapsed}ms</span>
+                  )}
+                  {r.status === 'found' && (
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-[var(--blue)] hover:underline"
+                    >
+                      Visit <ExternalLink size={11} />
+                    </a>
+                  )}
+                  {r.status === 'waf' && (
+                    <span className="text-[10px] text-[var(--amber)]">Blocked</span>
+                  )}
+                  {r.status === 'error' && (
+                    <span className="text-[10px] text-[var(--amber)]">Timeout</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-1">
+              <p className="text-[11px] text-[var(--text-muted)]">
+                {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, filtered.length)} of {filtered.length}
+              </p>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!searching && filtered.length === 0 && filter === 'found' && (
+            <p className="text-xs text-[var(--text-muted)] text-center py-4">
+              No profiles found for this username.
+            </p>
+          )}
+        </>
+      )}
+
+      {!searching && results.length === 0 && !error && (
+        <EmptyState
+          icon={<UserSearch size={20} />}
+          title="Username search"
+          description="Enter a username to check its availability across 500+ websites and social networks."
+          size="sm"
+        />
+      )}
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 const TABS: Array<{ id: Tab; label: string }> = [
-  { id: 'wayback', label: 'Wayback Machine' },
-  { id: 'diff',    label: 'Document Diff' },
+  { id: 'wayback',  label: 'Wayback Machine' },
+  { id: 'diff',     label: 'Document Diff' },
+  { id: 'username', label: 'Username Search' },
 ]
 
 export default function ResearchClient({ projects }: Props) {
@@ -392,8 +707,9 @@ export default function ResearchClient({ projects }: Props) {
       </div>
 
       <div>
-        {tab === 'wayback' && <WaybackTab />}
-        {tab === 'diff'    && <DiffTab projects={projects} />}
+        {tab === 'wayback'  && <WaybackTab />}
+        {tab === 'diff'     && <DiffTab projects={projects} />}
+        {tab === 'username' && <UsernameTab />}
       </div>
     </div>
   )

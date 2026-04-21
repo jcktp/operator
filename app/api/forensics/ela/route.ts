@@ -1,20 +1,11 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { getReportsRoot } from '@/lib/reports-folder'
+import { computeEla } from '@/lib/image-forensics'
 import { join, resolve } from 'path'
-import { writeFileSync, mkdirSync, unlinkSync } from 'fs'
+import { writeFileSync, unlinkSync } from 'fs'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
-
-const ANALYSIS_SERVICE = 'http://127.0.0.1:5051'
-
-interface ElaServiceResponse {
-  score: number
-  max_score: number
-  verdict: string
-  ela_image_base64: string
-  detail?: string
-}
 
 export async function POST(req: Request) {
   const deny = await requireAuth(req)
@@ -30,7 +21,6 @@ export async function POST(req: Request) {
     if (!file) {
       return NextResponse.json({ error: 'image is required' }, { status: 400 })
     }
-    // Save to a temp file for the Python service
     const ext = ((file as File).name ?? 'image.jpg').split('.').pop() ?? 'jpg'
     tempPath = join(tmpdir(), `ela_${randomUUID()}.${ext}`)
     const buf = Buffer.from(await file.arrayBuffer())
@@ -50,25 +40,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const res = await fetch(`${ANALYSIS_SERVICE}/ela`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_path: imagePath }),
-    })
-    const data = await res.json() as ElaServiceResponse
-    if (!res.ok) {
-      return NextResponse.json({ error: data.detail ?? 'ELA analysis failed' }, { status: 422 })
-    }
-    return NextResponse.json(data)
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException & { cause?: NodeJS.ErrnoException })?.cause?.code
-    if (code === 'ECONNREFUSED') {
-      return NextResponse.json(
-        { error: 'Analysis service unavailable. Ensure start.sh is running.' },
-        { status: 503 },
-      )
-    }
-    throw err
+    const result = await computeEla(imagePath)
+    return NextResponse.json(result)
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'ELA analysis failed' },
+      { status: 422 },
+    )
   } finally {
     if (tempPath) {
       try { unlinkSync(tempPath) } catch {}

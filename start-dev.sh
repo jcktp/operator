@@ -248,30 +248,9 @@ else
   warn "  Facial recognition service skipped"
 fi
 
-# ── 3e. Image analysis service (ELA + deepfake) ──────────────────────────────
-ANALYSIS_PID=0
-ANALYSIS_SKIP=false
-step "Setting up image analysis service..."
-
-if [ "$FACES_SKIP" = "true" ]; then
-  warn "  Faces venv unavailable — image analysis service will be skipped"
-  ANALYSIS_SKIP=true
-fi
-
-if [ "$ANALYSIS_SKIP" = "false" ] && ! "$FACES_VENV/bin/python3" -c "from PIL import Image" 2>/dev/null; then
-  step "  Installing Pillow into faces venv..."
-  "$FACES_VENV/bin/pip" install -q --prefer-binary Pillow \
-    || { warn "  Could not install Pillow — image analysis will be unavailable"; ANALYSIS_SKIP=true; }
-fi
-
-if [ "$ANALYSIS_SKIP" = "false" ]; then
-  pkill -f analysis_service.py 2>/dev/null || true
-  "$FACES_VENV/bin/python3" analysis_service.py &
-  ANALYSIS_PID=$!
-  step "  Analysis service started (PID $ANALYSIS_PID)"
-else
-  warn "  Image analysis service skipped"
-fi
+# ── 3e. Image analysis (ELA + deepfake) ───────────────────────────────────────
+# Ported to TypeScript (lib/image-forensics.ts) — no Python service needed.
+step "Image analysis: using built-in TypeScript module (no Python service needed)"
 
 # ── 3f. Media service (speaker diarization) ──────────────────────────────────
 MEDIA_PID=0
@@ -598,8 +577,7 @@ cleanup() {
   [ -f "$PID_FILE" ] && kill "$(cat $PID_FILE)" 2>/dev/null; rm -f "$PID_FILE"
   [ "$FACE_PID" -gt 0 ] 2>/dev/null && kill "$FACE_PID" 2>/dev/null || true
   pkill -f face_service.py 2>/dev/null || true
-  [ "$ANALYSIS_PID" -gt 0 ] 2>/dev/null && kill "$ANALYSIS_PID" 2>/dev/null || true
-  pkill -f analysis_service.py 2>/dev/null || true
+  # analysis_service.py removed — now handled by TypeScript
   [ "$MEDIA_PID" -gt 0 ] 2>/dev/null && kill "$MEDIA_PID" 2>/dev/null || true
   pkill -f media_service.py 2>/dev/null || true
   pkill -x "ollama" 2>/dev/null || true
