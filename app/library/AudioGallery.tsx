@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Play, Pause, ChevronDown, ChevronUp, Trash2, FileText } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Play, Pause, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { formatRelativeDate } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 import { useRouter } from 'next/navigation'
@@ -11,6 +11,7 @@ interface Segment {
   start: number
   end: number
   duration: number
+  text?: string
 }
 
 interface AudioReport {
@@ -48,20 +49,158 @@ function speakerStats(segments: Segment[], total: number) {
     .sort((a, b) => b.secs - a.secs)
 }
 
+// ── Synced audio player with karaoke transcript ──────────────────────────────
+
+function SyncedPlayer({ src, segments, speakerNames, duration: totalDuration }: {
+  src: string
+  segments: Segment[]
+  speakerNames: Record<string, string>
+  duration: number
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const transcriptRef = useRef<HTMLDivElement | null>(null)
+  const activeLineRef = useRef<HTMLDivElement | null>(null)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [playing, setPlaying] = useState(false)
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    const onTime = () => setCurrentTime(audio.currentTime)
+    const onMeta = () => setDuration(audio.duration || 0)
+    const onPlay = () => setPlaying(true)
+    const onPause = () => setPlaying(false)
+    const onEnded = () => { setPlaying(false); setCurrentTime(0) }
+    audio.addEventListener('timeupdate', onTime)
+    audio.addEventListener('loadedmetadata', onMeta)
+    audio.addEventListener('play', onPlay)
+    audio.addEventListener('pause', onPause)
+    audio.addEventListener('ended', onEnded)
+    return () => {
+      audio.removeEventListener('timeupdate', onTime)
+      audio.removeEventListener('loadedmetadata', onMeta)
+      audio.removeEventListener('play', onPlay)
+      audio.removeEventListener('pause', onPause)
+      audio.removeEventListener('ended', onEnded)
+    }
+  }, [src])
+
+  // Auto-scroll within the transcript container only — never move the page
+  useEffect(() => {
+    if (playing && activeLineRef.current && transcriptRef.current) {
+      const container = transcriptRef.current
+      const line = activeLineRef.current
+      const lineTop = line.offsetTop - container.offsetTop
+      const target = lineTop - container.clientHeight / 2 + line.clientHeight / 2
+      container.scrollTo({ top: target, behavior: 'smooth' })
+    }
+  }, [currentTime, playing])
+
+  const seekTo = (t: number) => {
+    if (audioRef.current) { audioRef.current.currentTime = t; audioRef.current.play().catch(() => {}) }
+  }
+  const togglePlay = () => {
+    if (!audioRef.current) return
+    if (audioRef.current.paused) audioRef.current.play().catch(() => {})
+    else audioRef.current.pause()
+  }
+
+  const activeIdx = segments.findIndex(s => currentTime >= s.start && currentTime < s.end)
+  const dur = duration || totalDuration || segments[segments.length - 1]?.end || 1
+  const hasText = segments.some(s => s.text)
+
+  return (
+    <div className="space-y-2">
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <audio ref={audioRef} src={src} preload="metadata" />
+      <div className="flex items-center gap-3">
+        <button onClick={togglePlay}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--ink)] text-[var(--ink-contrast)] hover:opacity-80 transition-opacity shrink-0"
+        >
+          {playing ? <Pause size={14} /> : <Play size={14} />}
+        </button>
+        <input type="range" min={0} max={dur} step={0.1} value={currentTime}
+          onChange={e => seekTo(parseFloat(e.target.value))}
+          className="flex-1 accent-[var(--blue)] h-1"
+        />
+        <span className="text-xs text-[var(--text-muted)] tabular-nums shrink-0">
+          {formatTime(currentTime)} / {formatTime(dur)}
+        </span>
+      </div>
+      {/* Clickable timeline */}
+      {segments.length > 0 && (
+        <div className="h-4 w-full rounded-[3px] overflow-hidden flex cursor-pointer relative"
+          onClick={e => {
+            const r = e.currentTarget.getBoundingClientRect()
+            seekTo(((e.clientX - r.left) / r.width) * dur)
+          }}
+        >
+          {segments.map((seg, i) => (
+            <div key={i}
+              title={`${speakerNames[seg.speaker] || seg.speaker}: ${formatTime(seg.start)}–${formatTime(seg.end)}`}
+              style={{ width: `${(seg.duration / (dur || 1)) * 100}%`, backgroundColor: speakerColor(seg.speaker, segments), opacity: 0.8 }}
+            />
+          ))}
+          <div className="absolute top-0 bottom-0 w-0.5 bg-white/70 pointer-events-none"
+            style={{ left: `${(currentTime / dur) * 100}%` }} />
+        </div>
+      )}
+      {/* Live transcript */}
+      {hasText && (
+        <div ref={transcriptRef}
+          className="max-h-48 overflow-y-auto rounded-[5px] bg-[var(--surface-2)] border border-[var(--border)] p-2 space-y-0.5 scroll-smooth"
+        >
+          {segments.map((seg, i) => {
+            const isActive = i === activeIdx
+            const isPast = currentTime >= seg.end
+            const color = speakerColor(seg.speaker, segments)
+            const name = speakerNames[seg.speaker] || seg.speaker
+            return (
+              <div
+                key={i}
+                ref={isActive ? activeLineRef : undefined}
+                onClick={() => seekTo(seg.start)}
+                className={`px-2 py-1.5 rounded-[4px] cursor-pointer transition-all ${
+                  isActive
+                    ? 'bg-[var(--surface-3)] shadow-sm'
+                    : 'hover:bg-[var(--surface-3)]'
+                }`}
+                style={{ opacity: isPast && !isActive ? 0.5 : 1 }}
+              >
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] tabular-nums shrink-0 w-10">
+                    {formatTime(seg.start)}
+                  </span>
+                  <span className="text-[11px] font-medium shrink-0" style={{ color }}>{name}</span>
+                </div>
+                {seg.text && (
+                  <p className={`text-xs leading-relaxed mt-0.5 ml-12 ${
+                    isActive ? 'text-[var(--text-bright)]' : 'text-[var(--text-body)]'
+                  }`}>
+                    {seg.text}
+                  </p>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Audio card ───────────────────────────────────────────────────────────────
+
 function AudioCard({ report, onDelete }: { report: AudioReport; onDelete: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [showTranscript, setShowTranscript] = useState(false)
 
   const { diarization, speakerNames } = report
   const seg = diarization.segments
   const stats = speakerStats(seg, diarization.duration)
 
   const audioSrc = `/api/files/download?path=${encodeURIComponent(report.filePath)}`
-
-  const transcript = seg
-    .map(s => `[${formatTime(s.start)}–${formatTime(s.end)}] ${speakerNames[s.speaker] || s.speaker}`)
-    .join('\n')
 
   async function handleDelete() {
     if (!window.confirm(`Delete "${report.title}"? This cannot be undone.`)) return
@@ -101,8 +240,8 @@ function AudioCard({ report, onDelete }: { report: AudioReport; onDelete: (id: s
         </div>
       </div>
 
-      {/* Speaker timeline bar */}
-      {seg.length > 0 && (
+      {/* Speaker timeline bar (collapsed preview) */}
+      {!expanded && seg.length > 0 && (
         <div className="px-4 pb-3">
           <div className="h-4 w-full rounded-[3px] overflow-hidden flex">
             {seg.map((s, i) => (
@@ -123,9 +262,15 @@ function AudioCard({ report, onDelete }: { report: AudioReport; onDelete: (id: s
       {/* Expanded content */}
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-[var(--border)]">
-          {/* Native audio element */}
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <audio controls src={audioSrc} className="w-full mt-3" style={{ height: 36 }} />
+          {/* Synced player with karaoke transcript */}
+          <div className="pt-3">
+            <SyncedPlayer
+              src={audioSrc}
+              segments={seg}
+              speakerNames={speakerNames}
+              duration={diarization.duration}
+            />
+          </div>
 
           {/* Speaker stats */}
           <div className="space-y-1.5">
@@ -144,22 +289,6 @@ function AudioCard({ report, onDelete }: { report: AudioReport; onDelete: (id: s
                 </div>
               )
             })}
-          </div>
-
-          {/* Transcript toggle */}
-          <div>
-            <button
-              onClick={() => setShowTranscript(v => !v)}
-              className="flex items-center gap-1.5 text-xs text-[var(--text-subtle)] hover:text-[var(--text-body)] transition-colors"
-            >
-              <FileText size={12} />
-              {showTranscript ? 'Hide transcript' : 'View transcript'}
-            </button>
-            {showTranscript && (
-              <pre className="mt-2 max-h-48 overflow-y-auto rounded-[5px] bg-[var(--surface-2)] border border-[var(--border)] p-3 text-[11px] leading-relaxed text-[var(--text-body)] whitespace-pre-wrap font-mono">
-                {transcript}
-              </pre>
-            )}
           </div>
         </div>
       )}

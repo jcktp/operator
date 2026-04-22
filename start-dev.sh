@@ -268,8 +268,8 @@ if [ "$MEDIA_SKIP" = "false" ] && [ ! -f "$MEDIA_VENV/bin/python3" ]; then
     || { warn "  Could not create media venv — speaker diarization will be unavailable"; MEDIA_SKIP=true; }
 fi
 
-if [ "$MEDIA_SKIP" = "false" ] && ! "$MEDIA_VENV/bin/python3" -c "import resemblyzer" 2>/dev/null; then
-  step "  Installing resemblyzer + dependencies (first run)..."
+if [ "$MEDIA_SKIP" = "false" ] && ! "$MEDIA_VENV/bin/python3" -c "import resemblyzer; import faster_whisper" 2>/dev/null; then
+  step "  Installing media dependencies (resemblyzer + faster-whisper)..."
   "$MEDIA_VENV/bin/pip" install -q --prefer-binary -r requirements-media.txt \
     || { warn "  Could not install media deps — speaker diarization will be unavailable"; MEDIA_SKIP=true; }
 fi

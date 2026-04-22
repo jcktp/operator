@@ -8,16 +8,18 @@ interface Segment {
   start: number
   end: number
   duration: number
+  text?: string
 }
 
 interface SaveBody {
-  projectId: string
+  projectId?: string           // optional — if omitted, saved under "General"
   area: string
   fileName: string
   diarization: {
     segments: Segment[]
     num_speakers: number
     duration: number
+    language?: string
   }
   speakerNames: Record<string, string>  // e.g. {"Speaker 1": "John", "Speaker 2": "Jane"}
 }
@@ -28,7 +30,7 @@ function buildTranscript(segments: Segment[], speakerNames: Record<string, strin
       const name = speakerNames[seg.speaker] || seg.speaker
       const start = formatTime(seg.start)
       const end = formatTime(seg.end)
-      return `[${start}–${end}] ${name}`
+      return seg.text ? `[${start}–${end}] ${name}: ${seg.text}` : `[${start}–${end}] ${name}`
     })
     .join('\n')
 }
@@ -62,17 +64,28 @@ export async function POST(req: Request) {
   }
 
   const { projectId, area, fileName, diarization, speakerNames } = body
-  if (!projectId || !area) {
-    return NextResponse.json({ error: 'projectId and area are required' }, { status: 400 })
+  if (!area) {
+    return NextResponse.json({ error: 'area is required' }, { status: 400 })
   }
 
-  const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true, mode: true } })
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+  // Look up project if provided, otherwise save under "General"
+  let projectName: string | undefined
+  let projectMode = ''
+  if (projectId) {
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true, mode: true } })
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+    projectName = project.name
+    projectMode = project.mode
+  } else {
+    // Inherit mode from current setting
+    const modeSetting = await prisma.setting.findUnique({ where: { key: 'mode' } })
+    projectMode = modeSetting?.value ?? ''
   }
 
   // Save audio file to disk
-  const filePath = saveReportFile(audioBuffer, fileName, area, project.name)
+  const filePath = saveReportFile(audioBuffer, fileName, area, projectName)
 
   // Build a human-readable transcript as rawContent
   const rawContent = buildTranscript(diarization.segments, speakerNames)
@@ -92,8 +105,8 @@ export async function POST(req: Request) {
       displayContent,
       filePath,
       area,
-      mode: project.mode,
-      projectId,
+      mode: projectMode,
+      projectId: projectId || null,
     },
   })
 

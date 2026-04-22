@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { Button, Spinner, EmptyState, Input } from '@/components/ui'
 import SelectField from '@/components/SelectField'
-import { Mic, X, Play, Pause, Check, Save, ChevronDown, ChevronUp, Plus, FileText } from 'lucide-react'
+import { Mic, X, Play, Pause, Check, ChevronDown, ChevronUp, Plus, FileText } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -11,12 +11,14 @@ interface Segment {
   start: number
   end: number
   duration: number
+  text?: string
 }
 
 interface DiarizeResult {
   segments: Segment[]
   num_speakers: number
   duration: number
+  language?: string
 }
 
 interface Project {
@@ -40,6 +42,36 @@ interface Job {
 interface Props {
   projects: Project[]
 }
+
+// ── Whisper model options ─────────────────────────────────────────────────────
+
+const WHISPER_MODELS = [
+  {
+    value: 'tiny',
+    label: 'Tiny — fastest, ~75 MB',
+    desc: 'Good enough for clear, single-language recordings with minimal background noise. May miss words in fast speech, accents, or overlapping speakers. Best for quick previews.',
+  },
+  {
+    value: 'base',
+    label: 'Base — fast, ~150 MB',
+    desc: 'Handles most clear recordings well. Reliable for interviews, meetings, and phone calls in common languages. Struggles with heavy accents, technical jargon, or noisy environments.',
+  },
+  {
+    value: 'small',
+    label: 'Small — balanced, ~500 MB',
+    desc: 'Strong accuracy across languages and accents. Handles background noise, crosstalk, and domain-specific vocabulary better. Noticeably slower than Base — expect 2-3x the processing time.',
+  },
+  {
+    value: 'medium',
+    label: 'Medium — accurate, ~1.5 GB',
+    desc: 'High accuracy even with difficult audio: heavy accents, low-quality recordings, technical terms. Supports 90+ languages well. Slow on CPU — a 5-minute file may take several minutes.',
+  },
+  {
+    value: 'large-v3',
+    label: 'Large — best accuracy, ~3 GB',
+    desc: 'Maximum accuracy for any language or condition. Use for critical transcriptions where every word matters: legal recordings, evidence, foreign language audio. Very slow on CPU and memory-heavy.',
+  },
+]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -78,11 +110,15 @@ function speakerStats(segments: Segment[], total: number): Array<{ speaker: stri
 
 function buildTranscript(segments: Segment[], speakerNames: Record<string, string>): string {
   return segments
-    .map(seg => `[${formatTime(seg.start)}–${formatTime(seg.end)}] ${speakerNames[seg.speaker] || seg.speaker}`)
+    .map(seg => {
+      const name = speakerNames[seg.speaker] || seg.speaker
+      const time = `[${formatTime(seg.start)}–${formatTime(seg.end)}]`
+      return seg.text ? `${time} ${name}: ${seg.text}` : `${time} ${name}`
+    })
     .join('\n')
 }
 
-// ── Inline audio player ───────────────────────────────────────────────────────
+// ── Inline audio player with live transcript ─────────────────────────────────
 
 function AudioPlayer({ src, segments, speakerNames }: {
   src: string
@@ -90,6 +126,8 @@ function AudioPlayer({ src, segments, speakerNames }: {
   speakerNames: Record<string, string>
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const transcriptRef = useRef<HTMLDivElement | null>(null)
+  const activeLineRef = useRef<HTMLDivElement | null>(null)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -116,6 +154,17 @@ function AudioPlayer({ src, segments, speakerNames }: {
     }
   }, [src])
 
+  // Auto-scroll within the transcript container only — never move the page
+  useEffect(() => {
+    if (playing && activeLineRef.current && transcriptRef.current) {
+      const container = transcriptRef.current
+      const line = activeLineRef.current
+      const lineTop = line.offsetTop - container.offsetTop
+      const target = lineTop - container.clientHeight / 2 + line.clientHeight / 2
+      container.scrollTo({ top: target, behavior: 'smooth' })
+    }
+  }, [currentTime, playing])
+
   const seekTo = (t: number) => {
     if (audioRef.current) { audioRef.current.currentTime = t; audioRef.current.play().catch(() => {}) }
   }
@@ -125,10 +174,12 @@ function AudioPlayer({ src, segments, speakerNames }: {
     else audioRef.current.pause()
   }
 
-  const activeSeg = segments.find(s => currentTime >= s.start && currentTime < s.end)
+  const activeIdx = segments.findIndex(s => currentTime >= s.start && currentTime < s.end)
+  const activeSeg = activeIdx >= 0 ? segments[activeIdx] : undefined
   const activeColor = activeSeg ? speakerColor(activeSeg.speaker, segments) : undefined
   const activeName = activeSeg ? (speakerNames[activeSeg.speaker] || activeSeg.speaker) : null
   const dur = duration || segments[segments.length - 1]?.end || 1
+  const hasText = segments.some(s => s.text)
 
   return (
     <div className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] p-3 space-y-2">
@@ -148,7 +199,7 @@ function AudioPlayer({ src, segments, speakerNames }: {
           {formatTime(currentTime)} / {formatTime(dur)}
         </span>
       </div>
-      {activeName && (
+      {activeName && !hasText && (
         <p className="text-xs text-[var(--text-muted)]">
           Now: <span className="font-medium" style={{ color: activeColor }}>{activeName}</span>
         </p>
@@ -169,6 +220,46 @@ function AudioPlayer({ src, segments, speakerNames }: {
           ))}
           <div className="absolute top-0 bottom-0 w-0.5 bg-white/70 pointer-events-none"
             style={{ left: `${(currentTime / dur) * 100}%` }} />
+        </div>
+      )}
+      {/* Live transcript — karaoke style */}
+      {hasText && (
+        <div ref={transcriptRef}
+          className="max-h-48 overflow-y-auto rounded-[5px] bg-[var(--surface-3)] border border-[var(--border)] p-2 space-y-0.5 scroll-smooth"
+        >
+          {segments.map((seg, i) => {
+            const isActive = i === activeIdx
+            const isPast = currentTime >= seg.end
+            const color = speakerColor(seg.speaker, segments)
+            const name = speakerNames[seg.speaker] || seg.speaker
+            return (
+              <div
+                key={i}
+                ref={isActive ? activeLineRef : undefined}
+                onClick={() => seekTo(seg.start)}
+                className={`px-2 py-1.5 rounded-[4px] cursor-pointer transition-all ${
+                  isActive
+                    ? 'bg-[var(--surface-2)] shadow-sm'
+                    : 'hover:bg-[var(--surface-2)]'
+                }`}
+                style={{ opacity: isPast && !isActive ? 0.5 : 1 }}
+              >
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] tabular-nums shrink-0 w-10">
+                    {formatTime(seg.start)}
+                  </span>
+                  <span className="text-[11px] font-medium shrink-0" style={{ color }}>{name}</span>
+                </div>
+                {seg.text && (
+                  <p className={`text-xs leading-relaxed mt-0.5 ml-12 ${
+                    isActive ? 'text-[var(--text-bright)]' : 'text-[var(--text-body)]'
+                  }`}>
+                    {seg.text}
+                  </p>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -222,21 +313,13 @@ function SpeakerNameEditor({ speaker, value, color, onChange }: {
 
 // ── Single job card ───────────────────────────────────────────────────────────
 
-function JobCard({ job, projects, onToggle, onSpeakerRename, onSave }: {
+function JobCard({ job, onToggle, onSpeakerRename, onResave }: {
   job: Job
-  projects: Project[]
   onToggle: () => void
   onSpeakerRename: (jobId: string, speaker: string, name: string) => void
-  onSave: (jobId: string, projectId: string, area: string) => void
+  onResave: (jobId: string) => void
 }) {
-  const [saveProjectId, setSaveProjectId] = useState(projects[0]?.id ?? '')
-  const [saveArea, setSaveArea] = useState('')
-  const [showSaveForm, setShowSaveForm] = useState(false)
   const [showTranscript, setShowTranscript] = useState(false)
-
-  const projectOptions = projects.map(p => ({ value: p.id, label: p.name }))
-  const projectAreas = projects.find(p => p.id === saveProjectId)?.areas ?? []
-  const areaOptions = projectAreas.map(a => ({ value: a, label: a }))
 
   const result = job.result
 
@@ -254,7 +337,7 @@ function JobCard({ job, projects, onToggle, onSpeakerRename, onSave }: {
             {job.status === 'processing' && <span className="flex items-center gap-1"><Spinner size="xs" /> Processing…</span>}
             {job.status === 'error' && <span className="text-[var(--red)]">{job.error}</span>}
             {job.status === 'done' && result && (
-              `${result.num_speakers} speakers · ${formatTime(result.duration)} · ${result.segments.length} segments`
+              `${result.num_speakers} speakers · ${formatTime(result.duration)} · ${result.segments.length} segments${result.language ? ` · ${result.language}` : ''}`
             )}
             {job.savedReportId && <span className="text-[var(--green)] ml-2">· Saved to library</span>}
           </div>
@@ -319,74 +402,38 @@ function JobCard({ job, projects, onToggle, onSpeakerRename, onSave }: {
               const color = speakerColor(seg.speaker, result.segments)
               const name = job.speakerNames[seg.speaker] || seg.speaker
               return (
-                <div key={i} className="flex items-center gap-3 px-3 py-1.5 rounded-[5px] bg-[var(--surface-3)] text-xs">
-                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                  <span className="font-medium w-24 shrink-0 truncate" style={{ color }}>{name}</span>
-                  <span className="text-[var(--text-muted)] tabular-nums">{formatTime(seg.start)} – {formatTime(seg.end)}</span>
-                  <span className="ml-auto text-[var(--text-muted)] tabular-nums">{formatDur(seg.duration)}</span>
+                <div key={i} className="px-3 py-1.5 rounded-[5px] bg-[var(--surface-3)] text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                    <span className="font-medium w-24 shrink-0 truncate" style={{ color }}>{name}</span>
+                    <span className="text-[var(--text-muted)] tabular-nums">{formatTime(seg.start)} – {formatTime(seg.end)}</span>
+                    <span className="ml-auto text-[var(--text-muted)] tabular-nums">{formatDur(seg.duration)}</span>
+                  </div>
+                  {seg.text && (
+                    <p className="mt-1 ml-[26px] text-[var(--text-body)] leading-relaxed">{seg.text}</p>
+                  )}
                 </div>
               )
             })}
           </div>
 
-          {/* Save to library */}
-          {!job.savedReportId && (
-            <div>
-              {!showSaveForm ? (
-                <button
-                  onClick={() => setShowSaveForm(true)}
-                  className="flex items-center gap-1.5 text-xs text-[var(--blue)] hover:underline"
-                >
-                  <Save size={12} /> Save to library
-                </button>
-              ) : (
-                <div className="flex items-end gap-2 flex-wrap">
-                  <div className="space-y-1">
-                    <p className="text-[11px] text-[var(--text-muted)]">Story</p>
-                    <SelectField
-                      value={saveProjectId}
-                      onChange={setSaveProjectId}
-                      options={projectOptions}
-                      placeholder="Select story…"
-                      className="w-40"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[11px] text-[var(--text-muted)]">Area</p>
-                    {areaOptions.length > 0 ? (
-                      <SelectField
-                        value={saveArea}
-                        onChange={setSaveArea}
-                        options={areaOptions}
-                        placeholder="Select area…"
-                        className="w-36"
-                      />
-                    ) : (
-                      <Input
-                        value={saveArea}
-                        onChange={e => setSaveArea(e.target.value)}
-                        placeholder="e.g. Interviews"
-                        inputSize="sm"
-                        className="w-36"
-                      />
-                    )}
-                  </div>
-                  <Button variant="primary" size="sm"
-                    disabled={!saveProjectId || !saveArea}
-                    onClick={() => { onSave(job.id, saveProjectId, saveArea); setShowSaveForm(false) }}
-                  >
-                    Save
-                  </Button>
-                  <button onClick={() => setShowSaveForm(false)} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)]">Cancel</button>
-                </div>
-              )}
+          {/* Save status */}
+          {job.savedReportId ? (
+            <div className="flex items-center gap-3">
+              <p className="flex items-center gap-1.5 text-xs text-[var(--green)]">
+                <Check size={12} /> Saved to library
+              </p>
+              <button
+                onClick={() => onResave(job.id)}
+                className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-body)] underline"
+              >
+                Update saved version
+              </button>
             </div>
-          )}
-
-          {job.savedReportId && (
-            <p className="flex items-center gap-1.5 text-xs text-[var(--green)]">
-              <Check size={12} /> Saved to library
-            </p>
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+              <Spinner size="xs" /> Saving…
+            </span>
           )}
         </div>
       )}
@@ -402,7 +449,33 @@ export default function SpeakersClient({ projects }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [jobs, setJobs] = useState<Job[]>([])
   const [numSpeakers, setNumSpeakers] = useState('')
+  const [transcribe, setTranscribe] = useState(true)
+  const [modelSize, setModelSize] = useState('base')
   const [processing, setProcessing] = useState(false)
+  const [saveProjectId, setSaveProjectId] = useState(projects[0]?.id ?? '')
+  const [saveArea, setSaveArea] = useState('Audio')
+
+  // Auto-save immediately after processing — uses current project/area settings
+  function autoSave(jobId: string, file: File, result: DiarizeResult, speakerNames: Record<string, string>) {
+    const fd = new FormData()
+    fd.append('audio', file)
+    const meta: Record<string, unknown> = {
+      area: saveArea || 'Audio',
+      fileName: file.name,
+      diarization: result,
+      speakerNames,
+    }
+    if (saveProjectId) meta.projectId = saveProjectId
+    fd.append('meta', JSON.stringify(meta))
+    fetch('/api/speakers/save', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then((data: { reportId?: string }) => {
+        if (data.reportId) {
+          setJobs(prev => prev.map(j => j.id === jobId ? { ...j, savedReportId: data.reportId } : j))
+        }
+      })
+      .catch(() => { /* silent */ })
+  }
 
   function addFiles(files: FileList) {
     const newJobs: Job[] = Array.from(files).map(file => ({
@@ -425,7 +498,9 @@ export default function SpeakersClient({ projects }: Props) {
         fd.append('audio', job.file)
         const n = parseInt(numSpeakers, 10)
         if (!isNaN(n) && n >= 2) fd.append('numSpeakers', String(n))
-        const res = await fetch('/api/speakers/diarize', { method: 'POST', body: fd })
+        if (transcribe) fd.append('modelSize', modelSize)
+        const endpoint = transcribe ? '/api/speakers/transcribe' : '/api/speakers/diarize'
+        const res = await fetch(endpoint, { method: 'POST', body: fd })
         const data = await res.json() as DiarizeResult & { error?: string }
         if (!res.ok) {
           setJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: 'error', error: data.error ?? 'Failed', expanded: true } : j))
@@ -434,13 +509,36 @@ export default function SpeakersClient({ projects }: Props) {
           const unique = [...new Set(data.segments.map(s => s.speaker))]
           unique.forEach(sp => { speakerNames[sp] = sp })
           setJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: 'done', result: data, speakerNames, expanded: true } : j))
+
+          // Try to identify speaker names from transcript (non-blocking)
+          const hasText = data.segments.some(s => s.text)
+          if (hasText && unique.length > 0) {
+            fetch('/api/speakers/identify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ segments: data.segments, speakerLabels: unique }),
+            })
+              .then(r => r.json())
+              .then((idData: { names?: Record<string, string> }) => {
+                if (idData.names && Object.keys(idData.names).length > 0) {
+                  setJobs(prev => prev.map(j => j.id === job.id
+                    ? { ...j, speakerNames: { ...j.speakerNames, ...idData.names } }
+                    : j
+                  ))
+                }
+              })
+              .catch(() => { /* silent — name identification is best-effort */ })
+          }
+
+          // Auto-save to file system
+          autoSave(job.id, job.file, data, speakerNames)
         }
       } catch {
         setJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: 'error', error: 'Could not reach server', expanded: true } : j))
       }
     }
     setProcessing(false)
-  }, [numSpeakers])
+  }, [numSpeakers, transcribe, modelSize])
 
   async function handleDiarizeAll() {
     const pending = jobs.filter(j => j.status === 'pending')
@@ -455,19 +553,20 @@ export default function SpeakersClient({ projects }: Props) {
     ))
   }
 
-  async function saveJob(jobId: string, projectId: string, area: string) {
+  async function saveJob(jobId: string) {
     const job = jobs.find(j => j.id === jobId)
     if (!job || !job.result) return
     try {
       const fd = new FormData()
       fd.append('audio', job.file)
-      fd.append('meta', JSON.stringify({
-        projectId,
-        area,
+      const meta: Record<string, unknown> = {
+        area: saveArea || 'Audio',
         fileName: job.file.name,
         diarization: job.result,
         speakerNames: job.speakerNames,
-      }))
+      }
+      if (saveProjectId) meta.projectId = saveProjectId
+      fd.append('meta', JSON.stringify(meta))
       const res = await fetch('/api/speakers/save', { method: 'POST', body: fd })
       const data = await res.json() as { reportId?: string; error?: string }
       if (data.reportId) {
@@ -488,6 +587,7 @@ export default function SpeakersClient({ projects }: Props) {
     })
   }
 
+  const selectedProjectAreas = projects.find(p => p.id === saveProjectId)?.areas ?? []
   const pendingCount = jobs.filter(j => j.status === 'pending').length
   const doneCount = jobs.filter(j => j.status === 'done').length
 
@@ -498,6 +598,97 @@ export default function SpeakersClient({ projects }: Props) {
         <p className="text-sm text-[var(--text-subtle)] mt-1">
           Identify and segment speakers in audio recordings. Click speaker labels to rename them.
         </p>
+      </div>
+
+      {/* Mode toggle: diarize only vs diarize + transcribe */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setTranscribe(false)}
+            disabled={processing}
+            className={`px-3 py-1.5 rounded-[6px] text-xs font-medium transition-colors ${
+              !transcribe
+                ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
+                : 'bg-[var(--surface-2)] text-[var(--text-subtle)] hover:text-[var(--text-body)]'
+            }`}
+          >
+            Diarize only
+          </button>
+          <button
+            onClick={() => setTranscribe(true)}
+            disabled={processing}
+            className={`px-3 py-1.5 rounded-[6px] text-xs font-medium transition-colors ${
+              transcribe
+                ? 'bg-[var(--ink)] text-[var(--ink-contrast)]'
+                : 'bg-[var(--surface-2)] text-[var(--text-subtle)] hover:text-[var(--text-body)]'
+            }`}
+          >
+            Diarize + Transcribe
+          </button>
+        </div>
+
+        {/* Whisper model selector — only shown when transcription is enabled */}
+        {transcribe && (
+          <div className="space-y-2">
+            <p className="text-xs text-[var(--text-muted)]">Transcription model</p>
+            <div className="grid gap-2">
+              {WHISPER_MODELS.map(m => (
+                <button
+                  key={m.value}
+                  onClick={() => setModelSize(m.value)}
+                  disabled={processing}
+                  className={`text-left px-3 py-2.5 rounded-[6px] border transition-colors ${
+                    modelSize === m.value
+                      ? 'border-[var(--blue)] bg-[var(--blue-dim,var(--surface-2))]'
+                      : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-mid)]'
+                  }`}
+                >
+                  <p className={`text-xs font-medium ${modelSize === m.value ? 'text-[var(--blue)]' : 'text-[var(--text-bright)]'}`}>
+                    {m.label}
+                  </p>
+                  <p className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed">{m.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Save destination — project + area */}
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="space-y-1">
+          <p className="text-[11px] text-[var(--text-muted)]">Story (optional)</p>
+          <SelectField
+            value={saveProjectId}
+            onChange={setSaveProjectId}
+            options={[
+              { value: '', label: 'No story — save to General' },
+              ...projects.map(p => ({ value: p.id, label: p.name })),
+            ]}
+            placeholder="Select story…"
+            className="w-52"
+          />
+        </div>
+        <div className="space-y-1">
+          <p className="text-[11px] text-[var(--text-muted)]">Area</p>
+          {selectedProjectAreas.length > 0 ? (
+            <SelectField
+              value={saveArea}
+              onChange={setSaveArea}
+              options={selectedProjectAreas.map(a => ({ value: a, label: a }))}
+              placeholder="Select area…"
+              className="w-40"
+            />
+          ) : (
+            <Input
+              value={saveArea}
+              onChange={e => setSaveArea(e.target.value)}
+              placeholder="e.g. Interviews"
+              inputSize="sm"
+              className="w-40"
+            />
+          )}
+        </div>
       </div>
 
       {/* Controls */}
@@ -523,7 +714,7 @@ export default function SpeakersClient({ projects }: Props) {
         />
         {pendingCount > 0 && (
           <Button variant="primary" size="sm" onClick={handleDiarizeAll} disabled={processing}>
-            {processing ? <Spinner size="xs" /> : `Diarize ${pendingCount} file${pendingCount !== 1 ? 's' : ''}`}
+            {processing ? <Spinner size="xs" /> : `${transcribe ? 'Transcribe' : 'Diarize'} ${pendingCount} file${pendingCount !== 1 ? 's' : ''}`}
           </Button>
         )}
       </div>
@@ -544,10 +735,9 @@ export default function SpeakersClient({ projects }: Props) {
             <div key={job.id} className="relative group">
               <JobCard
                 job={job}
-                projects={projects}
                 onToggle={() => toggleJob(job.id)}
                 onSpeakerRename={renameSpeaker}
-                onSave={saveJob}
+                onResave={saveJob}
               />
               {/* Remove button */}
               {job.status !== 'processing' && (
