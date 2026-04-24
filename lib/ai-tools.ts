@@ -133,8 +133,8 @@ export function extractWeatherLocation(
   const lastUser = [...messages].reverse().find(m => m.role === 'user')
   if (!lastUser) return ''
   const c = lastUser.content
-  // "weather in London", "weather for Amsterdam", "weather at Tokyo"
-  const inMatch = c.match(/weather\s+(?:in|for|at)\s+([A-Za-z][A-Za-z\s,]+?)(?:\?|$|\s+today|\s+tomorrow|\s+this)/i)
+  // "weather in London", "weather for Amsterdam", "weather at Tokyo", "weather is in Tallinn"
+  const inMatch = c.match(/weather\s+(?:(?:is|like)\s+)?(?:in|for|at)\s+([A-Za-z][A-Za-z\s,]+?)(?:\?|$|\s+today|\s+tomorrow|\s+this)/i)
   if (inMatch) return inMatch[1].trim()
   // "London weather", "Amsterdam's weather"
   const cityFirst = c.match(/^([A-Za-z][A-Za-z\s,]+?)'?s?\s+weather/i)
@@ -175,14 +175,27 @@ async function toolSaveJournal(title: string, content: string, folder?: string):
   return `Note saved: "${cleanTitle}"`
 }
 
-async function toolWeather(location: string): Promise<string> {
-  const geoRes = await fetch(
-    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json`,
+async function geoLookup(query: string) {
+  const res = await fetch(
+    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`,
     { signal: AbortSignal.timeout(8000) }
   )
-  const geoData = await geoRes.json() as { results?: Array<{ latitude: number; longitude: number; name: string; country: string; admin1?: string }> }
-  if (!geoData.results?.length) return `Could not find location: "${location}"`
-  const { latitude, longitude, name, country, admin1 } = geoData.results[0]
+  const data = await res.json() as { results?: Array<{ latitude: number; longitude: number; name: string; country: string; admin1?: string }> }
+  return data.results?.[0] ?? null
+}
+
+async function toolWeather(location: string): Promise<string> {
+  // Open-Meteo geocoding often fails when city + country are combined ("Tallinn Estonia")
+  // Try the full string first, then progressively strip trailing words until a match is found
+  let geo = await geoLookup(location)
+  if (!geo) {
+    const parts = location.split(/[\s,]+/).filter(Boolean)
+    for (let n = parts.length - 1; n >= 1 && !geo; n--) {
+      geo = await geoLookup(parts.slice(0, n).join(' '))
+    }
+  }
+  if (!geo) return `Could not find location: "${location}"`
+  const { latitude, longitude, name, country, admin1 } = geo
 
   const weatherRes = await fetch(
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
