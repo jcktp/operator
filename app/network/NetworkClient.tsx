@@ -10,6 +10,11 @@ import { TYPE_COLORS, ALL_TYPES } from './network-config'
 import type { SimNode } from './network-config'
 import NetworkSidePanel from './NetworkSidePanel'
 
+function isDarkMode(): boolean {
+ return document.documentElement.classList.contains('dark') ||
+  window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
 /** Build a SimNode-compatible object from a Cytoscape node for the side panel */
 function toSimNode(node: NodeSingular): SimNode {
  const d = node.data()
@@ -30,6 +35,7 @@ function toSimNode(node: NodeSingular): SimNode {
 export default function NetworkClient() {
  const containerRef = useRef<HTMLDivElement>(null)
  const cyRef = useRef<Core | null>(null)
+ const layoutRef = useRef<cytoscape.Layouts | null>(null)
  const [rawData, setRawData] = useState<NetworkData | null>(null)
  const [loading, setLoading] = useState(true)
  const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set(ALL_TYPES))
@@ -57,23 +63,22 @@ export default function NetworkClient() {
   const ids = new Set(nodes.map(n => n.id))
   const edges = rawData.edges.filter(e => ids.has(e.source) && ids.has(e.target))
 
-  if (nodes.length === 0) {
+  const teardown = () => {
+   if (layoutRef.current) { layoutRef.current.stop(); layoutRef.current = null }
    if (cyRef.current) {
     const old = cyRef.current; cyRef.current = null
-    old.unmount(); old.destroy()
+    old.removeAllListeners(); old.unmount(); old.destroy()
    }
-   return
   }
 
-  // Destroy previous instance — delay so pending renderer callbacks drain
-  if (cyRef.current) {
-   const old = cyRef.current
-   cyRef.current = null
-   old.unmount()
-   old.destroy()
-  }
+  if (nodes.length === 0) { teardown(); return }
+  teardown()
 
   const container = containerRef.current
+  const dark = isDarkMode()
+  const labelColor = dark ? '#e4e4e7' : '#27272a'
+  const labelOutline = dark ? '#18181b' : '#ffffff'
+
   const cy = cytoscape({
    container,
    elements: [
@@ -103,22 +108,20 @@ export default function NetworkClient() {
       'width': 'data(nodeSize)',
       'height': 'data(nodeSize)',
       'label': 'data(name)',
-      'font-size': 10,
+      'font-size': 12,
       'font-weight': 500,
       'font-family': 'system-ui, sans-serif',
       'text-valign': 'top',
       'text-halign': 'center',
       'text-margin-y': -6,
-      'color': '#222',
-      'text-outline-color': '#fff',
-      'text-outline-width': 2,
-      'text-max-width': '90px',
-      'text-wrap': 'ellipsis',
+      'color': labelColor,
+      'text-outline-color': labelOutline,
+      'text-outline-width': 2.5,
+      'text-max-width': '160px',
+      'text-wrap': 'wrap',
       'border-width': 1.5,
-      'border-color': '#fff',
+      'border-color': dark ? '#27272a' : '#ffffff',
       'overlay-opacity': 0,
-      'transition-property': 'opacity, border-width, border-color, width, height',
-      'transition-duration': 150,
      } as cytoscape.Css.Node,
     },
     {
@@ -136,11 +139,9 @@ export default function NetworkClient() {
      selector: 'edge',
      style: {
       'width': (ele: EdgeSingular) => Math.min((ele.data('weight') as number) * 0.7 + 0.5, 2.5),
-      'line-color': 'rgba(160,160,160,0.35)',
+      'line-color': dark ? 'rgba(161,161,170,0.3)' : 'rgba(120,120,130,0.3)',
       'curve-style': 'bezier',
       'overlay-opacity': 0,
-      'transition-property': 'line-color, width, opacity',
-      'transition-duration': 150,
      } as cytoscape.Css.Edge,
     },
     {
@@ -172,32 +173,8 @@ export default function NetworkClient() {
       'height': (ele: NodeSingular) => (ele.data('nodeSize') as number) + 4,
      } as cytoscape.Css.Node,
     },
-    {
-     selector: 'node[count < 2]',
-     style: {
-      'font-size': 0,
-     } as cytoscape.Css.Node,
-    },
-    {
-     selector: 'node:selected[count < 2], node.hovered[count < 2]',
-     style: {
-      'font-size': 10,
-     } as cytoscape.Css.Node,
-    },
    ],
-   layout: {
-    name: 'cose',
-    animate: true,
-    animationDuration: 800,
-    nodeRepulsion: () => 8000,
-    idealEdgeLength: () => 120,
-    gravity: 0.25,
-    numIter: 300,
-    nodeDimensionsIncludeLabels: true,
-    randomize: true,
-    fit: true,
-    padding: 40,
-   } as cytoscape.CoseLayoutOptions,
+   layout: { name: 'preset' },
    minZoom: 0.15,
    maxZoom: 4,
    wheelSensitivity: 0.15,
@@ -206,6 +183,23 @@ export default function NetworkClient() {
   })
 
   cyRef.current = cy
+
+  // Run layout separately so we can stop() it on cleanup.
+  // animate: false prevents async renderer callbacks that crash on unmount.
+  const layout = cy.layout({
+   name: 'cose',
+   animate: false,
+   nodeRepulsion: () => 8000,
+   idealEdgeLength: () => 120,
+   gravity: 0.25,
+   numIter: 300,
+   nodeDimensionsIncludeLabels: true,
+   randomize: true,
+   fit: true,
+   padding: 40,
+  } as cytoscape.CoseLayoutOptions)
+  layoutRef.current = layout
+  layout.run()
 
   // ── Event handlers ────────────────────────────────────────
 
@@ -254,11 +248,7 @@ export default function NetworkClient() {
    if (containerRef.current) containerRef.current.style.cursor = 'grab'
   })
 
-  return () => {
-   cyRef.current = null
-   cy.unmount()
-   cy.destroy()
-  }
+  return teardown
  }, [rawData, activeTypes])
 
  const fitView = useCallback((ids?: Set<string>) => {
