@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
+import { loadAiSettings } from '@/lib/settings'
 import { parseJsonSafe } from '@/lib/utils'
+import { generateEmbedding, cosineSimilarity } from '@/lib/embeddings'
 
 function snippet(text: string, q: string, maxLen = 120): string {
   const lower = text.toLowerCase()
@@ -18,7 +20,55 @@ export async function GET(req: NextRequest) {
   if (deny) return deny
   try {
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
+  const mode = req.nextUrl.searchParams.get('mode') ?? 'keyword'
   if (q.length < 2) return NextResponse.json({ reports: [], journal: [] })
+
+  // Semantic search mode — uses Ollama embeddings
+  if (mode === 'semantic') {
+    await loadAiSettings()
+    try {
+      const allEmbeddings = await prisma.reportEmbedding.findMany({
+        include: { report: { select: { id: true, title: true, area: true, summary: true } } },
+      })
+      if (allEmbeddings.length === 0) {
+        // Fall through to keyword search if no embeddings exist
+      } else {
+        const queryVec = await generateEmbedding(q)
+        const scored = new Map<string, { score: number; title: string; area: string; summary: string | null }>()
+        for (const emb of allEmbeddings) {
+          const vec = JSON.parse(emb.embedding) as number[]
+          const sim = cosineSimilarity(queryVec, vec)
+          const existing = scored.get(emb.reportId)
+          if (!existing || sim > existing.score) {
+            scored.set(emb.reportId, {
+              score: sim,
+              title: emb.report.title,
+              area: emb.report.area,
+              summary: emb.report.summary,
+            })
+          }
+        }
+        const sorted = [...scored.entries()]
+          .sort((a, b) => b[1].score - a[1].score)
+          .slice(0, 20)
+          .filter(([, v]) => v.score > 0.3)
+
+        return NextResponse.json({
+          reports: sorted.map(([id, v]) => ({
+            id,
+            title: v.title,
+            area: v.area,
+            directReport: null,
+            snippet: v.summary?.slice(0, 120) ?? '',
+            score: Math.round(v.score * 100) / 100,
+          })),
+          journal: [],
+        })
+      }
+    } catch (e) {
+      console.error('semantic search failed, falling back to keyword:', e)
+    }
+  }
 
   const qLower = q.toLowerCase()
 

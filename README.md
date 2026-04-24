@@ -56,7 +56,7 @@ Operator is a private intelligence workspace. Upload documents, images, and audi
 | **FOIA Tracker** | Track public records requests from draft through receipt with 7 status stages, overdue alerts, and per-request notes. Journalism mode only |
 | **Claims Tracker** | Log factual claims from sources and mark them verified, disputed, false, or needs-more-info. Journalism mode only |
 | **File Cleaner** | Strip EXIF metadata and identifying information from images and documents before sharing or publishing. Journalism mode only |
-| **Risk Register** | Log risks with probability × impact scoring, owner assignment, and status tracking. Executive and Legal modes |
+| **Risk Register** | Log risks with probability × impact scoring, owner assignment, and status tracking. Available in Executive, Journalism, Team Lead, Legal, and HR modes |
 | **Decision Log** | Capture key decisions with context, rationale, and outcome — a searchable audit trail. Executive mode |
 | **Blockers / Action Tracker** | Track sprint blockers (Team Lead) or HR follow-up actions with assignee, due date, priority, and overdue detection |
 | **Policy Register** | Maintain HR policies with owner, category, review dates, and 30-day review alerts. Human Resources mode |
@@ -69,6 +69,14 @@ Operator is a private intelligence workspace. Upload documents, images, and audi
 | **Image Analysis** | Forensic image tools: face extraction and comparison, Error Level Analysis (ELA), AI deepfake detection, and reverse image search. Journalism mode |
 | **Research Tools** | Wayback Machine lookups, document diff (side-by-side and inline change tracking), and structured research workflows. Journalism mode |
 | **P2P Collaboration** | LAN-based peer-to-peer sync — invite teammates via mDNS or invite strings, threaded chat, conflict resolution UI, and role-based permissions |
+| **Auto-tagging** | AI automatically extracts 3-8 topic tags per document on upload — tags appear on report cards and are searchable in the library |
+| **Auto action items** | AI extracts action items, tasks, and follow-ups from documents — creates Action Items automatically with assignee and due date when mentioned |
+| **Duplicate detection** | SHA-256 content hashing prevents the same document from being uploaded twice |
+| **Semantic search** | Toggle between keyword and AI-powered semantic search in the library — uses Ollama embeddings (nomic-embed-text) for meaning-based retrieval |
+| **Document digest** | Generate a structured summary across all new documents since the last digest — key themes, notable changes, and suggested follow-ups |
+| **Annotations** | Highlight text in any document with colored markers (yellow, green, blue, pink) and attach notes — highlights panel below the document |
+| **Print styles** | Proper `@page` CSS for clean PDF export via browser print — hides nav, uses serif fonts, controls page breaks, and formats tables |
+| **Audit trail** | All CRUD operations on projects, actions, risks, and auto-created items are logged to the audit trail (viewable in Settings) |
 
 ---
 

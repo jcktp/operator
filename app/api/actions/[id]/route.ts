@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
+import { logAction } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const item = await prisma.actionItem.update({ where: { id }, data })
+  void logAction('action.updated', item.title)
   return NextResponse.json({ item })
 }
 
@@ -27,6 +29,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (deny) return deny
 
   const { id } = await params
+  const item = await prisma.actionItem.findUnique({ where: { id }, select: { title: true } })
   await prisma.actionItem.delete({ where: { id } })
+  void logAction('action.deleted', item?.title ?? id)
   return NextResponse.json({ ok: true })
 }

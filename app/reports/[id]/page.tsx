@@ -226,6 +226,11 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
  )}
  </div>
  <h1 className="text-2xl font-semibold text-[var(--text-bright)]">{report.title}</h1>
+ {report.tags && (() => { try { const t = JSON.parse(report.tags) as string[]; return t.length > 0 ? (
+ <div className="flex flex-wrap gap-1.5 mt-2">
+ {t.map(tag => <span key={tag} className="px-2 py-0.5 text-[10px] rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-subtle)]">{tag}</span>)}
+ </div>
+ ) : null } catch { return null } })()}
  <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-subtle)] flex-wrap">
  <span className="flex items-center gap-1">
  <FileText size={11} />

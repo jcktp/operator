@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { AreaBadge, InsightTypeBadge, StatusBadge } from '@/components/Badge'
-import { ArrowRight, Upload, AlertTriangle, HelpCircle, CheckCircle2, FileStack, Loader2, X, Wand2 } from 'lucide-react'
+import { ArrowRight, Upload, AlertTriangle, HelpCircle, CheckCircle2, FileStack, Loader2, X, Wand2, BookOpen } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { useDispatch } from '@/components/DispatchContext'
@@ -78,6 +78,10 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
  const [catchMeUpOpen, setCatchMeUpOpen] = useState(false)
  const [catchMeUpLoading, setCatchMeUpLoading] = useState(false)
  const [catchMeUpText, setCatchMeUpText] = useState<string | null>(null)
+ const [digestOpen, setDigestOpen] = useState(false)
+ const [digestLoading, setDigestLoading] = useState(false)
+ const [digestText, setDigestText] = useState<string | null>(null)
+ const [digestDate, setDigestDate] = useState<string | null>(null)
 
  useEffect(() => {
  setAiContext(context)
@@ -99,6 +103,29 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
  }
  }
 
+ const handleDigest = async () => {
+  setDigestOpen(true)
+  setDigestLoading(true)
+  try {
+   const res = await fetch('/api/digest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+   })
+   const json = await res.json() as { digest?: { content: string; createdAt: string }; error?: string }
+   if (json.error) {
+    setDigestText(json.error)
+   } else if (json.digest) {
+    setDigestText(json.digest.content)
+    setDigestDate(json.digest.createdAt)
+   }
+  } catch {
+   setDigestText('Unable to generate digest. Check your AI provider settings.')
+  } finally {
+   setDigestLoading(false)
+  }
+ }
+
  return (
  <div className="flex flex-col flex-1 min-h-0">
 
@@ -113,9 +140,13 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
  </div>
  <div className="flex items-center gap-2 shrink-0">
  <PeriodDropdown activeFrom={activeFrom} activeTo={activeTo} basePath="/" />
- <Button variant="outline"size="sm"onClick={handleCatchMeUp}>
+ <Button variant="outline" size="sm" onClick={handleCatchMeUp}>
  <Wand2 size={13} />
  Catch me up
+ </Button>
+ <Button variant="outline" size="sm" onClick={handleDigest}>
+ <BookOpen size={13} />
+ Digest
  </Button>
  <Link href="/?tab=one-pager"className="inline-flex items-center gap-1.5 h-7 px-2.5 text-xs font-medium rounded-[4px] border border-[var(--border-mid)] text-[var(--text-body)] hover:bg-[var(--ink)] hover:text-[var(--ink-contrast)] hover:border-[var(--ink)] transition-colors">
  <FileStack size={13} />
@@ -193,6 +224,30 @@ export default function OverviewShell({ data, activeFrom, activeTo }: { data: Ov
  </div>
  ) : (
  <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap">{catchMeUpText}</p>
+ )}
+ </div>
+ )}
+
+ {digestOpen && (
+ <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-[10px] p-5 relative">
+ <button
+  onClick={() => setDigestOpen(false)}
+  className="absolute top-3 right-3 p-1 text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors"
+ >
+  <X size={14} />
+ </button>
+ <div className="flex items-center gap-2 mb-3">
+  <BookOpen size={13} className="text-[var(--text-muted)]" />
+  <span className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-[0.1em]">Document Digest</span>
+  {digestDate && <span className="text-[10px] text-[var(--text-muted)]">{formatRelativeDate(new Date(digestDate))}</span>}
+ </div>
+ {digestLoading ? (
+  <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] py-4">
+  <Loader2 size={14} className="animate-spin" />
+  Generating digest…
+  </div>
+ ) : (
+  <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap">{digestText}</p>
  )}
  </div>
  )}

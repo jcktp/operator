@@ -85,6 +85,8 @@ model Report {
   imagePath      String?
   filePath       String?  // relative path within getReportsRoot(), set for uploaded (non-image) files
   storyName      String?  // kept for backwards compat; projectId is the canonical grouping
+  tags           String?  // JSON-encoded string[] of auto-extracted topic tags
+  contentHash    String?  // SHA-256 hash of normalised rawContent for duplicate detection
   userNotes      String?  // analyst notes visible on the report page
   removedAt      DateTime?           // set when a peer deletes in a shared project
   removedBy      String?             // instance ID of the peer that removed it
@@ -97,11 +99,13 @@ model Report {
   directReport   DirectReport? @relation(fields: [directReportId], references: [id], onDelete: SetNull)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  // Journalism back-relations
+  // Back-relations
   entities       ReportEntity[]
   timelineEvents TimelineEvent[]
   journalism     ReportJournalism?
   claims         Claim[]
+  embeddings     ReportEmbedding[]
+  annotations    Annotation[]
 
   @@index([area])
   @@index([projectId])
@@ -656,4 +660,46 @@ model UploadJobItem {
 
   @@index([jobId])
   @@index([status])
+}
+
+// ── Semantic search embeddings ───────────────────────────────────────────────
+
+model ReportEmbedding {
+  id        String   @id @default(uuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  chunk     Int      @default(0)
+  embedding String   // JSON: float[]
+  createdAt DateTime @default(now())
+
+  @@index([reportId])
+}
+
+// ── Project digest ───────────────────────────────────────────────────────────
+
+model Digest {
+  id        String   @id @default(uuid())
+  projectId String?
+  content   String
+  reportIds String   // JSON: string[]
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// ── Document annotations ─────────────────────────────────────────────────────
+
+model Annotation {
+  id          String   @id @default(uuid())
+  reportId    String
+  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  startOffset Int
+  endOffset   Int
+  text        String
+  note        String?
+  color       String   @default("yellow")
+  createdAt   DateTime @default(now())
+
+  @@index([reportId])
 }

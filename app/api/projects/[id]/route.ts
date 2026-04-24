@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { deleteReportFile } from '@/lib/reports-folder'
 import { requireAuth } from '@/lib/api-auth'
+import { logAction } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       ...(body.description !== undefined ? { description: body.description } : {}),
     },
   })
+  void logAction('project.updated', project.name)
   return NextResponse.json({ project })
 }
 
@@ -61,6 +63,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     await prisma.setting.delete({ where: { key: 'current_project_id' } })
   }
 
+  const project = await prisma.project.findUnique({ where: { id }, select: { name: true } })
   await prisma.project.delete({ where: { id } })
+  void logAction('project.deleted', project?.name ?? id)
   return Response.json({ ok: true })
 }

@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import DOMPurify from 'dompurify'
 import { cn } from '@/lib/utils'
 import { Copy, Check } from 'lucide-react'
+import AnnotatedContent from './AnnotatedContent'
 
 // ── Excel / CSV structured display ─────────────────────────────────────────
 
@@ -285,6 +286,7 @@ export default function RawContent({
  if (isWord && displayContent) return <WordDisplay html={displayContent} />
  // PDF: embed original file if available, otherwise formatted text
  if (isPdf && hasFile && reportId) return <PdfDisplay reportId={reportId} />
+ if (reportId) return <AnnotatedContent content={content} reportId={reportId} />
  return <TextDisplay content={content} />
  }
 

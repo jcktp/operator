@@ -326,18 +326,26 @@ Only include claims that genuinely need verification — skip obvious background
 // Combines entities + timeline + redactions + verification into one prompt so
 // Ollama reads the document once instead of up to 4 times.
 
+export interface ActionItemExtract {
+  title: string
+  assignee?: string
+  dueDate?: string
+}
+
 export interface MergedExtractionResult {
   entities: NamedEntity[]
   events: JournalismTimelineEvent[]
   redactions: RedactionEntry[]
   verification: VerificationItem[]
+  tags: string[]
+  actionItems: ActionItemExtract[]
 }
 
 export async function extractMerged(
   content: string,
   title: string,
   area: string,
-  features: { entities: boolean; timeline: boolean; redactions: boolean; verification: boolean },
+  features: { entities: boolean; timeline: boolean; redactions: boolean; verification: boolean; tags: boolean; actionItems: boolean },
 ): Promise<MergedExtractionResult> {
   // Cloud providers are fast enough to run separate calls in parallel
   if (getProvider() !== 'ollama') {
@@ -347,7 +355,36 @@ export async function extractMerged(
       features.redactions ? detectRedactions(content, title) : Promise.resolve([]),
       features.verification ? generateVerificationChecklist(content, title, area) : Promise.resolve([]),
     ])
-    return { entities, events, redactions, verification }
+    // Tags and action items are lightweight — extract in one combined call
+    let tags: string[] = []
+    let actionItems: ActionItemExtract[] = []
+    if (features.tags || features.actionItems) {
+      try {
+        const truncated = content.slice(0, maxContentLength())
+        const prompt = `Analyse this document and extract the requested information. Always respond in English.
+
+Document: ${title} (${area})
+
+Content:
+${truncated}
+
+Return ONLY valid JSON:
+{
+  ${features.tags ? '"tags": ["3-8 short lowercase topic tags categorizing this document"],' : ''}
+  ${features.actionItems ? '"actionItems": [{"title": "action/task/follow-up", "assignee": "person if stated or null", "dueDate": "date if stated or null"}]' : ''}
+}`
+        const text = await chat([{ role: 'user', content: prompt }], 0.1, true)
+        const json = extractJsonFromText(text)
+        const parsed = JSON.parse(json) as Record<string, unknown>
+        if (features.tags && Array.isArray(parsed.tags)) {
+          tags = (parsed.tags as string[]).filter(t => typeof t === 'string' && t.trim().length > 0).map(t => t.toLowerCase().trim())
+        }
+        if (features.actionItems && Array.isArray(parsed.actionItems)) {
+          actionItems = (parsed.actionItems as ActionItemExtract[]).filter(a => a && typeof a.title === 'string' && a.title.trim().length > 0)
+        }
+      } catch (e) { console.error('Tags/action items extraction failed:', e) }
+    }
+    return { entities, events, redactions, verification, tags, actionItems }
   }
 
   // Build a single combined prompt for Ollama
@@ -371,8 +408,16 @@ export async function extractMerged(
     sections.push(`VERIFICATION: Identify up to 6 key claims that need fact-checking before publication. Classify each as statistical, attribution, event, or legal.`)
     schema.push(`"verification": [{"claim": "the claim", "claimType": "statistical|attribution|event|legal", "evidenceNeeded": "what to check", "suggestedSources": ["source type"]}]`)
   }
+  if (features.tags) {
+    sections.push(`TAGS: Extract 3-8 short lowercase topic tags that categorize this document's subject matter.`)
+    schema.push(`"tags": ["tag1", "tag2", "tag3"]`)
+  }
+  if (features.actionItems) {
+    sections.push(`ACTION ITEMS: Extract action items, tasks, commitments, or follow-ups mentioned. Include assignee if stated and due date if mentioned. Max 10.`)
+    schema.push(`"actionItems": [{"title": "the action or task", "assignee": "person name or null", "dueDate": "date or null"}]`)
+  }
 
-  if (sections.length === 0) return { entities: [], events: [], redactions: [], verification: [] }
+  if (sections.length === 0) return { entities: [], events: [], redactions: [], verification: [], tags: [], actionItems: [] }
 
   const prompt = `Analyse this document and extract the requested information. Always respond in English — translate from any source language.
 
@@ -413,9 +458,16 @@ Return ONLY valid JSON:
           }))
       : []
 
-    return { entities, events, redactions, verification }
+    const tags = features.tags && Array.isArray(parsed.tags)
+      ? (parsed.tags as string[]).filter(t => typeof t === 'string' && t.trim().length > 0).map(t => t.toLowerCase().trim())
+      : []
+    const actionItems = features.actionItems && Array.isArray(parsed.actionItems)
+      ? (parsed.actionItems as ActionItemExtract[]).filter(a => a && typeof a.title === 'string' && a.title.trim().length > 0)
+      : []
+
+    return { entities, events, redactions, verification, tags, actionItems }
   } catch (e) {
     console.error('extractMerged failed:', e)
-    return { entities: [], events: [], redactions: [], verification: [] }
+    return { entities: [], events: [], redactions: [], verification: [], tags: [], actionItems: [] }
   }
 }

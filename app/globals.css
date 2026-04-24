@@ -232,3 +232,54 @@ html, body, * {
 .doc-content th { background: #f9fafb; font-weight: 600; text-align: left; padding: 0.375rem 0.75rem; border: 1px solid #e5e7eb; }
 .doc-content td { padding: 0.3rem 0.75rem; border: 1px solid #e5e7eb; }
 .doc-content tr:nth-child(even) td { background: #f9fafb; }
+
+/* ── Print styles ──────────────────────────────────────────── */
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm 15mm;
+  }
+
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  /* Hide nav, sidebar, buttons, toolbars */
+  nav, aside, footer,
+  button, [role="toolbar"],
+  .no-print,
+  [data-no-print] {
+    display: none !important;
+  }
+
+  /* Ensure content fills page */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Page break control */
+  h1, h2, h3 { page-break-after: avoid; }
+  table, figure, img { page-break-inside: avoid; }
+  p { orphans: 3; widows: 3; }
+
+  /* Better table printing */
+  table { border-collapse: collapse; font-size: 9pt; }
+  th, td { border: 1px solid #999; padding: 4px 8px; }
+  th { background: #eee !important; font-weight: bold; }
+
+  /* Tags as simple inline text */
+  .print-tag { border: 1px solid #ccc; padding: 1px 6px; font-size: 8pt; border-radius: 2px; }
+
+  /* Links — show URL */
+  a[href]:not([href^="#"])::after {
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+    color: #666;
+  }
+}

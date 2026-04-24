@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/api-auth'
 import { loadAiSettings } from '@/lib/settings'
+import { logAction } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,5 +55,6 @@ export async function POST(req: Request) {
     create: { key: 'current_project_id', value: project.id },
   })
 
+  void logAction('project.created', project.name)
   return Response.json({ project })
 }

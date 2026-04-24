@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
+import { logAction } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,5 +59,6 @@ export async function POST(req: NextRequest) {
     },
   })
 
+  void logAction('risk.created', risk.title)
   return NextResponse.json({ risk }, { status: 201 })
 }

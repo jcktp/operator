@@ -6,15 +6,18 @@
 
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { createHash } from 'crypto'
 import { Ollama } from 'ollama'
 import { prisma } from './db'
 import { loadAiSettings } from './settings'
 import { analyzeReport, compareReports, checkResolvedFlags, extractMerged, compareDocumentsJournalism, generateAreaBriefing } from './ai'
+import { logAction } from './audit'
 import { getModeConfig } from './mode'
 import { describeImage, transcribeAudio } from './ai-vision'
 import { getMimeType, normalizeContent } from './parsers'
 import { getReportsRoot } from './reports-folder'
 import { routeVisionModel, routeAudioModel } from './model-capabilities'
+import { embedReport } from './embeddings'
 
 // ── Global worker state ──────────────────────────────────────────────────────
 let _workerRunning = false
@@ -138,6 +141,19 @@ async function processItem(itemId: string): Promise<void> {
     const freshStatus = await prisma.uploadJobItem.findUnique({ where: { id: itemId }, select: { status: true } })
     if (freshStatus?.status === 'error') return
 
+    // Duplicate detection via content hash
+    const contentHash = createHash('sha256').update(item.rawContent).digest('hex')
+    const duplicate = await prisma.report.findFirst({ where: { contentHash }, select: { id: true, title: true } })
+    if (duplicate) {
+      await setStep('Duplicate detected — skipping')
+      console.log(`[upload-queue] Duplicate of "${duplicate.title}" (${duplicate.id}), skipping`)
+      await prisma.uploadJobItem.update({
+        where: { id: itemId },
+        data: { status: 'done', reportId: duplicate.id },
+      })
+      return
+    }
+
     // Save the report immediately so it's visible in the UI while enrichment runs
     const report = await prisma.report.create({
       data: {
@@ -146,6 +162,7 @@ async function processItem(itemId: string): Promise<void> {
         fileType: item.fileType,
         fileSize: item.fileSizeBytes,
         rawContent: item.rawContent,
+        contentHash,
         displayContent: item.displayContent?.startsWith('audio:') ? null : item.displayContent,
         imagePath: item.displayContent?.startsWith('image:') ? item.displayContent.slice('image:'.length).split('\n')[0] : null,
         filePath: item.savedFilePath,
@@ -211,8 +228,8 @@ async function processItem(itemId: string): Promise<void> {
         })
       }
 
-      // Step 3: Merged extraction — one AI call for entities+timeline+redactions+verification
-      const needsMerged = modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification
+      // Step 3: Merged extraction — one AI call for entities+timeline+redactions+verification+tags+actionItems
+      const needsMerged = modeFeatures.entities || modeFeatures.timeline || modeFeatures.redactions || modeFeatures.verification || true /* tags + actionItems always */
       if (needsMerged) {
         await setStep('Extracting insights…')
         try {
@@ -221,6 +238,8 @@ async function processItem(itemId: string): Promise<void> {
             timeline: !!modeFeatures.timeline,
             redactions: !!modeFeatures.redactions,
             verification: !!modeFeatures.verification,
+            tags: true,
+            actionItems: true,
           })
 
           await Promise.all([
@@ -253,6 +272,39 @@ async function processItem(itemId: string): Promise<void> {
                 })
               : Promise.resolve(),
           ])
+          // Save tags on the report
+          if (merged.tags.length > 0) {
+            await prisma.report.update({
+              where: { id: report.id },
+              data: { tags: JSON.stringify(merged.tags) },
+            })
+          }
+
+          // Auto-create action items from extracted actions
+          if (merged.actionItems.length > 0) {
+            const existingTitles = new Set(
+              (await prisma.actionItem.findMany({
+                where: { ...(item.projectId ? { projectId: item.projectId } : {}), status: { not: 'done' } },
+                select: { title: true },
+              })).map(a => a.title.toLowerCase())
+            )
+            const toCreate = merged.actionItems.filter(a => !existingTitles.has(a.title.toLowerCase()))
+            if (toCreate.length > 0) {
+              await prisma.actionItem.createMany({
+                data: toCreate.map(a => ({
+                  id: crypto.randomUUID(),
+                  title: a.title.length > 200 ? a.title.slice(0, 197) + '…' : a.title,
+                  assignee: typeof a.assignee === 'string' ? a.assignee : null,
+                  dueAt: a.dueDate ? new Date(a.dueDate) : null,
+                  kind: 'action',
+                  status: 'open',
+                  source: report.title,
+                  projectId: item?.projectId || null,
+                })),
+              })
+              for (const a of toCreate) void logAction('action.auto_created', a.title)
+            }
+          }
         } catch (e) { console.error('[upload-queue] Merged extraction failed:', e) }
       }
 
@@ -295,6 +347,7 @@ async function processItem(itemId: string): Promise<void> {
                 projectId:   item?.projectId || null,
               })),
             })
+            for (const i of toCreate) void logAction('risk.auto_created', i.text)
           }
         }
 
@@ -317,6 +370,7 @@ async function processItem(itemId: string): Promise<void> {
                   where: { id: risk.id },
                   data: { status: 'closed', resolvedAt: now },
                 })
+                void logAction('risk.auto_resolved', risk.title)
               }
             }
           }
@@ -349,6 +403,12 @@ async function processItem(itemId: string): Promise<void> {
           })
         }
       } catch (e) { console.error('[upload-queue] Claims auto-populate failed:', e) }
+    }
+
+    // Generate embeddings for semantic search (Ollama only — has local embedding endpoint)
+    if ((process.env.AI_PROVIDER ?? 'ollama') === 'ollama' && !isImagePlaceholder && report.rawContent) {
+      try { await embedReport(report.id) }
+      catch (e) { console.error('[upload-queue] Embedding generation failed:', e) }
     }
 
     await prisma.uploadJobItem.update({

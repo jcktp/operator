@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search, X, ArrowRight, GitCompare, Clock, EyeOff, CheckSquare, Square, Layers, ChevronLeft, ChevronRight, Trash2, Loader2 } from 'lucide-react'
+import { Search, X, ArrowRight, GitCompare, Clock, EyeOff, CheckSquare, Square, Layers, ChevronLeft, ChevronRight, Trash2, Loader2, Sparkles } from 'lucide-react'
 
 const PAGE_SIZE = 25
 import { cn, formatRelativeDate, formatDate, AREA_COLORS, parseJsonSafe, parseMetrics } from '@/lib/utils'
@@ -24,6 +24,7 @@ interface Report {
  questions: string | null
  fileType: string | null
  displayContent: string | null
+ tags: string | null
  createdAt: Date
  reportDate: Date | null
  directReport: { name: string; title: string } | null
@@ -53,17 +54,47 @@ export default function LibrarySearch({
  const [redactionFilter, setRedactionFilter] = useState(false)
  const [page, setPage] = useState(1)
  const [deleting, setDeleting] = useState(false)
+ const [searchMode, setSearchMode] = useState<'keyword' | 'semantic'>('keyword')
+ const [semanticResults, setSemanticResults] = useState<Report[] | null>(null)
+ const [semanticLoading, setSemanticLoading] = useState(false)
 
  useEffect(() => { setPage(1) }, [query, redactionFilter])
 
+ // Semantic search effect
+ useEffect(() => {
+  if (searchMode !== 'semantic' || query.trim().length < 2) {
+    setSemanticResults(null)
+    return
+  }
+  const controller = new AbortController()
+  const timeout = setTimeout(async () => {
+    setSemanticLoading(true)
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}&mode=semantic`, { signal: controller.signal })
+      const data = await res.json() as { reports: Array<{ id: string; title: string; area: string; snippet: string; score?: number }> }
+      // Map to Report shape with minimal fields for display
+      setSemanticResults(data.reports.map(r => ({
+        id: r.id, title: r.title, area: r.area,
+        summary: r.snippet, metrics: null, comparison: null, questions: null,
+        fileType: null, displayContent: null, tags: null,
+        createdAt: new Date(), reportDate: null, directReport: null,
+      })))
+    } catch { /* aborted or error */ }
+    setSemanticLoading(false)
+  }, 300)
+  return () => { clearTimeout(timeout); controller.abort() }
+ }, [query, searchMode])
+
  const q = query.trim().toLowerCase()
  const textFiltered = q.length < 1 ? null : reports.filter(r => {
+ const parsedTags: string[] = r.tags ? parseJsonSafe<string[]>(r.tags, []) : []
  return (
  r.title.toLowerCase().includes(q) ||
  (r.summary ?? '').toLowerCase().includes(q) ||
  (r.directReport?.name ?? '').toLowerCase().includes(q) ||
  (r.area ?? '').toLowerCase().includes(q) ||
- (showEntities && (r.entityNames ?? []).some(n => n.toLowerCase().includes(q)))
+ (showEntities && (r.entityNames ?? []).some(n => n.toLowerCase().includes(q))) ||
+ parsedTags.some(t => t.includes(q))
  )
  })
  const filtered = showRedactions && redactionFilter
@@ -88,7 +119,7 @@ export default function LibrarySearch({
  router.refresh()
  }
 
- const list = filtered ?? reports
+ const list = searchMode === 'semantic' && semanticResults ? semanticResults : (filtered ?? reports)
  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
  const safePage = Math.min(page, totalPages)
  const pageItems = list.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
@@ -112,6 +143,19 @@ export default function LibrarySearch({
  </button>
  )}
  </div>
+ <button
+  onClick={() => setSearchMode(m => m === 'keyword' ? 'semantic' : 'keyword')}
+  title={searchMode === 'keyword' ? 'Switch to semantic search (AI-powered)' : 'Switch to keyword search'}
+  className={cn(
+   'flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-xs font-medium transition-colors shrink-0',
+   searchMode === 'semantic'
+    ? 'bg-[var(--blue-dim,rgba(59,130,246,0.1))] border-[var(--blue)] text-[var(--blue)] hover:bg-blue-100'
+    : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-subtle)] hover:border-[var(--border-mid)] hover:text-[var(--text-body)]'
+  )}
+ >
+  <Sparkles size={12} />
+  {searchMode === 'semantic' ? 'Semantic' : 'Keyword'}
+ </button>
  {showRedactions && (
  <button
  onClick={() => setRedactionFilter(v => !v)}
@@ -129,7 +173,22 @@ export default function LibrarySearch({
  )}
  </div>
 
- {(filtered !== null) && (
+ {semanticLoading && (
+ <p className="text-xs text-[var(--text-muted)] mb-3 flex items-center gap-1.5">
+ <Loader2 size={12} className="animate-spin" /> Searching semantically…
+ </p>
+ )}
+
+ {(searchMode === 'semantic' && semanticResults !== null) && (
+ <p className="text-xs text-[var(--text-muted)] mb-3">
+ {semanticResults.length === 0
+ ? `No ${modeConfig.documentLabelPlural.toLowerCase()} match semantically`
+ : `${semanticResults.length} semantic ${semanticResults.length !== 1 ? 'matches' : 'match'}`}
+ {query ? <> for &ldquo;{query}&rdquo;</> : null}
+ </p>
+ )}
+
+ {(searchMode === 'keyword' && filtered !== null) && (
  <p className="text-xs text-[var(--text-muted)] mb-3">
  {filtered.length === 0
  ? `No ${modeConfig.documentLabelPlural.toLowerCase()} match`
@@ -205,6 +264,7 @@ export default function LibrarySearch({
  Redacted
  </span>
  )}
+ {report.tags && (() => { try { const t = JSON.parse(report.tags) as string[]; return t.slice(0, 4).map(tag => <span key={tag} className="px-1.5 py-0.5 text-[10px] rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-muted)]">{tag}</span>) } catch { return null } })()}
  </div>
  <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] flex-wrap">
  <span className="flex items-center gap-1">
