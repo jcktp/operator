@@ -25,7 +25,7 @@ esac
 
 open_browser() {
   case "$PLATFORM" in
-    macOS)   open "$1" ;;
+    macOS)   open -g "$1" ;;
     Linux)   xdg-open "$1" 2>/dev/null || true ;;
     Windows) start "$1" 2>/dev/null || true ;;
   esac

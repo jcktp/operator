@@ -152,7 +152,7 @@ export default function LoginPage() {
  // ── Loading ──────────────────────────────────────────────────────────────────
  if (screen === 'loading') {
  return (
- <div className="fixed inset-0 z-[200] bg-[#fafafa] flex items-center justify-center">
+ <div className="fixed inset-0 z-[200] bg-[var(--background)] flex items-center justify-center">
  <Loader2 size={20} className="animate-spin text-[var(--border)] " />
  </div>
  )
@@ -161,7 +161,7 @@ export default function LoginPage() {
  // ── Uninstalled ──────────────────────────────────────────────────────────────
  if (screen === 'uninstalled') {
  return (
- <div className="fixed inset-0 z-[200] bg-gray-950 flex flex-col items-center justify-center">
+ <div className="fixed inset-0 z-[200] bg-[var(--background)] flex flex-col items-center justify-center">
  <div className="text-center space-y-4 max-w-sm px-8">
  <div className="w-10 h-10 mx-auto rounded-full bg-[var(--ink)] flex items-center justify-center">
  <ShieldAlert size={18} className="text-[var(--red)]" />
@@ -177,7 +177,7 @@ export default function LoginPage() {
 
  // ── Shared card wrapper ──────────────────────────────────────────────────────
  return (
- <div className="fixed inset-0 z-[200] bg-[#fafafa] flex items-center justify-center px-4 overflow-y-auto py-8">
+ <div className="fixed inset-0 z-[200] bg-[var(--background)] flex items-center justify-center px-4 overflow-y-auto py-8">
  <div className="w-full max-w-sm my-auto">
 
  {/* Logo */}
@@ -236,9 +236,9 @@ export default function LoginPage() {
  </div>
 
  {/* Warning */}
- <div className="bg-red-50 border border-red-200 rounded-[10px] p-4 flex gap-3">
+ <div className="bg-[var(--red-dim)] border border-[var(--red)] rounded-[10px] p-4 flex gap-3">
  <AlertTriangle size={16} className="text-[var(--red)] shrink-0 mt-0.5" />
- <div className="text-xs text-red-700 leading-relaxed space-y-1">
+ <div className="text-xs text-[var(--text-body)] leading-relaxed space-y-1">
  <p className="font-semibold">Do not forget your password</p>
  <p>
  After <strong>3 incorrect login attempts</strong>, Operator will automatically and
@@ -316,9 +316,9 @@ export default function LoginPage() {
  </div>
 
  {attemptsLeft < 3 && (
- <div className="bg-amber-50 border border-amber-200 rounded-[10px] p-3 flex gap-2">
- <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
- <p className="text-xs text-amber-700">
+ <div className="bg-[var(--amber-dim)] border border-[var(--amber)] rounded-[10px] p-3 flex gap-2">
+ <AlertTriangle size={14} className="text-[var(--amber)] shrink-0 mt-0.5" />
+ <p className="text-xs text-[var(--text-body)]">
  <strong>{attemptsLeft} attempt{attemptsLeft !== 1 ? 's' : ''} remaining.</strong>{' '}
  {attemptsLeft === 1
  ? 'One more failure will permanently delete Operator and all data.'

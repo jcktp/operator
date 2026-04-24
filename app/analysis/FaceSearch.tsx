@@ -170,11 +170,9 @@ export default function FaceSearch({ projectId }: Props) {
         </div>
       )}
 
-      {probeFaceId && (
-        <Button variant="primary" size="sm" onClick={handleSearch} disabled={searching}>
-          {searching ? <Spinner size="xs" /> : 'Search Case Index'}
-        </Button>
-      )}
+      <Button variant="primary" size="sm" onClick={handleSearch} disabled={!probeFaceId || searching}>
+        {searching ? <Spinner size="xs" /> : 'Search Case Index'}
+      </Button>
 
       {error && <p className="text-xs text-[var(--red)]">{error}</p>}
 
