@@ -58,15 +58,24 @@ export default function NetworkClient() {
   const edges = rawData.edges.filter(e => ids.has(e.source) && ids.has(e.target))
 
   if (nodes.length === 0) {
-   if (cyRef.current) { cyRef.current.destroy(); cyRef.current = null }
+   if (cyRef.current) {
+    const old = cyRef.current; cyRef.current = null
+    old.unmount(); old.destroy()
+   }
    return
   }
 
-  // Destroy previous instance
-  if (cyRef.current) { cyRef.current.destroy(); cyRef.current = null }
+  // Destroy previous instance — delay so pending renderer callbacks drain
+  if (cyRef.current) {
+   const old = cyRef.current
+   cyRef.current = null
+   old.unmount()
+   old.destroy()
+  }
 
+  const container = containerRef.current
   const cy = cytoscape({
-   container: containerRef.current,
+   container,
    elements: [
     ...nodes.map(n => ({
      data: {
@@ -245,7 +254,11 @@ export default function NetworkClient() {
    if (containerRef.current) containerRef.current.style.cursor = 'grab'
   })
 
-  return () => { cy.destroy(); cyRef.current = null }
+  return () => {
+   cyRef.current = null
+   cy.unmount()
+   cy.destroy()
+  }
  }, [rawData, activeTypes])
 
  const fitView = useCallback((ids?: Set<string>) => {
