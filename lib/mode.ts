@@ -210,6 +210,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
         { href: '/research',     label: 'Research Tools',  icon: 'History',      group: 'investigate' },
         { href: '/map',          label: 'Photo Map',       icon: 'MapPin',       group: 'investigate' },
         { href: '/speakers',     label: 'Speakers',        icon: 'AudioLines',   group: 'investigate' },
+        { href: '/monitors',    label: 'Web Monitor',     icon: 'Eye',          group: 'investigate' },
         { href: '/file-cleaner', label: 'File Cleaner',    icon: 'ShieldCheck',  group: 'intake'      },
       ],
     },

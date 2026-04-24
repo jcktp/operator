@@ -61,6 +61,7 @@ model Project {
   claims         Claim[]
   chatMessages   ChatMessage[]
   faceEmbeddings FaceEmbedding[]
+  webMonitors    WebMonitor[]
   @@index([status])
   @@index([createdAt])
 }
@@ -702,4 +703,40 @@ model Annotation {
   createdAt   DateTime @default(now())
 
   @@index([reportId])
+}
+
+// ── Web page monitors ───────────────────────────────────────────────────────
+
+model WebMonitor {
+  id            String             @id @default(uuid())
+  name          String
+  url           String
+  selector      String?            // CSS selector to monitor a specific part of the page
+  intervalMins  Int                @default(60)
+  status        String             @default("active") // active, paused
+  lastContent   String?            // last fetched text content
+  lastHash      String?            // SHA-256 of lastContent
+  lastCheckedAt DateTime?
+  errorCount    Int                @default(0)
+  lastError     String?
+  projectId     String?
+  project       Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt     DateTime           @default(now())
+  changes       WebMonitorChange[]
+
+  @@index([status])
+  @@index([projectId])
+}
+
+model WebMonitorChange {
+  id         String     @id @default(uuid())
+  monitorId  String
+  monitor    WebMonitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  oldHash    String?
+  newHash    String
+  diff       String     // JSON: array of {type: 'add'|'remove'|'same', text: string}
+  summary    String?    // AI-generated summary of changes
+  createdAt  DateTime   @default(now())
+
+  @@index([monitorId])
 }

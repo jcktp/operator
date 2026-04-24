@@ -32,57 +32,54 @@ Upload documents. Get structured AI analysis. Everything runs on your machine.
 
 ## What it does
 
-Operator is a private intelligence workspace. Upload documents, images, and audio to get structured AI analysis — summaries, metrics, risk flags, entity extraction, timelines, and period-over-period comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
+Operator is a private intelligence workspace. Upload documents, images, and audio to get structured AI analysis — summaries, metrics, risk flags, entity extraction, timelines, and comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
 
-| Feature | Description |
-|---|---|
-| **Projects** | Organise work into named projects — documents, entities, timelines, story maps, and dispatch are all scoped to the active project |
-| **Document analysis** | AI extracts summaries, metrics, risks, opportunities, and follow-up questions from every upload — with mode-specific framing per domain |
-| **Image uploads** | Upload photos and screenshots — AI describes the image, extracts text (OCR), and reads EXIF metadata (date, camera, GPS, focal length, exposure, aperture, ISO) automatically |
-| **Audio uploads** | Upload MP3, WAV, M4A, and other audio files — transcribed automatically using a dedicated audio model; shows a warning if no audio-capable model is configured |
-| **Background uploads** | Files are parsed immediately and queued for AI analysis so you can navigate away — no waiting |
-| **Library** | Every document stored with full history; dedicated Photos tab for image uploads with thumbnail gallery and lightbox |
-| **Dashboard** | Cross-area overview with AI-generated health signals across all documents |
-| **Metrics board** | KPI board aggregating every metric extracted across all documents, grouped by area |
-| **Dispatch** | AI chat with mode-specific personas; has full document context, remembers facts across conversations, and supports web search when enabled in Settings |
-| **Inspector sidebar** | Click any entity or map pin to open a panel showing the report summary, source documents, and connected entities — without leaving the page |
-| **Entities page** | Four-tab hub: entity management, timeline, interactive story map with zoom controls, and AI-assisted storyline builder (Journalism & Legal) — all filtered by active project |
-| **Files** | Browse and manage files saved by Operator, organised by project and area. Analyse documents directly from the folder view without re-uploading |
-| **Pulse** | Feed aggregator for RSS, Reddit, YouTube, Bluesky, and Mastodon — with keyword monitoring and auto-refresh |
-| **Journal** | Private note-taking with folder organisation and AI grammar correction |
-| **One-pager** | AI-generated executive brief across all documents; export to PDF |
-| **Remote submissions** | Shareable link so others can submit files from any device; lands directly in your library |
-| **Entity Network** | Force-directed graph of all extracted entities — pan, zoom, drag nodes, highlight connected clusters. Journalism mode only |
-| **FOIA Tracker** | Track public records requests from draft through receipt with 7 status stages, overdue alerts, and per-request notes. Journalism mode only |
-| **Claims Tracker** | Log factual claims from sources and mark them verified, disputed, false, or needs-more-info. Journalism mode only |
-| **File Cleaner** | Strip EXIF metadata and identifying information from images and documents before sharing or publishing. Journalism mode only |
-| **Risk Register** | Log risks with probability × impact scoring, owner assignment, and status tracking. Available in Executive, Journalism, Team Lead, Legal, and HR modes |
-| **Decision Log** | Capture key decisions with context, rationale, and outcome — a searchable audit trail. Executive mode |
-| **Blockers / Action Tracker** | Track sprint blockers (Team Lead) or HR follow-up actions with assignee, due date, priority, and overdue detection |
-| **Policy Register** | Maintain HR policies with owner, category, review dates, and 30-day review alerts. Human Resources mode |
-| **Deadline Tracker** | Track legal filing deadlines and HR milestones — urgency indicators, one-click mark complete. Legal and HR modes |
-| **Quote Bank** | Capture verbatim quotes from interviews and surveys with source type, speaker, tags, and full-text search. Market Research mode |
-| **Themes Board** | Synthesise patterns across research into candidate / confirmed / rejected themes. Market Research mode |
-| **Capacity Planning** | AIHR-formula capacity calculator, demand gap → FTE analysis, recruiting cost estimator, and headcount registry. HR mode |
-| **Speaker Diarization** | Upload audio and get speaker-segmented transcripts with per-speaker timelines, talk-time stats, and a reusable speaker library. Journalism mode |
-| **Photo Map** | Plot geotagged photos on an interactive map — cluster view, satellite/street layers, click-to-inspect with EXIF details. Journalism mode |
-| **Image Analysis** | Forensic image tools: face extraction and comparison, Error Level Analysis (ELA), AI deepfake detection, and reverse image search. Journalism mode |
-| **Research Tools** | Wayback Machine lookups, document diff (side-by-side and inline change tracking), and structured research workflows. Journalism mode |
-| **P2P Collaboration** | LAN-based peer-to-peer sync — invite teammates via mDNS or invite strings, threaded chat, conflict resolution UI, and role-based permissions |
-| **Auto-tagging** | AI automatically extracts 3-8 topic tags per document on upload — tags appear on report cards and are searchable in the library |
-| **Auto action items** | AI extracts action items, tasks, and follow-ups from documents — creates Action Items automatically with assignee and due date when mentioned |
-| **Duplicate detection** | SHA-256 content hashing prevents the same document from being uploaded twice |
-| **Semantic search** | Toggle between keyword and AI-powered semantic search in the library — uses Ollama embeddings (nomic-embed-text) for meaning-based retrieval |
-| **Document digest** | Generate a structured summary across all new documents since the last digest — key themes, notable changes, and suggested follow-ups |
-| **Annotations** | Highlight text in any document with colored markers (yellow, green, blue, pink) and attach notes — highlights panel below the document |
-| **Print styles** | Proper `@page` CSS for clean PDF export via browser print — hides nav, uses serif fonts, controls page breaks, and formats tables |
-| **Audit trail** | All CRUD operations on projects, actions, risks, and auto-created items are logged to the audit trail (viewable in Settings) |
+### Core
+
+- **Projects** — organise work into scoped projects with documents, entities, timelines, and dispatch
+- **Document analysis** — AI extracts summaries, metrics, risks, opportunities, and follow-up questions with mode-specific framing
+- **Image & audio uploads** — photos get OCR + EXIF extraction; audio files are transcribed with speaker diarization
+- **Library** — full document history with keyword and semantic search, auto-tagging, duplicate detection, and annotations
+- **Dashboard** — cross-area overview with health signals, document digest, and one-pager export
+- **Dispatch** — AI chat with document context, memory, web search, and mode-specific personas
+- **Pulse** — feed aggregator (RSS, Reddit, YouTube, Bluesky, Mastodon) with keyword monitoring
+- **Journal** — private notes with folder organisation and AI grammar correction
+- **Remote submissions** — shareable link for others to submit files directly to your library
+- **P2P collaboration** — LAN-based sync with threaded chat and conflict resolution
+
+### Analysis tools
+
+- **Entities** — extraction, timeline, interactive story map, and AI-assisted storyline builder
+- **Entity Network** — force-directed graph of extracted entities with cluster highlighting
+- **Risk Register** — probability x impact scoring, owner assignment, auto-creation from uploads
+- **Actions / Blockers** — task tracking with assignee, due date, priority, and auto-extraction from documents
+- **Claims Tracker** — log and verify factual claims from sources
+- **Metrics board** — aggregated KPIs across all documents, grouped by area
+- **Decision Log** — searchable audit trail of key decisions with context and rationale
+
+### Investigation tools (Journalism)
+
+- **Image Analysis** — face extraction/comparison, Error Level Analysis, deepfake detection, reverse search
+- **Photo Map** — geotagged photos on an interactive map with EXIF details
+- **Speaker Diarization** — speaker-segmented transcripts with talk-time stats and speaker library
+- **Web Monitor** — track web pages for changes with configurable intervals, CSS selector targeting, diff view, and AI change summaries
+- **Research Tools** — Wayback Machine lookups, document diff, structured research workflows
+- **FOIA Tracker** — public records requests with 7 status stages and overdue alerts
+- **File Cleaner** — strip EXIF metadata before sharing
+
+### Specialist tools
+
+- **Quote Bank** — verbatim quotes with source, speaker, and tags (Market Research)
+- **Themes Board** — synthesise patterns into candidate/confirmed/rejected themes (Market Research)
+- **Policy Register** — HR policies with review dates and 30-day alerts (HR)
+- **Deadline Tracker** — filing deadlines and milestones with urgency indicators (Legal, HR)
+- **Capacity Planning** — FTE analysis, demand gap calculator, headcount registry (HR)
 
 ---
 
 ## App modes
 
-Switch modes in **Settings** to adapt the interface, AI framing, and terminology to your domain.
+Switch modes in **Settings** to adapt the interface, AI framing, and terminology.
 
 | Mode | Use case |
 |---|---|
@@ -91,209 +88,74 @@ Switch modes in **Settings** to adapt the interface, AI framing, and terminology
 | 👥 Team Lead | Team updates, blockers & sprint tracking |
 | 🔍 Market Research | Interviews, surveys & pattern discovery |
 | ⚖️ Legal | Case files, evidence & matter management |
-| 🫂 Human Resources | People operations, talent & workforce analytics |
-
-<details>
-<summary>Mode-specific feature flags</summary>
-
-| Feature | Exec | Journalism | Team Lead | Market Research | Legal | HR |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| Document comparison | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Metrics board | ✓ | | | | | ✓ |
-| Entity extraction | | ✓ | | ✓ | ✓ | |
-| Timeline | | ✓ | ✓ | | ✓ | |
-| Redaction detection | | ✓ | | | ✓ | |
-| Verification checklist | | ✓ | | ✓ | ✓ | |
-| Keyword monitoring | | ✓ | | | | |
-| Investigation template | | ✓ | | | ✓ | |
-| Risk Register | ✓ | | | | ✓ | |
-| Decision Log | ✓ | | | | | |
-| Blockers / Action Tracker | | | ✓ | | | ✓ |
-| Policy Register | | | | | | ✓ |
-| Deadline Tracker | | | | | ✓ | ✓ |
-| Quote Bank | | | | ✓ | | |
-| Themes Board | | | | ✓ | | |
-| Capacity Planning | | | | | | ✓ |
-| Speaker Diarization | | ✓ | | | | |
-| Photo Map | | ✓ | | | | |
-| Image Analysis | | ✓ | | | | |
-| Research Tools | | ✓ | | | | |
-| P2P Collaboration | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-
-</details>
+| 🫂 Human Resources | People operations & workforce analytics |
 
 ---
 
 ## Requirements
 
-| | |
-|---|---|
-| **macOS or Linux** | Windows supported via WSL |
-| **Node.js 18+** | Auto-installed by `start.sh` if missing |
-| **Ollama** | Auto-installed by `start.sh` if missing |
-| **~5 GB free disk** | For `phi4-mini` (~2.5 GB) and `llava-phi3` (~2.9 GB) |
-| **8 GB RAM** | 16 GB recommended for local inference |
-
-Cloud AI (Anthropic, OpenAI, Google Gemini, Groq, xAI, Perplexity, Mistral) is optional — use any provider instead of or alongside Ollama.
+- **macOS or Linux** (Windows via WSL) — **Node.js 18+** — **Ollama** — **~5 GB disk** — **8 GB RAM** (16 GB recommended)
+- All dependencies auto-installed by `start.sh`
+- Cloud AI (Anthropic, OpenAI, Google, Groq, xAI, Perplexity, Mistral) optional — configure in Settings
 
 ---
 
 ## Installation
 
-**Option A — Download ZIP** *(no git required)*
-
-1. Click **Code → Download ZIP**, extract it
-2. Move it somewhere permanent (not Downloads)
-
-**Option B — Clone**
-
 ```bash
-git clone https://github.com/jcktp/operator.git
-cd operator
-```
+# Clone
+git clone https://github.com/jcktp/operator.git && cd operator
 
-### Run
-
-```bash
+# Run (installs everything on first run, starts in seconds after)
 bash start.sh
 ```
 
-On first run this installs Homebrew (macOS), Node.js, Ollama, and Tesseract if missing, sets up the database, pulls the default AI models, and opens the app at `http://localhost:3000`. Subsequent runs skip all setup and start in seconds.
-
-> **`start-dev.sh`** runs a hot-reload development server and is intended for contributors only.
-
----
-
-## First-time setup
-
-On first launch, an onboarding wizard walks you through:
-
-1. **Appearance** — Light, Dark, or Auto
-2. **Mode** — pick your use case
-3. **Profile** — name, company, and role so the AI tailors its responses
-
-All settings can be changed later in **Settings**.
+Or download the ZIP from [Releases](https://github.com/jcktp/operator/releases), extract, and run `bash start.sh`.
 
 ---
 
 ## AI providers
 
-### Local (default)
+**Local (default):** Ollama runs on-device. Default models: `phi4-mini` (text, ~2.5 GB) and `llava-phi3` (vision, ~2.9 GB). Optional audio models: `gemma4:e2b` or `phi4-multimodal`. Three setup modes available: Text + Vision, Full split, or All-in-one.
 
-Ollama runs entirely on your machine. Nothing is sent anywhere.
+**Cloud:** Enter API keys in Settings. Keys are AES-256-GCM encrypted and never leave your machine except in direct API calls.
 
-Three model setup modes are available in **Settings → AI**:
-
-| Mode | Models | Best for |
-|---|---|---|
-| **Text + Vision** *(default)* | Small text model + dedicated vision model | Most users — low RAM, fast text |
-| **Full split** | Separate text, vision, and audio models | Handles all file types with minimal RAM per task |
-| **All-in-one** | Single model for text, vision, and audio | Simpler setup; requires more RAM |
-
-**Default models**
-
-| Role | Model | Size |
-|---|---|---|
-| Text | `phi4-mini` | ~2.5 GB |
-| Vision | `llava-phi3` | ~2.9 GB — loaded on demand for image uploads |
-| Audio | configured separately in Full split mode | — |
-
-**Audio-capable models** (Full split mode)
-
-| Model | Size | Notes |
-|---|---|---|
-| `gemma4:e2b` | 7.2 GB | Full multimodal — text, vision, and audio |
-| `phi4-multimodal` | ~8.5 GB | Full multimodal — generally faster than gemma4 |
-
-The model list in Settings refreshes live from [ollama.com/search](https://ollama.com/search) and falls back to a curated list when offline.
-
-### Cloud
-
-Enter API keys in **Settings → AI**. Keys are encrypted with AES-256-GCM and never leave your machine except in direct API calls to the provider you've selected.
-
-| Provider | Key format |
-|---|---|
-| Anthropic (Claude) | `sk-ant-...` |
-| OpenAI (GPT) | `sk-...` |
-| Google (Gemini) | `AIza...` |
-| Groq | `gsk_...` |
-| xAI (Grok) | `xai-...` |
-| Perplexity | `pplx-...` |
-| Mistral | `...` |
-
----
-
-## Remote submissions
-
-Enable in **Settings → Remote** to get a public URL others can use to submit files directly to your library — no app required. The tunnel is temporary and closes when Operator shuts down.
+Supported: Anthropic, OpenAI, Google Gemini, Groq, xAI, Perplexity, Mistral.
 
 ---
 
 ## Security
 
-| | |
-|---|---|
-| **Encryption at rest** | API keys encrypted with AES-256-GCM; key file set to `0600` permissions |
-| **Session auth** | Password-protected; session tokens stored as SHA-256 hashes; HTTP-only cookies expire on browser close |
-| **All routes protected** | Every API endpoint requires a valid session — no unauthenticated access |
-| **Injection prevention** | Shell commands use `execFile` with argument arrays; no raw string interpolation |
-| **Path traversal guard** | File download routes validate paths against the reports root before serving |
-| **Local only** | Binds to `localhost`; nothing is reachable externally unless you enable the tunnel |
-| **No telemetry** | No analytics, no tracking, no external calls except to AI providers you've configured |
+- AES-256-GCM encrypted API keys; SHA-256 session hashing; HTTP-only cookies
+- All 60+ API routes require authentication; shell commands use `execFile` with argument arrays
+- File paths validated against root before serving; binds to localhost only
+- No telemetry, no tracking, no external calls except to configured AI providers
 
 ---
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router, Turbopack) |
-| Database | SQLite via Prisma 7 + `better-sqlite3` |
-| Local AI | Ollama (`phi4-mini` text, `llava-phi3` vision) |
-| Styling | Tailwind CSS v4 |
-| Maps | OpenLayers + MapLibre GL |
-| EXIF | exifr |
-| Tunnel | Cloudflare Quick Tunnel |
-| Auth | SHA-256 session tokens, HTTP-only cookies, AES-256-GCM key storage |
+Next.js 16 (Turbopack) · SQLite + Prisma 7 · Ollama · Tailwind CSS v4 · OpenLayers · Cloudflare Quick Tunnel
 
 ---
 
 ## Development
 
-### Running tests
-
 ```bash
-npm test                  # all tests
-npm run test:unit         # unit tests only (fast, no DB)
-npm run test:integration  # integration tests (uses a real test SQLite DB)
-npm run test:watch        # watch mode for active development
-npm run test:coverage     # generate coverage report
-npm run test:smoke        # smoke test — requires the dev server to be running
+npm test              # all tests (unit + integration)
+npm run test:watch    # watch mode
+npm run test:coverage # coverage report
 ```
 
-The test suite covers:
-- **Unit tests** — pure functions in `lib/` (parsers, utilities, auth crypto, model capabilities, capacity planning formulas)
-- **Integration tests** — database-backed functions using an isolated test database
-
-### API reference
-
-See [`docs/api.md`](./docs/api.md) for a full reference of all API routes with request/response shapes.
+API reference: [`docs/api.md`](./docs/api.md)
 
 ---
 
 ## License
 
-Released under **BSL 1.1**. Non-commercial use is free. Commercial use (deploying as or within a product or service offered to third parties) requires a commercial license. Converts to MIT on January 1, 2032.
+**BSL 1.1** — non-commercial use is free. Commercial use requires a license. Converts to MIT on January 1, 2032. Full text: [`license.md`](./license.md)
 
-Full text: [`license.md`](./license.md)
-
----
-
-## Disclaimer
-
-AI-generated outputs are probabilistic and must not be treated as professional legal, financial, medical, or journalistic advice. Verify all analysis before acting on it.
-
-Excel file parsing uses the `exceljs` library. Only upload Excel files from sources you trust.
+AI outputs are probabilistic — verify all analysis before acting on it.
 
 ---
 
