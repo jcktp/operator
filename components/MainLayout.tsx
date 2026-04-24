@@ -41,7 +41,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return (
       <>
         <IdleGuard autoLockMinutes={autoLockMinutes} />
-        <main className="pt-20 h-screen overflow-hidden px-6 sm:px-8 max-w-[1600px] mx-auto flex flex-col">
+        <main className="pt-20 pb-6 h-screen overflow-hidden px-6 sm:px-8 max-w-[1600px] mx-auto flex flex-col">
           {children}
         </main>
       </>
