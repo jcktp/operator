@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-  const mode = modeRow?.value ?? 'executive'
+  const mode = modeRow?.value ?? 'journalism'
   const briefing = await generateAreaBriefing(area, mode, reports)
   return NextResponse.json({ briefing })
 }

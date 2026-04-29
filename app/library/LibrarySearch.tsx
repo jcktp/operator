@@ -127,7 +127,7 @@ export default function LibrarySearch({
  return (
  <>
  {/* Search input */}
- <div className="flex items-center gap-2 mb-4">
+ <div className="sticky top-40 z-10 bg-[var(--background)] flex items-center gap-2 mb-4 pt-1 pb-2">
  <div className="relative flex-1">
  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
  <input

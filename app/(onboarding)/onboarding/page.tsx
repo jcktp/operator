@@ -4,25 +4,22 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getModeConfig } from '@/lib/mode'
 import StepWelcome from './steps/StepWelcome'
-import StepMode from './steps/StepMode'
 import StepContext from './steps/StepContext'
 import StepModels from './steps/StepModels'
 import StepTour from './steps/StepTour'
 import StepReady from './steps/StepReady'
 
-const TOTAL_STEPS = 6
+const TOTAL_STEPS = 5
 
 export default function OnboardingPage() {
  const router = useRouter()
  const [step, setStep] = useState(0)
- const [modeId, setModeId] = useState('executive')
  const [userName, setUserName] = useState('')
 
  useEffect(() => {
  fetch('/api/settings')
  .then(r => r.json())
  .then((d: { settings?: Record<string, string> }) => {
- if (d.settings?.app_mode) setModeId(d.settings.app_mode)
  if (d.settings?.ceo_name) setUserName(d.settings.ceo_name)
  })
  .catch(() => {})
@@ -44,7 +41,7 @@ export default function OnboardingPage() {
  }
  const back = () => setStep(s => Math.max(0, s - 1))
 
- const modeConfig = getModeConfig(modeId)
+ const modeConfig = getModeConfig('journalism')
 
  return (
  <div className="relative min-h-screen flex flex-col items-center justify-start px-4 py-12">
@@ -72,11 +69,10 @@ export default function OnboardingPage() {
 
  <div className="w-full max-w-xl">
  {step === 0 && <StepWelcome userName={userName} onNext={next} />}
- {step === 1 && <StepMode modeConfig={modeConfig} onNext={next} onBack={back} />}
- {step === 2 && <StepContext modeConfig={modeConfig} onNext={next} onBack={back} />}
- {step === 3 && <StepModels onNext={next} onBack={back} onSkip={next} />}
- {step === 4 && <StepTour modeConfig={modeConfig} onNext={next} onBack={back} />}
- {step === 5 && <StepReady modeConfig={modeConfig} onComplete={complete} onUpload={() => completeTo('/upload')} />}
+ {step === 1 && <StepContext modeConfig={modeConfig} onNext={next} onBack={back} />}
+ {step === 2 && <StepModels onNext={next} onBack={back} onSkip={next} />}
+ {step === 3 && <StepTour modeConfig={modeConfig} onNext={next} onBack={back} />}
+ {step === 4 && <StepReady modeConfig={modeConfig} onComplete={complete} onUpload={() => completeTo('/upload')} />}
  </div>
  </div>
  )

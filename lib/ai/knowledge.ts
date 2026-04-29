@@ -16,7 +16,7 @@ export async function loadKnowledgeForArea(area: string): Promise<KnowledgeConte
   } catch { /* non-blocking */ }
 
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-  const mode = modeRow?.value ?? 'executive'
+  const mode = modeRow?.value ?? 'journalism'
 
   const [memoryRow, glossaryTerms, briefingRow] = await Promise.all([
     prisma.setting.findUnique({ where: { key: 'user_memory' } }),
@@ -60,15 +60,7 @@ export async function generateAreaBriefing(
 ): Promise<string> {
   const modeConfig = getModeConfig(mode)
 
-  const framingByMode: Record<string, string> = {
-    executive:      'Focus on: metrics trends, financial/operational health, key contacts, risks and opportunities.',
-    consulting:     'Focus on: metrics trends, financial/operational health, key contacts, risks and opportunities.',
-    journalism:     'Focus on: open story threads, sources and entities in play, angles being pursued, pending follow-ups.',
-    legal:          'Focus on: active parties, claims, evidence patterns, procedural stage, timeline state.',
-    'team-lead':    'Focus on: velocity norms, recurring blockers, team dynamics, delivery patterns, sprint health.',
-    'market-research': 'Focus on: recurring themes, respondent patterns, open research questions, data quality signals.',
-  }
-  const framing = framingByMode[mode] ?? framingByMode.executive
+  const framing = 'Focus on: open story threads, sources and entities in play, angles being pursued, pending follow-ups.'
 
   const reportsText = reports.slice(0, 10).map((r, i) => {
     let metricsData: Metric[] = []

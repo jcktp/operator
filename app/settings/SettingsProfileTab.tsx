@@ -2,9 +2,8 @@
 
 import { X, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { MODE_LIST, getModeConfig } from '@/lib/mode'
+import { getModeConfig } from '@/lib/mode'
 import SelectField from '@/components/SelectField'
-import ModeIcon from './ModeIcons'
 import RecoveryCodesPanel from './RecoveryCodesPanel'
 import type { useSettingsState } from './useSettingsState'
 
@@ -36,29 +35,6 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
           <label className="block text-xs font-medium text-[var(--text-subtle)] mb-1.5">Your role</label>
           <input type="text" value={s.userRole} onChange={e => s.setUserRole(e.target.value)} placeholder="e.g. CEO, Head of Product, COO"
             className="w-full border border-[var(--border)] rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2" />
-        </div>
-      </div>
-
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--text-bright)]">App Mode</h2>
-          {s.appMode !== s.savedMode && <span className="text-xs text-[var(--amber)]">Unsaved</span>}
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          {MODE_LIST.map(m => (
-            <button key={m.id} type="button" onClick={() => {
-              s.setAppMode(m.id)
-              s.setCustomAreas(getModeConfig(m.id).defaultAreas)
-              s.setAreasCustomized(false)
-            }}
-              className={cn('text-left px-3 py-2.5 rounded-[4px] border-2 transition-all',
-                s.appMode === m.id ? 'border-[var(--ink)] bg-[var(--ink)] text-[var(--ink-contrast)]' : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-bright)] hover:border-[var(--border)]'
-              )}>
-              <ModeIcon modeId={m.id} className="w-6 h-6" />
-              <div className="text-xs font-semibold mt-1">{m.label}</div>
-              {s.savedMode === m.id && s.appMode !== m.id && <div className="text-[10px] text-blue-400 mt-0.5">current</div>}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -115,16 +91,16 @@ export default function SettingsProfileTab({ s, theme, mode, setMode }: Props) {
 
       <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--text-bright)]">Areas</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-bright)]">Beats</h2>
           {s.areasCustomized && (
             <button type="button"
-              onClick={() => { s.setCustomAreas(getModeConfig(s.appMode).defaultAreas); s.setAreasCustomized(false) }}
+              onClick={() => { s.setCustomAreas(getModeConfig('journalism').defaultAreas); s.setAreasCustomized(false) }}
               className="text-xs text-[var(--text-muted)] hover:text-[var(--text-subtle)] transition-colors">
-              Reset to {getModeConfig(s.appMode).label} defaults
+              Reset to defaults
             </button>
           )}
         </div>
-        <p className="text-xs text-[var(--text-muted)]">Areas appear when uploading {getModeConfig(s.appMode).documentLabelPlural.toLowerCase()} and creating request links. Switching modes resets to that mode&apos;s defaults unless you&apos;ve customised them.</p>
+        <p className="text-xs text-[var(--text-muted)]">Beats appear when uploading documents and creating request links.</p>
         <div className="flex flex-wrap gap-2">
           {s.customAreas.map(area => (
             <span key={area} className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-[var(--surface-2)] text-xs text-[var(--text-body)] rounded-md">

@@ -2,16 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, AlertTriangle, Eye, EyeOff, ShieldAlert, ArrowRight } from 'lucide-react'
+import { Loader2, AlertTriangle, Eye, EyeOff, ShieldAlert } from 'lucide-react'
 import WalkieTalkie from '@/components/WalkieTalkie'
-import { MODE_LIST, type AppMode } from '@/lib/mode'
 
-type Screen = 'loading' | 'mode-pick' | 'setup' | 'login' | 'recover' | 'reset' | 'uninstalled'
+type Screen = 'loading' | 'setup' | 'login' | 'recover' | 'reset' | 'uninstalled'
 
 export default function LoginPage() {
  const router = useRouter()
  const [screen, setScreen] = useState<Screen>('loading')
- const [selectedMode, setSelectedMode] = useState<AppMode>('executive')
  const [name, setName] = useState('')
  const [role, setRole] = useState('')
  const [password, setPassword] = useState('')
@@ -31,10 +29,10 @@ export default function LoginPage() {
  .then(r => r.json())
  .then((d: { setupComplete: boolean; attemptsLeft: number }) => {
  setAttemptsLeft(d.attemptsLeft)
- setScreen(d.setupComplete ? 'login' : 'mode-pick')
+ setScreen(d.setupComplete ? 'login' : 'setup')
  setTimeout(() => passwordRef.current?.focus(), 100)
  })
- .catch(() => setScreen('mode-pick'))
+ .catch(() => setScreen('setup'))
  }, [])
 
  const handleSetup = async (e: React.FormEvent) => {
@@ -47,7 +45,7 @@ export default function LoginPage() {
  const res = await fetch('/api/auth/setup', {
  method: 'POST',
  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
- body: JSON.stringify({ name, role, password, appMode: selectedMode }),
+ body: JSON.stringify({ name, role, password, appMode: 'journalism' }),
  })
  const data = await res.json() as { ok?: boolean; error?: string }
  if (res.ok) {
@@ -188,46 +186,7 @@ export default function LoginPage() {
  </span>
  </div>
 
- {/* ── Step 1: Mode picker ── */}
- {screen === 'mode-pick' && (
- <div className="space-y-5">
- <div>
- <h1 className="text-lg font-semibold text-[var(--text-bright)]">How will you use Operator?</h1>
- <p className="text-sm text-[var(--text-muted)] mt-0.5">This tailors the app to your workflow.</p>
- </div>
-
- <div className="grid grid-cols-2 gap-2">
- {MODE_LIST.map(m => (
- <button
- key={m.id}
- type="button"
- onClick={() => setSelectedMode(m.id)}
- className={`text-left p-3 rounded-[10px] border-2 transition-all ${
- selectedMode === m.id
- ? 'border-[var(--ink)] bg-[var(--ink)] text-[var(--ink-contrast)]'
- : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-bright)] hover:border-[var(--border)] '
- }`}
- >
- <div className="text-xl mb-1.5">{m.icon}</div>
- <div className="text-xs font-semibold">{m.label}</div>
- <div className={`text-[10px] mt-0.5 leading-tight ${selectedMode === m.id ? 'text-[var(--border)]' : 'text-[var(--text-muted)]'}`}>
- {m.tagline}
- </div>
- </button>
- ))}
- </div>
-
- <button
- type="button"
- onClick={() => setScreen('setup')}
- className="w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors flex items-center justify-center gap-2"
- >
- Continue <ArrowRight size={14} />
- </button>
- </div>
- )}
-
- {/* ── Step 2: Setup form ── */}
+ {/* ── Setup form ── */}
  {screen === 'setup' && (
  <form onSubmit={handleSetup} className="space-y-5">
  <div>
@@ -294,16 +253,10 @@ export default function LoginPage() {
 
  {error && <p className="text-sm text-[var(--red)] text-center">{error}</p>}
 
- <div className="flex gap-2">
- <button type="button"onClick={() => setScreen('mode-pick')}
- className="h-7 px-3 rounded-[4px] border border-[var(--border)] text-xs font-medium text-[var(--text-subtle)] hover:bg-[var(--surface-2)] transition-colors">
- Back
- </button>
  <button type="submit"disabled={submitting || !name.trim() || !password || !confirm}
- className="flex-1 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+ className="w-full bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
  {submitting ? <><Loader2 size={14} className="animate-spin" /> Setting up…</> : 'Create account'}
  </button>
- </div>
  </form>
  )}
 

@@ -141,7 +141,7 @@ export async function updatePassword(newPassword: string): Promise<void> {
 
 // ── Account setup ─────────────────────────────────────────────────────────────
 
-export async function setupAuth(name: string, role: string, password: string, mode?: string): Promise<string> {
+export async function setupAuth(name: string, role: string, password: string, mode: string = 'journalism'): Promise<string> {
   const hash = hashPassword(password)
   const token = generateToken()
   await Promise.all([
@@ -151,7 +151,7 @@ export async function setupAuth(name: string, role: string, password: string, mo
     upsert('auth_setup_complete', 'true'),
     name ? upsert('ceo_name', name) : Promise.resolve(),
     role ? upsert('user_role', role) : Promise.resolve(),
-    mode ? upsert('app_mode', mode) : Promise.resolve(),
+    upsert('app_mode', mode),
   ])
   return token
 }

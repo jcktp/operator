@@ -19,20 +19,6 @@ export interface ModeReportLabels {
 }
 
 const LABELS: Record<AppMode, ModeReportLabels> = {
-  executive: {
-    metrics: 'Key Metrics',
-    flags: 'Observations & Flags',
-    questionsHeading: 'Questions to ask',
-    questionsPersonPrefix: 'Ask',
-    comparison: 'What changed from last report',
-    content: 'Report Content',
-    flagsPanel: 'Flags & Risks',
-    questionsPanel: 'Questions to ask',
-    resolvedPanel: 'Resolved since last report',
-    onePagerMetrics: 'Metrics',
-    onePagerFlags: 'Flags',
-    onePagerQuestions: 'Key questions',
-  },
   journalism: {
     metrics: 'Key Facts & Claims',
     flags: 'Flags & Anomalies',
@@ -47,64 +33,8 @@ const LABELS: Record<AppMode, ModeReportLabels> = {
     onePagerFlags: 'Flags',
     onePagerQuestions: 'Claims to verify',
   },
-  team_lead: {
-    metrics: 'Delivery Metrics',
-    flags: 'Blockers & Risks',
-    questionsHeading: 'Questions for your team',
-    questionsPersonPrefix: 'Raise with',
-    comparison: 'What changed from last update',
-    content: 'Update Content',
-    flagsPanel: 'Blockers & Risks',
-    questionsPanel: 'Open questions',
-    resolvedPanel: 'Resolved since last update',
-    onePagerMetrics: 'Metrics',
-    onePagerFlags: 'Blockers',
-    onePagerQuestions: 'Open questions',
-  },
-  market_research: {
-    metrics: 'Key Findings',
-    flags: 'Observations & Outliers',
-    questionsHeading: 'Hypotheses to test',
-    questionsPersonPrefix: 'Explore with',
-    comparison: 'Changes from previous wave',
-    content: 'Research Content',
-    flagsPanel: 'Observations & Outliers',
-    questionsPanel: 'Hypotheses to test',
-    resolvedPanel: 'Addressed since last wave',
-    onePagerMetrics: 'Findings',
-    onePagerFlags: 'Observations',
-    onePagerQuestions: 'Hypotheses',
-  },
-  legal: {
-    metrics: 'Key Facts',
-    flags: 'Issues & Inconsistencies',
-    questionsHeading: 'Issues to investigate',
-    questionsPersonPrefix: 'Raise with',
-    comparison: 'Document changes',
-    content: 'Case File Content',
-    flagsPanel: 'Issues & Inconsistencies',
-    questionsPanel: 'Issues to investigate',
-    resolvedPanel: 'Resolved since last filing',
-    onePagerMetrics: 'Key Facts',
-    onePagerFlags: 'Issues',
-    onePagerQuestions: 'Issues to investigate',
-  },
-  human_resources: {
-    metrics: 'Workforce Metrics',
-    flags: 'People Risks & Signals',
-    questionsHeading: 'Questions to investigate',
-    questionsPersonPrefix: 'Review with',
-    comparison: 'What changed from last report',
-    content: 'Report Content',
-    flagsPanel: 'People Risks',
-    questionsPanel: 'HR questions',
-    resolvedPanel: 'Resolved since last report',
-    onePagerMetrics: 'Workforce Metrics',
-    onePagerFlags: 'People Risks',
-    onePagerQuestions: 'HR questions',
-  },
 }
 
 export function getReportLabels(modeId?: string): ModeReportLabels {
-  return LABELS[(modeId as AppMode) ?? 'executive'] ?? LABELS.executive
+  return LABELS[(modeId as AppMode) ?? 'journalism'] ?? LABELS.journalism
 }

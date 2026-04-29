@@ -204,7 +204,7 @@ export default function SettingsPage() {
  )}
 
  {/* AI Context tab */}
- {tab === 'knowledge' && <SettingsKnowledgeTab appMode={s.appMode} />}
+ {tab === 'knowledge' && <SettingsKnowledgeTab />}
 
  {/* Collab tab */}
  {tab === 'collab' && <SettingsCollabTab />}

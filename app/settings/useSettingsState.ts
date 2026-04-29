@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSetMode } from '@/components/ModeContext'
-import { getModeConfig, type AppMode } from '@/lib/mode'
+import { getModeConfig } from '@/lib/mode'
 import { getModelCapsClient } from '@/lib/model-caps-shared'
 import { CLOUD_PROVIDERS, type AIProvider, type CloudProviderId, type PullState, type TestState } from './settingsTypes'
 
@@ -19,7 +18,6 @@ async function saveSetting(key: string, value: string) {
 
 export function useSettingsState() {
   const router = useRouter()
-  const setMode = useSetMode()
 
   const [ollamaHost, setOllamaHost] = useState('http://localhost:11434')
   const [ollamaModel, setOllamaModel] = useState('phi4-mini')
@@ -52,8 +50,6 @@ export function useSettingsState() {
   const [bskyIdentifier, setBskyIdentifier] = useState('')
   const [bskyAppPassword, setBskyAppPassword] = useState('')
   const [mastodonToken, setMastodonToken] = useState('')
-  const [appMode, setAppMode] = useState<AppMode>('executive')
-  const [savedMode, setSavedMode] = useState<AppMode>('executive')
   const [lastBackup, setLastBackup] = useState<string | null>(null)
   const [backupPath, setBackupPath] = useState('')
   const [soundEnabled, setSoundEnabled] = useState(true)
@@ -100,9 +96,6 @@ export function useSettingsState() {
       setAiProvider(provider)
       setWebAccess(s.ollama_web_access === 'true')
       setSavedProvider(provider)
-      const mode = (s.app_mode ?? 'executive') as AppMode
-      setAppMode(mode)
-      setSavedMode(mode)
       setLastBackup(s.last_backup ?? null)
       setBackupPath(s.backup_path ?? '')
       const sound = s.sound_enabled !== 'false'
@@ -114,7 +107,7 @@ export function useSettingsState() {
       setMastodonToken(s.mastodon_access_token ?? '')
       setSelectedModels({ anthropic: s.anthropic_model ?? '', openai: s.openai_model ?? '', groq: s.groq_model ?? '', google: s.google_model ?? '', xai: s.xai_model ?? '', perplexity: s.perplexity_model ?? '', mistral: s.mistral_model ?? '' })
       const savedAreas = s.custom_areas ? JSON.parse(s.custom_areas) as string[] : null
-      setCustomAreas(savedAreas ?? getModeConfig(s.app_mode ?? 'executive').defaultAreas)
+      setCustomAreas(savedAreas ?? getModeConfig('journalism').defaultAreas)
       setAreasCustomized(!!s.custom_areas)
       setAutoLockMinutes(parseInt(s.auto_lock_minutes ?? '0') || 0)
       setAirGapMode(s.air_gap_mode === 'true')
@@ -261,14 +254,7 @@ export function useSettingsState() {
       )
     }
 
-    // If the mode changed, clear the active project so the user starts fresh in the new mode
-    if (appMode !== savedMode) {
-      await saveSetting('current_project_id', '')
-      window.dispatchEvent(new Event('project:changed'))
-    }
-
     await Promise.all([
-      saveSetting('app_mode', appMode),
       saveSetting('model_setup_mode', modelSetupMode),
       saveSetting('ollama_host', ollamaHost),
       saveSetting('ollama_model', selectedModel),
@@ -307,8 +293,6 @@ export function useSettingsState() {
     setSavedVisionModel(effectiveVisionModel)
     setSavedAudioModel(audioModel)
     setSavedProvider(aiProvider)
-    setSavedMode(appMode)
-    setMode(appMode)
     setRemoveOllamaModels(false)
 
     if (bskyIdentifier.trim() && bskyAppPassword.trim()) {
@@ -339,9 +323,6 @@ export function useSettingsState() {
     ceoName, setCeoName,
     companyName, setCompanyName,
     userRole, setUserRole,
-    // Mode
-    appMode, setAppMode,
-    savedMode,
     // Sound
     soundEnabled, setSoundEnabled,
     // Areas

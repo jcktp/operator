@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Trash2, Plus, Loader2, ChevronDown } from 'lucide-react'
-import type { AppMode } from '@/lib/mode'
 import Pagination from './KnowledgePagination'
 
 const PAGE_SIZE = 10
@@ -16,23 +15,18 @@ interface GlossaryTerm {
 }
 
 const SCOPE_OPTIONS = [
-  { value: 'global', label: 'Global (all modes)' },
-  { value: 'mode:executive', label: 'Executive mode' },
-  { value: 'mode:human_resources', label: 'Human Resources mode' },
-  { value: 'mode:journalism', label: 'Journalism mode' },
-  { value: 'mode:team_lead', label: 'Team Lead mode' },
-  { value: 'mode:market_research', label: 'Market Research mode' },
-  { value: 'mode:legal', label: 'Legal mode' },
+  { value: 'global', label: 'Global' },
+  { value: 'mode:journalism', label: 'Journalism' },
 ]
 
 function scopeLabel(scope: string): string {
   if (scope === 'global') return 'Global'
-  if (scope.startsWith('mode:')) return scope.replace('mode:', '') + ' mode'
-  if (scope.startsWith('area:')) return 'Area: ' + scope.replace('area:', '')
+  if (scope.startsWith('mode:')) return scope.replace('mode:', '')
+  if (scope.startsWith('area:')) return 'Beat: ' + scope.replace('area:', '')
   return scope
 }
 
-export default function GlossaryPanel({ appMode }: { appMode: AppMode }) {
+export default function GlossaryPanel() {
   const [terms, setTerms] = useState<GlossaryTerm[]>([])
   const [loading, setLoading] = useState(true)
   const [newTerm, setNewTerm] = useState('')
@@ -42,7 +36,7 @@ export default function GlossaryPanel({ appMode }: { appMode: AppMode }) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [page, setPage] = useState(0)
 
-  const modeScope = `mode:${appMode}`
+  const modeScope = 'mode:journalism'
 
   useEffect(() => {
     fetch('/api/knowledge/glossary')
@@ -142,7 +136,7 @@ export default function GlossaryPanel({ appMode }: { appMode: AppMode }) {
         </div>
       </div>
 
-      <p className="text-xs text-[var(--text-muted)]">{visibleTerms.length} term{visibleTerms.length !== 1 ? 's' : ''} · global + {appMode.replace('_', ' ')} mode</p>
+      <p className="text-xs text-[var(--text-muted)]">{visibleTerms.length} term{visibleTerms.length !== 1 ? 's' : ''}</p>
 
       <div className="space-y-4">
         {Object.entries(grouped).map(([scope, scopeTerms]) => (

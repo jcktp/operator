@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   if (deny) return deny
   // Apply saved Ollama settings
   const allSettings = await prisma.setting.findMany()
-  let appMode = 'executive'
+  let appMode = 'journalism'
   for (const s of allSettings) {
     if (s.key === 'ollama_host') process.env.OLLAMA_HOST = s.value
     if (s.key === 'ollama_model') process.env.OLLAMA_MODEL = s.value

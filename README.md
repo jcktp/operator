@@ -2,9 +2,9 @@
 
 # Operator
 
-**Local-first AI workspace for documents, investigations, and team intelligence**
+**Local-first AI workspace for investigative journalism**
 
-Upload documents. Get structured AI analysis. Everything runs on your machine.
+Upload notes, sources, photos, and documents. Get structured AI analysis — entities, timelines, claims, redactions. Everything runs on your machine.
 
 <br>
 
@@ -32,32 +32,30 @@ Upload documents. Get structured AI analysis. Everything runs on your machine.
 
 ## What it does
 
-Operator is a private intelligence workspace. Upload documents, images, and audio to get structured AI analysis — summaries, metrics, risk flags, entity extraction, timelines, and comparisons. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
+Operator is a private journalism workspace. Upload documents, images, and audio to get structured AI analysis — summaries, claims, entity extraction, timelines, and comparisons — with framing tuned for investigative reporting. Everything runs locally; no data leaves your machine unless you choose a cloud AI provider.
 
 ### Core
 
-- **Projects** — organise work into scoped projects with documents, entities, timelines, and dispatch
-- **Document analysis** — AI extracts summaries, metrics, risks, opportunities, and follow-up questions with mode-specific framing
+- **Stories** — organise work into scoped stories with documents, entities, timelines, and dispatch
+- **Document analysis** — AI extracts summaries, claims, flags, and follow-up questions framed for journalism
 - **Image & audio uploads** — photos get OCR + EXIF extraction; audio files are transcribed with speaker diarization
 - **Library** — full document history with keyword and semantic search, auto-tagging, duplicate detection, and annotations
-- **Dashboard** — cross-area overview with health signals, document digest, and one-pager export
-- **Dispatch** — AI chat with document context, memory, web search, and mode-specific personas
+- **Dashboard** — cross-beat overview with health signals, document digest, and one-pager export
+- **Dispatch** — AI chat with document context, memory, web search, and journalism-tuned personas
 - **Pulse** — feed aggregator (RSS, Reddit, YouTube, Bluesky, Mastodon) with keyword monitoring
 - **Journal** — private notes with folder organisation and AI grammar correction
-- **Remote submissions** — shareable link for others to submit files directly to your library
+- **Remote submissions** — shareable link for sources to submit files directly to your library
 - **P2P collaboration** — LAN-based sync with threaded chat and conflict resolution
 
 ### Analysis tools
 
 - **Entities** — extraction, timeline, interactive story map, and AI-assisted storyline builder
 - **Entity Network** — force-directed graph of extracted entities with cluster highlighting
-- **Risk Register** — probability x impact scoring, owner assignment, auto-creation from uploads
-- **Actions / Blockers** — task tracking with assignee, due date, priority, and auto-extraction from documents
 - **Claims Tracker** — log and verify factual claims from sources
-- **Metrics board** — aggregated KPIs across all documents, grouped by area
-- **Decision Log** — searchable audit trail of key decisions with context and rationale
+- **Risk Register** — probability x impact scoring, owner assignment, auto-creation from uploads
+- **Actions** — task tracking with assignee, due date, priority, and auto-extraction from documents
 
-### Investigation tools (Journalism)
+### Investigation tools
 
 - **Image Analysis** — face extraction/comparison, Error Level Analysis, deepfake detection, reverse search
 - **Photo Map** — geotagged photos on an interactive map with EXIF details
@@ -66,29 +64,6 @@ Operator is a private intelligence workspace. Upload documents, images, and audi
 - **Research Tools** — Wayback Machine lookups, document diff, structured research workflows
 - **FOIA Tracker** — public records requests with 7 status stages and overdue alerts
 - **File Cleaner** — strip EXIF metadata before sharing
-
-### Specialist tools
-
-- **Quote Bank** — verbatim quotes with source, speaker, and tags (Market Research)
-- **Themes Board** — synthesise patterns into candidate/confirmed/rejected themes (Market Research)
-- **Policy Register** — HR policies with review dates and 30-day alerts (HR)
-- **Deadline Tracker** — filing deadlines and milestones with urgency indicators (Legal, HR)
-- **Capacity Planning** — FTE analysis, demand gap calculator, headcount registry (HR)
-
----
-
-## App modes
-
-Switch modes in **Settings** to adapt the interface, AI framing, and terminology.
-
-| Mode | Use case |
-|---|---|
-| 📊 Executive | Business reporting & team oversight |
-| 📰 Journalism | Field notes, sources & story research |
-| 👥 Team Lead | Team updates, blockers & sprint tracking |
-| 🔍 Market Research | Interviews, surveys & pattern discovery |
-| ⚖️ Legal | Case files, evidence & matter management |
-| 🫂 Human Resources | People operations & workforce analytics |
 
 ---
 

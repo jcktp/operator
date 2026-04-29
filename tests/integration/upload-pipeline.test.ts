@@ -45,7 +45,7 @@ vi.mock('@/lib/settings', () => ({
 
 vi.mock('@/lib/mode', () => ({
   getModeConfig: vi.fn().mockReturnValue({
-    id: 'executive',
+    id: 'journalism',
     features: {
       entities: true,
       timeline: true,

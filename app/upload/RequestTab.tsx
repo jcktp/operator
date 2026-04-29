@@ -8,29 +8,9 @@ import { useMode } from '@/components/ModeContext'
 import { useSettings } from '@/lib/use-settings'
 
 const MODE_PLACEHOLDERS: Record<AppMode, { title: string; message: string }> = {
- executive: {
- title: 'e.g. Q1 Engineering Update',
- message: 'e.g. Please include your pipeline numbers and any blockers for this quarter.',
- },
  journalism: {
  title: 'e.g. Interview notes — Jane Smith',
  message: 'e.g. Please include any documents, photos, or recordings you can share.',
- },
- team_lead: {
- title: 'e.g. Sprint 14 Status Update',
- message: 'e.g. Please include your blockers and progress since last week.',
- },
- market_research: {
- title: 'e.g. Customer Interview — Alex Chen',
- message: 'e.g. Please share any transcripts, notes, or supporting materials.',
- },
- legal: {
- title: 'e.g. Contract Review — Smith v Jones',
- message: 'e.g. Please include the signed contract and any relevant correspondence.',
- },
- human_resources: {
- title: 'e.g. Q1 Engagement Survey Results',
- message: 'e.g. Please include the anonymised data and any additional context.',
  },
 }
 
@@ -337,8 +317,8 @@ export default function RequestTab() {
  )
  }
 
- const currentMode = (settings.app_mode ?? 'executive') as AppMode
- const placeholders = MODE_PLACEHOLDERS[currentMode] ?? MODE_PLACEHOLDERS.executive
+ const currentMode = (settings.app_mode ?? 'journalism') as AppMode
+ const placeholders = MODE_PLACEHOLDERS[currentMode] ?? MODE_PLACEHOLDERS.journalism
 
  return (
  <form onSubmit={generate} className="space-y-5">

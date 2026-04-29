@@ -136,28 +136,17 @@ export function buildPersonaSet(defs: Record<PersonaId, PersonaDef>): Record<Per
 
 // ── Mode registry ─────────────────────────────────────────────────────────────
 
-import { EXECUTIVE_PERSONA_DEFS } from './executive'
 import { JOURNALISM_PERSONA_DEFS } from './journalism'
-import { TEAM_LEAD_PERSONA_DEFS } from './team_lead'
-import { MARKET_RESEARCH_PERSONA_DEFS } from './market_research'
-import { LEGAL_PERSONA_DEFS } from './legal'
-import { HUMAN_RESOURCES_PERSONA_DEFS } from './human_resources'
 
 const PERSONA_DEFS_BY_MODE: Record<AppMode, Record<PersonaId, PersonaDef>> = {
-  executive: EXECUTIVE_PERSONA_DEFS,
   journalism: JOURNALISM_PERSONA_DEFS,
-  team_lead: TEAM_LEAD_PERSONA_DEFS,
-  market_research: MARKET_RESEARCH_PERSONA_DEFS,
-  legal: LEGAL_PERSONA_DEFS,
-  human_resources: HUMAN_RESOURCES_PERSONA_DEFS,
 }
 
-export function getPersonasForMode(modeId?: string): Record<PersonaId, Persona> {
-  const defs = PERSONA_DEFS_BY_MODE[(modeId as AppMode) ?? 'executive'] ?? EXECUTIVE_PERSONA_DEFS
-  return buildPersonaSet(defs)
+export function getPersonasForMode(_modeId?: string): Record<PersonaId, Persona> {
+  return buildPersonaSet(PERSONA_DEFS_BY_MODE.journalism)
 }
 
 // Backwards-compat exports
-const _executive = buildPersonaSet(EXECUTIVE_PERSONA_DEFS)
-export const PERSONAS: Record<PersonaId, Persona> = _executive
-export const PERSONA_LIST: Persona[] = [_executive.dispatch, _executive.debrief, _executive.recon]
+const _journalism = buildPersonaSet(JOURNALISM_PERSONA_DEFS)
+export const PERSONAS: Record<PersonaId, Persona> = _journalism
+export const PERSONA_LIST: Persona[] = [_journalism.dispatch, _journalism.debrief, _journalism.recon]

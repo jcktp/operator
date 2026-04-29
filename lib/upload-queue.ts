@@ -101,7 +101,7 @@ async function processItem(itemId: string): Promise<void> {
     }
 
     const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-    const appMode = modeRow?.value ?? 'executive'
+    const appMode = modeRow?.value ?? 'journalism'
 
     let directName: string | undefined
     if (item.directReportId) {
@@ -458,7 +458,7 @@ async function unloadOllamaModel(): Promise<void> {
 async function refreshBriefingsForBatch(): Promise<void> {
   try {
     const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-    const appMode = modeRow?.value ?? 'executive'
+    const appMode = modeRow?.value ?? 'journalism'
 
     // Find areas that have recent reports but stale or missing briefings
     const recentReports = await prisma.report.findMany({

@@ -9,7 +9,7 @@ interface ModeContextValue {
 }
 
 const ModeContext = createContext<ModeContextValue>({
-  config: getModeConfig('executive'),
+  config: getModeConfig('journalism'),
   setMode: () => {},
 })
 

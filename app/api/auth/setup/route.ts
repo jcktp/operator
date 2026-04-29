@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Already set up' }, { status: 400 })
   }
 
-  const { name, role, password, appMode } = await req.json() as { name?: string; role?: string; password?: string; appMode?: string }
+  const { name, role, password } = await req.json() as { name?: string; role?: string; password?: string; appMode?: string }
 
   if (!password || password.length < 6) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
 
-  const token = await setupAuth(name.trim(), role?.trim() ?? '', password, appMode)
+  const token = await setupAuth(name.trim(), role?.trim() ?? '', password, 'journalism')
 
   void logAction('auth:setup', `Account created for ${name.trim()}`)
   const res = NextResponse.json({ ok: true })

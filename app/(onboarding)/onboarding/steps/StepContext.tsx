@@ -17,22 +17,8 @@ async function saveSetting(key: string, value: string) {
  })
 }
 
-const ORG_PLACEHOLDER: Record<string, string> = {
- journalism: 'e.g. The Guardian, NRC, Freelance',
- market_research: 'e.g. Acme Research, Client: Nike',
- legal: 'e.g. Chambers & Partners, In-house at Acme',
- team_lead: 'e.g. Acme Engineering',
- human_resources: 'e.g. Acme Corp HR',
-}
-
-const MEMORY_PLACEHOLDER: Record<string, string> = {
- journalism: 'e.g. I cover climate policy and Eastern Europe. I prefer bullet-point summaries. Always cite sources.',
- executive: 'e.g. Our FY runs April–March. Revenue target is €50M. Focus on EMEA and APAC.',
- market_research: 'e.g. I focus on B2B SaaS. I prefer verbatim quotes highlighted separately from synthesis.',
- legal: 'e.g. I specialise in employment law. Flag any statute references.',
- team_lead: 'e.g. We run two-week sprints. Velocity target is 40 points. Surface blockers first.',
- human_resources: 'e.g. We use OKRs. Focus on attrition and engagement scores.',
-}
+const ORG_PLACEHOLDER = 'e.g. The Guardian, NRC, Freelance'
+const MEMORY_PLACEHOLDER = 'e.g. I cover climate policy and Eastern Europe. I prefer bullet-point summaries. Always cite sources.'
 
 export default function StepContext({ modeConfig, onNext, onBack }: Props) {
  const [orgName, setOrgName] = useState('')
@@ -52,12 +38,9 @@ export default function StepContext({ modeConfig, onNext, onBack }: Props) {
  }
  }
 
- const orgLabel = modeConfig.id === 'journalism' || modeConfig.id === 'market_research'
- ? 'Project or organisation name'
- : 'Organisation name'
-
- const orgPlaceholder = ORG_PLACEHOLDER[modeConfig.id] ?? 'e.g. Acme Corp'
- const memPlaceholder = MEMORY_PLACEHOLDER[modeConfig.id] ?? 'e.g. I prefer concise summaries with key findings up front.'
+ const orgLabel = 'Project or organisation name'
+ const orgPlaceholder = ORG_PLACEHOLDER
+ const memPlaceholder = MEMORY_PLACEHOLDER
 
  return (
  <div className="space-y-6">

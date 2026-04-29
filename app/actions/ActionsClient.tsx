@@ -37,12 +37,10 @@ function isOverdue(dueAt: string | null) {
 }
 
 export default function ActionsClient() {
- const config = useMode()
- // Determine context: blockers for team_lead, actions for HR
- const isBlockerMode = config.id === 'team_lead'
- const defaultKind = isBlockerMode ? 'blocker' : 'action'
- const pageTitle = isBlockerMode ? 'Blockers' : 'Action Log'
- const addLabel = isBlockerMode ? 'Add blocker' : 'Add action'
+ useMode()
+ const defaultKind = 'action'
+ const pageTitle = 'Action Log'
+ const addLabel = 'Add action'
 
  const [items, setItems] = useState<ActionItem[]>([])
  const [loading, setLoading] = useState(true)

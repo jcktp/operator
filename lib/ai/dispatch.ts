@@ -29,7 +29,7 @@ export function dispatchChatStream(
   userMemory = '',
   mode?: string
 ): ReadableStream<Uint8Array> {
-  const resolvedMode = mode ?? process.env.APP_MODE ?? 'executive'
+  const resolvedMode = mode ?? process.env.APP_MODE ?? 'journalism'
   const personas = getPersonasForMode(resolvedMode)
   const persona = personas[personaId]
   const webEnabled = process.env.OLLAMA_WEB_ACCESS === 'true'

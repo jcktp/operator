@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         if (direct) directName = direct.name
       }
       const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-      const appMode = modeRow?.value ?? 'executive'
+      const appMode = modeRow?.value ?? 'journalism'
 
       let analysis = null
       try { analysis = await analyzeReport(transcript, title, area, directName, appMode) }
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
 
     // Read mode from DB — process.env.APP_MODE is not reliably set at runtime
     const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-    const appMode = modeRow?.value ?? 'executive'
+    const appMode = modeRow?.value ?? 'journalism'
 
     // Find the most recent prior report for the same area (for comparison + series detection)
     const previousReport = await prisma.report.findFirst({

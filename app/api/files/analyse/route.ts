@@ -60,7 +60,7 @@ export async function POST(req: Request) {
   const title = fileName.replace(/\.[^/.]+$/, '')
 
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-  const appMode = modeRow?.value ?? 'executive'
+  const appMode = modeRow?.value ?? 'journalism'
 
   let analysis = null
   try { analysis = await analyzeReport(rawContent, title, area, undefined, appMode) }

@@ -43,7 +43,7 @@ export default function ReportContent({
  className="w-5/12 shrink-0 overflow-y-auto rounded-[10px]"
  style={SCROLL_MASK}
  >
- <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-4 pt-6">
+ <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-4 pt-6 min-h-full">
  {docSlot}
  </div>
  </div>

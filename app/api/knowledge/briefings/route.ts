@@ -15,7 +15,7 @@ export async function PATCH(req: NextRequest) {
   const { area, notes } = await req.json() as { area?: string; notes?: string }
   if (!area) return NextResponse.json({ error: 'area required' }, { status: 400 })
   const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-  const mode = modeRow?.value ?? 'executive'
+  const mode = modeRow?.value ?? 'journalism'
   const updated = await prisma.areaBriefing.updateMany({
     where: { area, mode },
     data: { userNotes: notes ?? null },

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, Loader2, Save, Trash2, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { AppMode } from '@/lib/mode'
 import Pagination from './KnowledgePagination'
 import YouPanel from './YouPanel'
 import GlossaryPanel from './GlossaryPanel'
@@ -221,7 +220,7 @@ function AreaKnowledgePanel() {
 
 type KnowledgePanel = 'you' | 'glossary' | 'area'
 
-export default function SettingsKnowledgeTab({ appMode }: { appMode: AppMode }) {
+export default function SettingsKnowledgeTab() {
  const [panel, setPanel] = useState<KnowledgePanel>('you')
 
  const panels: { id: KnowledgePanel; label: string }[] = [
@@ -251,7 +250,7 @@ export default function SettingsKnowledgeTab({ appMode }: { appMode: AppMode }) 
 
  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-5">
  {panel === 'you' && <><h2 className="text-sm font-semibold text-[var(--text-bright)] mb-4">Your context</h2><YouPanel /></>}
- {panel === 'glossary' && <><h2 className="text-sm font-semibold text-[var(--text-bright)] mb-4">Glossary</h2><GlossaryPanel appMode={appMode} /></>}
+ {panel === 'glossary' && <><h2 className="text-sm font-semibold text-[var(--text-bright)] mb-4">Glossary</h2><GlossaryPanel /></>}
  {panel === 'area' && <><h2 className="text-sm font-semibold text-[var(--text-bright)] mb-4">Area knowledge</h2><AreaKnowledgePanel /></>}
  </div>
  </div>

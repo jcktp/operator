@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   try {
     await loadAiSettings()
     const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-    const appMode = modeRow?.value ?? 'executive'
+    const appMode = modeRow?.value ?? 'journalism'
 
     const reports = await prisma.report.findMany({
       orderBy: { createdAt: 'desc' },

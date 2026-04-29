@@ -55,7 +55,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       void prisma.areaBriefing.deleteMany({ where: { area } }).catch(() => {})
     } else {
       const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-      void generateAreaBriefing(area, modeRow?.value ?? 'executive', remaining).catch(() => {})
+      void generateAreaBriefing(area, modeRow?.value ?? 'journalism', remaining).catch(() => {})
     }
   }
 
