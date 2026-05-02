@@ -65,7 +65,7 @@ function makeRequest(body: unknown): Request {
 
 async function createProject(): Promise<string> {
   const p = await _prisma.project.create({
-    data: { name: 'Test Story', mode: 'journalism' },
+    data: { name: 'Test Story' },
   })
   return p.id
 }

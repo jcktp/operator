@@ -15,27 +15,22 @@ export async function loadKnowledgeForArea(area: string): Promise<KnowledgeConte
     await seedGlossaryIfEmpty()
   } catch { /* non-blocking */ }
 
-  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-  const mode = modeRow?.value ?? 'journalism'
-
   const [memoryRow, glossaryTerms, briefingRow] = await Promise.all([
     prisma.setting.findUnique({ where: { key: 'user_memory' } }),
     prisma.glossaryTerm.findMany({
       where: {
-        scope: { in: ['global', `mode:${mode}`, `area:${area}`] },
+        scope: { in: ['global', `area:${area}`] },
       },
       orderBy: [{ scope: 'asc' }, { term: 'asc' }],
     }),
-    prisma.areaBriefing.findUnique({ where: { area_mode: { area, mode } } }),
+    prisma.areaBriefing.findUnique({ where: { area } }),
   ])
 
   const userMemory = memoryRow?.value?.trim() ?? ''
 
   const byScope: Record<string, string[]> = {}
   for (const t of glossaryTerms) {
-    const label = t.scope === 'global' ? 'Global'
-      : t.scope.startsWith('mode:') ? t.scope.replace('mode:', '')
-      : t.scope.replace('area:', '')
+    const label = t.scope === 'global' ? 'Global' : t.scope.replace('area:', '')
     byScope[label] = byScope[label] ?? []
     byScope[label].push(`${t.term} = ${t.definition}`)
   }
@@ -85,9 +80,9 @@ ${reportsText}`
   const trimmed = content.trim()
 
   await prisma.areaBriefing.upsert({
-    where: { area_mode: { area, mode } },
+    where: { area },
     update: { content: trimmed, reportCount: reports.length, updatedAt: new Date() },
-    create: { id: crypto.randomUUID(), area, mode, content: trimmed, reportCount: reports.length, updatedAt: new Date() },
+    create: { id: crypto.randomUUID(), area, content: trimmed, reportCount: reports.length, updatedAt: new Date() },
   })
 
   return trimmed

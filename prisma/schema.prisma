@@ -48,7 +48,6 @@ model Project {
   id          String    @id @default(uuid())
   name        String
   area        String    @default("")
-  mode        String    @default("")  // app mode this project belongs to; "" = visible in all modes (legacy)
   startDate   DateTime?
   status      String    @default("in_progress") // in_progress | completed
   description String?   @default("")
@@ -80,7 +79,6 @@ model Report {
   comparison     String?
   displayContent String?
   area           String
-  mode           String    @default("")  // app mode this report belongs to; "" = visible in all modes (legacy)
   reportDate     DateTime?
   resolvedFlags  String?
   imagePath      String?
@@ -113,7 +111,6 @@ model Report {
   @@index([directReportId])
   @@index([createdAt])
   @@index([area, directReportId])
-  @@index([mode])
   @@index([reportDate])
 }
 
@@ -159,7 +156,6 @@ model JournalEntry {
   title     String    @default("Untitled")
   folder    String    @default("General")
   content   String    @default("")
-  mode      String    @default("")  // app mode; "" = visible in all modes (legacy)
   weekStart DateTime?
   projectId String?
   project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -167,7 +163,6 @@ model JournalEntry {
   updatedAt DateTime  @updatedAt
 
   @@index([projectId])
-  @@index([mode])
 }
 
 model DispatchChat {
@@ -224,7 +219,7 @@ model GlossaryTerm {
   id         String   @id @default(uuid())
   term       String
   definition String
-  scope      String   // 'global' | 'mode:executive' | 'area:Finance' etc.
+  scope      String   // 'global' | 'area:<name>'
   createdAt  DateTime @default(now())
 
   @@unique([term, scope])
@@ -233,15 +228,11 @@ model GlossaryTerm {
 
 model AreaBriefing {
   id          String   @id @default(uuid())
-  area        String
-  mode        String
+  area        String   @unique
   content     String
   userNotes   String?
   reportCount Int      @default(0)
   updatedAt   DateTime @updatedAt
-
-  @@unique([area, mode])
-  @@index([area])
 }
 
 // ── Storyline ─────────────────────────────────────────────────────────────────

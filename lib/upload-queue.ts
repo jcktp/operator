@@ -167,7 +167,6 @@ async function processItem(itemId: string): Promise<void> {
         imagePath: item.displayContent?.startsWith('image:') ? item.displayContent.slice('image:'.length).split('\n')[0] : null,
         filePath: item.savedFilePath,
         area: item.area,
-        mode: appMode,
         directReportId: item.directReportId || null,
         reportDate: item.reportDate ? new Date(item.reportDate) : null,
         storyName: item.storyName || null,
@@ -470,7 +469,7 @@ async function refreshBriefingsForBatch(): Promise<void> {
     const areas = [...new Set(recentReports.map(r => r.area))]
 
     for (const area of areas) {
-      const briefing = await prisma.areaBriefing.findFirst({ where: { area, mode: appMode } })
+      const briefing = await prisma.areaBriefing.findUnique({ where: { area } })
       const latestReport = await prisma.report.findFirst({
         where: { area, summary: { not: null } },
         orderBy: { createdAt: 'desc' },

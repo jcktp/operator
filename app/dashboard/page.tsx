@@ -48,25 +48,13 @@ export default async function DashboardPage({
  const fromDate = filterFrom ? new Date(filterFrom) : null
  const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
 
- const [modeRow, projectSetting] = await Promise.all([
- prisma.setting.findUnique({ where: { key: 'app_mode' } }),
- prisma.setting.findUnique({ where: { key: 'current_project_id' } }),
- ])
- const currentMode = modeRow?.value ?? ''
- const modeWhere = currentMode ? { OR: [{ mode: currentMode }, { mode: '' }] } : {}
-
- // Validate current project belongs to active mode
- const storedProjectId = projectSetting?.value || null
- let currentProjectId: string | null = storedProjectId
- if (storedProjectId) {
- const proj = await prisma.project.findUnique({ where: { id: storedProjectId }, select: { mode: true } })
- if (proj && proj.mode !== '' && proj.mode !== currentMode) currentProjectId = null
- }
+ const projectSetting = await prisma.setting.findUnique({ where: { key: 'current_project_id' } })
+ const currentProjectId: string | null = projectSetting?.value || null
 
  const [allReports, directs] = await Promise.all([
  prisma.report.findMany({
  where: {
- ...(currentProjectId ? { projectId: currentProjectId } : modeWhere),
+ ...(currentProjectId ? { projectId: currentProjectId } : {}),
  ...(filterArea ? { area: filterArea } : {}),
  ...(filterDirect ? { directReportId: filterDirect } : {}),
  ...(fromDate || toDate ? {
@@ -81,7 +69,7 @@ export default async function DashboardPage({
  }),
  prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
  ])
- const modeConfig = getModeConfig(currentMode)
+ const modeConfig = getModeConfig(null)
 
  // Fetch recent timeline events for modes that have the timeline feature
  const recentEvents = modeConfig.features.timeline
@@ -152,7 +140,7 @@ export default async function DashboardPage({
  }
 
  const allAreas = await prisma.report.findMany({
- where: currentProjectId ? { projectId: currentProjectId } : modeWhere,
+ where: currentProjectId ? { projectId: currentProjectId } : {},
  select: { area: true }, distinct: ['area'], orderBy: { area: 'asc' },
  })
 

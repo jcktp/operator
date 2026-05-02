@@ -155,6 +155,7 @@ export const MODES: Record<AppMode, ModeConfig> = {
         { href: '/foia',         label: 'FOIA',            icon: 'FileSearch',   group: 'analysis'    },
         { href: '/risks',        label: 'Risk Register',   icon: 'ShieldAlert',  group: 'analysis'    },
         { href: '/actions',      label: 'Actions',         icon: 'ListChecks',   group: 'analysis'    },
+        { href: '/knowledge',    label: 'Knowledge',       icon: 'GraduationCap', group: 'analysis'   },
         { href: '/analysis',     label: 'Image Analysis',  icon: 'ScanSearch',   group: 'investigate' },
         { href: '/research',     label: 'Research Tools',  icon: 'History',      group: 'investigate' },
         { href: '/map',          label: 'Photo Map',       icon: 'MapPin',       group: 'investigate' },

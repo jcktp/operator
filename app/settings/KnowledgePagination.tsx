@@ -2,10 +2,20 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-const PAGE_SIZE = 10
+const DEFAULT_PAGE_SIZE = 10
 
-export default function Pagination({ page, total, onPage }: { page: number; total: number; onPage: (p: number) => void }) {
-  const pages = Math.ceil(total / PAGE_SIZE)
+export default function Pagination({
+  page,
+  total,
+  onPage,
+  pageSize = DEFAULT_PAGE_SIZE,
+}: {
+  page: number
+  total: number
+  onPage: (p: number) => void
+  pageSize?: number
+}) {
+  const pages = Math.ceil(total / pageSize)
   if (pages <= 1) return null
   return (
     <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">

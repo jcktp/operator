@@ -100,7 +100,6 @@ async function applyReport(
         insights: (data.insights as string | undefined) ?? null,
         questions: (data.questions as string | undefined) ?? null,
         area: data.area ?? '',
-        mode: data.mode ?? '',
         projectId,
         createdAt: record.data.createdAt ? new Date(record.data.createdAt as string) : new Date(),
         updatedAt: remoteTs,

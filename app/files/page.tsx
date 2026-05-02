@@ -37,21 +37,11 @@ export default async function FilesPage() {
  const root = getReportsRoot()
  const allEntries = listDir(root)
 
- // Fetch project names for the current mode
- const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
- const currentMode = modeRow?.value ?? ''
- const projects = await prisma.project.findMany({
- where: currentMode ? { OR: [{ mode: currentMode }, { mode: '' }] } : {},
- select: { name: true },
- })
+ const projects = await prisma.project.findMany({ select: { name: true } })
  const projectFolderNames = new Set(projects.map(p => sanitizeProjectName(p.name)))
 
- // Filter root entries to only show folders belonging to the current mode's projects,
- // plus the"General"folder (used for reports not scoped to a project).
- // Files within those folders are not filtered — the full subtree is accessible.
- const initialEntries = currentMode
- ? allEntries.filter(e => e.name === 'General' || projectFolderNames.has(e.name))
- : allEntries
+ // Filter root entries to project folders + "General".
+ const initialEntries = allEntries.filter(e => e.name === 'General' || projectFolderNames.has(e.name))
 
  return <FilesClient initialEntries={initialEntries} projectFolderNames={projectFolderNames} />
 }

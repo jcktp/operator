@@ -425,7 +425,9 @@ fi
 update_tools_bg() {
   case "$PLATFORM" in
     macOS)
-      command -v brew &>/dev/null && brew upgrade cloudflared tesseract >/dev/null 2>&1 || true ;;
+      command -v brew &>/dev/null || return
+      brew install cloudflared tesseract >/dev/null 2>&1 || true
+      brew upgrade cloudflared tesseract >/dev/null 2>&1 || true ;;
     Linux)
       # Update cloudflared binary — install to system path if admin, else user bin
       ARCH="$(uname -m)"

@@ -68,20 +68,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'area is required' }, { status: 400 })
   }
 
-  // Look up project if provided, otherwise save under "General"
   let projectName: string | undefined
-  let projectMode = ''
   if (projectId) {
-    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true, mode: true } })
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } })
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
     projectName = project.name
-    projectMode = project.mode
-  } else {
-    // Inherit mode from current setting
-    const modeSetting = await prisma.setting.findUnique({ where: { key: 'mode' } })
-    projectMode = modeSetting?.value ?? ''
   }
 
   // Save audio file to disk
@@ -105,7 +98,6 @@ export async function POST(req: Request) {
       displayContent,
       filePath,
       area,
-      mode: projectMode,
       projectId: projectId || null,
     },
   })

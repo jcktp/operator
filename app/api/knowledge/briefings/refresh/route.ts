@@ -20,8 +20,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No reports found for this area' }, { status: 404 })
   }
 
-  const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
-  const mode = modeRow?.value ?? 'journalism'
-  const briefing = await generateAreaBriefing(area, mode, reports)
+  const briefing = await generateAreaBriefing(area, 'journalism', reports)
   return NextResponse.json({ briefing })
 }
