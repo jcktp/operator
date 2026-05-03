@@ -19,11 +19,11 @@ export async function POST(req: Request) {
     let text = ''
 
     if (ext === 'pdf') {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const mod = require('pdf-parse')
-      const pdfParse: (buf: Buffer) => Promise<{ text: string }> = mod.default ?? mod
-      const parsed = await pdfParse(buf)
-      text = parsed.text
+      const { PDFParse } = await import('pdf-parse')
+      const parser = new PDFParse({ data: buf })
+      const result = await parser.getText()
+      await parser.destroy()
+      text = result.text
     } else if (ext === 'docx' || ext === 'doc') {
       const mammoth = await import('mammoth')
       const result = await mammoth.extractRawText({ buffer: buf })
