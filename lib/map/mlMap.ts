@@ -199,6 +199,14 @@ export async function initStoryMap(
     attributionControl: { compact: true },
   })
 
+  // Suppress tile-load failures from the CDN (network errors, rate limits) —
+  // these are cosmetic and don't affect app functionality.
+  map.on('error', (e: { error?: { status?: number }; message?: string }) => {
+    const msg = e?.message ?? ''
+    if (msg.includes('tiles') || msg.includes('.pbf') || e?.error?.status === 0) return
+    console.error('[map]', e)
+  })
+
   const addPins = () => {
     if (map.getSource('pins')) return
 

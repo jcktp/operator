@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const deny = await requireAuth(req)
   if (deny) return deny
   try {
-    const { id, title, folder, content, projectId } = await req.json()
+    const { id, title, folder, content, projectId, shared } = await req.json()
 
     if (id) {
       // Update existing
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       if (folder !== undefined) update.folder = folder
       if (content !== undefined) update.content = content
       if (projectId !== undefined) update.projectId = projectId ?? null
+      if (shared !== undefined) update.shared = !!shared
       const entry = await prisma.journalEntry.update({
         where: { id },
         data: update,
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
         content: content ?? '',
         weekStart: null,
         projectId: projectId ?? null,
+        shared: !!shared,
       },
     })
     return NextResponse.json({ entry })

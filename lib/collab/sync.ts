@@ -12,6 +12,8 @@
  *   TimelineEvent   — append-only
  *   Claim           — full sync; updatedAt for LWW
  *   FoiaRequest     — full sync; updatedAt for LWW
+ *   JournalEntry    — gated on shared===true; full sync; updatedAt for LWW
+ *   EntryStructure  — only when parent JournalEntry is shared; full sync; updatedAt for LWW
  */
 
 import { prisma } from '@/lib/db'
@@ -124,6 +126,32 @@ export async function buildSyncPayload(
       data: msg as unknown as Record<string, unknown>,
       updatedAt: msg.updatedAt.toISOString(),
     })
+  }
+
+  // JournalEntries — only those with shared=true (per-entry opt-in)
+  const journalWhere = since
+    ? { projectId, shared: true, updatedAt: { gt: since } }
+    : { projectId, shared: true }
+  const entries = await prisma.journalEntry.findMany({
+    where: journalWhere,
+    include: { structure: true },
+  })
+  for (const entry of entries) {
+    const { structure, ...entryData } = entry
+    records.push({
+      table: 'JournalEntry',
+      id: entry.id,
+      data: entryData as unknown as Record<string, unknown>,
+      updatedAt: entry.updatedAt.toISOString(),
+    })
+    if (structure) {
+      records.push({
+        table: 'EntryStructure',
+        id: structure.id,
+        data: structure as unknown as Record<string, unknown>,
+        updatedAt: structure.updatedAt.toISOString(),
+      })
+    }
   }
 
   const { isLanOnly } = await import('./sync-push')

@@ -8,6 +8,8 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import OverviewShell from '@/app/overview/OverviewShell'
 import type { OverviewData } from '@/app/overview/OverviewShell'
+import OverviewStoriesShell from '@/app/overview/OverviewStoriesShell'
+import type { OverviewStoriesData, StoryItem, StoryDocument, StoryEvent } from '@/app/overview/OverviewStoriesShell'
 import OnePagerTab from '@/app/overview/OnePagerTab'
 import type { OnePagerReport } from '@/app/overview/OnePagerTab'
 import { getModeConfig } from '@/lib/mode'
@@ -48,7 +50,7 @@ function weekLabel(ts: number, index: number): string {
 export default async function OverviewPage({
  searchParams,
 }: {
- searchParams: Promise<{ tab?: string; week?: string; from?: string; to?: string; area?: string }>
+ searchParams: Promise<{ tab?: string; week?: string; from?: string; to?: string; area?: string; view?: string }>
 }) {
  const cookieStore = await cookies()
  const token = cookieStore.get(SESSION_COOKIE)?.value
@@ -64,6 +66,7 @@ export default async function OverviewPage({
  const filterFrom = params.from
  const filterTo = params.to
  const selectedArea = params.area
+ const view = params.view  // 'classic' to use legacy area-based OverviewShell
 
  const fromDate = filterFrom ? new Date(filterFrom) : null
  const toDate = filterTo ? new Date(filterTo + 'T23:59:59') : null
@@ -94,60 +97,25 @@ export default async function OverviewPage({
  )
  }
 
- const [reports_final, directs, activeProject] = await Promise.all([
- prisma.report.findMany({
+ // ── One Pager tab (preserved — special tab on overview) ───────────────────
+ if (tab === 'one-pager') {
+ const allReports = await prisma.report.findMany({
  where: {
  ...(currentProjectId ? { projectId: currentProjectId } : {}),
- ...(fromDate || toDate ? {
- createdAt: {
- ...(fromDate ? { gte: fromDate } : {}),
- ...(toDate ? { lte: toDate } : {}),
- },
- } : {}),
+ ...(fromDate || toDate ? { createdAt: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) } } : {}),
  },
  orderBy: { createdAt: 'desc' },
  include: { directReport: true },
- }),
- prisma.directReport.findMany({ orderBy: { name: 'asc' } }),
- currentProjectId
- ? prisma.project.findUnique({ where: { id: currentProjectId }, select: { name: true } })
- : Promise.resolve(null),
- ])
+ })
 
- if (reports_final.length === 0) {
- return (
- <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
- <div className="w-12 h-12 bg-[var(--surface-2)] rounded-[10px] flex items-center justify-center mb-4">
- <FileText size={20} className="text-[var(--text-muted)] " />
- </div>
- <h1 className="text-xl font-semibold text-[var(--text-bright)] mb-2">
- {activeProject ? `No documents in"${activeProject.name} "yet` : modeConfig.emptyStateTitle}
- </h1>
- <p className="text-[var(--text-muted)] text-sm max-w-sm mb-6">{modeConfig.emptyStateBody}</p>
- <Link href="/upload"
- className="inline-flex items-center gap-2 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors">
- <Upload size={15} />{modeConfig.emptyStateCta}
- </Link>
- </div>
- )
- }
-
- // ── One Pager tab ───────────────────────────────────────────────────────────
- if (tab === 'one-pager') {
- // Group reports into weekly buckets by Monday of their createdAt week
- const bucketMap: Map<number, typeof reports_final> = new Map()
- for (const r of reports_final) {
+ const bucketMap: Map<number, typeof allReports> = new Map()
+ for (const r of allReports) {
  const key = weekStart(r.createdAt)
  if (!bucketMap.has(key)) bucketMap.set(key, [])
  bucketMap.get(key)!.push(r)
  }
- // Sorted newest first
  const buckets = [...bucketMap.entries()].sort((a, b) => b[0] - a[0])
-
- const weekIndex = Math.min(
- Math.max(parseInt(params.week ?? '0', 10), 0),
- buckets.length - 1
- )
+ const weekIndex = Math.min(Math.max(parseInt(params.week ?? '0', 10), 0), buckets.length - 1)
  const [bucketTs, bucketReports] = buckets[weekIndex] ?? [Date.now(), []]
 
  const onePagerReports: OnePagerReport[] = bucketReports.map(r => ({
@@ -174,16 +142,138 @@ export default async function OverviewPage({
  )
  }
 
- // ── Overview tab ────────────────────────────────────────────────────────────
+ // ── Stories overview (Layout A — default) ─────────────────────────────────
+ if (view !== 'classic') {
+ // Story = Project. Fetch all in-progress projects; each IS a story.
+ const [projects, recentActivityReports] = await Promise.all([
+ prisma.project.findMany({
+ where: { status: 'in_progress' },
+ orderBy: { updatedAt: 'desc' },
+ select: {
+ id: true, name: true, updatedAt: true,
+ narrative: true, storyStatus: true, storyDescription: true,
+ storyReportIds: true, storyEvents: true, storyClaimStatuses: true,
+ reports: { select: { id: true, title: true, area: true, fileType: true, fileSize: true, createdAt: true, displayContent: true, insights: true } },
+ },
+ }),
+ prisma.report.findMany({
+ where: currentProjectId ? { projectId: currentProjectId } : {},
+ orderBy: { createdAt: 'desc' },
+ select: { id: true, title: true, area: true, createdAt: true, insights: true },
+ take: 200,
+ }),
+ ])
 
- // Area counts for sidebar (from full date-filtered set)
+ function flagsListFor(r: { insights: string | null }): Array<{ type: string; text: string }> {
+ const list = parseJsonSafe<Insight[]>(r.insights, [])
+ return list.filter(i => i.type === 'risk' || i.type === 'anomaly').map(i => ({ type: i.type, text: i.text }))
+ }
+ function stripHtml(html: string): string {
+ return html.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ')
+ .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+ .replace(/\s+/g, ' ').trim()
+ }
+
+ // Gather reportIds for each story.
+ // If storyReportIds is explicitly empty but the project has reports, use ALL project reports
+ // so flags/entities/docs are visible without needing a manual attach step.
+ const allReportIds = new Set<string>()
+ const perStoryReportIds = new Map<string, string[]>()
+ for (const p of projects) {
+ const explicit = parseJsonSafe<string[]>(p.storyReportIds, [])
+ const ids = explicit.length > 0 ? explicit : p.reports.map(r => r.id)
+ perStoryReportIds.set(p.id, ids)
+ for (const id of ids) allReportIds.add(id)
+ }
+
+ const [attachedReports, allEntities] = allReportIds.size > 0
+ ? await Promise.all([
+   prisma.report.findMany({ where: { id: { in: [...allReportIds] } }, select: { id: true, title: true, area: true, fileType: true, fileSize: true, createdAt: true, displayContent: true, insights: true } }),
+   prisma.reportEntity.findMany({ where: { reportId: { in: [...allReportIds] } }, select: { id: true, reportId: true, type: true, name: true }, orderBy: { createdAt: 'asc' } }),
+ ])
+ : [[], []] as const
+ const reportMap = new Map(attachedReports.map(r => [r.id, r]))
+ const entitiesByReport = new Map<string, Array<{ id: string; type: string; name: string }>>()
+ for (const e of allEntities) {
+ if (!entitiesByReport.has(e.reportId)) entitiesByReport.set(e.reportId, [])
+ entitiesByReport.get(e.reportId)!.push({ id: e.id, type: e.type, name: e.name })
+ }
+
+ const stories: StoryItem[] = projects.map(p => {
+ const ids = perStoryReportIds.get(p.id) ?? []
+ const docs: StoryDocument[] = ids.map(id => reportMap.get(id)).filter((r): r is NonNullable<typeof r> => !!r)
+ .map(r => {
+ const docFlags = flagsListFor(r)
+ return { id: r.id, title: r.title, area: r.area, fileType: r.fileType, fileSize: r.fileSize, createdAt: r.createdAt.toISOString(), flagCount: docFlags.length, displayContent: r.displayContent, entities: (entitiesByReport.get(r.id) ?? []).slice(0, 12), flags: docFlags.slice(0, 5) }
+ })
+ const areaCounts: Record<string, number> = {}
+ for (const d of docs) areaCounts[d.area] = (areaCounts[d.area] ?? 0) + 1
+ const area = Object.entries(areaCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+ const events: StoryEvent[] = parseJsonSafe<StoryEvent[]>(p.storyEvents, [])
+ const flagCount = docs.reduce((sum, d) => sum + d.flagCount, 0)
+ const storyFlags: Array<{ type: string; text: string; reportTitle: string; reportId: string }> = []
+ for (const d of docs) for (const f of d.flags) storyFlags.push({ ...f, reportTitle: d.title, reportId: d.id })
+ const seenEntityNames = new Set<string>()
+ const storyEntities: Array<{ id: string; type: string; name: string }> = []
+ for (const d of docs) for (const ent of d.entities) {
+ const k = `${ent.type}:${ent.name.toLowerCase()}`
+ if (seenEntityNames.has(k)) continue; seenEntityNames.add(k); storyEntities.push(ent)
+ if (storyEntities.length >= 20) break
+ }
+ const snippet = (() => { const plain = stripHtml(p.narrative); if (!plain) return null; return plain.length > 250 ? plain.slice(0, 247).trimEnd() + '\u2026' : plain })()
+ return { id: p.id, title: p.name, status: p.storyStatus as StoryItem['status'], area, description: p.storyDescription, reportIds: ids, events, documents: docs, flagCount, updatedAt: p.updatedAt.toISOString(), draftSnippet: snippet, storyFlags: storyFlags.slice(0, 5), storyEntities }
+ })
+
+ const totalDocs = stories.reduce((sum, s) => sum + s.documents.length, 0)
+ const totalFlags = stories.reduce((sum, s) => sum + s.flagCount, 0)
+ const activeCount = stories.filter(s => s.status !== 'filed').length
+ const recentActivity = recentActivityReports.slice(0, 8).map(r => ({ id: r.id, title: r.title, area: r.area, createdAt: r.createdAt.toISOString(), flagCount: parseJsonSafe<Insight[]>(r.insights, []).filter(i => i.type === 'risk' || i.type === 'anomaly').length }))
+ const totalReportsInProject = recentActivityReports.length === 200 ? '200+' : String(recentActivityReports.length)
+ const allReportsForPicker = recentActivityReports.map(r => ({ id: r.id, title: r.title, area: r.area }))
+ const data: OverviewStoriesData = { stories, totalDocs, totalFlags, activeCount, recentActivity, totalReportsInProject, allReports: allReportsForPicker }
+ return <OverviewStoriesShell data={data} />
+ }
+
+ // ── Classic overview (legacy area-based) — `?view=classic` ────────────────
+
+ const reports_final = await prisma.report.findMany({
+ where: {
+ ...(currentProjectId ? { projectId: currentProjectId } : {}),
+ ...(fromDate || toDate ? { createdAt: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) } } : {}),
+ },
+ orderBy: { createdAt: 'desc' },
+ include: { directReport: true },
+ })
+ const directs = await prisma.directReport.findMany({ orderBy: { name: 'asc' } })
+ const activeProject = currentProjectId
+ ? await prisma.project.findUnique({ where: { id: currentProjectId }, select: { name: true } })
+ : null
+
+ if (reports_final.length === 0) {
+ return (
+ <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+ <div className="w-12 h-12 bg-[var(--surface-2)] rounded-[10px] flex items-center justify-center mb-4">
+ <FileText size={20} className="text-[var(--text-muted)] " />
+ </div>
+ <h1 className="text-xl font-semibold text-[var(--text-bright)] mb-2">
+ {activeProject ? `No documents in"${activeProject.name} "yet` : modeConfig.emptyStateTitle}
+ </h1>
+ <p className="text-[var(--text-muted)] text-sm max-w-sm mb-6">{modeConfig.emptyStateBody}</p>
+ <Link href="/upload"
+ className="inline-flex items-center gap-2 bg-[var(--ink)] text-[var(--ink-contrast)] text-sm font-medium h-7 px-3 rounded-[4px] hover:bg-[var(--ink)] transition-colors">
+ <Upload size={15} />{modeConfig.emptyStateCta}
+ </Link>
+ </div>
+ )
+ }
+
+ // Area counts for sidebar
  const areaCounts: Record<string, number> = {}
  for (const r of reports_final) areaCounts[r.area] = (areaCounts[r.area] ?? 0) + 1
  const sidebarAreas = Object.keys(areaCounts).sort().map(name => ({ name, count: areaCounts[name] }))
 
  const recent = (selectedArea ? reports_final.filter(r => r.area === selectedArea) : reports_final).slice(0, 30)
 
- // Most recent report per area (all areas view) OR up to 6 recent reports (single area view)
  let activeAreas: typeof reports_final
  if (selectedArea) {
  activeAreas = recent.slice(0, 6)
@@ -207,11 +297,9 @@ export default async function OverviewPage({
  parseJsonSafe<Insight[]>(r.insights, [])
  .filter(i => i.type === 'risk' || i.type === 'anomaly')
  .forEach(i => topInsights.push({ text: i.text, type: i.type, reportTitle: r.title, reportId: r.id }))
-
  parseJsonSafe<Question[]>(r.questions, [])
  .filter(q => q.priority === 'high')
  .forEach(q => topQuestions.push({ text: q.text, reportTitle: r.title, directName: r.directReport?.name, reportId: r.id }))
-
  parseJsonSafe<string[]>(r.resolvedFlags, [])
  .forEach(text => resolvedFlagItems.push({ text, area: r.area, reportId: r.id }))
  }
@@ -235,8 +323,6 @@ export default async function OverviewPage({
  topQuestions.slice(0, 5).forEach(q => contextLines.push(`- ${q.text}${q.directName ? ` (${labels.questionsPersonPrefix.toLowerCase()} ${q.directName})` : ''}`))
  }
 
- // ── Metric time-series per area ─────────────────────────────────────────────
- // Group all recent reports by area, sorted oldest→newest
  const byArea: Record<string, typeof reports_final> = {}
  for (const r of [...recent].reverse()) {
  if (!byArea[r.area]) byArea[r.area] = []
@@ -244,7 +330,6 @@ export default async function OverviewPage({
  }
 
  const areaMetrics: AreaMetricData[] = Object.entries(byArea).map(([area, areaReports]) => {
- // Track first-seen label text per normalized key
  const labelText: Record<string, string> = {}
  const labelPoints: Record<string, MetricPoint[]> = {}
  for (const r of areaReports) {

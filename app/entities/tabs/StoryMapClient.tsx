@@ -13,6 +13,8 @@ export interface RawLocation {
  reportAreas: Record<string, string>
  reportStoryNames: Record<string, string>
  reportSummaries: Record<string, string>
+ /** imagePath for reports that are photos — null for text docs */
+ reportImagePaths: Record<string, string | null>
  contexts: string[]
  contextsByReport: Array<{ reportId: string; reportTitle: string; area: string; context: string }>
 }
@@ -99,6 +101,7 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
  const [error, setError] = useState<string | null>(null)
  const [activeLayer, setActiveLayer] = useState<MapLayer>('osm')
  const [activeStory, setActiveStory] = useState<string | null>(null)
+ const [photoPopup, setPhotoPopup] = useState<{ imagePath: string; locationName: string } | null>(null)
  const { setSelected } = useInspector()
  const dark = useDarkMode()
 
@@ -157,6 +160,13 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
  const { initStoryMap } = await import('@/lib/map/mlMap')
  const result = await initStoryMap(mapRef.current, pinsToShow, pin => {
  const loc = locations.find(l => l.name === pin.name)
+ // If any source report is a photo, show thumbnail popup
+ const firstPhoto = pin.reportIds
+ .map(id => loc?.reportImagePaths?.[id])
+ .find(p => !!p)
+ if (firstPhoto) {
+ setPhotoPopup({ imagePath: firstPhoto, locationName: pin.name })
+ }
  setSelected({
  type: 'location',
  name: pin.name,
@@ -277,6 +287,28 @@ export default function StoryMapClient({ locations, storyNames }: Props) {
  )}
 
  <div className="flex-1 min-w-0 relative">
+ {/* Photo thumbnail popup — shown when clicking a pin that has a photo source */}
+ {photoPopup && (
+ <div className="absolute top-2 left-2 z-20 w-52 rounded-[8px] border border-[var(--border)] bg-[var(--surface)] shadow-xl overflow-hidden">
+ <div className="relative bg-[var(--surface-3)] h-36">
+ <img
+ src={`/api/files/download?path=${encodeURIComponent(photoPopup.imagePath)}`}
+ alt={photoPopup.locationName}
+ className="w-full h-full object-cover"
+ loading="lazy"
+ />
+ <button
+ type="button"
+ onClick={() => setPhotoPopup(null)}
+ className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/50 text-white text-[13px] leading-none flex items-center justify-center hover:bg-black/70 transition-colors"
+ >×</button>
+ </div>
+ <div className="px-2.5 py-2">
+ <p className="text-[11.5px] font-medium text-[var(--text-bright)] truncate">{photoPopup.locationName}</p>
+ <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Photo source</p>
+ </div>
+ </div>
+ )}
  {error && (
  <div className="absolute inset-0 flex items-center justify-center bg-[var(--surface-2)] rounded-[10px] z-10">
  <p className="text-sm text-[var(--red)] px-4 text-center">{error}</p>

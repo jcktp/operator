@@ -75,13 +75,12 @@ export default function NavDropdown({
         aria-expanded={isOpen}
         aria-haspopup="true"
         className={cn(
-          'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors',
+          'flex items-center gap-1 px-2.5 py-1.5 text-xs whitespace-nowrap transition-colors border-b-2',
           groupIsActive || isOpen
-            ? 'font-bold text-white'
-            : 'font-normal text-white/55 hover:text-white'
+            ? 'font-semibold text-white border-white/60'
+            : 'font-normal text-white/55 hover:text-white border-transparent'
         )}
       >
-        <GroupIcon size={13} className="shrink-0" />
         {label}
         <ChevronDown
           size={10}

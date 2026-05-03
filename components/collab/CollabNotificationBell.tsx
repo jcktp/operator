@@ -9,7 +9,12 @@ import { cn } from '@/lib/utils'
 
 const POLL_MS = 60_000
 
-export default function CollabNotificationBell() {
+interface Props {
+  /** When true, always render the nav entry even if collab is disabled. */
+  alwaysShow?: boolean
+}
+
+export default function CollabNotificationBell({ alwaysShow = false }: Props) {
   const [total, setTotal] = useState(0)
   const [enabled, setEnabled] = useState(false)
   const pathname = usePathname()
@@ -27,7 +32,6 @@ export default function CollabNotificationBell() {
   useEffect(() => {
     fetchUnread()
     const timer = setInterval(fetchUnread, POLL_MS)
-    // Re-check immediately when collab is enabled mid-session
     window.addEventListener('collab:enabled', fetchUnread)
     return () => {
       clearInterval(timer)
@@ -35,7 +39,8 @@ export default function CollabNotificationBell() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!enabled) return null
+  // When alwaysShow is false (embedded use), only render when collab is enabled
+  if (!alwaysShow && !enabled) return null
 
   const isActive = pathname.startsWith('/collab')
 
@@ -43,16 +48,15 @@ export default function CollabNotificationBell() {
     <Link
       href="/collab"
       className={cn(
-        'relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors shrink-0',
+        'relative flex items-center px-2.5 py-1.5 text-xs whitespace-nowrap transition-colors shrink-0 border-b-2',
         isActive
-          ? 'font-bold text-white'
-          : 'font-normal text-white/55 hover:text-white'
+          ? 'font-semibold text-white border-white/60'
+          : 'font-normal text-white/55 hover:text-white border-transparent'
       )}
-      title="Collaboration"
+      title={enabled ? 'Collab — peer sync active' : 'Collab — click to set up'}
     >
-      <Users size={13} />
       Collab
-      {total > 0 && (
+      {enabled && total > 0 && (
         <UnreadBadge count={total} className="absolute -top-0.5 -right-0.5" />
       )}
     </Link>

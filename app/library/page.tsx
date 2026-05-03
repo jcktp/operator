@@ -10,6 +10,7 @@ import PhotosGallery from './PhotosGallery'
 import AudioGallery from './AudioGallery'
 import { getModeConfig } from '@/lib/mode'
 import SourceProtectionBanner from '@/components/SourceProtectionBanner'
+import SourcesTabs from '@/components/SourcesTabs'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,14 +121,17 @@ export default async function LibraryPage({
  <div className="space-y-6">
  <SourceProtectionBanner />
  {/* Header */}
- <div className="sticky top-14 z-20 bg-[var(--background)] border-b border-[var(--border)] flex items-start justify-between py-5 -mx-6 px-6 sm:-mx-8 sm:px-8 mb-0">
+ <div className="sticky top-[88px] z-20 bg-[var(--background)] py-5 -mx-6 px-6 sm:-mx-8 sm:px-8 mb-0">
+ <div className="flex items-start justify-between mb-2">
  <div>
- <h1 className="text-2xl font-semibold text-[var(--text-bright)]">{modeConfig.navLibrary}</h1>
+ <h1 className="text-2xl font-semibold text-[var(--text-bright)]">Sources</h1>
  <p className="text-[var(--text-muted)] text-sm mt-0.5">
  All {modeConfig.documentLabelPlural.toLowerCase()}, by {modeConfig.collectionLabel.toLowerCase()}. Full history with diffs and questions.
  </p>
  </div>
  {allReports.length > 0 && <LibraryClearButton />}
+ </div>
+ <SourcesTabs active="library" />
  </div>
 
  {allReports.length === 0 ? (

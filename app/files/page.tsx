@@ -4,6 +4,7 @@ import { getReportsRoot } from '@/lib/reports-folder'
 import { prisma } from '@/lib/db'
 import { sanitizeProjectName } from '@/lib/reports-folder'
 import FilesClient from './FilesClient'
+import SourcesTabs from '@/components/SourcesTabs'
 import type { DirEntry } from '@/lib/files-types'
 
 function listDir(dir: string): DirEntry[] {
@@ -43,5 +44,16 @@ export default async function FilesPage() {
  // Filter root entries to project folders + "General".
  const initialEntries = allEntries.filter(e => e.name === 'General' || projectFolderNames.has(e.name))
 
- return <FilesClient initialEntries={initialEntries} projectFolderNames={projectFolderNames} />
+ return (
+   <div>
+     <div className="sticky top-[88px] z-20 bg-[var(--background)] py-5 -mx-6 px-6 sm:-mx-8 sm:px-8 mb-3">
+       <div className="mb-2">
+         <h1 className="text-2xl font-semibold text-[var(--text-bright)]">Sources</h1>
+         <p className="text-[var(--text-muted)] text-sm mt-0.5">Raw filesystem view of uploaded source materials.</p>
+       </div>
+       <SourcesTabs active="filesystem" />
+     </div>
+     <FilesClient initialEntries={initialEntries} projectFolderNames={projectFolderNames} />
+   </div>
+ )
 }

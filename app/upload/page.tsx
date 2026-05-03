@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import UploadTab from './UploadTab'
 import RequestTab from './RequestTab'
 import SourceProtectionBanner from '@/components/SourceProtectionBanner'
+import SourcesTabs from '@/components/SourcesTabs'
 import { useMode } from '@/components/ModeContext'
 
 type Tab = 'upload' | 'request'
@@ -15,13 +16,16 @@ export default function UploadPage() {
  const [tab, setTab] = useState<Tab>('upload')
 
  return (
- <div className="max-w-2xl">
+ <div>
  <SourceProtectionBanner />
- <div className="sticky top-14 z-20 bg-[var(--background)] border-b border-[var(--border)] -mx-6 px-6 sm:-mx-8 sm:px-8 mb-6">
+ <div className="sticky top-[88px] z-20 bg-[var(--background)] -mx-6 px-6 sm:-mx-8 sm:px-8 mb-6">
  <div className="py-4">
- <h1 className="text-2xl font-semibold text-[var(--text-bright)]">{modeConfig.uploadTitle}</h1>
+ <h1 className="text-2xl font-semibold text-[var(--text-bright)]">Sources</h1>
  <p className="text-[var(--text-muted)] text-sm mt-0.5">{modeConfig.uploadDescription}</p>
  </div>
+ <SourcesTabs active="add" />
+ </div>
+ <div className="max-w-2xl">
  <div className="flex bg-[var(--surface-2)] rounded-lg p-1 gap-1 mb-3">
  <button onClick={() => setTab('upload')}
  className={cn('flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors',
@@ -34,9 +38,9 @@ export default function UploadPage() {
  <Link2 size={14} /> Request submission
  </button>
  </div>
- </div>
  <div className="pb-32">
  {tab === 'upload' ? <UploadTab /> : <RequestTab />}
+ </div>
  </div>
  </div>
  )

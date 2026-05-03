@@ -17,9 +17,12 @@ interface Props {
   modeId: string
   initialChat?: { id: string; title: string; messages: Message[] }
   initialMessage?: string
+  /** Optionally lift persona state to a parent (so the sidebar can render the selector) */
+  persona?: PersonaId
+  setPersona?: (p: PersonaId) => void
 }
 
-export function useChatLogic({ context, modeId, initialChat, initialMessage }: Props) {
+export function useChatLogic({ context, modeId, initialChat, initialMessage, persona: externalPersona, setPersona: externalSetPersona }: Props) {
   const { settings, saveSetting } = useSettings()
   const personaMap = getPersonasForMode(modeId)
 
@@ -35,7 +38,9 @@ export function useChatLogic({ context, modeId, initialChat, initialMessage }: P
   const [webAccess, setWebAccess] = useState(false)
   const [isApiProvider, setIsApiProvider] = useState(false)
   const [apiLockNotice, setApiLockNotice] = useState(false)
-  const [persona, setPersona] = useState<PersonaId>('dispatch')
+  const [internalPersona, setInternalPersona] = useState<PersonaId>('dispatch')
+  const persona = externalPersona ?? internalPersona
+  const setPersona = externalSetPersona ?? setInternalPersona
   const [userMemory, setUserMemory] = useState('')
   const [view, setView] = useState<'chat' | 'history'>('chat')
   const [history, setHistory] = useState<ChatSummary[]>([])

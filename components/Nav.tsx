@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Upload, Users, Settings, Library, Power, BarChart2, BookOpen, MessageSquare, Search, ChevronDown, LogOut, Radio } from '@/components/icons'
-import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen, ShieldCheck, GitFork, CheckSquare, FileSearch, ShieldAlert, Lightbulb, Ban, ListChecks, ScrollText, CalendarClock, Quote, Layers, Users2, UserSearch, ScanSearch, MapPin, GitCompare, History, AudioLines, GraduationCap } from 'lucide-react'
+import { Network, Users as UsersIcon, BarChart2 as BarChart2Icon, Clock, Inbox, FolderOpen, ShieldCheck, GitFork, CheckSquare, FileSearch, ShieldAlert, Lightbulb, Ban, ListChecks, ScrollText, CalendarClock, Quote, Layers, Users2, UserSearch, ScanSearch, MapPin, GitCompare, History, AudioLines, GraduationCap, Radar, Globe } from 'lucide-react'
 import type React from 'react'
 
 type AnyIcon = React.ComponentType<{ size?: number; className?: string }>
@@ -34,6 +34,8 @@ const EXTRA_NAV_ICONS: Record<string, AnyIcon> = {
   GitCompare,
   History,
   AudioLines,
+  Radar,
+  Globe,
 }
 import { useShutdown } from '@/components/ShutdownProvider'
 import { useState, useEffect, useRef, Suspense } from 'react'
@@ -55,9 +57,9 @@ import { Moon, Sun, ShieldOff, FlaskConical, Bug } from 'lucide-react'
 export const SIDEBAR_W = 0
 
 const NAV_LINK_CLASS =
-  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors shrink-0 text-white/55 hover:text-white font-normal'
+  'flex items-center px-2.5 py-1.5 text-xs whitespace-nowrap transition-colors shrink-0 text-white/55 hover:text-white font-normal border-b-2 border-transparent'
 const NAV_ACTIVE_CLASS =
-  'font-bold text-white'
+  'font-semibold text-white border-b-2 border-white/60'
 
 export default function Nav() {
   const pathname = usePathname()
@@ -102,38 +104,52 @@ export default function Nav() {
 
   const { extraNavItems, pulseInNotebook, peopleInNotebook } = config.features
 
-  // GROUP A: Intake — upload + (pulse if not in notebook) + files + intake-group extras
+  const byLabel = (a: NavGroupItem, b: NavGroupItem) => a.label.localeCompare(b.label)
+
+  // GROUP A: Intake — Add source + Pulse (if not in notebook) + intake-group extras. Sorted alphabetically.
   const intakeItems: NavGroupItem[] = [
-    { href: '/upload', label: config.navDocuments, icon: Upload },
+    { href: '/upload', label: 'Add source', icon: Upload },
     ...(!pulseInNotebook ? [{ href: '/pulse', label: 'Pulse', icon: Radio }] : []),
-    { href: '/files', label: 'Files', icon: FolderOpen },
     ...extraNavItems
       .filter(i => i.group === 'intake')
       .map(i => ({ href: i.href, label: i.label, icon: EXTRA_NAV_ICONS[i.icon] ?? Network })),
-  ]
+  ].sort(byLabel)
 
-  // GROUP B: Analysis — library + analysis-group extras + (people if not in notebook)
+  // Research dropdown — all tools live as flat tabs on /research
+  const researchItems: NavGroupItem[] = [
+    { href: '/research',                 label: 'Wayback Machine',  icon: History },
+    { href: '/research?tab=diff',        label: 'Document diff',    icon: Globe   },
+    { href: '/research?tab=username',    label: 'Username search',  icon: Globe   },
+    { href: '/research?tab=osint',       label: 'OSINT directory',  icon: Globe   },
+    { href: '/research?tab=monitor',     label: 'Web monitor',      icon: Radar   },
+  ].sort(byLabel)
+
+  // GROUP B: Analysis — analysis-group extras + (people if not in notebook). Sorted alphabetically.
   const analysisItems: NavGroupItem[] = [
-    { href: '/library', label: config.navLibrary, icon: Library },
     ...extraNavItems
       .filter(i => !i.group || i.group === 'analysis')
       .map(i => ({ href: i.href, label: i.label, icon: EXTRA_NAV_ICONS[i.icon] ?? Network })),
     ...(!peopleInNotebook ? [{ href: '/directs', label: config.navPeople, icon: Users }] : []),
-  ]
+  ].sort(byLabel)
 
-  // GROUP B2: Investigate — investigate-group extras (only shown when non-empty)
+  // GROUP B2: Investigate — investigate-group extras (only shown when non-empty). Sorted alphabetically.
   const investigateItems: NavGroupItem[] = extraNavItems
     .filter(i => i.group === 'investigate')
     .map(i => ({ href: i.href, label: i.label, icon: EXTRA_NAV_ICONS[i.icon] ?? Network }))
+    .sort(byLabel)
 
-  // GROUP C: Notebook — journal + (pulse if pulseInNotebook) + (people if peopleInNotebook) + notebook-group extras
-  const notebookItems: NavGroupItem[] = [
-    { href: '/journal', label: config.navJournal, icon: BookOpen },
+  // GROUP C: Notebook — journal + (pulse if pulseInNotebook) + (people if peopleInNotebook) + notebook-group extras.
+  // Journal stays first (anchor item), the rest sorted alphabetically.
+  const notebookExtras: NavGroupItem[] = [
     ...(pulseInNotebook  ? [{ href: '/pulse',   label: 'Pulse',          icon: Radio }] : []),
     ...(peopleInNotebook ? [{ href: '/directs', label: config.navPeople, icon: Users }] : []),
     ...extraNavItems
       .filter(i => i.group === 'notebook')
       .map(i => ({ href: i.href, label: i.label, icon: EXTRA_NAV_ICONS[i.icon] ?? Network })),
+  ].sort(byLabel)
+  const notebookItems: NavGroupItem[] = [
+    { href: '/journal', label: config.navJournal, icon: BookOpen },
+    ...notebookExtras,
   ]
   const notebookIsDropdown = notebookItems.length > 1
 
@@ -177,7 +193,7 @@ export default function Nav() {
   return (
     <>
       {/* ── TOP NAV BAR ─────────────────────────────────────────────────── */}
-      <header className="fixed top-0 inset-x-0 h-14 z-50 bg-black flex items-center px-4 gap-3">
+      <header className="fixed top-0 inset-x-0 h-14 z-50 bg-[var(--nav-bg)] flex items-center px-4 gap-3">
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
@@ -193,22 +209,40 @@ export default function Nav() {
         {/* Nav links */}
         <nav className="flex items-center gap-0.5 flex-1 min-w-0">
           {/* Standalone: Overview */}
-          <Link
-            href="/"
-            className={cn(NAV_LINK_CLASS, pathname === '/' && NAV_ACTIVE_CLASS)}
-          >
-            <LayoutDashboard size={13} className="shrink-0" />
+          <Link href="/" className={cn(NAV_LINK_CLASS, pathname === '/' && NAV_ACTIVE_CLASS)}>
             Overview
           </Link>
 
-          {/* Standalone: Situation Report */}
+          {/* Standalone: Intelligence Brief (was Situation Report) */}
           <Link
             href="/dashboard"
             className={cn(NAV_LINK_CLASS, (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) && NAV_ACTIVE_CLASS)}
           >
-            <BarChart2 size={13} className="shrink-0" />
-            Situation Report
+            Intelligence Brief
           </Link>
+
+          {/* Standalone: Sources */}
+          <Link
+            href="/sources"
+            className={cn(
+              NAV_LINK_CLASS,
+              (pathname === '/sources' || pathname.startsWith('/library') || pathname.startsWith('/files') || pathname.startsWith('/upload')) && NAV_ACTIVE_CLASS
+            )}
+          >
+            Sources
+          </Link>
+
+          {/* Research dropdown — Wayback/diff/username search, OSINT directory, Web Monitor */}
+          <NavDropdown
+            id="research"
+            label="Research"
+            icon={History}
+            items={researchItems}
+            isOpen={openGroup === 'research'}
+            onToggle={toggleGroup}
+            onClose={closeGroups}
+            activeArea={activeArea}
+          />
 
           {/* GROUP A: Intake */}
           <NavDropdown
@@ -261,44 +295,23 @@ export default function Nav() {
               activeArea={activeArea}
             />
           ) : (
-            <Link
-              href="/journal"
-              className={cn(NAV_LINK_CLASS, pathname.startsWith('/journal') && NAV_ACTIVE_CLASS)}
-            >
-              <BookOpen size={13} className="shrink-0" />
+            <Link href="/journal" className={cn(NAV_LINK_CLASS, pathname.startsWith('/journal') && NAV_ACTIVE_CLASS)}>
               {config.navJournal}
             </Link>
           )}
 
+          {/* Standalone: Stories */}
+          <Link href="/stories" className={cn(NAV_LINK_CLASS, pathname.startsWith('/stories') && NAV_ACTIVE_CLASS)}>
+            Stories
+          </Link>
+
           {/* Standalone: Dispatch */}
-          <Link
-            href="/dispatch"
-            className={cn(NAV_LINK_CLASS, pathname.startsWith('/dispatch') && NAV_ACTIVE_CLASS)}
-          >
-            <MessageSquare size={13} className="shrink-0" />
+          <Link href="/dispatch" className={cn(NAV_LINK_CLASS, pathname.startsWith('/dispatch') && NAV_ACTIVE_CLASS)}>
             Dispatch
           </Link>
 
-          {/* Standalone: Projects */}
-          <Link
-            href="/projects"
-            className={cn(NAV_LINK_CLASS, pathname.startsWith('/projects') && NAV_ACTIVE_CLASS)}
-          >
-            <FolderOpen size={13} className="shrink-0" />
-            {config.projectLabelPlural}
-          </Link>
-
-          {/* Collab — only renders when collab is enabled */}
-          <CollabNotificationBell />
-
-          {/* Standalone: Settings */}
-          <Link
-            href="/settings"
-            className={cn(NAV_LINK_CLASS, pathname.startsWith('/settings') && NAV_ACTIVE_CLASS)}
-          >
-            <Settings size={13} className="shrink-0" />
-            Settings
-          </Link>
+          {/* Collab — always in nav; badge appears when enabled + has unread */}
+          <CollabNotificationBell alwaysShow />
         </nav>
 
         {/* Active area badge — persists across pages when ?area= was set */}
@@ -349,6 +362,15 @@ export default function Nav() {
             </button>
             {powerMenuOpen && (
               <div className="absolute right-0 top-full mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-[4px] shadow-lg py-1 min-w-[160px] z-50">
+                <Link
+                  href="/settings"
+                  onClick={() => setPowerMenuOpen(false)}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[var(--text-body)] hover:bg-[var(--surface-2)] transition-colors"
+                >
+                  <Settings size={12} />
+                  Settings
+                </Link>
+                <div className="mx-2 my-1 h-px bg-[var(--border)]" />
                 <button
                   type="button"
                   onClick={() => { toggleTheme(); setPowerMenuOpen(false) }}

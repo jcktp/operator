@@ -11,6 +11,8 @@ import DispatchHistoryView, { type ChatSummary } from './DispatchHistoryView'
 import { downloadCode, markdownToHtml } from './dispatchUtils'
 import { useChatLogic } from './useChatLogic'
 
+import type { PersonaId } from '@/lib/personas'
+
 interface Props {
  context: string
  currentUrl?: string
@@ -21,11 +23,16 @@ interface Props {
  compact?: boolean
  currentProjectId?: string | null
  currentProjectName?: string | null
+ /** Lift persona to a parent (e.g. the sidebar in the Dispatch page). */
+ persona?: PersonaId
+ setPersona?: (p: PersonaId) => void
+ /** Hide the in-chat persona selector row when the parent renders one elsewhere (e.g. sidebar). */
+ hideInlinePersonaSelector?: boolean
 }
 
-export default function DispatchPanel({ context, currentUrl, onClose, initialChat, initialMessage, fullPage, compact, currentProjectId, currentProjectName }: Props) {
+export default function DispatchPanel({ context, currentUrl, onClose, initialChat, initialMessage, fullPage, compact, currentProjectId, currentProjectName, persona, setPersona, hideInlinePersonaSelector }: Props) {
  const modeConfig = useMode()
- const c = useChatLogic({ context, modeId: modeConfig.id, initialChat, initialMessage })
+ const c = useChatLogic({ context, modeId: modeConfig.id, initialChat, initialMessage, persona, setPersona })
  const personaList = Object.values(c.personaMap)
  const activePersona = c.personaMap[c.persona]
  const [savedNoteIdx, setSavedNoteIdx] = useState<number | null>(null)
@@ -125,7 +132,8 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
 
  {/* Chat view */}
  {c.view === 'chat' && <>
- {/* Persona selector */}
+ {/* Persona selector — hidden when the parent (e.g. Dispatch sidebar) renders its own */}
+ {!hideInlinePersonaSelector && (
  <div className="flex gap-1 px-3 pt-2.5 pb-0 shrink-0">
  {personaList.map(p => {
  const locked = c.messages.length > 0
@@ -150,6 +158,7 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  )
  })}
  </div>
+ )}
 
  <div className="flex-1 overflow-y-auto p-4 space-y-4">
  {c.messages.length === 0 && (
@@ -297,11 +306,11 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); c.send() } }}
  placeholder="Ask anything…"
  rows={1}
- className="flex-1 resize-none bg-[var(--surface-2)] border border-[var(--border)] rounded-[10px] px-3 py-2 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2 placeholder-gray-400 max-h-28 overflow-y-auto"
+ className="flex-1 resize-none bg-[var(--surface-2)] border border-[var(--border)] rounded-[6px] px-3 py-2 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2 placeholder-gray-400 max-h-28 overflow-y-auto"
  style={{ fieldSizing: 'content' } as React.CSSProperties}
  />
  <button onClick={c.send} disabled={(!c.input.trim() && !c.pendingAttachment) || c.loading}
- className="shrink-0 flex items-center justify-center px-2.5 py-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[10px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40">
+ className="shrink-0 flex items-center justify-center px-2.5 py-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[6px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40">
  <Send size={14} />
  </button>
  </div>
@@ -371,11 +380,11 @@ export default function DispatchPanel({ context, currentUrl, onClose, initialCha
  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); c.send() } }}
  placeholder="Ask anything…"
  rows={1}
- className="flex-1 resize-none border border-[var(--border)] rounded-[10px] px-3 py-2 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2 placeholder-gray-400 max-h-32 overflow-y-auto"
+ className="flex-1 resize-none border border-[var(--border)] rounded-[6px] px-3 py-2 text-sm text-[var(--text-bright)] focus:outline-none focus:ring-2 placeholder-gray-400 max-h-32 overflow-y-auto"
  style={{ fieldSizing: 'content' } as React.CSSProperties}
  />
  <button onClick={c.send} disabled={(!c.input.trim() && !c.pendingAttachment) || c.loading}
- className="shrink-0 flex items-center justify-center px-2.5 py-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[10px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40">
+ className="shrink-0 flex items-center justify-center px-2.5 py-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] rounded-[6px] hover:bg-[var(--ink)] transition-colors disabled:opacity-40">
  <Send size={14} />
  </button>
  </div>

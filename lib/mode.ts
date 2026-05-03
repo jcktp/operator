@@ -36,7 +36,7 @@ export interface ModeFeatures {
   extraNavItems: Array<{ href: string; label: string; icon: string; group?: 'analysis' | 'investigate' | 'intake' | 'notebook' }>
   /** Move Pulse from Intake into the Notebook dropdown */
   pulseInNotebook: boolean
-  /** Move the navPeople link (Sources/Directs/etc.) from Analysis into the Notebook dropdown */
+  /** Move the navPeople link (Contacts/Directs/etc.) from Analysis into the Notebook dropdown */
   peopleInNotebook: boolean
 }
 
@@ -109,15 +109,15 @@ export const MODES: Record<AppMode, ModeConfig> = {
     label: 'Journalism',
     tagline: 'Field notes, sources & story research',
     icon: '📰',
-    personLabel: 'Source',
-    personLabelPlural: 'Sources',
+    personLabel: 'Contact',
+    personLabelPlural: 'Contacts',
     documentLabel: 'Notes',
     documentLabelPlural: 'Notes',
     collectionLabel: 'Beat',
     collectionLabelPlural: 'Beats',
     projectLabel: 'Story',
     projectLabelPlural: 'Stories',
-    navPeople: 'Sources',
+    navPeople: 'Contacts',
     navDocuments: 'Add Documents',
     navLibrary: 'Library',
     navJournal: 'Notebook',
@@ -151,16 +151,11 @@ export const MODES: Record<AppMode, ModeConfig> = {
       extraNavItems: [
         { href: '/entities',     label: 'Entities',        icon: 'Network',      group: 'analysis'    },
         { href: '/network',      label: 'Entity Network',  icon: 'GitFork',      group: 'analysis'    },
-        { href: '/claims',       label: 'Claims',          icon: 'CheckSquare',  group: 'analysis'    },
-        { href: '/foia',         label: 'FOIA',            icon: 'FileSearch',   group: 'analysis'    },
-        { href: '/risks',        label: 'Risk Register',   icon: 'ShieldAlert',  group: 'analysis'    },
-        { href: '/actions',      label: 'Actions',         icon: 'ListChecks',   group: 'analysis'    },
+        { href: '/tracker',      label: 'Tracker',         icon: 'CheckSquare',  group: 'analysis'    },
         { href: '/knowledge',    label: 'Knowledge',       icon: 'GraduationCap', group: 'analysis'   },
-        { href: '/analysis',     label: 'Image Analysis',  icon: 'ScanSearch',   group: 'investigate' },
-        { href: '/research',     label: 'Research Tools',  icon: 'History',      group: 'investigate' },
-        { href: '/map',          label: 'Photo Map',       icon: 'MapPin',       group: 'investigate' },
-        { href: '/speakers',     label: 'Speakers',        icon: 'AudioLines',   group: 'investigate' },
-        { href: '/monitors',    label: 'Web Monitor',     icon: 'Eye',          group: 'investigate' },
+        { href: '/analysis',     label: 'Image Analysis',  icon: 'ScanSearch',   group: 'analysis'    },
+        { href: '/map',          label: 'Photo Map',       icon: 'MapPin',       group: 'analysis'    },
+        { href: '/speakers',     label: 'Speakers',        icon: 'AudioLines',   group: 'analysis'    },
         { href: '/file-cleaner', label: 'File Cleaner',    icon: 'ShieldCheck',  group: 'intake'      },
       ],
     },

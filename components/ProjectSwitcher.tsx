@@ -60,7 +60,13 @@ export default function ProjectSwitcher() {
       body: JSON.stringify({ key: 'current_project_id', value: id ?? '' }),
     })
     setCurrentProjectId(id)
-    router.refresh()
+    window.dispatchEvent(new Event('project:changed'))
+    // Navigate to the story workspace so the dropdown and the Stories nav show the same view
+    if (id) {
+      router.push(`/stories/${id}`)
+    } else {
+      router.push('/stories')
+    }
   }
 
   const currentProject = projects.find(p => p.id === currentProjectId) ?? null
@@ -132,11 +138,11 @@ export default function ProjectSwitcher() {
           <div className="mx-2 my-1 h-px bg-[var(--border)]" />
 
           <button
-            onClick={() => { setOpen(false); router.push('/projects') }}
+            onClick={() => { setOpen(false); router.push('/stories') }}
             className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[var(--blue)] hover:bg-[var(--blue-dim)] transition-colors"
           >
             <Plus size={11} />
-            Manage {modeConfig.projectLabelPlural.toLowerCase()}
+            All {modeConfig.projectLabelPlural.toLowerCase()} →
           </button>
         </div>
       )}

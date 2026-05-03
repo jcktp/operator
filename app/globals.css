@@ -3,81 +3,81 @@
 
 :root {
   /* ── Layout ───────────────────────────────────────────────── */
-  --background: #ffffff;
+  --background: #fdfdfd;
   --foreground: #111111;
   --surface:    #ffffff;
-  --surface-2:  #fafafa;
-  --surface-3:  #f4f4f4;
+  --surface-2:  #f7f7f7;
+  --surface-3:  #efefef;
 
   /* ── Borders ──────────────────────────────────────────────── */
-  --border:     #ececec;
-  --border-mid: #d8d8d8;
+  --border:     #e8e8e8;
+  --border-mid: #d4d4d4;
 
   /* ── Text scale ───────────────────────────────────────────── */
   --text-bright:  #111111;
-  --text-body:    #333333;
-  --text-subtle:  #666666;
+  --text-body:    #1a1a1a;
+  --text-subtle:  #555555;
   --text-muted:   #999999;
 
   /* ── Legacy aliases (keep for existing usage) ─────────────── */
   --muted:  #999999;
-  --accent: #0A0E26;
+  --accent: #111111;
 
   /* ── Brand ────────────────────────────────────────────────── */
-  --nav-bg:       #000000;
-  --nav-bg-dim:   #1a1a1a;
-  --ink:          #0A0E26;
+  --nav-bg:       #1c1c1e;
+  --nav-bg-dim:   #2c2c2e;
+  --ink:          #111111;
   --ink-contrast: #ffffff;
   --yellow:       #F2D649;
 
   /* ── Semantic colours ─────────────────────────────────────── */
-  --green:        #34c255;
-  --green-dim:    rgba(52, 194, 85, 0.08);
-  --red:          #F26241;
-  --red-dim:      rgba(242, 98, 65, 0.08);
-  --amber:        #a86200;
-  --amber-dim:    rgba(168, 98, 0, 0.07);
-  --blue:         #2E4CA6;
-  --blue-dim:     rgba(46, 76, 166, 0.07);
+  --green:        #16a34a;
+  --green-dim:    rgba(22,163,74,0.09);
+  --red:          #dc2626;
+  --red-dim:      rgba(220,38,38,0.09);
+  --amber:        #d97706;
+  --amber-dim:    rgba(217,119,6,0.09);
+  --blue:         #6366f1;
+  --blue-dim:     rgba(99,102,241,0.10);
 }
 
 .dark {
   /* ── Layout ───────────────────────────────────────────────── */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --surface:    #18181b;
-  --surface-2:  #27272a;
-  --surface-3:  #3f3f46;
+  --background: #1c1c1a;
+  --foreground: #f5f5f0;
+  --surface:    #242422;
+  --surface-2:  #2c2c2a;
+  --surface-3:  #363632;
 
   /* ── Borders ──────────────────────────────────────────────── */
-  --border:     #27272a;
-  --border-mid: #3f3f46;
+  --border:     #383834;
+  --border-mid: #4a4a44;
 
   /* ── Text scale ───────────────────────────────────────────── */
-  --text-bright:  #fafafa;
-  --text-body:    #d4d4d8;
-  --text-subtle:  #a1a1aa;
-  --text-muted:   #71717a;
+  --text-bright:  #f5f5f0;
+  --text-body:    #d8d8d0;
+  --text-subtle:  #7a7a72;
+  --text-muted:   #484840;
 
   /* ── Legacy aliases ───────────────────────────────────────── */
-  --muted:  #a1a1aa;
-  --accent: #fafafa;
+  --muted:  #7a7a72;
+  --accent: #f5f5f0;
 
-  /* ── Brand (nav stays black in dark mode) ─────────────────── */
-  --nav-bg:       #000000;
-  --nav-bg-dim:   #1a1a1a;
-  --ink:          #fafafa;
-  --ink-contrast: #09090b;
+  /* ── Brand (nav stays dark in dark mode) ──────────────────── */
+  --nav-bg:       #111110;
+  --nav-bg-dim:   #1c1c1a;
+  --ink:          #f5f5f0;
+  --ink-contrast: #1c1c1a;
 
-  /* ── Semantic colours (slightly lighter for dark bg) ──────── */
-  --green:        #34c255;
-  --green-dim:    rgba(52, 194, 85, 0.12);
-  --red:          #f47358;
-  --red-dim:      rgba(244, 115, 88, 0.12);
-  --amber:        #d97706;
-  --amber-dim:    rgba(217, 119, 6, 0.12);
-  --blue:         #5b78d4;
-  --blue-dim:     rgba(91, 120, 212, 0.12);
+  /* ── Semantic colours ─────────────────────────────────────── */
+  --green:        #4ade80;
+  --green-dim:    rgba(74,222,128,0.10);
+  --red:          #f87171;
+  --red-dim:      rgba(248,113,113,0.10);
+  --amber:        #fbbf24;
+  --amber-dim:    rgba(251,191,36,0.10);
+  --blue:         #818cf8;
+  --blue-dim:     rgba(129,140,248,0.12);
 
   color-scheme: dark;
 }
@@ -216,6 +216,24 @@ html, body, * {
 .tiptap-editor code { background: #f3f4f6; border-radius: 3px; padding: 0 4px; font-family: var(--font-mono); font-size: 0.8125rem; }
 .tiptap-editor blockquote { border-left: 3px solid #e5e7eb; padding-left: 1rem; color: #6b7280; margin: 0.5rem 0; }
 .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; float: left; height: 0; }
+.tiptap-editor s, .tiptap-editor del { text-decoration: line-through; }
+.tiptap-editor mark, .tiptap-editor .tiptap-editor mark { background: #fef08a; color: inherit; padding: 0 2px; border-radius: 2px; }
+.tiptap-editor a, .tiptap-editor .tiptap-link { color: #2563eb; text-decoration: underline; }
+.tiptap-editor img, .tiptap-editor .tiptap-image { max-width: 100%; height: auto; border-radius: 6px; margin: 0.5rem 0; display: block; }
+.tiptap-editor pre { background: #f3f4f6; border-radius: 6px; padding: 0.625rem 0.75rem; margin: 0.5rem 0; font-family: var(--font-mono); font-size: 0.8125rem; overflow-x: auto; }
+.tiptap-editor pre code { background: transparent; padding: 0; }
+.tiptap-editor hr { border: 0; border-top: 1px solid #e5e7eb; margin: 0.75rem 0; }
+.tiptap-editor ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+.tiptap-editor ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.375rem; margin: 0.2rem 0; }
+.tiptap-editor ul[data-type="taskList"] li > label { margin-top: 0.25rem; flex-shrink: 0; }
+.tiptap-editor ul[data-type="taskList"] li > label > input { cursor: pointer; }
+.tiptap-editor ul[data-type="taskList"] li > div { flex: 1; }
+
+/* Dark-mode overrides for the new elements */
+.dark .tiptap-editor mark { background: #facc15; color: #18181b; }
+.dark .tiptap-editor a, .dark .tiptap-editor .tiptap-link { color: #60a5fa; }
+.dark .tiptap-editor pre { background: #27272a; color: #e4e4e7; }
+.dark .tiptap-editor hr { border-top-color: #3f3f46; }
 
 /* Word document rendered HTML */
 .doc-content { font-size: 0.875rem; line-height: 1.6; color: #374151; max-height: 600px; overflow-y: auto; padding-right: 4px; scrollbar-width: none; }

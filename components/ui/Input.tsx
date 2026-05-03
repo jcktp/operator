@@ -13,9 +13,9 @@ const SIZE = {
 }
 
 const BASE =
-  'w-full rounded-[4px] border border-[var(--border-mid)] bg-[var(--surface)] ' +
+  'w-full rounded-[6px] border border-[var(--border-mid)] bg-[var(--surface)] ' +
   'text-[var(--text-body)] placeholder:text-[var(--text-muted)] ' +
-  'focus:outline-none focus:ring-1 focus:ring-[var(--ink)] focus:border-[var(--ink)] ' +
+  'focus:outline-none focus:ring-1 focus:ring-[var(--blue)] focus:border-[var(--blue)] ' +
   'disabled:opacity-40 disabled:pointer-events-none transition-colors'
 
 export default function Input({ inputSize = 'md', className, ...props }: InputProps) {

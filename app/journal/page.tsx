@@ -24,15 +24,8 @@ export default async function JournalPage() {
  updatedAt: e.updatedAt.toISOString(),
  }))
 
- const description = modeConfig.features.journalDescription ?? 'Notes organised by folder — auto-saved, AI-assisted'
+ // Suppress: description is used inside JournalShell layout below — kept for parity with mode config.
+ void modeConfig
 
- return (
- <div className="space-y-6">
- <div className="sticky top-14 z-20 bg-[var(--background)] border-b border-[var(--border)] py-5 -mx-6 px-6 sm:-mx-8 sm:px-8">
- <h1 className="text-2xl font-semibold text-[var(--text-bright)]">{modeConfig.navJournal}</h1>
- <p className="text-[var(--text-muted)] text-sm mt-0.5">{description}</p>
- </div>
- <JournalShell entries={serialized} projects={projects} />
- </div>
- )
+ return <JournalShell entries={serialized} projects={projects} />
 }

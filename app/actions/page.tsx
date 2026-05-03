@@ -1,5 +1,6 @@
-import ActionsClient from './ActionsClient'
+import { redirect } from 'next/navigation'
 
-export default async function ActionsPage() {
- return <ActionsClient />
+// Actions now lives under the unified Tracker (/tracker?tab=actions).
+export default function ActionsPage() {
+  redirect('/tracker?tab=actions')
 }

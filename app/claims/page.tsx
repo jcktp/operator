@@ -1,11 +1,7 @@
-import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/db'
-import ClaimsClient from './ClaimsClient'
+import { redirect } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
-
-export default async function ClaimsPage() {
- const modeRow = await prisma.setting.findUnique({ where: { key: 'app_mode' } })
- if (modeRow?.value !== 'journalism') notFound()
- return <ClaimsClient />
+// Claims now lives under the unified Tracker (/tracker?tab=claims).
+// This redirect preserves any existing bookmarks and internal links to /claims.
+export default function ClaimsPage() {
+  redirect('/tracker?tab=claims')
 }

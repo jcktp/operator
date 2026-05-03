@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Loader2, Plus, Trash2, RefreshCw, BookOpen, ScrollText, Save, Pencil, X, Search } from 'lucide-react'
+import { Loader2, Plus, Trash2, RefreshCw, BookOpen, ScrollText, Save, Pencil, X } from 'lucide-react'
+import SearchInput from '@/components/ui/SearchInput'
 import { cn } from '@/lib/utils'
 import SelectField from '@/components/SelectField'
 import Pagination from '@/app/settings/KnowledgePagination'
@@ -474,15 +475,15 @@ function GlossaryPanel({ allAreas }: { allAreas: string[] }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search terms or definitions…"
-            className={cn(inputCls, 'pl-7')}
-          />
-        </div>
+        <SearchInput
+          size="md"
+          className="flex-1"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search terms or definitions…"
+          clearable
+          onClear={() => setQuery('')}
+        />
         <div className="w-44 shrink-0">
           <SelectField
             value={scopeFilter}

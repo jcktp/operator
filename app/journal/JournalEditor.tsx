@@ -1,15 +1,22 @@
 'use client'
 
-import { useEditor, EditorContent, Extension } from '@tiptap/react'
+import { useEditor, EditorContent, Extension, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { FontFamily } from '@tiptap/extension-font-family'
 import Placeholder from '@tiptap/extension-placeholder'
+import Image from '@tiptap/extension-image'
+import Link from '@tiptap/extension-link'
+import Highlight from '@tiptap/extension-highlight'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 import { useCallback, useRef, useState } from 'react'
 import {
- Bold, Italic, UnderlineIcon, Heading2, List, ListOrdered,
+ Bold, Italic, UnderlineIcon, Heading1, Heading2, Heading3, List, ListOrdered,
  Check, Loader2, Wand2, Download, Printer, Mic, MicOff, RefreshCw,
+ Strikethrough, Quote, Code2, Minus, Link as LinkIcon, Image as ImageIcon,
+ Highlighter, ListChecks,
 } from 'lucide-react'
 import SelectField from '@/components/SelectField'
 
@@ -86,9 +93,13 @@ interface Props {
  entryId: string
  initialContent: string
  onContentChange?: (html: string) => void
+ /** Called once when the Tiptap editor instance is ready. */
+ onReady?: (editor: Editor) => void
+ /** When true, skip the internal /api/journal autosave — parent handles saving via onContentChange. */
+ disableAutosave?: boolean
 }
 
-export default function JournalEditor({ entryId, initialContent, onContentChange }: Props) {
+export default function JournalEditor({ entryId, initialContent, onContentChange, onReady, disableAutosave }: Props) {
  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
  const [fixingGrammar, setFixingGrammar] = useState(false)
  const [rewriting, setRewriting] = useState(false)
@@ -98,6 +109,7 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  const recognitionRef = useRef<{ stop(): void } | null>(null)
 
  const save = useCallback(async (html: string) => {
+ if (disableAutosave) return   // parent handles saving via onContentChange
  setStatus('saving')
  try {
  await fetch('/api/journal', {
@@ -110,7 +122,7 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  } catch {
  setStatus('idle')
  }
- }, [entryId])
+ }, [entryId, disableAutosave])
 
  const editor = useEditor({
  immediatelyRender: false,
@@ -120,6 +132,11 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  TextStyle,
  FontFamily,
  FontSize,
+ Image.configure({ inline: false, allowBase64: true, HTMLAttributes: { class: 'tiptap-image' } }),
+ Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { class: 'tiptap-link', rel: 'noopener noreferrer' } }),
+ Highlight.configure({ multicolor: false }),
+ TaskList,
+ TaskItem.configure({ nested: true }),
  Placeholder.configure({ placeholder: 'Write your notes here…' }),
  ],
  content: initialContent,
@@ -133,6 +150,9 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  onContentChange?.(html)
  if (timerRef.current) clearTimeout(timerRef.current)
  timerRef.current = setTimeout(() => save(html), 800)
+ },
+ onCreate: ({ editor }) => {
+ onReady?.(editor)
  },
  })
 
@@ -238,6 +258,39 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  URL.revokeObjectURL(url)
  }
 
+ // Link prompt — toggles link on selection, prompts for URL
+ const setLink = useCallback(() => {
+   if (!editor) return
+   const previous = editor.getAttributes('link').href as string | undefined
+   const url = window.prompt('Link URL (leave blank to remove):', previous ?? '')
+   if (url === null) return
+   if (url === '') {
+     editor.chain().focus().extendMarkRange('link').unsetLink().run()
+     return
+   }
+   editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+ }, [editor])
+
+ // Image insert — accepts a URL, or a local file (base64-embedded for portability)
+ const fileInputRef = useRef<HTMLInputElement | null>(null)
+ const insertImageFromUrl = useCallback(() => {
+   if (!editor) return
+   const url = window.prompt('Image URL:')
+   if (!url) return
+   editor.chain().focus().setImage({ src: url }).run()
+ }, [editor])
+ const onImageFileChosen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+   const file = e.target.files?.[0]
+   e.target.value = ''
+   if (!file || !editor) return
+   const reader = new FileReader()
+   reader.onload = () => {
+     const dataUrl = String(reader.result ?? '')
+     if (dataUrl) editor.chain().focus().setImage({ src: dataUrl }).run()
+   }
+   reader.readAsDataURL(file)
+ }, [editor])
+
  if (!editor) return null
 
  // Current text style attributes for selectors
@@ -283,11 +336,23 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  <ToolButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline">
  <UnderlineIcon size={13} />
  </ToolButton>
+ <ToolButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} title="Strikethrough">
+ <Strikethrough size={13} />
+ </ToolButton>
+ <ToolButton onClick={() => editor.chain().focus().toggleHighlight().run()} active={editor.isActive('highlight')} title="Highlight">
+ <Highlighter size={13} />
+ </ToolButton>
 
  <div className="w-px h-4 bg-[var(--surface-3)] mx-1" />
 
- <ToolButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Heading">
+ <ToolButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })} title="Heading 1">
+ <Heading1 size={13} />
+ </ToolButton>
+ <ToolButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Heading 2">
  <Heading2 size={13} />
+ </ToolButton>
+ <ToolButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })} title="Heading 3">
+ <Heading3 size={13} />
  </ToolButton>
  <ToolButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} title="Bullet list">
  <List size={13} />
@@ -295,6 +360,40 @@ export default function JournalEditor({ entryId, initialContent, onContentChange
  <ToolButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numbered list">
  <ListOrdered size={13} />
  </ToolButton>
+ <ToolButton onClick={() => editor.chain().focus().toggleTaskList().run()} active={editor.isActive('taskList')} title="Task list (checkboxes)">
+ <ListChecks size={13} />
+ </ToolButton>
+
+ <div className="w-px h-4 bg-[var(--surface-3)] mx-1" />
+
+ <ToolButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} title="Blockquote">
+ <Quote size={13} />
+ </ToolButton>
+ <ToolButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} title="Code block">
+ <Code2 size={13} />
+ </ToolButton>
+ <ToolButton onClick={() => editor.chain().focus().setHorizontalRule().run()} active={false} title="Horizontal rule">
+ <Minus size={13} />
+ </ToolButton>
+
+ <div className="w-px h-4 bg-[var(--surface-3)] mx-1" />
+
+ <ToolButton onClick={setLink} active={editor.isActive('link')} title="Link">
+ <LinkIcon size={13} />
+ </ToolButton>
+ <ToolButton onClick={() => fileInputRef.current?.click()} active={false} title="Insert image (file)">
+ <ImageIcon size={13} />
+ </ToolButton>
+ <ToolButton onClick={insertImageFromUrl} active={false} title="Insert image from URL">
+ <span className="text-[10px] font-semibold leading-none">URL</span>
+ </ToolButton>
+ <input
+ ref={fileInputRef}
+ type="file"
+ accept="image/*"
+ className="hidden"
+ onChange={onImageFileChosen}
+ />
 
  <div className="flex-1" />
 

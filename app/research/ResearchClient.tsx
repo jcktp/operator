@@ -105,18 +105,29 @@ function DocPicker({ label, projects, onText, disabled }: DocPickerProps) {
   const [reportId, setReportId] = useState('')
   const [uploading, setUploading] = useState(false)
   const [fileName, setFileName] = useState('')
+  const [fileError, setFileError] = useState<string | null>(null)
+  const [fileLoaded, setFileLoaded] = useState(false)
 
   const reports = projects.find(p => p.id === projectId)?.reports ?? []
 
   async function handleFile(file: File) {
     setUploading(true)
     setFileName(file.name)
+    setFileError(null)
+    setFileLoaded(false)
     try {
       const fd = new FormData()
       fd.append('file', file)
       const res = await fetch('/api/research/extract-text', { method: 'POST', body: fd })
       const data = await res.json() as { text?: string; error?: string }
-      if (data.text) onText(data.text, file.name)
+      if (!res.ok || !data.text) {
+        setFileError(data.error ?? 'Could not extract text from this file.')
+      } else {
+        onText(data.text, file.name)
+        setFileLoaded(true)
+      }
+    } catch {
+      setFileError('Upload failed — check your connection.')
     } finally {
       setUploading(false)
     }
@@ -160,11 +171,15 @@ function DocPicker({ label, projects, onText, disabled }: DocPickerProps) {
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={disabled || uploading}
-            className="flex items-center gap-2 w-full min-h-[44px] rounded-[8px] border-2 border-dashed border-[var(--border-mid)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] hover:border-[var(--text-muted)] transition-colors disabled:opacity-40 disabled:pointer-events-none px-3"
+            className={`flex items-center gap-2 w-full min-h-[44px] rounded-[8px] border-2 border-dashed transition-colors disabled:opacity-40 disabled:pointer-events-none px-3 ${
+              fileError ? 'border-[var(--red)] bg-[var(--red-dim)]' :
+              fileLoaded ? 'border-[var(--green)] bg-[var(--green-dim)]' :
+              'border-[var(--border-mid)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] hover:border-[var(--text-muted)]'
+            }`}
           >
-            {uploading ? <Spinner size="xs" /> : <Upload size={14} className="text-[var(--text-muted)]" />}
-            <span className="text-xs text-[var(--text-subtle)] truncate">
-              {fileName || 'PDF, DOCX, TXT, MD…'}
+            {uploading ? <Spinner size="xs" /> : <Upload size={14} className={fileError ? 'text-[var(--red)]' : fileLoaded ? 'text-[var(--green)]' : 'text-[var(--text-muted)]'} />}
+            <span className={`text-xs truncate ${fileError ? 'text-[var(--red)]' : fileLoaded ? 'text-[var(--green)]' : 'text-[var(--text-subtle)]'}`}>
+              {uploading ? 'Extracting text…' : fileError ? fileError : fileName || 'PDF, DOCX, TXT, MD…'}
             </span>
           </button>
         </div>
@@ -201,7 +216,7 @@ function DocPicker({ label, projects, onText, disabled }: DocPickerProps) {
 
 // ── Wayback tab ───────────────────────────────────────────────────────────────
 
-function WaybackTab() {
+export function WaybackTab() {
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -299,19 +314,24 @@ function WaybackTab() {
 
 // ── Diff tab ──────────────────────────────────────────────────────────────────
 
-function DiffTab({ projects }: { projects: Project[] }) {
+export function DiffTab({ projects }: { projects: Project[] }) {
   const [textA, setTextA] = useState('')
   const [textB, setTextB] = useState('')
   const [labelA, setLabelA] = useState('Document A')
   const [labelB, setLabelB] = useState('Document B')
+  const [diffActive, setDiffActive] = useState(false)
 
   const diffs = useMemo(() => {
-    if (!textA || !textB) return null
+    if (!diffActive || !textA || !textB) return null
     return buildDiff(textA, textB)
-  }, [textA, textB])
+  }, [diffActive, textA, textB])
 
   const stats = useMemo(() => diffs ? countChanges(diffs) : null, [diffs])
   const ready = !!textA && !!textB
+
+  // Reset diff when docs change
+  const handleTextA = (t: string, l: string) => { setTextA(t); setLabelA(l); setDiffActive(false) }
+  const handleTextB = (t: string, l: string) => { setTextB(t); setLabelB(l); setDiffActive(false) }
 
   return (
     <div className="space-y-5">
@@ -319,28 +339,26 @@ function DiffTab({ projects }: { projects: Project[] }) {
         Compare two documents — upload files or select from your story index.
       </p>
       <div className="grid grid-cols-2 gap-4">
-        <DocPicker
-          label="Document A"
-          projects={projects}
-          onText={(t, l) => { setTextA(t); setLabelA(l) }}
-        />
-        <DocPicker
-          label="Document B"
-          projects={projects}
-          onText={(t, l) => { setTextB(t); setLabelB(l) }}
-        />
+        <DocPicker label="Document A" projects={projects} onText={handleTextA} />
+        <DocPicker label="Document B" projects={projects} onText={handleTextB} />
       </div>
 
       {!ready && (
         <EmptyState
           icon={<GitCompare size={20} />}
           title="Select two documents"
-          description="Upload or choose a document for each side above."
+          description="Load a document on each side, then click Compare."
           size="sm"
         />
       )}
 
-      {ready && diffs && (
+      {ready && !diffActive && (
+        <Button variant="primary" size="sm" onClick={() => setDiffActive(true)}>
+          <GitCompare size={13} /> Compare documents
+        </Button>
+      )}
+
+      {ready && diffActive && diffs && (
         <>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 text-xs">
@@ -375,7 +393,7 @@ interface UsernameResult {
   domain?: string
 }
 
-function UsernameTab() {
+export function UsernameTab() {
   const [username, setUsername] = useState('')
   const [results, setResults] = useState<UsernameResult[]>([])
   const [searching, setSearching] = useState(false)

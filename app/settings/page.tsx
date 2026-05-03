@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '@/components/ThemeProvider'
 import { CheckCircle, Loader2, Download, Server, Trash2, AlertTriangle } from 'lucide-react'
 import AuditLogPanel from './AuditLogPanel'
+import LayoutB from '@/components/layouts/LayoutB'
 import { cn } from '@/lib/utils'
 import { CLOUD_PROVIDERS } from './settingsTypes'
 import ModelPullOverlay from './ModelPullOverlay'
@@ -28,25 +29,67 @@ export default function SettingsPage() {
 
  useEffect(() => {
  if (window.location.hash === '#danger') setTab('danger')
+ // Honor ?tab=collab (or any valid tab id) so other pages can deep-link.
+ const params = new URLSearchParams(window.location.search)
+ const fromQuery = params.get('tab')
+ const VALID: Tab[] = ['profile', 'ai', 'pulse', 'remote', 'backup', 'knowledge', 'collab', 'danger']
+ if (fromQuery && (VALID as string[]).includes(fromQuery)) {
+ setTab(fromQuery as Tab)
+ }
  }, [])
 
  const s = useSettingsState()
 
  if (s.loading) return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={20} className="animate-spin text-[var(--text-muted)]" /></div>
 
- const TABS: { id: Tab; label: string }[] = [
- { id: 'profile', label: 'Profile' },
- { id: 'ai', label: 'AI' },
- { id: 'pulse', label: 'Pulse' },
- { id: 'remote', label: 'Remote' },
- { id: 'backup', label: 'Backup' },
- { id: 'knowledge', label: 'AI Context' },
- { id: 'collab', label: 'Collab' },
- { id: 'danger', label: 'Danger' },
+ // Grouped sections for the sidebar (per Layout B mockup in layout-reference.html)
+ const SECTIONS: { label: string; items: { id: Tab; label: string }[] }[] = [
+ { label: 'General',      items: [{ id: 'profile', label: 'Profile' }] },
+ { label: 'Intelligence', items: [
+   { id: 'ai',        label: 'AI providers' },
+   { id: 'knowledge', label: 'AI context' },
+   { id: 'pulse',     label: 'Pulse feeds' },
+ ] },
+ { label: 'Data',         items: [
+   { id: 'backup', label: 'Backup' },
+   { id: 'remote', label: 'Remote' },
+   { id: 'collab', label: 'Collab' },
+ ] },
+ { label: 'Advanced',     items: [{ id: 'danger', label: 'Danger zone' }] },
  ]
 
+ const sidebar = (
+ <nav className="flex flex-col py-3">
+ <div className="px-3 pb-3">
+ <h1 className="text-base font-semibold text-[var(--text-bright)]">Settings</h1>
+ </div>
+ {SECTIONS.map(section => (
+ <div key={section.label} className="mb-1">
+ <p className="px-3 pt-3 pb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+ {section.label}
+ </p>
+ {section.items.map(item => (
+ <button
+ key={item.id}
+ type="button"
+ onClick={() => setTab(item.id)}
+ className={cn(
+ 'w-full text-left text-xs px-3 py-1.5 transition-colors border-l-2',
+ tab === item.id
+ ? 'border-l-[var(--blue)] bg-[var(--blue-dim)] text-[var(--text-bright)] font-semibold'
+ : 'border-l-transparent text-[var(--text-subtle)] hover:text-[var(--text-bright)] hover:bg-[var(--surface-2)]'
+ )}
+ >
+ {item.label}
+ </button>
+ ))}
+ </div>
+ ))}
+ </nav>
+ )
+
  return (
- <div className="h-full flex flex-col max-w-2xl mx-auto w-full">
+ <>
  {s.pull.active && (
  <ModelPullOverlay
  pull={s.pull}
@@ -54,34 +97,7 @@ export default function SettingsPage() {
  onClose={() => s.setPull(p => ({ ...p, active: false }))}
  />
  )}
-
- {/* Fixed header */}
- <div className="shrink-0 space-y-4 pb-0">
- <div>
- <h1 className="text-2xl font-semibold text-[var(--text-bright)]">Settings</h1>
- <p className="text-[var(--text-muted)] text-sm mt-0.5">Configure your Operator workspace.</p>
- </div>
-
- {/* Tab bar */}
- <div className="flex gap-5 border-b border-[var(--border)]">
- {TABS.map(t => (
- <button
- key={t.id}
- type="button"
- onClick={() => setTab(t.id)}
- className={cn(
- 'pb-2 text-xs font-medium transition-colors border-b-2 -mb-px',
- tab === t.id ? 'border-[var(--ink)] text-[var(--text-bright)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-subtle)]'
- )}
- >
- {t.label}
- </button>
- ))}
- </div>
- </div>
-
- {/* Scrollable tab content */}
- <div className="flex-1 min-h-0 overflow-y-auto py-5">
+ <LayoutB sidebar={sidebar} sidebarWidth={196}>
  <div className="space-y-5">
  {/* Profile tab */}
  {tab === 'profile' && (
@@ -289,8 +305,6 @@ export default function SettingsPage() {
  </div>
  </div>}
 
- </div>
-
  <a
  href="https://github.com/jcktp"
  target="_blank"
@@ -299,8 +313,9 @@ export default function SettingsPage() {
  >
  Built with purpose by Jorick.
  </a>
+ </LayoutB>
 
- {/* Uninstall overlay */}
+ {/* Uninstall overlay — fixed-position, sibling to LayoutB so it covers the whole viewport */}
  {(uninstallPhase === 'running' || uninstallPhase === 'done') && (
  <div className="fixed inset-0 z-[100] bg-gray-950 flex flex-col items-center justify-center">
  <div className="text-center space-y-6 max-w-sm w-full px-8">
@@ -324,6 +339,6 @@ export default function SettingsPage() {
  </div>
  </div>
  )}
- </div>
+ </>
  )
 }

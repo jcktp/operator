@@ -51,17 +51,28 @@ export default function UploadTab() {
  setDirectsLoaded(true)
  }, [directsLoaded])
 
- const loadProjects = useCallback(async () => {
- if (projectsLoaded) return
+ const refetchProjects = useCallback(async () => {
  const res = await fetch('/api/projects')
  const data = await res.json() as { projects?: Array<{ id: string; name: string; status: string }>; currentProjectId?: string | null }
  const list = (data.projects ?? []).filter(p => p.status === 'in_progress')
  setProjects(list)
  if (data.currentProjectId) setSelectedProjectId(data.currentProjectId)
  setProjectsLoaded(true)
- }, [projectsLoaded])
+ }, [])
+
+ const loadProjects = useCallback(async () => {
+ if (projectsLoaded) return
+ await refetchProjects()
+ }, [projectsLoaded, refetchProjects])
 
  useEffect(() => { loadProjects() }, [loadProjects])
+
+ // Refetch when another component (e.g. /projects CRUD or ProjectSwitcher) signals a project change
+ useEffect(() => {
+ const handler = () => { refetchProjects() }
+ window.addEventListener('project:changed', handler)
+ return () => window.removeEventListener('project:changed', handler)
+ }, [refetchProjects])
 
  const hasAudio = queue.some(q => q.type === 'file' && q.file && /\.(mp3|wav|m4a|ogg|webm|flac|aac|opus)$/i.test(q.file.name))
  useEffect(() => {

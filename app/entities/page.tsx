@@ -2,12 +2,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getModeConfig } from '@/lib/mode'
-import { Users, Clock, Map, BookOpen, Globe } from 'lucide-react'
+import { Users, Clock, Map } from 'lucide-react'
 import EntitiesTab from './tabs/EntitiesTab'
 import TimelineTab from './tabs/TimelineTab'
 import StoryMapTab from './tabs/StoryMapTab'
-import StorylineTab from './tabs/StorylineTab'
-import OsintTab from './tabs/OsintTab'
 import InspectorSidebar from '@/components/InspectorSidebar'
 import EntitiesSearchBar from './EntitiesSearchBar'
 import { EntitiesSearchProvider } from './EntitiesSearchContext'
@@ -18,8 +16,6 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
  entities: <Users size={13} />,
  timeline: <Clock size={12} />,
  'story-map': <Map size={13} />,
- storyline: <BookOpen size={13} />,
- resources: <Globe size={13} />,
 }
 
 export default async function EntitiesPage({
@@ -44,8 +40,6 @@ export default async function EntitiesPage({
  { id: 'entities', label: navItem?.label ?? 'Entities' },
  ...(modeConfig.features.timeline ? [{ id: 'timeline', label: 'Timeline' }] : []),
  { id: 'story-map', label: 'Story Map' },
- { id: 'storyline', label: 'Storyline' },
- ...(modeConfig.features.investigationTemplate ? [{ id: 'resources', label: 'Investigative Hub' }] : []),
  ]
 
  const activeTab = tabs.find(t => t.id === tab)?.id ?? 'entities'
@@ -110,10 +104,6 @@ export default async function EntitiesPage({
  <div className="pb-8">
  <TimelineTab modeConfig={modeConfig} projectId={currentProjectId} />
  </div>
- )}
- {activeTab === 'storyline' && <StorylineTab />}
- {activeTab === 'resources' && modeConfig.features.investigationTemplate && (
- <div className="pb-8"><OsintTab /></div>
  )}
  </div>
  )}

@@ -193,20 +193,32 @@ export default function MapPageClient({ projects }: Props) {
           </div>
 
           {selected && (
-            <div className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] p-3 space-y-1.5">
-              <p className="text-sm font-medium text-[var(--text-bright)]">{selected.title}</p>
-              <p className="text-xs text-[var(--text-muted)]">
-                {selected.lat.toFixed(6)}, {selected.lon.toFixed(6)}
-              </p>
-              {selected.camera && (
-                <p className="text-xs text-[var(--text-subtle)]">Camera: {selected.camera}</p>
-              )}
-              {selected.dateTaken && (
-                <p className="text-xs text-[var(--text-subtle)]">
-                  Taken: {new Date(selected.dateTaken).toLocaleString()}
+            <div className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden">
+              {/* Photo thumbnail */}
+              <div className="relative bg-[var(--surface-3)] h-40 overflow-hidden">
+                <img
+                  src={`/api/files/download?path=${encodeURIComponent(selected.imagePath)}`}
+                  alt={selected.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/50 text-white text-[13px] leading-none flex items-center justify-center hover:bg-black/70 transition-colors"
+                >×</button>
+              </div>
+              <div className="p-2.5 space-y-0.5">
+                <p className="text-xs font-medium text-[var(--text-bright)] truncate">{selected.title}</p>
+                <p className="text-[11px] font-mono text-[var(--text-muted)]">
+                  {selected.lat.toFixed(5)}, {selected.lon.toFixed(5)}
                 </p>
-              )}
-              <p className="text-xs text-[var(--text-muted)]">Area: {selected.area}</p>
+                {selected.camera && <p className="text-[11px] text-[var(--text-subtle)]">{selected.camera}</p>}
+                {selected.dateTaken && (
+                  <p className="text-[11px] text-[var(--text-muted)]">{new Date(selected.dateTaken).toLocaleDateString()}</p>
+                )}
+                <p className="text-[11px] text-[var(--text-muted)]">{selected.area}</p>
+              </div>
             </div>
           )}
         </>

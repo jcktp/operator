@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, FolderOpen, X, Loader2, Search, Share2 } from 'lucide-react'
+import LayoutD from '@/components/layouts/LayoutD'
 import SelectField from '@/components/SelectField'
 import dynamic from 'next/dynamic'
 import ProjectListItem from './ProjectListItem'
@@ -127,11 +128,17 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
  }
 
  const handleDelete = async (id: string) => {
+ const project = projects.find(p => p.id === id)
+ const confirmed = window.confirm(
+ `Delete "${project?.name ?? 'this story'}"?\n\nThis will permanently delete the story, its documents, contacts, notes, and all analysis data. This cannot be undone.`
+ )
+ if (!confirmed) return
  setDeletingId(id)
  try {
  await fetch(`/api/projects/${id}`, { method: 'DELETE' })
  setProjects(ps => ps.filter(p => p.id !== id))
  if (currentProjectId === id) setCurrentProjectId(null)
+ window.dispatchEvent(new Event('project:changed'))
  router.refresh()
  } finally {
  setDeletingId(null)
@@ -165,24 +172,26 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
  const inProgressCount = projects.filter(p => p.status === 'in_progress').length
  const completedCount = projects.filter(p => p.status === 'completed').length
 
+ const header = (
+   <div className="px-7 py-5 flex items-center justify-between gap-4">
+     <div>
+       <h1 className="text-2xl font-semibold text-[var(--text-bright)]">{projectLabelPlural}</h1>
+       <p className="text-sm text-[var(--text-muted)] mt-0.5">
+         Organise your work into {projectLabelPlural.toLowerCase()}. All documents, analysis and dispatch are scoped to the active {projectLabel.toLowerCase()}.
+       </p>
+     </div>
+     <button
+       onClick={openCreate}
+       className="inline-flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-full bg-[var(--ink)] text-[var(--ink-contrast)] hover:opacity-90 transition-colors shrink-0"
+     >
+       <Plus size={13} /> New {projectLabel}
+     </button>
+   </div>
+ )
+
  return (
- <div className="max-w-4xl space-y-6">
- {/* Header */}
- <div className="flex items-center justify-between">
- <div>
- <h1 className="text-2xl font-semibold text-[var(--text-bright)]">{projectLabelPlural}</h1>
- <p className="text-sm text-[var(--text-muted)] mt-1">
- Organise your work into {projectLabelPlural.toLowerCase()}. All documents, analysis and dispatch are scoped to the active {projectLabel.toLowerCase()}.
- </p>
- </div>
- <button
- onClick={openCreate}
- className="flex items-center gap-1.5 h-7 px-2.5 bg-[var(--ink)] text-[var(--ink-contrast)] text-xs font-medium rounded-[4px] hover:opacity-90 transition-colors"
- >
- <Plus size={14} />
- New {projectLabel}
- </button>
- </div>
+ <LayoutD header={header}>
+ <div className="space-y-6">
 
  {/* Create / Edit form */}
  {showForm && (
@@ -395,5 +404,6 @@ export default function ProjectsClient({ projects: initial, currentProjectId: in
  </div>
  )}
  </div>
+ </LayoutD>
  )
 }

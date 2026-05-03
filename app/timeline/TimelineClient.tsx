@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Search, X, Clock } from 'lucide-react'
+import { Clock } from 'lucide-react'
+import SearchInput from '@/components/ui/SearchInput'
 import { cn } from '@/lib/utils'
 import { AreaBadge } from '@/components/Badge'
 
@@ -102,21 +103,14 @@ export default function TimelineClient({
  {/* Main */}
  <div className="flex-1 min-w-0 space-y-4">
  {/* Search */}
- <div className="relative">
- <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
- <input
- type="text"
+ <SearchInput
+ size="lg"
  value={search}
  onChange={e => setSearch(e.target.value)}
  placeholder="Search events, dates, or reports…"
- className="w-full border border-[var(--border)] rounded-[4px] pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 bg-[var(--surface)]"
+ clearable
+ onClear={() => setSearch('')}
  />
- {search && (
- <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-subtle)]">
- <X size={13} />
- </button>
- )}
- </div>
 
  {(search || selectedArea) && (
  <p className="text-xs text-[var(--text-muted)]">

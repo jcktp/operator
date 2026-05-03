@@ -5,7 +5,7 @@ export function AreaBadge({ area, className }: { area: string; className?: strin
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium border',
+        'inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-medium font-mono border',
         color,
         className
       )}

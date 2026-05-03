@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Trash2, ChevronDown } from 'lucide-react'
+import LayoutD from '@/components/layouts/LayoutD'
 import { cn } from '@/lib/utils'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -120,19 +121,24 @@ export default function FoiaClient() {
 
  if (loading) return <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={18} className="animate-spin text-[var(--text-muted)]" /></div>
 
+ const header = (
+   <div className="px-7 py-5 flex items-center justify-between gap-4">
+     <div>
+       <h1 className="text-2xl font-semibold text-[var(--text-bright)]">FOIA Tracker</h1>
+       <p className="text-sm text-[var(--text-muted)] mt-0.5">Track public records requests and their status.</p>
+     </div>
+     <button
+       onClick={() => setShowForm(v => !v)}
+       className="inline-flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-full bg-[var(--ink)] text-[var(--ink-contrast)] hover:opacity-90 transition-colors shrink-0"
+     >
+       <Plus size={13} /> New request
+     </button>
+   </div>
+ )
+
  return (
- <div className="max-w-3xl space-y-5">
- {/* Header */}
- <div className="flex items-center justify-between">
- <div>
- <h1 className="text-2xl font-semibold text-[var(--text-bright)]">FOIA Tracker</h1>
- <p className="text-sm text-[var(--text-muted)] mt-0.5">Track public records requests and their status.</p>
- </div>
- <button onClick={() => setShowForm(v => !v)}
- className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors">
- <Plus size={14} /> New request
- </button>
- </div>
+ <LayoutD header={header}>
+ <div className="space-y-5">
 
  {/* New request form */}
  {showForm && (
@@ -247,5 +253,6 @@ export default function FoiaClient() {
  </div>
  )}
  </div>
+ </LayoutD>
  )
 }

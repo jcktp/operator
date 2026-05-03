@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { MessageSquare, Plus, Trash2, ChevronRight, Loader2, Search, X } from 'lucide-react'
+import { MessageSquare, Plus, Trash2, ChevronRight, Loader2 } from 'lucide-react'
+import SearchInput from '@/components/ui/SearchInput'
 import { cn } from '@/lib/utils'
 
 export interface ChatSummary {
@@ -47,20 +48,14 @@ export default function DispatchHistoryView({
 
  {/* Search */}
  <div className="px-3 pb-2 shrink-0">
- <div className="relative">
- <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
- <input
+ <SearchInput
+ size="md"
  value={search}
  onChange={e => setSearch(e.target.value)}
  placeholder="Search chats…"
- className="w-full text-xs pl-7 pr-7 py-2 border border-[var(--border)] rounded-[4px] focus:outline-none focus:ring-1 focus:ring-inset bg-[var(--surface)] text-[var(--text-body)] placeholder-gray-400"
+ clearable
+ onClear={() => setSearch('')}
  />
- {search && (
- <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-subtle)]">
- <X size={11} />
- </button>
- )}
- </div>
  </div>
 
  <div className="border-t border-[var(--border)]" />

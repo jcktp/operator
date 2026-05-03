@@ -10,7 +10,7 @@ export default async function StoryMapTab({ projectId }: { projectId?: string | 
  ...(projectId ? { report: { projectId } } : {}),
  },
  include: {
- report: { select: { id: true, title: true, area: true, storyName: true, summary: true } },
+ report: { select: { id: true, title: true, area: true, storyName: true, summary: true, imagePath: true, displayContent: true } },
  },
  orderBy: { createdAt: 'desc' },
  })
@@ -31,6 +31,7 @@ export default async function StoryMapTab({ projectId }: { projectId?: string | 
  reportAreas: {},
  reportStoryNames: {},
  reportSummaries: {},
+ reportImagePaths: {},
  contexts: [],
  contextsByReport: [],
  }
@@ -42,6 +43,7 @@ export default async function StoryMapTab({ projectId }: { projectId?: string | 
  g.reportAreas[e.reportId] = e.report.area
  if (e.report.storyName) g.reportStoryNames[e.reportId] = e.report.storyName
  if (e.report.summary) g.reportSummaries[e.reportId] = e.report.summary
+ g.reportImagePaths[e.reportId] = (e.report.displayContent?.startsWith('image:') || e.report.imagePath) ? (e.report.imagePath ?? null) : null
  }
  if (e.context && !g.contexts.includes(e.context)) {
  g.contexts.push(e.context)

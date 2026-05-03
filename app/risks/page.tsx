@@ -1,5 +1,6 @@
-import RisksClient from './RisksClient'
+import { redirect } from 'next/navigation'
 
-export default async function RisksPage() {
- return <RisksClient />
+// Risks now lives under the unified Tracker (/tracker?tab=risks).
+export default function RisksPage() {
+  redirect('/tracker?tab=risks')
 }

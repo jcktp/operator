@@ -96,11 +96,18 @@ export default function ActionsClient() {
  await fetch(`/api/actions/${id}`, { method: 'DELETE' }).catch(() => {})
  }
 
- const visible = items.filter(i => {
+ const PAGE_SIZE = 20
+ const [page, setPage] = useState(1)
+
+ const filtered = items.filter(i => {
  if (filterStatus !== 'all' && i.status !== filterStatus) return false
  if (filterKind !== 'all' && i.kind !== filterKind) return false
  return true
  })
+ const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+ const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+ useEffect(() => { setPage(1) }, [filterStatus, filterKind])
 
  const openCount = items.filter(i => i.status === 'open' || i.status === 'in_progress').length
 
@@ -227,6 +234,25 @@ export default function ActionsClient() {
  </div>
  )
  })}
+ </div>
+ )}
+
+ {totalPages > 1 && (
+ <div className="flex items-center justify-between pt-2">
+ <p className="text-[11px] text-[var(--text-muted)] font-mono">
+ {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+ </p>
+ <div className="flex items-center gap-1">
+ <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+ className="px-2 py-1 text-xs border border-[var(--border)] rounded disabled:opacity-40 hover:bg-[var(--surface-2)] transition-colors">
+ ← Prev
+ </button>
+ <span className="text-[11px] font-mono text-[var(--text-muted)] px-2">{page}/{totalPages}</span>
+ <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+ className="px-2 py-1 text-xs border border-[var(--border)] rounded disabled:opacity-40 hover:bg-[var(--surface-2)] transition-colors">
+ Next →
+ </button>
+ </div>
  </div>
  )}
  </div>

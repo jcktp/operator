@@ -53,6 +53,23 @@ model Project {
   description String?   @default("")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  // ── Story fields — a Project IS the story ────────────────────────────────
+  // Prose narrative — the Tiptap HTML draft
+  narrative       String  @default("")
+  // draft | writing | filed
+  storyStatus     String  @default("draft")
+  // One-line working hypothesis
+  storyDescription String?
+  // JSON array of report IDs attached to this story
+  storyReportIds  String  @default("[]")
+  // JSON: ordered story events [{id, date, description, actors}]
+  storyEvents     String  @default("[]")
+  // JSON: claims tracker [{id, text, status}]
+  storyClaimStatuses String @default("[]")
+  // Per-entry collab opt-in
+  storyShared     Boolean @default(false)
+
   reports        Report[]
   reportRequests ReportRequest[]
   journalEntries JournalEntry[]
@@ -152,17 +169,32 @@ model Setting {
 }
 
 model JournalEntry {
-  id        String    @id @default(uuid())
-  title     String    @default("Untitled")
-  folder    String    @default("General")
-  content   String    @default("")
+  id        String          @id @default(uuid())
+  title     String          @default("Untitled")
+  folder    String          @default("General")
+  content   String          @default("")
   weekStart DateTime?
   projectId String?
-  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  shared    Boolean         @default(false)
+  structure EntryStructure?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
   @@index([projectId])
+}
+
+model EntryStructure {
+  id            String       @id @default(cuid())
+  entryId       String       @unique
+  entry         JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  status        String       @default("draft")  // draft | writing | filed
+  description   String?
+  reportIds     String       @default("[]")
+  events        String       @default("[]")
+  claimStatuses String       @default("[]")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 model DispatchChat {
@@ -254,22 +286,25 @@ model Story {
 
 model StorySource {
   id             String       @id @default(uuid())
-  storyId        String
-  story          Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  storyId        String?
+  story          Story?       @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  entryId        String?
   directReportId String
   directReport   DirectReport @relation(fields: [directReportId], references: [id], onDelete: Cascade)
   tags           String       @default("[]")  // JSON string[] e.g. ["on-record","whistleblower"]
   notes          String?
   createdAt      DateTime     @default(now())
 
-  @@unique([storyId, directReportId])
   @@index([storyId])
+  @@index([entryId])
+  @@unique([entryId, directReportId])
 }
 
 model EvidenceItem {
   id         String   @id @default(uuid())
-  storyId    String
-  story      Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  storyId    String?
+  story      Story?   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  entryId    String?
   url        String
   title      String
   accessedAt DateTime?
@@ -278,6 +313,7 @@ model EvidenceItem {
   createdAt  DateTime @default(now())
 
   @@index([storyId])
+  @@index([entryId])
 }
 
 // ── Journalism: FOIA tracker ──────────────────────────────────────────────────

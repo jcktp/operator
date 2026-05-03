@@ -121,12 +121,18 @@ export default function RequestTab() {
  }, [])
 
  useEffect(() => {
+ const load = () => {
  fetch('/api/projects')
  .then(r => r.json())
  .then((data: { projects?: Project[] }) => {
  setProjects((data.projects ?? []).filter(p => p.status === 'in_progress'))
  })
  .catch(() => {})
+ }
+ load()
+ // Refetch when another component signals a project change (created/deleted/renamed)
+ window.addEventListener('project:changed', load)
+ return () => window.removeEventListener('project:changed', load)
  }, [])
 
  useEffect(() => {

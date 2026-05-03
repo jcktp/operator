@@ -41,6 +41,11 @@ class SearchRequest(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+@app.get("/health")
+def health():
+    return {"ok": True, "service": "face"}
+
+
 @app.post("/extract")
 def extract(req: ExtractRequest):
     try:

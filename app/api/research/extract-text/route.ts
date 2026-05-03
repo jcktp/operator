@@ -19,8 +19,9 @@ export async function POST(req: Request) {
     let text = ''
 
     if (ext === 'pdf') {
-      const { PDFParse } = require('pdf-parse') as { PDFParse: new (buf: Buffer) => Promise<{ text: string }> }
-      const parsed = await new PDFParse(buf)
+      // pdf-parse default export is a function, not a constructor
+      const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
+      const parsed = await pdfParse(buf)
       text = parsed.text
     } else if (ext === 'docx' || ext === 'doc') {
       const mammoth = await import('mammoth')

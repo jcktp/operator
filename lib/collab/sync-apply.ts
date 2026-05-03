@@ -55,6 +55,8 @@ async function applyRecord(
     case 'Claim':      return applyClaim(record, remoteTs, fromInstanceId, projectId)
     case 'FoiaRequest': return applyFoia(record, remoteTs, fromInstanceId, projectId)
     case 'ChatMessage': return applyChatMessage(record)
+    case 'JournalEntry': return applyJournalEntry(record, remoteTs, fromInstanceId, projectId)
+    case 'EntryStructure': return applyEntryStructure(record, remoteTs, fromInstanceId, projectId)
     default:
       console.warn(`[collab] Unknown sync table: ${record.table}`)
       return false
@@ -334,6 +336,149 @@ async function applyChatMessage(record: SyncRecord): Promise<boolean> {
     })
   }
 
+  return false
+}
+
+async function applyJournalEntry(
+  record: SyncRecord,
+  remoteTs: Date,
+  fromInstanceId: string,
+  projectId: string
+): Promise<boolean> {
+  const data = record.data as {
+    title?: string; folder?: string; content?: string
+    projectId?: string | null; shared?: boolean
+    weekStart?: string | null; createdAt?: string
+  }
+
+  // Only accept entries explicitly shared by the sender — defence in depth.
+  if (data.shared !== true) return false
+
+  const local = await prisma.journalEntry.findUnique({ where: { id: record.id } })
+
+  if (!local) {
+    await prisma.journalEntry.create({
+      data: {
+        id: record.id,
+        title: data.title ?? 'Untitled',
+        folder: data.folder ?? 'General',
+        content: data.content ?? '',
+        projectId: data.projectId ?? projectId,
+        shared: true,
+        weekStart: data.weekStart ? new Date(data.weekStart) : null,
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: remoteTs,
+      },
+    })
+    return false
+  }
+
+  const localTs = local.updatedAt
+  const timeDiff = Math.abs(localTs.getTime() - remoteTs.getTime())
+
+  if (timeDiff <= CONFLICT_WINDOW_MS) {
+    // Field-level conflict check on prose content + title — both are user-edited surfaces.
+    const conflictFields: Array<keyof typeof data> = ['content', 'title']
+    let hasConflict = false
+    for (const field of conflictFields) {
+      const localVal = (local as Record<string, unknown>)[field]
+      const remoteVal = data[field]
+      if (localVal !== remoteVal && remoteVal !== undefined) {
+        await logConflict({
+          projectId,
+          tableName: 'JournalEntry',
+          recordId: record.id,
+          fieldName: field,
+          localValue: localVal != null ? String(localVal) : null,
+          remoteValue: remoteVal != null ? String(remoteVal) : null,
+          localPeerId: null,
+          remotePeerId: fromInstanceId,
+          localTimestamp: localTs,
+          remoteTimestamp: remoteTs,
+        })
+        hasConflict = true
+      }
+    }
+    if (hasConflict) return true
+  }
+
+  if (remoteTs > localTs) {
+    await prisma.journalEntry.update({
+      where: { id: record.id },
+      data: {
+        title: data.title,
+        folder: data.folder,
+        content: data.content,
+        projectId: data.projectId,
+        updatedAt: remoteTs,
+      },
+    })
+  }
+  return false
+}
+
+async function applyEntryStructure(
+  record: SyncRecord,
+  remoteTs: Date,
+  fromInstanceId: string,
+  projectId: string
+): Promise<boolean> {
+  const data = record.data as {
+    entryId?: string; status?: string; description?: string | null
+    reportIds?: string; events?: string; claimStatuses?: string
+    createdAt?: string
+  }
+
+  // Refuse if the parent entry is missing or not shared locally.
+  if (!data.entryId) return false
+  const parent = await prisma.journalEntry.findUnique({ where: { id: data.entryId } })
+  if (!parent || !parent.shared) return false
+
+  const local = await prisma.entryStructure.findUnique({ where: { entryId: data.entryId } })
+
+  if (!local) {
+    await prisma.entryStructure.create({
+      data: {
+        id: record.id,
+        entryId: data.entryId,
+        status: data.status ?? 'draft',
+        description: data.description ?? null,
+        reportIds: data.reportIds ?? '[]',
+        events: data.events ?? '[]',
+        claimStatuses: data.claimStatuses ?? '[]',
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: remoteTs,
+      },
+    })
+    return false
+  }
+
+  const localTs = local.updatedAt
+  const timeDiff = Math.abs(localTs.getTime() - remoteTs.getTime())
+
+  if (timeDiff <= CONFLICT_WINDOW_MS && local.status !== data.status && data.status !== undefined) {
+    await logConflict({
+      projectId, tableName: 'EntryStructure', recordId: record.id, fieldName: 'status',
+      localValue: local.status, remoteValue: data.status ?? null,
+      localPeerId: null, remotePeerId: fromInstanceId,
+      localTimestamp: localTs, remoteTimestamp: remoteTs,
+    })
+    return true
+  }
+
+  if (remoteTs > localTs) {
+    await prisma.entryStructure.update({
+      where: { entryId: data.entryId },
+      data: {
+        status: data.status,
+        description: data.description,
+        reportIds: data.reportIds,
+        events: data.events,
+        claimStatuses: data.claimStatuses,
+        updatedAt: remoteTs,
+      },
+    })
+  }
   return false
 }
 
