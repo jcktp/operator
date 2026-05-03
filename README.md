@@ -24,8 +24,6 @@ Upload notes, sources, photos, and documents. Get structured AI analysis — ent
 ![AI providers](https://img.shields.io/badge/AI-xAI-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
 ![AI providers](https://img.shields.io/badge/AI-Perplexity-18181b?style=flat-square&labelColor=18181b&color=a1a1aa)
 
-[![Watch the demo](https://img.youtube.com/vi/GQbDxk5euKE/maxresdefault.jpg)](https://www.youtube.com/watch?v=GQbDxk5euKE)
-
 </div>
 
 ---
