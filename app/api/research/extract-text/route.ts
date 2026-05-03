@@ -19,8 +19,9 @@ export async function POST(req: Request) {
     let text = ''
 
     if (ext === 'pdf') {
-      // pdf-parse default export is a function, not a constructor
-      const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const mod = require('pdf-parse')
+      const pdfParse: (buf: Buffer) => Promise<{ text: string }> = mod.default ?? mod
       const parsed = await pdfParse(buf)
       text = parsed.text
     } else if (ext === 'docx' || ext === 'doc') {
