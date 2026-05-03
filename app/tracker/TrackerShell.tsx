@@ -11,17 +11,15 @@ import FoiaClient from '@/app/foia/FoiaClient'
 
 type Tab = 'claims' | 'risks' | 'actions' | 'foia'
 
-const TABS: { id: Tab; label: string; icon: typeof CheckSquare; description: string }[] = [
-  { id: 'claims',  label: 'Claims',  icon: CheckSquare, description: 'Verifiable assertions extracted from your documents.' },
-  { id: 'risks',   label: 'Risks',   icon: ShieldAlert, description: 'Auto-extracted risks, severity and mitigation status.' },
-  { id: 'actions', label: 'Actions', icon: ListChecks,  description: 'Follow-ups with owners and due dates.' },
-  { id: 'foia',    label: 'FOIA',    icon: FileSearch,  description: 'Track public records requests from filing to receipt.' },
+const TABS: { id: Tab; label: string; icon: typeof CheckSquare }[] = [
+  { id: 'claims',  label: 'Claims',  icon: CheckSquare },
+  { id: 'risks',   label: 'Risks',   icon: ShieldAlert },
+  { id: 'actions', label: 'Actions', icon: ListChecks  },
+  { id: 'foia',    label: 'FOIA',    icon: FileSearch  },
 ]
 
 export default function TrackerShell({ initialTab }: { initialTab: Tab }) {
   const [tab, setTab] = useState<Tab>(initialTab)
-  const active = TABS.find(t => t.id === tab) ?? TABS[0]
-
   const select = (next: Tab) => {
     setTab(next)
     const url = next === 'claims' ? '/tracker' : `/tracker?tab=${next}`
@@ -34,7 +32,6 @@ export default function TrackerShell({ initialTab }: { initialTab: Tab }) {
         <div className="px-7 py-5">
           <div className="mb-3">
             <h1 className="text-2xl font-semibold text-[var(--text-bright)]">Tracker</h1>
-            <p className="text-[var(--text-muted)] text-sm mt-0.5">{active.description}</p>
           </div>
           <div className="flex gap-1 border-b border-[var(--border)] -mb-5">
             {TABS.map(t => {

@@ -172,9 +172,6 @@ export default function MonitorsClient({ projectId }: { projectId: string | null
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-[var(--text-bright)]">Web Monitor</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-0.5">
-            Track web pages for changes — get notified when content updates
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={checkAll} disabled={checking || monitors.length === 0}>

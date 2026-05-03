@@ -122,7 +122,6 @@ export default function ClaimsClient() {
  <div className="flex items-center justify-between">
  <div>
  <h1 className="text-2xl font-semibold text-[var(--text-bright)]">Claims Tracker</h1>
- <p className="text-sm text-[var(--text-muted)] mt-0.5">Track factual claims and their verification status.</p>
  </div>
  <button onClick={() => setShowForm(v => !v)}
  className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-xs font-medium bg-[var(--ink)] text-[var(--ink-contrast)] hover:bg-[var(--ink)] transition-colors">
