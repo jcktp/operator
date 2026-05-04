@@ -1,7 +1,7 @@
 // ── Ollama streaming provider + tool helpers ─────────────────────────────────
 
 import { Ollama } from 'ollama'
-import { availableTools, hasNoteSaveIntent, executeTool, extractWeatherLocation } from '../ai-tools'
+import { availableTools, hasNoteSaveIntent, executeTool, extractWeatherLocation } from './tools'
 import type { Message } from './types'
 
 // ── Tool helpers ─────────────────────────────────────────────────────────────

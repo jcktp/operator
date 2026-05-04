@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { CheckCircle, AlertCircle, Loader2, Download, ChevronDown, ChevronUp } from 'lucide-react'
-import { getModelCapsClient, modelRamWarning, formatContextWindow } from '@/lib/model-caps-shared'
+import { getModelCapsClient, modelRamWarning, formatContextWindow } from '@/lib/models/caps-shared'
 
 interface Props {
  onNext: () => void

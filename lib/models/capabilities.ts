@@ -1,11 +1,11 @@
 /**
  * Server-side model capability utilities.
  * Uses Node.js `os` module — do NOT import in client components.
- * Client components should import from lib/model-caps-shared.ts instead.
+ * Client components should import from lib/models/caps-shared.ts instead.
  */
 
 import { totalmem } from 'os'
-import { getModelCapsClient, type ModelCaps } from './model-caps-shared'
+import { getModelCapsClient, type ModelCaps } from './caps-shared'
 
 export type { ModelCaps }
 export { getModelCapsClient as getModelCaps }

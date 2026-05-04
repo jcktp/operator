@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { join } from 'path'
 import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
-import { validateImagePath, serializeEmbedding, saveUploadedFaceImage } from '@/lib/face-utils'
+import { validateImagePath, serializeEmbedding, saveUploadedFaceImage } from '@/lib/media/face-utils'
 import { getReportsRoot } from '@/lib/reports-folder'
 
 const FACE_SERVICE = 'http://127.0.0.1:5050'

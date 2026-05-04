@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/db'
-import { deserializeEmbedding, parseBbox, saveUploadedFaceImage, serializeEmbedding } from '@/lib/face-utils'
+import { deserializeEmbedding, parseBbox, saveUploadedFaceImage, serializeEmbedding } from '@/lib/media/face-utils'
 
 const FACE_SERVICE = 'http://127.0.0.1:5050'
 

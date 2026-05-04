@@ -1,7 +1,7 @@
 // ── Google (Gemini) streaming provider ───────────────────────────────────────
 
 import { fetchWithRetry } from './stream-utils'
-import { availableTools, executeTool } from '../ai-tools'
+import { availableTools, executeTool } from './tools'
 import { getSecret } from '../settings'
 import type { Message } from './types'
 

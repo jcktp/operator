@@ -1,5 +1,5 @@
 import { getSecret } from './settings'
-import { getNoteSaved, resetNoteSaved } from './ai-tools'
+import { getNoteSaved, resetNoteSaved } from './ai/tools'
 import { chatAnthropicStream, chatAnthropicSimple } from './ai/anthropic'
 import { chatOpenAIStream, chatOpenAISimple } from './ai/openai'
 import { chatGoogleStream, chatGoogleSimple } from './ai/google'
@@ -18,7 +18,7 @@ export function getProvider(): AIProvider {
 export function maxContentLength(): number {
   if (getProvider() !== 'ollama') return 100_000
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { maxCharsForModel } = require('./model-capabilities') as typeof import('./model-capabilities')
+  const { maxCharsForModel } = require('./models/capabilities') as typeof import('./models/capabilities')
   return maxCharsForModel(process.env.OLLAMA_MODEL ?? 'phi4-mini')
 }
 

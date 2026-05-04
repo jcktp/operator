@@ -1,7 +1,7 @@
 // ── Journalism-specific AI analysis functions ─────────────────────────────────
-import { chat, getProvider } from './ai-providers'
-import { maxContentLength } from './ai-providers'
-import { extractJsonFromText } from './utils'
+import { chat, getProvider } from '../ai-providers'
+import { maxContentLength } from '../ai-providers'
+import { extractJsonFromText } from '../utils'
 
 // ── Named Entity Extraction ───────────────────────────────────────────────────
 

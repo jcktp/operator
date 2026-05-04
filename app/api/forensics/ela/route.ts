@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { getReportsRoot } from '@/lib/reports-folder'
-import { computeEla } from '@/lib/image-forensics'
+import { computeEla } from '@/lib/media/forensics'
 import { join, resolve } from 'path'
 import { writeFileSync, unlinkSync } from 'fs'
 import { tmpdir } from 'os'

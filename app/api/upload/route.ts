@@ -8,7 +8,7 @@ import { saveReportFile } from '@/lib/reports-folder'
 import { logAction } from '@/lib/audit'
 import { getModeConfig } from '@/lib/mode'
 import { scanFile } from '@/lib/file-scan'
-import { canTranscribeAudio, audioUnavailableReason } from '@/lib/model-capabilities'
+import { canTranscribeAudio, audioUnavailableReason } from '@/lib/models/capabilities'
 
 export async function POST(req: NextRequest) {
   const deny = await requireAuth(req)

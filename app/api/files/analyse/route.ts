@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db'
 import { getReportsRoot } from '@/lib/reports-folder'
 import { extractContent, getFileType, IMAGE_TYPES, AUDIO_TYPES } from '@/lib/parsers'
 import { analyzeReport } from '@/lib/ai'
-import { extractEntities, extractTimeline } from '@/lib/ai-journalism'
+import { extractEntities, extractTimeline } from '@/lib/ai/journalism'
 import { loadAiSettings } from '@/lib/settings'
 
 const VIDEO_TYPES = new Set(['mp4', 'mov', 'avi', 'mkv'])

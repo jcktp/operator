@@ -1,7 +1,7 @@
 // ── Anthropic streaming provider ─────────────────────────────────────────────
 
 import { fetchWithRetry, sseLines } from './stream-utils'
-import { availableTools, executeTool } from '../ai-tools'
+import { availableTools, executeTool } from './tools'
 import { getSecret } from '../settings'
 import type { Message } from './types'
 

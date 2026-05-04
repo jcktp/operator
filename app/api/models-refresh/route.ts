@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
-import { getModelCapsClient } from '@/lib/model-caps-shared'
+import { getModelCapsClient } from '@/lib/models/caps-shared'
 
 // Fallback curated list — used when ollama.com is unreachable
 const FALLBACK_MODELS = [

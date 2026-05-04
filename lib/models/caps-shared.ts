@@ -1,7 +1,7 @@
 /**
  * Static model capability data — safe to import in both server and client code.
  * No Node.js-specific imports. Server-side utilities (RAM check, routing) live
- * in lib/model-capabilities.ts which imports from this file.
+ * in lib/models/capabilities.ts which imports from this file.
  */
 
 export interface ModelCaps {

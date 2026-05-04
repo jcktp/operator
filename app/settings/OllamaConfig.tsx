@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { CheckCircle, AlertCircle, Loader2, Circle, Download, RefreshCw, Globe, GlobeLock } from 'lucide-react'
 import { DEFAULT_MODELS } from './settingsTypes'
 import type { ModelSetupMode } from './useSettingsState'
-import { getModelCapsClient, modelRamWarning, formatContextWindow } from '@/lib/model-caps-shared'
+import { getModelCapsClient, modelRamWarning, formatContextWindow } from '@/lib/models/caps-shared'
 
 const ALL_IN_ONE_MODELS = [
  { id: 'gemma4:e2b', label: 'Gemma 4 E2B', note: '7.2 GB · text + vision + audio · slow on 16 GB machines' },

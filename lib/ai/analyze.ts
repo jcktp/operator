@@ -3,7 +3,7 @@ import type { Metric, Insight, Question } from '../utils'
 import { getModeConfig } from '../mode'
 import { chat, getProvider, maxContentLength } from '../ai-providers'
 import { loadKnowledgeForArea } from './knowledge'
-import { maxCharsForModel } from '../model-capabilities'
+import { maxCharsForModel } from '../models/capabilities'
 
 export type { Metric, Insight, Question }
 

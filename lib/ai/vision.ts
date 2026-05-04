@@ -1,7 +1,7 @@
 // ── Image description (vision) + Audio transcription ─────────────────────────
-import { getProvider } from './ai-providers'
-import { getSecret } from './settings'
-import { routeVisionModel, routeAudioModel } from './model-capabilities'
+import { getProvider } from '../ai-providers'
+import { getSecret } from '../settings'
+import { routeVisionModel, routeAudioModel } from '../models/capabilities'
 
 const VISION_PROMPT = 'Describe only what you can clearly see in this image. Include visible text (quote it exactly, do not paraphrase or invent), people (without identifying them), objects, and context. If you cannot read text clearly, say so — do not guess or make up content.'
 

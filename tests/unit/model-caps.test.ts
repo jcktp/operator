@@ -4,7 +4,7 @@ import {
   modelRamWarning,
   formatContextWindow,
   MODEL_CAPS_REGISTRY,
-} from '@/lib/model-caps-shared'
+} from '@/lib/models/caps-shared'
 
 // ── getModelCapsClient ────────────────────────────────────────────────────────
 

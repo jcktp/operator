@@ -1,5 +1,5 @@
 // ── Tool definitions and implementations ────────────────────────────────────
-import { prisma } from './db'
+import { prisma } from '../db'
 
 export type ToolDef = {
   name: string

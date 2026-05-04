@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getModeConfig } from '@/lib/mode'
-import { getModelCapsClient } from '@/lib/model-caps-shared'
+import { getModelCapsClient } from '@/lib/models/caps-shared'
 import { CLOUD_PROVIDERS, type AIProvider, type CloudProviderId, type PullState, type TestState } from './settingsTypes'
 
 export type ModelSetupMode = 'all-in-one' | 'text-vision' | 'full-split'

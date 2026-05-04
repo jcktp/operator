@@ -1,7 +1,7 @@
 import { NextResponse , NextRequest } from 'next/server'
 import { requireAuth } from '@/lib/api-auth'
 import { loadAiSettings } from '@/lib/settings'
-import { canTranscribeAudio, audioUnavailableReason } from '@/lib/model-capabilities'
+import { canTranscribeAudio, audioUnavailableReason } from '@/lib/models/capabilities'
 
 export async function GET(req: Request) {
   const deny = await requireAuth(req)

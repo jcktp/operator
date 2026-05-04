@@ -356,7 +356,7 @@ fi
 # Install deps into the venv if not already present
 if [ "$FACES_SKIP" = "false" ] && ! "$FACES_VENV/bin/python3" -c "import deepface" 2>/dev/null; then
   step "  Installing DeepFace dependencies (first run — this may take a few minutes)..."
-  "$FACES_VENV/bin/pip" install -q --prefer-binary -r requirements-faces.txt \
+  "$FACES_VENV/bin/pip" install -q --no-cache-dir --prefer-binary -r requirements-faces.txt \
     || { warn "  Could not install DeepFace — facial recognition will be unavailable"; FACES_SKIP=true; }
 fi
 
@@ -407,7 +407,7 @@ fi
 
 if [ "$MEDIA_SKIP" = "false" ] && ! "$MEDIA_VENV/bin/python3" -c "import resemblyzer; import faster_whisper" 2>/dev/null; then
   step "  Installing media dependencies (resemblyzer + faster-whisper)..."
-  "$MEDIA_VENV/bin/pip" install -q --prefer-binary -r requirements-media.txt \
+  "$MEDIA_VENV/bin/pip" install -q --no-cache-dir --prefer-binary -r requirements-media.txt \
     || { warn "  Could not install media deps — speaker diarization will be unavailable"; MEDIA_SKIP=true; }
 fi
 

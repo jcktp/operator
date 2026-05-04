@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { join } from 'path'
 import { requireAuth } from '@/lib/api-auth'
-import { validateImagePath, saveUploadedFaceImage } from '@/lib/face-utils'
+import { validateImagePath, saveUploadedFaceImage } from '@/lib/media/face-utils'
 import { getReportsRoot } from '@/lib/reports-folder'
 
 const FACE_SERVICE = 'http://127.0.0.1:5050'

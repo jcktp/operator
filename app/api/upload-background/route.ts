@@ -11,9 +11,9 @@ import { checkRateLimit } from '@/lib/rate-limit'
 import { extractContent, getFileType, IMAGE_TYPES, AUDIO_TYPES, getAudioMimeType } from '@/lib/parsers'
 import { saveReportFile } from '@/lib/reports-folder'
 import { kickWorker } from '@/lib/upload-queue'
-import { extractImageMetadata } from '@/lib/image-metadata'
+import { extractImageMetadata } from '@/lib/media/metadata'
 import { scanFile } from '@/lib/file-scan'
-import { canTranscribeAudio, audioUnavailableReason } from '@/lib/model-capabilities'
+import { canTranscribeAudio, audioUnavailableReason } from '@/lib/models/capabilities'
 
 export async function POST(req: NextRequest) {
   const deny = await requireAuth(req)

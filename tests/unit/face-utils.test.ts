@@ -18,7 +18,7 @@ import {
   parseBbox,
   serializeEmbedding,
   deserializeEmbedding,
-} from '@/lib/face-utils'
+} from '@/lib/media/face-utils'
 
 // ── validateImagePath ─────────────────────────────────────────────────────────
 
