@@ -131,7 +131,4 @@ CREATE INDEX "WebMonitorChange_monitorId_idx" ON "WebMonitorChange"("monitorId")
 CREATE INDEX "JournalEntry_mode_idx" ON "JournalEntry"("mode");
 
 -- CreateIndex
-CREATE INDEX "Report_mode_idx" ON "Report"("mode");
-
--- CreateIndex
 CREATE INDEX "Report_reportDate_idx" ON "Report"("reportDate");
